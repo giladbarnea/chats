@@ -16,23 +16,20 @@ Current code quality issues, known technical debt, development conventions, and 
 
 ### Code Duplication
 
-- [ ] **Recursive data traversal** in `shorten_data()` and `extract_text_from_content()` (both in `scripts/conversations/utils.py`) uses very similar dict/list/str handling patterns.
+- [ ] **Recursive data traversal** in `shorten_data()` and `extract_text_from_content()` (both in `src/conversations/utils.py`) uses very similar dict/list/str handling patterns.
   `effort::low`
 
 ### Mixed Concerns
 
-- [ ] **`cmd_parse()` (in `scripts/conversations/commands.py`)** currently covers a fairly wide set of responsibilities:
+- [ ] **`cmd_parse()` (in `src/conversations/commands.py`)** currently covers a fairly wide set of responsibilities:
   - Input resolution
   - Content reading
   - Conversation parsing
-  - **Agent file handling (in `scripts/conversations/commands.py`)** – about 80 lines of relatively complex logic inside an already long function
   - Slice application
   - Metadata printing
   - Output formatting decisions
 
-  Consider extracting agent file handling into separate function.
-
-- [ ] **`main()` (in `scripts/conversations/cli.py`)** sets up four different `argparse` configurations inline, one per subcommand. These might be easier to manage as separate `parse_*_args()` helper functions.
+- [ ] **`main()` (in `src/conversations/cli.py`)** sets up four different `argparse` configurations inline, one per subcommand. These might be easier to manage as separate `parse_*_args()` helper functions.
 
 ### Other Maintainability
 
@@ -43,9 +40,7 @@ Current code quality issues, known technical debt, development conventions, and 
 
 ## Known Technical Debt
 
-### Fragile Functions
-
-- [ ] **`is_system_message()` is fragile (in `scripts/conversations/parsing.py`)** – Currently uses naive string matching ("is running" in line) to distinguish system messages from user input. Both start with "> " prefix, making this distinction brittle. The inline comment states: "I hate this function, any other way would be better."
+None currently tracked.
 
 ---
 ## Maintenance Guidelines
@@ -78,29 +73,7 @@ Not urgent, not necessarily important. Jotting down to not forget.
 
 ### Support Other Message Types
 
-1. **Support `is_error: true` in `tool_result` messages**
-
-Properly detect and handle tool errors from raw JSON input.
-Example structure:
-```json
-{
-  "type": "user",
-  "message": {
-    "role": "user",
-    "content": [
-      {
-        "type": "tool_result",
-        "tool_use_id": "toolu_014bCRg7RwRcFP4trWqEGfs2",
-        "content": "...",
-        "is_error": false
-      }
-    ]
-  }
-}
-```
-
-
-2. **Support `AskUserQuestion` tool**
+1. **Support `AskUserQuestion` tool**
 
 Example data:
 
@@ -267,7 +240,7 @@ er's answers in mind.",
 ```
 
 
-3. **Support embedded "command-message" in user messages**
+2. **Support embedded "command-message" in user messages**
 
 Example data:
 ```json
@@ -288,7 +261,7 @@ Example data:
 }
 ```
 
-4. **Support `TodoWrite` tool**
+3. **Support `TodoWrite` tool**
 
 Tool input:
 ```json

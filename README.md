@@ -16,6 +16,7 @@ Format and search Claude Code conversation history files. The `ccc` CLI converts
 - **Search**: Find conversations using regex patterns with rich display
 - **Format**: Convert between JSONL and raw transcript formats
 - **Remove**: Safely delete conversation sessions and all associated files
+- **Rename**: Assign custom titles to conversations for easier discovery
 - **Catalog**: AI-powered session cataloging to sessions.yaml files
 
 ## When to Use This Skill
@@ -73,6 +74,9 @@ Automatically detects input format by examining **first non-empty line only** (d
 --color auto     # Default: Rich format in terminal, plain when piped
 --color always   # Force Rich formatting (pipe to less -R)
 --color never    # Plain output only
+
+--paging         # Force use of a pager (e.g. less)
+--no-paging      # Disable pager
 
 -f, --format FORMAT  # Output format: xml (default), json, or raw
 -r, --raw            # Alias for: -f raw (implies --no-metadata)
@@ -230,6 +234,20 @@ ccc rm -n session-uuid
 - Defensive existence checks - missing files don't cause errors
 - Clear summary of removed items after execution
 
+### Rename Mode
+
+Rename a conversation by appending a custom title entry.
+
+```bash
+ccc rename <session> "New Title"
+```
+
+This mutates the conversation file by appending a `custom-title` entry and updates the global `history.jsonl` file.
+
+**Session Resolution:**
+- **Direct file path**: `/path/to/session.jsonl`
+- **Session UUID**: `5078a7c7-0646-43cc-9412-7e1454a282b4`
+
 ### Catalog Mode
 
 Catalog conversation sessions by upserting entries to a sessions.yaml file.
@@ -241,8 +259,8 @@ ccc catalog [SESSION_IDS OR FILE_PATHS]
 This command is a wrapper around `scripts/meta/catalog-sessions.sh`, which uses an AI model (Gemini) to analyze conversation sessions and maintain a sessions.yaml catalog file. The script reads session content and either creates new entries or updates existing ones with meaningful descriptions organized by date.
 
 **Input Methods:**
-- **Direct session IDs**: `parse.py catalog 00000000-0000-0000-0000-000000000000`
-- **File paths**: `parse.py catalog path/to/session.jsonl`
+- **Direct session IDs**: `ccc catalog 00000000-0000-0000-0000-000000000000`
+- **File paths**: `ccc catalog path/to/session.jsonl`
 - **Piped input**: `ccc search -ca 1d . -l | ccc catalog`
 - **Multiple sessions**: All input methods can handle multiple sessions
 

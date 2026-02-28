@@ -22,6 +22,9 @@ class Message:
     plan: Optional[str]    # ExitPlanMode plan content (shown by default)
     index: int             # Position in conversation
     agent_id: Optional[str] # Set if this is a subagent message
+    timestamp: float       # Creation timestamp
+    subagent_type: Optional[str] # Type of subagent if applicable
+    model: Optional[str]   # Model used for the message
 ```
 
 Key method: `iter_visible_parts(flags)` → Yields structured `MessagePart` objects (TEXT, THINKING, TOOL) based on flags
@@ -32,7 +35,7 @@ Key method: `iter_visible_parts(flags)` → Yields structured `MessagePart` obje
 
 **Problem solved:** XML tag knowledge was scattered across 4 functions. Adding new content types required editing multiple locations.
 
-**Solution:** Single source of truth enum (in `scripts/conversations/registry.py`):
+**Solution:** Single source of truth enum (in `src/conversations/registry.py`):
 
 ```python
 class ContentBlockType(Enum):
@@ -60,7 +63,7 @@ Each entry defines:
 
 **Problem solved:** `format_tool_for_xml()` had 9 hardcoded `elif` branches (one per tool). Adding tools required code changes.
 
-**Solution:** Data-driven schema lookup (in `scripts/conversations/registry.py`):
+**Solution:** Data-driven schema lookup (in `src/conversations/registry.py`):
 
 ```python
 TOOL_SCHEMAS: Dict[str, ToolSchema] = {
@@ -161,8 +164,8 @@ New design (`iter_visible_parts`) yields `(kind, data)` tuples. This keeps data 
 ## Module Structure
 
 ```
-scripts/parse.py                      # Stable CLI entrypoint + test re-exports
-scripts/conversations/
+src/conversations/
+├── __init__.py                       # Package exports
 ├── cli.py                            # argparse + main()
 ├── commands.py                       # cmd_parse/search/rename + resolution/slicing
 ├── parsing.py                        # detect_format + parse_jsonl/raw + extract_*
@@ -186,7 +189,7 @@ Primary commands:
 ### /export Slash Command
 Location: `~/.claude/commands/export.md`
 ```bash
-parse.py --color never <conversation-id>
+ccc --color never <conversation-id>
 ```
 Copies XML output to clipboard (macOS) or saves to file.
 

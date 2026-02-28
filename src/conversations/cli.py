@@ -22,7 +22,7 @@ def main():
     # Check for subcommands early (before argparse)
     if len(sys.argv) > 1 and sys.argv[1] == "search":
         # Parse search arguments
-        parser = argparse.ArgumentParser(prog="parse.py search")
+        parser = argparse.ArgumentParser(prog="ccc search")
         parser.add_argument("pattern", help="Pattern to search for")
         parser.add_argument(
             "-l",
@@ -129,7 +129,7 @@ def main():
     elif len(sys.argv) > 1 and sys.argv[1] == "rename":
         # Parse rename arguments
         parser = argparse.ArgumentParser(
-            prog="parse.py rename",
+            prog="ccc rename",
             description="Rename a conversation by updating its display name",
         )
         parser.add_argument(
@@ -143,7 +143,7 @@ def main():
     elif len(sys.argv) > 1 and sys.argv[1] == "rm":
         # Parse rm arguments
         parser = argparse.ArgumentParser(
-            prog="parse.py rm",
+            prog="ccc rm",
             description="Remove a conversation session and all associated files. "
                         "Shows a preview, then prompts for confirmation before removal.",
         )
@@ -167,7 +167,7 @@ def main():
     else:
         # Default parse behavior
         parser = argparse.ArgumentParser(
-            prog="parse.py",
+            prog="ccc",
             description="Parse and format Claude Code conversations",
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
