@@ -229,7 +229,8 @@ def render_messages_with_rich(
             if part.kind == MessagePartKind.TEXT:
                 # Use Text() for content with XML tags to avoid Markdown mangling
                 if xml_tag_pattern.search(part.data):
-                    print_targets.append(Text(part.data))
+                    escaped_data = re.sub(r"<(/?)([a-zA-Z][a-zA-Z0-9\\-]*)(\\s+[^>]*?)?>", r"\\<\1\2\3>", part.data)
+                    print_targets.append(Markdown(escaped_data))
                 else:
                     print_targets.append(Markdown(part.data))
 
