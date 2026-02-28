@@ -926,7 +926,7 @@ def _extract_task_dispatches(content: str) -> list[tuple[str, str]]:
 
 def cmd_catalog(args: list[str]) -> None:
     """Passthrough to catalog-sessions.sh shell script."""
-    script_path = Path(__file__).parent.parent / "meta" / "catalog-sessions.sh"
+    script_path = Path(__file__).parent.parent.parent / "scripts" / "meta" / "catalog-sessions.sh"
 
     if not script_path.exists():
         print_error(f"Script not found: {script_path}")
