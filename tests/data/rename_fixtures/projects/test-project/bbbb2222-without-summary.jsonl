@@ -1,0 +1,2 @@
+{"type":"file-history-snapshot","messageId":"snap-1","snapshot":{},"isSnapshotUpdate":false}
+{"type":"user","message":{"role":"user","content":"First message"},"uuid":"msg-1","cwd":"/test/project"}

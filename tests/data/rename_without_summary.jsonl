@@ -1,0 +1,2 @@
+{"type":"user","message":{"role":"user","content":"First message without summary"},"uuid":"msg-1","timestamp":"2025-01-01T00:00:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Response"}]},"uuid":"msg-2","timestamp":"2025-01-01T00:00:01.000Z"}

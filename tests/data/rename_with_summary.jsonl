@@ -1,0 +1,3 @@
+{"type":"summary","summary":"Original summary for rename test","leafUuid":"test-leaf-uuid-1234"}
+{"type":"user","message":{"role":"user","content":"Hello"},"uuid":"msg-1","timestamp":"2025-01-01T00:00:00.000Z","cwd":"/test/project"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Hi there!"}]},"uuid":"msg-2","timestamp":"2025-01-01T00:00:01.000Z"}

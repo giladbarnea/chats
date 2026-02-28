@@ -1,0 +1,183 @@
+# Changelog
+
+All notable changes to the `conversations` skill.
+
+---
+## 2026-01-04 Feat: `-ca,--cafter` and `-ma,--mafter` for Created/Modified After filter
+
+---
+
+## [2026-01-01] Fix: Rich Rendering Bug & Structured Data Refactor
+
+### Fixed
+
+**Thinking/Tools content stripped in colored output**
+- **Problem:** `--color=always` output (and default colored output) stripped `<thinking>`, `<tool-input>`, and `<tool-output>` blocks entirely.
+- **Root cause:** Rich's Markdown parser treated custom XML tags as unknown HTML and stripped them along with their content.
+- **Solution:** Refactored rendering pipeline to separate structure from formatting. `render_messages_with_rich()` now handles tags as explicit `Text` objects and only passes actual message content to `Markdown()`.
+
+### Changed
+
+**Architecture Refactor: Structured Message Parts**
+- Replaced `Message.get_visible_content()` (which returned a serialized string) with `Message.iter_visible_parts()` (which yields structured `MessagePart` objects).
+- Introduced `MessagePart` and `ToolParts` named tuples for type-safe data flow.
+- Tool formatting logic centralized in `tool_to_parts()` (shared by both XML and Rich renderers), preventing implementation drift.
+
+**Resolved Technical Debt**
+- Removed "Premature Serialization" debt. JSON output is now clean (no embedded XML tags in content).
+
+---
+
+## [2025-12-29] Support `custom-title` entries
+
+Parse `type: "custom-title"` as `<session-rename>` blocks. Shown by default, searchable.
+
+---
+
+## [2025-12-22] Fix: Conversation Resolution Bugs
+
+### Fixed
+
+**"Not found" misreported as "ambiguous"**
+- **Problem:** `_try_resolve_conversation_file()` returned `iter([])` for "not found" case. Since iterators are always truthy in Python, `resolve_conversation_file()` took the "ambiguous" branch even with zero matches.
+- **Solution:** Return `[]` (list) instead of `iter([])`. Empty lists are falsy.
+
+**Single-word summary prefix match failing**
+- **Problem:** For single-word queries, the function iterated `conversation_files` twice (exact match, then summary prefix). If passed a generator (from `Path.glob()`), the first loop exhausted it.
+- **Solution:** Materialize generator with `list(conversation_files)` before iteration.
+
+**Ambiguous input silently treated as raw content**
+- **Problem:** `get_input_content()` ignored `ambiguous_matches` return value, falling back to raw content parsing and producing "No messages found" instead of showing ambiguity.
+- **Solution:** Check `ambiguous_matches` and exit with error listing matching conversations.
+
+### Changed
+
+**Factored out `extract_summaries_from_content()`**
+- `extract_summaries_from_jsonl()` now wraps `extract_summaries_from_content(content: str)`
+- `cmd_search()` reuses already-read content instead of re-reading file
+
+### Added
+
+**New test files:**
+- `tests/test_resolution.py` - 10 tests for resolution bugs
+
+### User Impact
+
+**Improved error messages** for conversation resolution failures. No changes to CLI syntax or output format.
+
+---
+
+## [2025-12-10] Refactor: Centralized Content Block Handling
+
+**Commits:**
+- `d162af9` (2025-12-10 09:27) - Implementation
+- `1a55d1b` (2025-12-10 09:36) - Added post-implementation review
+- `54fcb6b` (2025-12-11 10:23) - Documentation updates
+
+**Changed files:**
+- `skills/conversations/scripts/parse.py` (+374 lines, -151 lines)
+- `skills/conversations/DEVELOPMENT.md` (marked 2 issues resolved)
+
+**New files:**
+- `skills/conversations/plan.claude.md` (implementation plan)
+- `skills/conversations/post-plan-implementation-review.md` (critique)
+
+**Unchanged:**
+- `skills/conversations/SKILL.md` (no user-facing changes)
+
+### Fixed
+
+**Agent messages not displaying with --color flag**
+- **Problem:** `render_xml_with_rich()` used regex that only matched `user-message` and `assistant-response` tags. Agent messages were silently skipped in colored output.
+- **Root cause:** XML tag knowledge scattered across multiple functions. Renderer out of sync with message formatter.
+- **Solution:** New `render_messages_with_rich()` works directly from Message objects, bypassing XML parsing entirely.
+
+### Added
+
+**Content Block Type Registry** (`ContentBlockType` enum, lines 52-63)
+- Centralized definition of all 6 XML content block types
+- Each type has: xml_tag, header, rich_style
+- Single source of truth for message wrappers (user/assistant/agent) and inner blocks (thinking/tool-input/tool-output)
+
+**Tool Schema Registry** (`TOOL_SCHEMAS` dict, lines 75-85)
+- Data-driven tool formatting replacing 9 hardcoded `elif` branches
+- Each schema defines: attr_keys, content_key, content_lang
+- Adding new tool = adding dict entry (was: adding code branch)
+
+**New rendering path** (`render_messages_with_rich()`, lines 955-999)
+- Direct Message → Rich console rendering
+- Eliminates XML → regex → render anti-pattern
+- Recognizes all 6 content block types (old: only 2)
+
+### Changed
+
+**Architectural improvements:**
+- Console initialization: `console: Console` → `console: Optional[Console] = None` with lazy init
+- Added `get_console()` helper (lines 102-108)
+- Added `get_wrapper_type()` method to Message class
+- Extracted `_format_edit_content()` helper (lines 168-176)
+- Refactored `format_tool_for_xml()` to use TOOL_SCHEMAS registry
+
+**DEVELOPMENT.md updates:**
+- [x] Marked `format_tool_for_xml_not_dynamic` resolved
+- [x] Marked `render_xml_with_rich_flimsy` resolved
+- Added "Random Ideas" section
+
+### User Impact
+
+**None.** This was a structural refactoring with no changes to:
+- CLI flags or command syntax
+- Output format (XML/JSON structure identical)
+- Behavior (except agent message bug fix)
+- SKILL.md documentation
+
+### Known Issues
+
+See `post-plan-implementation-review.md` for detailed critique.
+
+**Premature Serialization:**
+- `get_visible_content()` returns string with XML tags embedded
+- Causes: (1) Rich styling for inner blocks unused, (2) JSON output polluted with XML
+- Suggested fix: Return structured blocks instead of serialized string
+
+---
+
+## [2025-12-09] Color Handling Improvements
+
+**Commit:** `2f18e34` (2025-12-09 10:49)
+
+### Fixed
+- Conversations color output consistency
+
+---
+
+## [2025-12-08] Console and Style Improvements
+
+**Commits:**
+- `c937a55` (2025-12-08 22:03) - Style improvements
+- `0d9a169` (2025-12-08 20:55) - Console handling refactor
+
+### Changed
+- Centralized color/console handling
+- Added `print_error()` utility
+- Renamed `parse_raw()` → `parse_raw_cli_transcript()` for clarity
+- Changed `List[Path]` → `Iterable[Path]` for better typing
+- Batched Rich prints for performance
+- Converted to keyword-only args in key functions
+
+---
+
+## [2025-12-07] Code Reuse and Metadata
+
+**Commits:**
+- `ed22297` (2025-12-07) - Code reuse improvements
+- `843951e` (2025-12-07) - Tool output handling
+- `6eceec8` (2025-12-07) - Metadata in YAML frontmatter
+- `51ecbdd` (2025-12-07) - Initial commit
+
+### Added
+- YAML frontmatter for metadata
+- Improved tool output handling (type=text with dict content)
+
+### Changed
+- Code reuse refactoring across parsing functions

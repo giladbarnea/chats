@@ -1,0 +1,2 @@
+{"type":"summary","summary":"Fix authentication bug in login","leafUuid":"leaf-uuid-3333"}
+{"type":"user","message":{"role":"user","content":"Auth work"},"uuid":"msg-1"}

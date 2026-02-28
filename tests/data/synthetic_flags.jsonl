@@ -1,0 +1,4 @@
+{"type":"user","message":{"role":"user","content":"Hi"},"timestamp":"2025-11-23T09:29:08.354Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"thinking","thinking":"I should reply hello"},{"type":"text","text":"Hello!"}]},"timestamp":"2025-11-23T09:29:14.958Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_1","name":"test","input":{}}]},"timestamp":"2025-11-23T09:29:15.316Z"}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"result"}]},"timestamp":"2025-11-23T09:29:16.114Z"}

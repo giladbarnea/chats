@@ -1,0 +1,4 @@
+{"type":"user","message":{"role":"user","content":"Start a research task"},"timestamp":"2025-11-23T09:29:08.354Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I'll dispatch an agent for that."}]},"timestamp":"2025-11-23T09:29:14.958Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Agent research complete: found 3 relevant files."}],"model":"claude-sonnet-4-5-20250929"},"agentId":"agent-abc-123","timestamp":"2025-11-23T09:29:20.000Z"}
+{"type":"user","message":{"role":"user","content":"Thanks"},"timestamp":"2025-11-23T09:30:00.000Z"}

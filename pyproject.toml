@@ -1,0 +1,22 @@
+[project]
+name = "conversations"
+version = "0.1.0"
+description = "CLI for parsing and querying Claude Code conversations"
+readme = "README.md"
+authors = [
+    { name = "Gilad Barnea", email = "gilad@hear.ai" }
+]
+requires-python = ">=3.13"
+dependencies = ["rich"]
+
+[project.scripts]
+ccc = "conversations.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

@@ -1,0 +1,54 @@
+from __future__ import annotations
+
+from enum import Enum
+from typing import NamedTuple
+
+
+class ContentBlockInfo(NamedTuple):
+    """Configuration for an XML content block type."""
+
+    xml_tag: str
+    header: str | None  # None for inner blocks (thinking, tools)
+    rich_style: str  # Rich style for colored output
+
+
+class ContentBlockType(Enum):
+    """All XML content block types the system outputs."""
+
+    # Message wrappers (outer)
+    USER_MESSAGE = ContentBlockInfo("user-message", "# User", "bold cyan")
+    ASSISTANT_RESPONSE = ContentBlockInfo(
+        "assistant-response", "# Assistant", "bold green"
+    )
+    AGENT = ContentBlockInfo("agent", "# Agent", "bold magenta")
+    SESSION_RENAME = ContentBlockInfo(
+        "session-rename", "# Renamed Session", "bold yellow"
+    )
+
+    # Content blocks (inner)
+    THINKING = ContentBlockInfo("thinking", None, "dim italic")
+    TOOL_INPUT = ContentBlockInfo("tool-input", None, "dim")
+    TOOL_OUTPUT = ContentBlockInfo("tool-output", None, "dim")
+
+
+class ToolSchema(NamedTuple):
+    """How to format a specific tool's input for XML output."""
+
+    attr_keys: list[str]  # Keys to extract as XML attributes
+    content_key: str | None  # Key for content body (None = no content)
+    content_lang: str | None  # Language for code fence (None = no fence)
+
+
+# Tool-specific formatting schemas. Adding a new tool = adding an entry here.
+TOOL_SCHEMAS: dict[str, ToolSchema] = {
+    "Bash": ToolSchema([], "command", "sh"),
+    "Read": ToolSchema(["file_path"], None, None),
+    "Glob": ToolSchema(["pattern", "path"], None, None),
+    "Grep": ToolSchema(["pattern", "path", "glob", "type", "output_mode"], None, None),
+    "Write": ToolSchema(["file_path"], "content", None),
+    "Edit": ToolSchema(["file_path"], None, None),  # old_string/new_string handled separately
+    "Task": ToolSchema(["subagent_type", "model"], "prompt", None),
+    "WebFetch": ToolSchema(["url"], "prompt", None),
+    "WebSearch": ToolSchema(["query"], None, None),
+}
+

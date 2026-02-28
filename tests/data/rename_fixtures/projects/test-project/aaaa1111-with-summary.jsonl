@@ -1,0 +1,2 @@
+{"type":"summary","summary":"Existing summary for update test","leafUuid":"leaf-uuid-1111"}
+{"type":"user","message":{"role":"user","content":"Hello"},"uuid":"msg-1","cwd":"/test/project"}

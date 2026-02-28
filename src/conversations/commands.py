@@ -1,0 +1,946 @@
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+from collections.abc import Iterable
+from contextlib import nullcontext
+from datetime import datetime
+from pathlib import Path
+
+from .console import get_console, print_error
+from .date_filters import parse_date_filter
+from .formatting import (
+    format_to_json,
+    format_to_raw,
+    format_to_xml,
+    print_metadata,
+    render_message_inner_xml,
+    render_messages_with_rich,
+)
+from .model import ConversationFlags, ConversationMetadata, Message
+from .parsing import (
+    detect_format,
+    extract_custom_titles_from_content,
+    extract_summaries_from_content,
+    extract_summaries_from_jsonl,
+    extract_cwd_from_jsonl,
+    get_jsonl_timestamps,
+    parse_jsonl,
+    parse_raw_cli_transcript,
+)
+
+
+def _build_tool_id_map(messages: list[Message]) -> dict[str, str]:
+    """Build a map of tool ID to tool name from all messages."""
+    tool_id_map = {}
+    for msg in messages:
+        for tool in msg.tools:
+            if tool.get("type") == "tool_use" and "id" in tool:
+                tool_id_map[tool["id"]] = tool.get("name", "Unknown")
+    return tool_id_map
+
+
+def find_all_conversations(projects_dir: Path) -> Iterable[Path]:
+    """Find all .jsonl conversation files in the projects directory."""
+    if not projects_dir.exists():
+        raise FileNotFoundError(f"Projects directory does not exist: {projects_dir}")
+
+    return projects_dir.glob("*/*.jsonl")
+
+
+def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]:
+    """Find all agent files in the same directory that belong to a session."""
+    agent_files = []
+
+    for agent_file in conv_file.parent.glob("agent-*.jsonl"):
+        try:
+            with open(agent_file, "r", encoding="utf-8") as f:
+                first_line = f.readline().strip()
+                if first_line:
+                    entry = json.loads(first_line)
+                    if entry.get("sessionId") == session_id:
+                        agent_files.append(agent_file)
+        except (json.JSONDecodeError, OSError):
+            continue
+
+    return agent_files
+
+
+def _try_resolve_conversation_file(
+    identifier: str,
+    conversation_files: Iterable[Path] | None = None,
+) -> tuple[Path | None, list[tuple[Path, str]]]:
+    """
+    Try to resolve a conversation identifier to a file path.
+
+    Resolution order:
+    1. Direct file path (if exists)
+    2. UUID exact match (single-word only)
+    3. Summary prefix match (case-insensitive)
+
+    Returns:
+        Tuple of (resolved_path, ambiguous_matches):
+        - If exactly one match: (Path, [])
+        - If ambiguous: (None, [(path, summary), ...])
+        - If not found: (None, [])
+    """
+    stripped = identifier.strip()
+
+    # Try direct file path
+    try:
+        path = Path(stripped)
+        if path.exists() and path.is_file():
+            return path, []
+    except (OSError, ValueError):
+        pass
+
+    # Fetch conversation files if not provided
+    if conversation_files is None:
+        projects_dir = Path.home() / ".claude" / "projects"
+        conversation_files = find_all_conversations(projects_dir)
+
+    # Materialize generator to allow multiple iterations
+    conversation_files = list(conversation_files)
+
+    # Try exact match by conversation ID (single-word queries only)
+    if len(stripped.split()) == 1:
+        for conv_file in conversation_files:
+            if conv_file.stem == stripped or conv_file.name == stripped:
+                return conv_file, []
+
+    # Try matching by summary prefix
+    query_lower = stripped.lower()
+    matches = []
+    for conv_file in conversation_files:
+        for summary in extract_summaries_from_jsonl(conv_file):
+            if summary.lower().startswith(query_lower):
+                matches.append((conv_file, summary))
+                break  # Only count each file once
+
+    if len(matches) == 1:
+        return matches[0][0], []
+    if len(matches) > 1:
+        return None, matches
+
+    return None, []
+
+
+def get_input_content(input_arg: str | None) -> str:
+    """Get input content from CLI argument or stdin."""
+    if input_arg:
+        content_or_path = input_arg
+    elif sys.stdin.isatty():
+        print(
+            "Error: No input provided. Provide a file path, raw content, or pipe to stdin.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    else:
+        content_or_path = sys.stdin.read()
+
+    # Try to resolve as conversation file
+    resolved_path, ambiguous_matches = _try_resolve_conversation_file(
+        content_or_path.strip()
+    )
+    if resolved_path:
+        return resolved_path.read_text(encoding="utf-8")
+
+    if ambiguous_matches:
+        _print_ambiguous_error(content_or_path.strip(), ambiguous_matches)
+        sys.exit(1)
+
+    return content_or_path
+
+
+def _print_ambiguous_error(identifier: str, matches: list[tuple[Path, str]]) -> None:
+    """Print error message for ambiguous conversation identifier."""
+    console = get_console()
+    console.print("[red]Error: Ambiguous conversation identifier[/red]")
+    console.print(f"[yellow]'{identifier}'[/yellow] matches multiple conversations:")
+    console.print()
+    for conv_file, summary in matches:
+        console.print(f"  * [cyan]{conv_file.stem}[/cyan]: {summary}")
+    console.print()
+    console.print("[dim]Use a more specific prefix or the full UUID[/dim]")
+
+
+def resolve_conversation_file(conversation_id: str) -> Path:
+    """
+    Resolve conversation identifier to file path.
+
+    Resolution order:
+    1. Direct file path (if exists)
+    2. UUID exact match (single-word only)
+    3. Summary prefix match (case-insensitive)
+    """
+    resolved_path, ambiguous_matches = _try_resolve_conversation_file(conversation_id)
+
+    if resolved_path:
+        return resolved_path
+
+    console = get_console()
+
+    if ambiguous_matches:
+        _print_ambiguous_error(conversation_id, ambiguous_matches)
+        sys.exit(1)
+
+    # Not found
+    console.print(
+        f"[red]Error: Conversation not found: [yellow]{conversation_id}[/yellow][/red]"
+    )
+    console.print()
+    console.print("[dim]Try one of:[/dim]")
+    console.print(
+        "  * A conversation UUID (e.g., 4a3a84d0-3a14-453f-8984-05a8607164d6)"
+    )
+    console.print("  * A summary prefix (e.g., 'Locate SFTP')")
+    console.print("  * A file path to a .jsonl file")
+    sys.exit(1)
+
+
+def display_search_result(
+    conv_file: Path,
+    messages: list[Message],
+    matches: list[Message],
+    cwd: str | None,
+    flags: ConversationFlags,
+    *,
+    list_only: bool,
+    emit_metadata: bool,
+    matching_summaries: list[str] | None = None,
+    last_custom_title: str | None = None,
+) -> None:
+    """Display a single search result in unified XML format."""
+    if emit_metadata:
+        match_count = len(matches) + (len(matching_summaries) if matching_summaries else 0)
+        print_metadata(
+            conv_file,
+            cwd,
+            len(messages),
+            match_count,
+            matching_summaries,
+            last_custom_title=last_custom_title,
+            color=flags.color,
+            dedupe_frontmatter_separators=False,
+        )
+
+    if list_only:
+        return
+
+    if not matches:
+        return
+
+    tool_id_map = _build_tool_id_map(messages)
+
+    if flags.color:
+        render_messages_with_rich(matches, flags, tool_id_map)
+    else:
+        print(format_to_xml(matches, flags, tool_id_map))
+        print()
+
+
+def cmd_search(
+    pattern_arg: str,
+    flags: ConversationFlags,
+    list_only: bool,
+    dir_filter: str | None = None,
+    mafter: str | None = None,
+    cafter: str | None = None,
+    *,
+    emit_metadata: bool = True,
+) -> None:
+    """Handle search subcommand."""
+    mafter_dt = parse_date_filter(mafter)
+    cafter_dt = parse_date_filter(cafter)
+
+    # Compile regex (treat invalid regex as literal string like grep -F)
+    try:
+        regex = re.compile(pattern_arg, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    except re.error:
+        regex = re.compile(
+            re.escape(pattern_arg), re.IGNORECASE | re.MULTILINE | re.DOTALL
+        )
+
+    projects_dir = Path.home() / ".claude" / "projects"
+    conversation_files = find_all_conversations(projects_dir)
+
+    # Build metadata list once (avoiding multiple stats/reads)
+    # We fallback to stat() if jsonl timestamps are missing (e.g. raw transcripts)
+    metadata_list = []
+    for conv_file in conversation_files:
+        ctime, mtime = get_jsonl_timestamps(conv_file)
+        
+        # Fallback to OS stat if timestamps not found in content
+        if ctime is None or mtime is None:
+            try:
+                stat = conv_file.stat()
+                if ctime is None:
+                    ctime = datetime.fromtimestamp(stat.st_birthtime)
+                if mtime is None:
+                    mtime = datetime.fromtimestamp(stat.st_mtime)
+            except OSError:
+                pass
+        
+        metadata_list.append(ConversationMetadata(conv_file, ctime, mtime))
+
+    if not metadata_list:
+        sys.exit(1)
+
+    # Sort by modification time (oldest first, most recent last)
+    # Handle None by putting them first (oldest)
+    metadata_list.sort(key=lambda m: m.mtime or datetime.min)
+
+    found_any = False
+    pager_ctx = get_console().pager(styles=True) if flags.paging else nullcontext()
+
+    with pager_ctx:
+        for meta in metadata_list:
+            if not flags.show_agents and meta.path.name.startswith("agent-"):
+                continue
+
+            if not _passes_date_filters(meta, mafter_dt, cafter_dt):
+                continue
+
+            try:
+                result = _search_conversation(meta.path, regex, flags, dir_filter)
+                if result is None:
+                    continue
+
+                messages, matches, cwd, matching_summaries, last_custom_title = result
+
+                if matches or matching_summaries:
+                    found_any = True
+                    # Make sure rule is displayed first, acting as a title, followed by the session's metadata
+                    get_console().rule(
+                        title=f"[bold white]{meta.path.stem}[/]", style="#00ffba"
+                    )
+                    display_search_result(
+                        meta.path,
+                        messages,
+                        matches,
+                        cwd,
+                        flags,
+                        list_only=list_only,
+                        emit_metadata=emit_metadata,
+                        matching_summaries=matching_summaries,
+                        last_custom_title=last_custom_title,
+                    )
+
+            except Exception as e:
+                print_error(f"Error processing conversation file {meta.path}: {e}")
+                continue
+
+    sys.exit(0 if found_any else 1)
+
+
+def _passes_date_filters(
+    meta: ConversationMetadata, mafter_dt: datetime | None, cafter_dt: datetime | None
+) -> bool:
+    """Check if conversation file passes date filters."""
+    if not mafter_dt and not cafter_dt:
+        return True
+
+    if mafter_dt:
+        if not meta.mtime or meta.mtime < mafter_dt:
+            return False
+            
+    if cafter_dt:
+        if not meta.ctime or meta.ctime < cafter_dt:
+            return False
+            
+    return True
+
+
+def _search_conversation(
+    conv_file: Path,
+    regex: re.Pattern,
+    flags: ConversationFlags,
+    dir_filter: str | None,
+) -> tuple[list[Message], list[Message], str | None, list[str], str | None] | None:
+    """
+    Search a single conversation file.
+
+    Returns tuple of (messages, matches, cwd, matching_summaries, last_custom_title)
+    or None if the conversation should be skipped.
+    """
+    content = conv_file.read_text(encoding="utf-8")
+    format_type = detect_format(content)
+
+    if format_type == "jsonl":
+        messages = parse_jsonl(content, flags)
+        cwd = extract_cwd_from_jsonl(content)
+    else:
+        messages = parse_raw_cli_transcript(content, flags)
+        cwd = None
+
+    # Apply directory filter
+    if dir_filter is not None:
+        if cwd is None:
+            return None
+        try:
+            Path(cwd).resolve().relative_to(Path(dir_filter).resolve())
+        except ValueError:
+            return None
+
+    summaries = extract_summaries_from_content(content)
+    matching_summaries = [s for s in summaries if regex.search(s)]
+
+    custom_titles = extract_custom_titles_from_content(content)
+    last_custom_title = custom_titles[-1] if custom_titles else None
+
+    tool_id_map = _build_tool_id_map(messages)
+
+    matches = [
+        msg
+        for msg in messages
+        if regex.search(render_message_inner_xml(msg, flags, tool_id_map))
+    ]
+
+    return messages, matches, cwd, matching_summaries, last_custom_title
+
+
+def cmd_rename(conversation_id: str, new_name: str) -> None:
+    """Rename a conversation by appending custom-title and agent-name entries."""
+    import time
+
+    new_name = new_name.strip()
+    if not new_name:
+        print_error("New name cannot be empty.")
+        sys.exit(1)
+
+    conv_file = resolve_conversation_file(conversation_id)
+    session_id = conv_file.stem
+
+    # Read content to extract project path (cwd) before appending
+    content = conv_file.read_text(encoding="utf-8")
+    project = extract_cwd_from_jsonl(content) or ""
+
+    custom_title_entry = {
+        "type": "custom-title",
+        "customTitle": new_name,
+        "sessionId": session_id,
+    }
+    agent_name_entry = {
+        "type": "agent-name",
+        "agentName": new_name,
+        "sessionId": session_id,
+    }
+
+    try:
+        with open(conv_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(custom_title_entry, separators=(",", ":")) + "\n")
+            f.write(json.dumps(agent_name_entry, separators=(",", ":")) + "\n")
+    except Exception as e:
+        print_error(f"Error writing file: {e}")
+        sys.exit(1)
+
+    # Append to global history.jsonl
+    history_entry = {
+        "display": f"/rename {new_name}",
+        "pastedContents": {},
+        "timestamp": int(time.time() * 1000),
+        "project": project,
+        "sessionId": session_id,
+    }
+    history_file = Path.home() / ".claude" / "history.jsonl"
+    try:
+        with open(history_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(history_entry, separators=(",", ":")) + "\n")
+    except Exception as e:
+        print_error(f"Error writing history.jsonl: {e}")
+
+    console = get_console()
+    console.print(f"[green]v[/green] Added custom title to [cyan]{conv_file.name}[/cyan]")
+    console.print(f"  [dim]Title:[/dim] [bold]{new_name}[/bold]")
+
+
+def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
+    """Remove a conversation session and all associated files."""
+    conv_file = _resolve_session_for_rm(session_id)
+    session_uuid = conv_file.stem
+    project_dir_name = conv_file.parent.name
+    claude_dir = Path.home() / ".claude"
+
+    # Collect paths to remove
+    files_to_remove = _collect_session_files(conv_file, session_uuid, claude_dir)
+    dirs_to_remove = _collect_session_dirs(session_uuid, project_dir_name, claude_dir)
+    filtered_lines, history_lines_to_remove = _filter_history_lines(
+        claude_dir / "history.jsonl", session_uuid
+    )
+
+    # Display what will be removed (always show preview)
+    _display_rm_preview(
+        session_uuid,
+        project_dir_name,
+        files_to_remove,
+        dirs_to_remove,
+        history_lines_to_remove,
+        claude_dir,
+        preview_mode=True,
+    )
+
+    console = get_console()
+
+    # If dry run, exit without prompting
+    if dry_run:
+        console.print("\n[yellow]Dry run - no changes made[/yellow]")
+        return
+
+    # Ask for confirmation
+    console.print()
+    try:
+        response = input("Proceed with removal? [y/n]: ").strip().lower()
+    except (KeyboardInterrupt, EOFError):
+        console.print("\n[yellow]Cancelled[/yellow]")
+        sys.exit(0)
+
+    if response != "y":
+        console.print("[yellow]Cancelled[/yellow]")
+        sys.exit(0)
+
+    # Execute removal
+    removed_files, removed_dirs = _execute_removal(
+        files_to_remove, dirs_to_remove, filtered_lines, claude_dir / "history.jsonl"
+    )
+
+    console.print(
+        f"\n[green]v[/green] Removed session [cyan]{session_uuid}[/cyan]: "
+        f"{removed_files} files, {removed_dirs} directories, {history_lines_to_remove} history entries"
+    )
+
+
+def _resolve_session_for_rm(session_id: str) -> Path:
+    """Resolve session identifier to file path (direct path or UUID only)."""
+    stripped = session_id.strip()
+    console = get_console()
+
+    try:
+        path = Path(stripped)
+        if path.exists() and path.is_file():
+            return path
+    except (OSError, ValueError):
+        console.print(
+            f"[red]Error: Invalid session identifier: [yellow]{session_id}[/yellow][/red]"
+        )
+        sys.exit(1)
+
+    # Try UUID match
+    projects_dir = Path.home() / ".claude" / "projects"
+    for conv in find_all_conversations(projects_dir):
+        if conv.stem == stripped or conv.name == stripped:
+            return conv
+
+    # Not found
+    console.print(f"[red]Error: Session not found: [yellow]{session_id}[/yellow][/red]")
+    console.print()
+    console.print("[dim]Provide:[/dim]")
+    console.print("  * A session UUID (e.g., 5078a7c7-0646-43cc-9412-7e1454a282b4)")
+    console.print("  * A file path to a .jsonl file")
+    sys.exit(1)
+
+
+def _collect_session_files(
+    conv_file: Path, session_uuid: str, claude_dir: Path
+) -> list[Path]:
+    """Collect all files associated with a session."""
+    files = [conv_file]
+
+    # Agent files
+    for agent_file in find_agent_files_for_session(conv_file, session_uuid):
+        files.append(agent_file)
+
+    # Debug and todos
+    files.append(claude_dir / "debug" / f"{session_uuid}.txt")
+    files.append(claude_dir / "todos" / f"{session_uuid}-agent-{session_uuid}.json")
+
+    return files
+
+
+def _collect_session_dirs(
+    session_uuid: str, project_dir_name: str, claude_dir: Path
+) -> list[Path]:
+    """Collect all directories associated with a session."""
+    return [
+        claude_dir / "file-history" / session_uuid,
+        claude_dir / "projects" / project_dir_name / session_uuid,
+        claude_dir / "session-env" / session_uuid,
+    ]
+
+
+def _filter_history_lines(
+    history_file: Path, session_uuid: str
+) -> tuple[list[str] | None, int]:
+    """Filter history.jsonl to remove lines for session. Returns (filtered_lines, removed_count)."""
+    if not history_file.exists():
+        return None, 0
+
+    try:
+        lines = history_file.read_text(encoding="utf-8").splitlines(keepends=True)
+    except OSError as e:
+        print_error(f"Error reading history.jsonl: {e}")
+        return None, 0
+
+    filtered = []
+    removed = 0
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            filtered.append(line)
+            continue
+
+        try:
+            entry = json.loads(stripped)
+            if entry.get("sessionId") == session_uuid:
+                removed += 1
+            else:
+                filtered.append(line)
+        except json.JSONDecodeError:
+            filtered.append(line)
+
+    return filtered, removed
+
+
+def _display_rm_preview(
+    session_uuid: str,
+    project_dir_name: str,
+    files: list[Path],
+    dirs: list[Path],
+    history_lines: int,
+    claude_dir: Path,
+    preview_mode: bool = True,
+) -> None:
+    """Display preview of what will be removed."""
+    console = get_console()
+
+    console.print(f"\n[bold]Session:[/bold] [cyan]{session_uuid}[/cyan]")
+    console.print(f"[bold]Project:[/bold] [dim]{project_dir_name}[/dim]\n")
+
+    existing_files = [f for f in files if f.exists()]
+    missing_files = [f for f in files if not f.exists()]
+    existing_dirs = [d for d in dirs if d.exists()]
+    missing_dirs = [d for d in dirs if not d.exists()]
+
+    if existing_files:
+        console.print("[bold]Files to remove:[/bold]")
+        for f in existing_files:
+            console.print(f"  [red]x[/red] ~/.claude/{f.relative_to(claude_dir)}")
+
+    if missing_files and preview_mode:
+        console.print("\n[dim]Files not found (will be skipped):[/dim]")
+        for f in missing_files:
+            console.print(f"  [dim]  ~/.claude/{f.relative_to(claude_dir)}[/dim]")
+
+    if existing_dirs:
+        console.print("\n[bold]Directories to remove:[/bold]")
+        for d in existing_dirs:
+            console.print(f"  [red]x[/red] ~/.claude/{d.relative_to(claude_dir)}/")
+
+    if missing_dirs and preview_mode:
+        console.print("\n[dim]Directories not found (will be skipped):[/dim]")
+        for d in missing_dirs:
+            console.print(f"  [dim]  ~/.claude/{d.relative_to(claude_dir)}/[/dim]")
+
+    if history_lines > 0:
+        console.print(
+            f"\n[bold]History entries to remove:[/bold] {history_lines} lines from history.jsonl"
+        )
+
+
+def _execute_removal(
+    files: list[Path],
+    dirs: list[Path],
+    filtered_history: list[str] | None,
+    history_file: Path,
+) -> tuple[int, int]:
+    """Execute file and directory removal. Returns (removed_files, removed_dirs)."""
+    import shutil
+
+    removed_files = 0
+    removed_dirs = 0
+
+    for f in files:
+        if f.exists():
+            try:
+                f.unlink()
+                removed_files += 1
+            except OSError as e:
+                print_error(f"Error removing {f}: {e}")
+
+    for d in dirs:
+        if d.exists():
+            try:
+                shutil.rmtree(d)
+                removed_dirs += 1
+            except OSError as e:
+                print_error(f"Error removing {d}: {e}")
+
+    if filtered_history is not None:
+        try:
+            history_file.write_text("".join(filtered_history), encoding="utf-8")
+        except OSError as e:
+            print_error(f"Error writing history.jsonl: {e}")
+
+    return removed_files, removed_dirs
+
+
+def parse_slice_notation(slice_str: str | None) -> tuple[int | None, int | None]:
+    """
+    Parse 1-indexed slice notation into 0-indexed Python slice bounds.
+
+    Examples:
+        "1" -> (0, 1)       # First message
+        "-1" -> (-1, None)  # Last message
+        "2:" -> (1, None)   # From second to end
+        ":-2" -> (None, -2) # All except last 2
+        "2:4" -> (1, 3)     # Messages 2 and 3
+    """
+    if not slice_str:
+        return (None, None)
+
+    # Single index
+    if ":" not in slice_str:
+        return _parse_single_index(slice_str)
+
+    # Range
+    parts = slice_str.split(":")
+    if len(parts) != 2:
+        print_error(f"Invalid slice notation: {slice_str}.")
+        sys.exit(1)
+
+    start = _convert_slice_bound(parts[0], "Start")
+    stop = _convert_slice_bound(parts[1], "Stop")
+
+    return (start, stop)
+
+
+def _parse_single_index(idx_str: str) -> tuple[int | None, int | None]:
+    """Parse a single index into slice bounds."""
+    try:
+        idx = int(idx_str)
+    except ValueError:
+        print_error(f"Invalid slice notation: {idx_str}.")
+        sys.exit(1)
+
+    if idx > 0:
+        return (idx - 1, idx)
+    if idx < 0:
+        return (idx, None) if idx == -1 else (idx, idx + 1)
+
+    print_error("Index must be >= 1 or < 0 (got 0).")
+    sys.exit(1)
+
+
+def _convert_slice_bound(bound_str: str, name: str) -> int | None:
+    """Convert a slice bound string to int, handling 1-based indexing."""
+    if bound_str == "":
+        return None
+
+    bound = int(bound_str)
+    if bound > 0:
+        return bound - 1
+    if bound == 0:
+        print_error(f"{name} index must be >= 1 or < 0 (got 0).")
+        sys.exit(1)
+
+    return bound
+
+
+def cmd_parse(
+    flags: ConversationFlags,
+    input_arg: str | None,
+    slice_str: str | None,
+    output_file: Path | None,
+    *,
+    output_format: str = "xml",
+    emit_metadata: bool = True,
+) -> None:
+    """Handle parse command (default behavior)."""
+    try:
+        content = get_input_content(input_arg)
+        input_file_path = None
+        if input_arg:
+            input_file_path, _ = _try_resolve_conversation_file(input_arg.strip())
+    except Exception as e:
+        print_error(f"Error reading input: {e}.")
+        sys.exit(1)
+
+    if not content.strip():
+        print_error("Input is empty.")
+        sys.exit(1)
+
+    # Parse conversation
+    format_type = detect_format(content)
+    if format_type == "jsonl":
+        messages = parse_jsonl(content, flags)
+        cwd = extract_cwd_from_jsonl(content)
+    else:
+        messages = parse_raw_cli_transcript(content, flags)
+        cwd = None
+
+    # Load agent files if enabled
+    if flags.show_agents and input_file_path and format_type == "jsonl":
+        messages = _merge_agent_messages(messages, content, input_file_path, flags)
+
+    if not messages:
+        print_error("No messages found in input.")
+        sys.exit(0)
+
+    # Apply slice
+    start, stop = parse_slice_notation(slice_str)
+    if start is not None or stop is not None:
+        messages = messages[start:stop]
+        if not messages:
+            print_error(f"Slice {slice_str} produced no messages.")
+            sys.exit(0)
+
+    # Print metadata for XML output
+    if (
+        emit_metadata
+        and input_file_path
+        and not output_file
+        and output_format not in ("json", "raw")
+    ):
+        custom_titles = extract_custom_titles_from_content(content) if format_type == "jsonl" else []
+        last_custom_title = custom_titles[-1] if custom_titles else None
+
+        print_metadata(
+            input_file_path,
+            cwd,
+            len(messages),
+            last_custom_title=last_custom_title,
+            color=flags.color,
+        )
+
+    tool_id_map = _build_tool_id_map(messages)
+
+    # Format output
+    if output_format == "json":
+        formatted = format_to_json(messages, flags, tool_id_map)
+    elif output_format == "raw":
+        formatted = format_to_raw(messages, flags, tool_id_map)
+    else:
+        formatted = format_to_xml(messages, flags, tool_id_map)
+
+    # Emit output
+    if output_file:
+        output_file.write_text(formatted + "\n", encoding="utf-8")
+        print(f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr)
+    elif output_format in ("json", "raw"):
+        print(formatted)
+    elif flags.color:
+        pager_ctx = get_console().pager(styles=True) if flags.paging else nullcontext()
+        with pager_ctx:
+            render_messages_with_rich(messages, flags, tool_id_map)
+    else:
+        print(formatted)
+
+
+def _merge_agent_messages(
+    messages: list[Message],
+    content: str,
+    input_file_path: Path,
+    flags: ConversationFlags,
+) -> list[Message]:
+    """Merge agent messages into main conversation timeline."""
+    session_id = input_file_path.stem
+    agent_files = find_agent_files_for_session(input_file_path, session_id)
+
+    # Extract Task tool dispatches (timestamp -> subagent_type)
+    task_dispatches = _extract_task_dispatches(content)
+
+    # Load and match agent messages
+    all_agent_messages = []
+    for agent_file in agent_files:
+        try:
+            agent_content = agent_file.read_text(encoding="utf-8")
+            agent_messages = parse_jsonl(agent_content, flags)
+            if not agent_messages or not agent_messages[0].timestamp:
+                continue
+
+            first_ts = agent_messages[0].timestamp
+            matched_subagent_type = None
+            for dispatch_ts, subagent_type in task_dispatches:
+                if first_ts > dispatch_ts:
+                    matched_subagent_type = subagent_type
+
+            if matched_subagent_type is not None:
+                for msg in agent_messages:
+                    msg.subagent_type = matched_subagent_type
+                all_agent_messages.extend(agent_messages)
+        except Exception:
+            continue
+
+    if not all_agent_messages:
+        return messages
+
+    # Sort and insert
+    all_agent_messages.sort(key=lambda m: m.timestamp or "")
+    first_agent_ts = all_agent_messages[0].timestamp
+    insert_idx = 0
+    for i, msg in enumerate(messages):
+        if msg.timestamp and msg.timestamp < first_agent_ts:
+            insert_idx = i + 1
+
+    messages[insert_idx:insert_idx] = all_agent_messages
+
+    # Re-index
+    for i, msg in enumerate(messages, start=1):
+        msg.index = i
+
+    return messages
+
+
+def _extract_task_dispatches(content: str) -> list[tuple[str, str]]:
+    """Extract Task tool dispatches from JSONL content."""
+    dispatches = []
+    for line in content.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+            if entry.get("type") != "assistant":
+                continue
+            ts = entry.get("timestamp")
+            if not ts:
+                continue
+            content_items = entry.get("message", {}).get("content", [])
+            if not isinstance(content_items, list):
+                continue
+            for item in content_items:
+                if (
+                    isinstance(item, dict)
+                    and item.get("type") == "tool_use"
+                    and item.get("name") == "Task"
+                ):
+                    subagent_type = item.get("input", {}).get("subagent_type", "")
+                    dispatches.append((ts, subagent_type))
+        except json.JSONDecodeError:
+            continue
+    return dispatches
+
+
+def cmd_catalog(args: list[str]) -> None:
+    """Passthrough to catalog-sessions.sh shell script."""
+    script_path = Path(__file__).parent.parent / "meta" / "catalog-sessions.sh"
+
+    if not script_path.exists():
+        print_error(f"Script not found: {script_path}")
+        sys.exit(1)
+
+    try:
+        process = subprocess.Popen(
+            [str(script_path)] + args,
+            stdin=sys.stdin,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            env=os.environ.copy(),
+        )
+        sys.exit(process.wait())
+    except Exception as e:
+        print_error(f"Error executing catalog-sessions.sh: {e}")
+        sys.exit(1)

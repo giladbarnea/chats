@@ -1,0 +1,47 @@
+---
+session_id: synthetic_flags
+history_path: tests/data/synthetic_flags.jsonl
+created: "2025-11-23 15:14"
+modified: "2025-11-23 15:14"
+messages: 4
+---
+<user-message i="1">
+# User
+
+Hi
+</user-message>
+
+---
+
+<assistant-response i="2">
+# Assistant
+
+Hello!
+
+
+<thinking>
+I should reply hello
+</thinking>
+</assistant-response>
+
+---
+
+<assistant-response i="3">
+# Assistant
+
+
+<tool-input name="test"></tool-input>
+</assistant-response>
+
+---
+
+<user-message i="4">
+# User
+
+
+<tool-output>
+```
+result
+```
+</tool-output>
+</user-message>
