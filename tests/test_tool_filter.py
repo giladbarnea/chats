@@ -4,7 +4,7 @@ Tests for granular tool filtering: parsing, matching, and integration.
 
 Covers:
 - Spec parsing (lax syntax: order-independent, short/long forms, optional colon)
-- Filter matching (criteria AND'd, negation inverts, multiple filters OR'd)
+- Filter matching (criteria AND'd, negation inverts, positive OR'd, negative AND'd as blocklist)
 - Integration with Message.iter_visible_parts (direction, name, error, shortening)
 """
 
@@ -24,8 +24,10 @@ BASH_RESULT = {"type": "tool_result", "tool_use_id": "toolu_01", "content": "fil
 BASH_ERROR = {"type": "tool_result", "tool_use_id": "toolu_01", "content": "cmd failed", "is_error": True}
 READ_USE = {"type": "tool_use", "name": "Read", "id": "toolu_02", "input": {"file_path": "f.txt"}}
 READ_RESULT = {"type": "tool_result", "tool_use_id": "toolu_02", "content": "content of f.txt"}
+SKILL_USE = {"type": "tool_use", "name": "Skill", "id": "toolu_03", "input": {"skill": "commit"}}
+SKILL_RESULT = {"type": "tool_result", "tool_use_id": "toolu_03", "content": "skill output"}
 
-ID_MAP = {"toolu_01": "Bash", "toolu_02": "Read"}
+ID_MAP = {"toolu_01": "Bash", "toolu_02": "Read", "toolu_03": "Skill"}
 
 
 def make_message(*tools):
@@ -208,6 +210,37 @@ class TestFilterIntegration:
         assert len(parts) == 2
         assert parts[0].data.tag == "tool-input"
         assert dict(parts[0].data.attrs).get("name") == "Read"
+
+    def test_multiple_negated_filters(self):
+        """!Skill + !Read:o → exclude Skill tools AND Read outputs, show rest."""
+        msg = make_message(BASH_USE, BASH_RESULT, READ_USE, READ_RESULT, SKILL_USE, SKILL_RESULT)
+        id_map = {**ID_MAP}
+        flags = ConversationFlags(show_tools=[
+            ToolFilter(name="Skill", negate=True),
+            ToolFilter(name="Read", direction="output", negate=True),
+        ])
+        parts = tool_parts_from(msg, flags, id_map)
+        # Should show: Bash use, Bash result, Read use (input only)
+        # Should NOT show: Skill use, Skill result, Read result
+        names = [dict(p.data.attrs).get("name") for p in parts]
+        assert len(parts) == 3, (
+            f"Expected 3 parts (Bash in+out, Read in), got {len(parts)}: {names}"
+        )
+        assert "Skill" not in names, f"Skill should be excluded, got {names}"
+
+    def test_mixed_positive_and_negative(self):
+        """Bash + !Read:o → only Bash (positive allowlist), minus Read outputs (irrelevant here)."""
+        msg = make_message(BASH_USE, BASH_RESULT, READ_USE, READ_RESULT, SKILL_USE, SKILL_RESULT)
+        id_map = {**ID_MAP}
+        flags = ConversationFlags(show_tools=[
+            ToolFilter(name="Bash"),
+            ToolFilter(name="Read", direction="output", negate=True),
+        ])
+        parts = tool_parts_from(msg, flags, id_map)
+        # Positive allowlist: only Bash. Negative: also blocks Read output (but Bash already excludes it).
+        names = [dict(p.data.attrs).get("name") for p in parts]
+        assert len(parts) == 2, f"Expected 2 Bash parts, got {len(parts)}: {names}"
+        assert all(n in ("Bash", None) for n in names), f"Only Bash expected, got {names}"
 
     def test_error_filter(self):
         """error_only → only tool_results with is_error=True."""

@@ -157,12 +157,27 @@ class Message:
         """Determine if a tool should be shown and whether to shorten it.
 
         Returns (show, filter_short).
+
+        Negative filters are AND'd as a blocklist: if ANY negative filter's
+        criteria match, the tool is excluded.
+        Positive filters are OR'd as an allowlist: at least one must match.
+        If only negative filters exist, the tool is shown (unless blocked).
         """
         if isinstance(filter_value, bool):
             return filter_value, False
 
+        # Blocklist: any negative filter whose criteria match → exclude
         for f in filter_value:
-            if f.matches(tool, id_map):
+            if f.negate and f._matches_criteria(tool, id_map):
+                return False, False
+
+        # Allowlist: positive filters OR'd
+        positive = [f for f in filter_value if not f.negate]
+        if not positive:
+            return True, False
+
+        for f in positive:
+            if f._matches_criteria(tool, id_map):
                 return True, f.short
         return False, False
 
