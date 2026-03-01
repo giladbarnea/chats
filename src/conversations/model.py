@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
+from .tool_filter import ToolFilter
 from .tools import tool_to_parts
 from .utils import shorten_data
 
@@ -24,7 +25,7 @@ class ConversationFlags:
     """Flags controlling what content to include."""
 
     show_thinking: bool
-    show_tools: bool | str
+    show_tools: bool | list[ToolFilter]
     show_agents: bool
     show_plans: bool
     shorten: bool
@@ -35,7 +36,7 @@ class ConversationFlags:
         self,
         *,
         show_thinking: bool = False,
-        show_tools: bool | str = False,
+        show_tools: bool | list[ToolFilter] = False,
         show_agents: bool = False,
         show_plans: bool = True,
         shorten: bool = False,
@@ -126,45 +127,42 @@ class Message:
         flags: "ConversationFlags",
         tool_id_map: dict[str, str] | None,
     ) -> None:
-        """Append visible tool parts based on filter string."""
-        # Build ID map for tool_result -> tool_use name lookup
+        """Append visible tool parts based on filters."""
         id_map = tool_id_map or {}
-        if isinstance(flags.show_tools, str) and not tool_id_map:
-            # Fallback to local map (only sees tools in this message)
-            for tool in self.tools:
-                if tool.get("type") == "tool_use" and "id" in tool:
-                    id_map[tool["id"]] = tool.get("name", "Unknown")
+        filters = flags.show_tools
+
+        # Build local id_map when filters need name resolution and no global map provided
+        if isinstance(filters, list) and not tool_id_map:
+            if any(f.name is not None for f in filters):
+                for tool in self.tools:
+                    if tool.get("type") == "tool_use" and "id" in tool:
+                        id_map[tool["id"]] = tool.get("name", "Unknown")
 
         for tool in self.tools:
-            if not self._should_show_tool(tool, flags.show_tools, id_map):
+            show, filter_short = self._should_show_tool(tool, filters, id_map)
+            if not show:
                 continue
-            tool_data = shorten_data(tool) if flags.shorten else tool
+            should_shorten = flags.shorten or filter_short
+            tool_data = shorten_data(tool) if should_shorten else tool
             parts.append(MessagePart(MessagePartKind.TOOL, tool_to_parts(tool_data)))
 
     def _should_show_tool(
-        self, tool: dict, filter_value: bool | str, id_map: dict[str, str]
-    ) -> bool:
-        """Determine if a tool should be shown based on filter."""
-        if not isinstance(filter_value, str):
-            return True
+        self,
+        tool: dict,
+        filter_value: bool | list[ToolFilter],
+        id_map: dict[str, str],
+    ) -> tuple[bool, bool]:
+        """Determine if a tool should be shown and whether to shorten it.
 
-        is_negation = filter_value.startswith("!")
-        target_name = filter_value[1:] if is_negation else filter_value
+        Returns (show, filter_short).
+        """
+        if isinstance(filter_value, bool):
+            return filter_value, False
 
-        # Determine tool name
-        tool_type = tool.get("type")
-        if tool_type == "tool_use":
-            current_name = tool.get("name")
-        elif tool_type == "tool_result":
-            current_name = id_map.get(tool.get("tool_use_id"))
-        else:
-            current_name = None
-
-        if current_name is None:
-            return is_negation
-
-        matches = current_name == target_name
-        return not matches if is_negation else matches
+        for f in filter_value:
+            if f.matches(tool, id_map):
+                return True, f.short
+        return False, False
 
     def has_content(self) -> bool:
         """Check if message has any displayable content."""

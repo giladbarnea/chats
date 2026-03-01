@@ -9,6 +9,28 @@ from pathlib import Path
 from .commands import cmd_catalog, cmd_parse, cmd_rename, cmd_rm, cmd_search
 from .console import init_module_console
 from .model import ConversationFlags
+from .tool_filter import ToolFilter, parse_tool_spec
+
+
+def _resolve_show_tools(
+    raw_tools: list[bool | str] | None, show_all: bool
+) -> bool | list[ToolFilter]:
+    """Convert raw --tools CLI args to the value ConversationFlags expects."""
+    if show_all:
+        return True
+    if raw_tools is None:
+        return False
+
+    specs: list[str] = []
+    for v in raw_tools:
+        if v is True:
+            continue  # bare --tools, no filter spec
+        specs.extend(v.split())
+
+    if not specs:
+        return True  # only bare --tools with no filters
+
+    return [parse_tool_spec(s) for s in specs]
 
 
 def main():
@@ -59,10 +81,11 @@ def main():
         parser.add_argument(
             "-t",
             "--tools",
+            action="append",
             nargs="?",
             const=True,
-            default=False,
-            help="Show tool use/result details (optional: filter by name, e.g. 'Bash' or '!Bash')",
+            default=None,
+            help="Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
         )
         parser.add_argument(
             "-a", "--agents", action="store_true", help="Include agent messages"
@@ -110,7 +133,7 @@ def main():
 
         flags = ConversationFlags(
             show_thinking=args.thinking or args.all,
-            show_tools=args.tools or args.all,
+            show_tools=_resolve_show_tools(args.tools, args.all),
             show_agents=args.agents or args.all,
             show_plans=not args.no_plans,
             shorten=args.short,
@@ -195,10 +218,11 @@ def main():
         parser.add_argument(
             "-t",
             "--tools",
+            action="append",
             nargs="?",
             const=True,
-            default=False,
-            help="Show tool use/result details (optional: filter by name, e.g. 'Bash' or '!Bash')",
+            default=None,
+            help="Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
         )
         parser.add_argument(
             "-a", "--agents", action="store_true", help="Include agent messages"
@@ -261,10 +285,17 @@ def main():
         args, unknown = parser.parse_known_args()
 
         def _looks_like_slice(candidate: str) -> bool:
-            return (
-                candidate.isdigit()  # "0", "1", "2"
-                or (candidate.startswith("-") and candidate[1:].isdigit())  # "-1", "-5"
-                or ":" in candidate  # "2:", ":-2", "4:-7", "-5:"
+            """Check if candidate is a numeric slice (not a tool filter spec).
+
+            Valid slices: "1", "-1", "2:", ":-2", "2:5", "-5:".
+            NOT slices: "Bash:i", "Read:o:s" (contain non-numeric parts).
+            """
+            parts = candidate.split(":")
+            if len(parts) > 2:
+                return False
+            return all(
+                not p or p.isdigit() or (p.startswith("-") and len(p) > 1 and p[1:].isdigit())
+                for p in parts
             )
 
         # Check if unknown[0] looks like a slice and args.slice wasn't set
@@ -275,36 +306,42 @@ def main():
                 args.slice = candidate
 
         # Fix for nargs='?' consuming positional arg:
-        # If args.tools is a string (value consumed) but args.input is None,
-        # check if args.tools looks like a file/session ID. If so, swap them.
-        if args.input is None and isinstance(args.tools, str):
-            candidate = args.tools
+        # With action="append", args.tools is None or a list.
+        # If args.tools has a single string that looks like a file/session ID, swap it.
+        if (
+            args.input is None
+            and args.tools is not None
+            and len(args.tools) == 1
+            and isinstance(args.tools[0], str)
+        ):
+            candidate = args.tools[0]
             should_swap = False
-            # Check existence if it looks like a path
             if os.path.exists(candidate):
                 should_swap = True
-            # Check for common extensions or path separators
             elif candidate.endswith(".jsonl") or "/" in candidate or os.sep in candidate:
                 should_swap = True
-            # Check for UUID-like (session ID)
             elif re.match(r"^[0-9a-f-]{36}$", candidate):
                 should_swap = True
 
             if should_swap:
                 args.input = candidate
-                # Restore default boolean behavior for -t
-                args.tools = True
+                args.tools = [True]
+
         # Fix for nargs='?' consuming slice argument:
-        # If args.tools is a string that looks like a slice, restore slice.
-        if args.slice is None and isinstance(args.tools, str):
-            candidate = args.tools
+        if (
+            args.slice is None
+            and args.tools is not None
+            and len(args.tools) == 1
+            and isinstance(args.tools[0], str)
+        ):
+            candidate = args.tools[0]
             if _looks_like_slice(candidate):
                 args.slice = candidate
-                args.tools = True
+                args.tools = [True]
 
         flags = ConversationFlags(
             show_thinking=args.thinking or args.all,
-            show_tools=args.tools or args.all,
+            show_tools=_resolve_show_tools(args.tools, args.all),
             show_agents=args.agents or args.all,
             show_plans=not args.no_plans,
             shorten=args.short,

@@ -82,7 +82,14 @@ Automatically detects input format by examining **first non-empty line only** (d
 -r, --raw            # Alias for: -f raw (implies --no-metadata)
 --no-metadata        # Disable outputting metadata frontmatter
 -T, --thinking       # Include thinking tokens
--t, --tools          # Include tool use/result details (optional: filter by name, e.g. 'Bash' or '!Bash')
+-t, --tools [SPEC]   # Include tool use/result details. Filter with modifiers:
+                     #   Name:    -t Bash, -t Read, -t !Bash (exclude)
+                     #   Direction: -t i (inputs), -t o (outputs), -t Bash:i
+                     #   Error:   -t e (errors only), -t Bash:e
+                     #   Short:   -t s (shorten), -t Read:o:s
+                     #   Combine: -t "Read:o:s Bash:i" or -t Read:o:s -t Bash:i
+                     #   Order-free: -t i:Bash == -t Bash:i
+                     #   Long form: -t input, -t output, -t short, -t error
 -a, --agents         # Include subagent messages
 -A, --all            # Show everything (thinking, tools, agents)
 --no-plans           # Hide plan content (ExitPlanMode) - shown by default

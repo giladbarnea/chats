@@ -174,6 +174,7 @@ src/conversations/
 ├── tools.py                          # tool_to_parts + tool renderers
 ├── registry.py                       # ContentBlockType + TOOL_SCHEMAS
 ├── parts.py                          # MessagePartKind + ToolParts + MessagePart
+├── tool_filter.py                    # ToolFilter dataclass + spec parsing
 ├── console.py                        # Rich console singleton + print_error()
 └── utils.py                          # shorten_data + extract_text_from_content + helpers
 ```

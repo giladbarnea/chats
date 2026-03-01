@@ -67,9 +67,7 @@ Not urgent, not necessarily important. Jotting down to not forget.
        3→on:
   ```
   The gap makes it hard to see which output corresponds to which input.
-3. **`--tools=input` or `--tools=output` flags** - Show only tool inputs or only outputs (not both)
-
-4. **`-u`, `--usage` flag** - Display token usage statistics from conversation file
+3. **`-u`, `--usage` flag** - Display token usage statistics from conversation file
 
 ### Support Other Message Types
 
