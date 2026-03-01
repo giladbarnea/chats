@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .model import ConversationFlags, Message
+from .utils import shorten_tool_use_id
 
 
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
@@ -252,7 +253,18 @@ def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Mess
         return None
 
     content_data = message_data.get("content")
-    msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
+    source_tool_use_id = (
+        entry.get("sourceToolUseID")
+        or entry.get("sourceToolUseId")
+        or entry.get("sourceToolUserId")
+    )
+    msg = Message(
+        role="user",
+        index=index,
+        timestamp=entry.get("timestamp"),
+        is_meta=entry.get("isMeta") is True,
+        source_tool_user_id=shorten_tool_use_id(source_tool_use_id),
+    )
 
     if isinstance(content_data, str):
         msg.text = content_data
@@ -402,4 +414,3 @@ def extract_cwd_from_jsonl(content: str) -> str | None:
             continue
 
     return None
-

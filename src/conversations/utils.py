@@ -51,3 +51,9 @@ def collapse_home(path_str: str) -> str:
         return "~" + path_str[len(home):]
     return path_str
 
+
+def shorten_tool_use_id(tool_use_id: str | None) -> str | None:
+    """Normalize tool use IDs to their short printable form."""
+    if not tool_use_id:
+        return None
+    return tool_use_id.removeprefix("toolu_")[:4]

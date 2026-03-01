@@ -79,6 +79,8 @@ class Message:
     timestamp: str | None = None  # ISO timestamp for chronological sorting
     subagent_type: str | None = None  # e.g., "codebase-analyzer:multiple-subsystems"
     model: str | None = None  # e.g., "claude-sonnet-4-5-20250929"
+    is_meta: bool = False
+    source_tool_user_id: str | None = None
 
     def iter_visible_parts(
         self, flags: "ConversationFlags", tool_id_map: dict[str, str] | None = None
@@ -181,6 +183,11 @@ class Message:
     def get_wrapper_attrs(self) -> str:
         """Build XML attributes string for this message's wrapper tag."""
         attrs = [f'i="{self.index}"']
+        if self.role == "user":
+            if self.is_meta:
+                attrs.append('isMeta="true"')
+            if self.source_tool_user_id:
+                attrs.append(f'sourceToolUserId="{self.source_tool_user_id}"')
         if self.agent_id:
             attrs.append(f'agent_id="{self.agent_id}"')
             if self.subagent_type:
@@ -188,4 +195,3 @@ class Message:
             if self.model:
                 attrs.append(f'model="{self.model}"')
         return " ".join(attrs)
-

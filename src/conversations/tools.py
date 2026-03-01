@@ -7,7 +7,7 @@ from rich.text import Text
 
 from .parts import ToolParts
 from .registry import ContentBlockType, TOOL_SCHEMAS
-from .utils import extract_text_from_content
+from .utils import extract_text_from_content, shorten_tool_use_id
 
 
 def _format_edit_content(input_data: dict) -> str:
@@ -55,8 +55,8 @@ def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
     schema = TOOL_SCHEMAS.get(name)
 
     attrs: list[tuple[str, str]] = [("name", name)]
-    if tool_id := tool.get("id"):
-        attrs.append(("id", tool_id.removeprefix("toolu_")[:4]))
+    if short_tool_id := shorten_tool_use_id(tool.get("id")):
+        attrs.append(("id", short_tool_id))
 
     content: str | None = None
 
@@ -82,8 +82,8 @@ def _tool_result_to_parts(tool: dict, tag: str) -> ToolParts:
     is_error = tool.get("is_error", False)
 
     attrs: list[tuple[str, str]] = []
-    if tool_id := tool.get("tool_use_id"):
-        attrs.append(("id", tool_id.removeprefix("toolu_")[:4]))
+    if short_tool_id := shorten_tool_use_id(tool.get("tool_use_id")):
+        attrs.append(("id", short_tool_id))
     if is_error:
         attrs.append(("is_error", "true"))
 
@@ -115,4 +115,3 @@ def render_tool_rich(parts: ToolParts) -> list[Text | Markdown]:
         result.append(Markdown(parts.content))
     result.append(Text(f"</{parts.tag}>", style="dim"))
     return result
-
