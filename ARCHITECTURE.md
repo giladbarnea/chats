@@ -169,8 +169,12 @@ New design (`iter_visible_parts`) yields `(kind, data)` tuples. This keeps data 
 ```
 src/conversations/
 ├── __init__.py                       # Package exports
+├── catalog/                          # Catalog command module
+│   ├── __init__.py                   # Cataloging logic and LLM orchestration
+│   └── assets/                       
+│       └── sessions.template.yaml    # Template for new sessions.yaml files
 ├── cli.py                            # argparse + main()
-├── commands.py                       # cmd_parse/search/rename + resolution/slicing
+├── commands.py                       # cmd_parse/search/rename/catalog + resolution/slicing
 ├── parsing.py                        # detect_format + parse_jsonl/raw + extract_*
 ├── formatting.py                     # xml/json/raw formatting + Rich rendering
 ├── model.py                          # Message + ConversationFlags
@@ -185,6 +189,7 @@ src/conversations/
 Primary commands:
 - `cmd_parse()` - Parse and format conversations
 - `cmd_search()` - Regex search across conversations
+- `cmd_catalog()` - Catalog sessions to sessions.yaml using an LLM
 
 ---
 
