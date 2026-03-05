@@ -51,7 +51,7 @@ Conversations can have multiple summary entries (prepended as conversation evolv
 Optional second argument uses Python slice notation to select message ranges:
 
 ```bash
-ccc <id> "0"       # First message only
+ccc <id> "1"       # First message only
 ccc <id> "-1"      # Last message only
 ccc <id> "5:"      # From index 5 to end
 ccc <id> "-5:"     # Last 5 messages
@@ -105,7 +105,7 @@ Automatically detects input format by examining **first non-empty line only** (d
 Metadata frontmatter (optional), XML to stdout, separated by `---`:
 
 ```xml
-<user-message i="1">
+<user-message i="1" isMeta="true" sourceToolUserId="a1b2">
 {user message text}
 </user-message>
 
@@ -249,7 +249,7 @@ Rename a conversation by appending a custom title entry.
 ccc rename <session> "New Title"
 ```
 
-This mutates the conversation file by appending a `custom-title` entry and updates the global `history.jsonl` file.
+This mutates the conversation file by appending `custom-title` and `agent-name` entries and updates the global `history.jsonl` file.
 
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`

@@ -11,6 +11,8 @@ Check which of these exist in the project, then dive into those that do:
 
 The instruction to read files in full is intentional - truly do that.
 
+If the user asks to read the source code as well, read it all, besides `tests/data/*`, which has huge files. 
+
 <relevancy>
 **Global rule for reading docs, files and gathering context:** always maintain a mental "relevancy" weight for each resource. This is to be able to home in on relevant resources — resources that touch upon the Sphere-Of-Influence(d) of the subject at hand — and not bloat the context window with unequivocally irrelevant resources. Note the language I've used now: The threshold for a resource to qualify as 'relevant' is *low*. Recall has precedence over precision.
 **Criteria that make up the 'Relevancy' weight:**

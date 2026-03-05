@@ -22,9 +22,11 @@ class Message:
     plan: Optional[str]    # ExitPlanMode plan content (shown by default)
     index: int             # Position in conversation
     agent_id: Optional[str] # Set if this is a subagent message
-    timestamp: float       # Creation timestamp
+    timestamp: Optional[str] # ISO timestamp for chronological sorting
     subagent_type: Optional[str] # Type of subagent if applicable
     model: Optional[str]   # Model used for the message
+    is_meta: bool          # Whether this is a meta user message
+    source_tool_user_id: Optional[str] # Tool ID associated with user message
 ```
 
 Key method: `iter_visible_parts(flags)` → Yields structured `MessagePart` objects (TEXT, THINKING, TOOL) based on flags
@@ -43,6 +45,7 @@ class ContentBlockType(Enum):
     USER_MESSAGE = ContentBlockInfo("user-message", "# User", "bold cyan")
     ASSISTANT_RESPONSE = ContentBlockInfo("assistant-response", "# Assistant", "bold green")
     AGENT = ContentBlockInfo("agent", "# Agent", "bold magenta")
+    SESSION_RENAME = ContentBlockInfo("session-rename", "# Renamed Session", "bold yellow")
 
     # Content blocks (inner blocks)
     THINKING = ContentBlockInfo("thinking", None, "dim italic")
@@ -73,7 +76,7 @@ TOOL_SCHEMAS: Dict[str, ToolSchema] = {
     "Grep": ToolSchema(["pattern", "path", "glob", "type", "output_mode"], None, None),
     "Write": ToolSchema(["file_path"], "content", None),
     "Edit": ToolSchema(["file_path"], None, None),  # Special case: old_string/new_string
-    "Task": ToolSchema(["subagent_type"], "prompt", None),
+    "Task": ToolSchema(["subagent_type", "model"], "prompt", None),
     "WebFetch": ToolSchema(["url"], "prompt", None),
     "WebSearch": ToolSchema(["query"], None, None),
 }
