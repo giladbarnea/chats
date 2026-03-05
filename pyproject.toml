@@ -7,7 +7,10 @@ authors = [
     { name = "Gilad Barnea", email = "gilad@hear.ai" }
 ]
 requires-python = ">=3.13"
-dependencies = ["rich"]
+dependencies = [
+    "pyyaml>=6.0.3",
+    "rich",
+]
 
 [project.scripts]
 ccc = "conversations.cli:main"

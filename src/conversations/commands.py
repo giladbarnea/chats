@@ -925,22 +925,11 @@ def _extract_task_dispatches(content: str) -> list[tuple[str, str]]:
 
 
 def cmd_catalog(args: list[str]) -> None:
-    """Passthrough to catalog-sessions.sh shell script."""
-    script_path = Path(__file__).parent.parent.parent / "scripts" / "meta" / "catalog-sessions.sh"
-
-    if not script_path.exists():
-        print_error(f"Script not found: {script_path}")
-        sys.exit(1)
-
+    """Catalog conversation sessions into sessions.yaml."""
+    from .catalog import catalog_sessions
+    
     try:
-        process = subprocess.Popen(
-            [str(script_path)] + args,
-            stdin=sys.stdin,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-            env=os.environ.copy(),
-        )
-        sys.exit(process.wait())
+        catalog_sessions(args)
     except Exception as e:
-        print_error(f"Error executing catalog-sessions.sh: {e}")
+        print_error(f"Error executing catalog: {e}")
         sys.exit(1)
