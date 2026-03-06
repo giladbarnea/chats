@@ -164,11 +164,23 @@ def catalog_sessions(args: list[str]) -> None:
         filled_prompt = f"<real-task>\n{PROMPT_TEMPLATE.format(sessions_path=sessions_yaml_path)}\n</real-task>"
         full_prompt = f"{tagged_session_content}\n\n---\n\n{filled_prompt}"
 
+        oauth_token_path = Path.home() / ".claude-code-oauth-token"
+        api_key_path = Path.home() / ".anthropic-api-key-hearai-gilad-local-dev"
+        env = os.environ.copy()
+        if oauth_token_path.is_file():
+            env["CLAUDE_CODE_OAUTH_TOKEN"] = oauth_token_path.read_text().strip()
+        else:
+            env["ANTHROPIC_API_KEY"] = api_key_path.read_text().strip()
+
         try:
-            subprocess.run(["claudesn", "-p", full_prompt], cwd=session_directory)
+            subprocess.run(
+                ["claude", "--model=sonnet", "--dangerously-skip-permissions", "-p", full_prompt],
+                cwd=session_directory,
+                env=env,
+            )
         except subprocess.CalledProcessError as e:
-            console.print(f"[red]└── Error running claudesn: {e}[/red]")
+            console.print(f"[red]└── Error running claude: {e}[/red]")
         except FileNotFoundError:
-            console.print(f"[red]└── Error: 'claudesn' command not found. Ensure it is installed and in PATH.[/red]")
+            console.print(f"[red]└── Error: 'claude' command not found. Ensure it is installed and in PATH.[/red]")
 
     console.print("\n[bold]Done.[/bold]")
