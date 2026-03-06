@@ -1,5 +1,5 @@
 ---
-name: catchup
+name: load-project-context
 description: Establish continuity with recent work. Catch up on recent project context and progress. Use when starting a session on an ongoing project or effort, when wider context is helpful, or when user asks to get up to speed.
 ---
 
