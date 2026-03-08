@@ -20,7 +20,7 @@ def _format_edit_content(input_data: dict) -> str:
     return "\n".join(parts)
 
 
-def tool_to_parts(tool: dict) -> ToolParts:
+def tool_to_parts(tool: dict, id_map: dict[str, str] | None = None) -> ToolParts:
     """Convert a raw tool dict to normalized ToolParts.
 
     Contains ALL tool formatting decisions:
@@ -37,7 +37,7 @@ def tool_to_parts(tool: dict) -> ToolParts:
         return _tool_use_to_parts(tool, input_tag)
 
     if tool_type == "tool_result":
-        return _tool_result_to_parts(tool, output_tag)
+        return _tool_result_to_parts(tool, output_tag, id_map)
 
     # Unknown type: fallback to JSON dump
     return ToolParts(
@@ -76,13 +76,16 @@ def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
     return ToolParts(tag=tag, attrs=attrs, content=content, is_empty=not content)
 
 
-def _tool_result_to_parts(tool: dict, tag: str) -> ToolParts:
+def _tool_result_to_parts(tool: dict, tag: str, id_map: dict[str, str] | None = None) -> ToolParts:
     """Convert tool_result to ToolParts."""
     content_text = "\n".join(extract_text_from_content(tool.get("content", "")))
     is_error = tool.get("is_error", False)
+    tool_use_id = tool.get("tool_use_id")
 
     attrs: list[tuple[str, str]] = []
-    if short_tool_id := shorten_tool_use_id(tool.get("tool_use_id")):
+    if id_map and tool_use_id and (name := id_map.get(tool_use_id)):
+        attrs.append(("name", name))
+    if short_tool_id := shorten_tool_use_id(tool_use_id):
         attrs.append(("id", short_tool_id))
     if is_error:
         attrs.append(("is_error", "true"))

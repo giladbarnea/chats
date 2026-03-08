@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for meta user messages linked to tool input/output chains."""
 
-from conversations import ConversationFlags, parse_jsonl
+from conversations import ConversationFlags, cmd_parse, parse_jsonl
 from conversations.formatting import format_to_xml
 
 
@@ -27,8 +27,8 @@ def test_meta_user_message_includes_wrapper_attrs_and_tool_chain_link():
     assert '<tool-input name="Skill" id="013c">' in output, (
         "Expected tool input to render with short id='013c' for chain linkage."
     )
-    assert '<tool-output id="013c">' in output, (
-        "Expected tool output to render with short id='013c' for chain linkage."
+    assert '<tool-output name="Skill" id="013c">' in output, (
+        "Expected tool output to render with name='Skill' and short id='013c' for chain linkage."
     )
     assert '<user-message i="3" isMeta="true" sourceToolUserId="013c">' in output, (
         "Expected meta user wrapper attrs with short sourceToolUserId."
@@ -48,4 +48,27 @@ def test_non_meta_user_message_has_no_meta_wrapper_attrs():
     )
     assert 'sourceToolUserId="0abc"' in output, (
         "Expected sourceToolUseId variant to map to sourceToolUserId short id."
+    )
+
+
+def test_cmd_parse_slice_preserves_tool_name_on_tool_output(tmp_path, capsys):
+    """Sliced parse output should still know the originating tool name."""
+    content = """{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_013cAqxRaJroBvWdutKHWm47","name":"Skill","input":{"prompt":"go"}}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_013cAqxRaJroBvWdutKHWm47","content":"ok"}]}}"""
+    conversation_path = tmp_path / "tool-chain.jsonl"
+    conversation_path.write_text(content, encoding="utf-8")
+
+    cmd_parse(
+        ConversationFlags(show_tools=True, color="never"),
+        str(conversation_path),
+        "2",
+        None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert '<tool-output name="Skill" id="013c">' in captured.out, (
+        "Expected sliced parse output to preserve the originating tool name on "
+        f"tool-output tags. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

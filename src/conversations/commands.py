@@ -789,6 +789,10 @@ def cmd_parse(
         print_error("No messages found in input.")
         sys.exit(0)
 
+    # Build tool_id_map before slicing so tool-output tags retain their name
+    # even when the corresponding tool-input message is sliced out.
+    tool_id_map = _build_tool_id_map(messages)
+
     # Apply slice
     start, stop = parse_slice_notation(slice_str)
     if start is not None or stop is not None:
@@ -814,8 +818,6 @@ def cmd_parse(
             last_custom_title=last_custom_title,
             color=flags.color,
         )
-
-    tool_id_map = _build_tool_id_map(messages)
 
     # Format output
     if output_format == "json":

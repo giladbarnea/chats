@@ -27,6 +27,15 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Mar 07 26
+  9fc38f50-14fd-48ae-9318-e68075228131:
+    description: "Added `name` attribute to `tool-output` XML tags to match the existing `name` on `tool-input` tags, by threading `id_map` through `tool_to_parts()` and `_tool_result_to_parts()` in `tools.py` and `model.py`; updated one test assertion."
+    directories: [~/dev/conversations]
+    keywords: [tool-output, xml-formatting, tool-id-map]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 14
+    edited_files: [src/conversations/tools.py, src/conversations/model.py, tests/test_meta_user_messages.py]
+    branch: main
   # Mar 01 26
   3bf9ac75-6064-446b-a173-b3dc613000cb:
     description:

@@ -146,7 +146,7 @@ class Message:
                 continue
             should_shorten = flags.shorten or filter_short
             tool_data = shorten_data(tool) if should_shorten else tool
-            parts.append(MessagePart(MessagePartKind.TOOL, tool_to_parts(tool_data)))
+            parts.append(MessagePart(MessagePartKind.TOOL, tool_to_parts(tool_data, id_map)))
 
     def _should_show_tool(
         self,
