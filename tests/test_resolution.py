@@ -12,6 +12,7 @@ Uses same fixture pattern as test_rename.py - reuses rename_fixtures.
 
 import io
 import json
+import os
 import shutil
 from pathlib import Path
 from unittest.mock import patch
@@ -67,6 +68,46 @@ def add_single_word_fixture(temp_claude_home):
             f.write(json.dumps(line) + "\n")
 
     return fixture_file
+
+
+@pytest.fixture
+def set_recent_order(temp_claude_home):
+    """Assign deterministic mtimes so negative indices map to recent sessions."""
+    projects_dir = temp_claude_home / ".claude" / "projects" / "test-project"
+    ordered_names = [
+        "aaaa1111-with-summary.jsonl",
+        "bbbb2222-without-summary.jsonl",
+        "cccc3333-ambiguous-alpha.jsonl",
+        "dddd4444-ambiguous-beta.jsonl",
+    ]
+    base_mtime = 1_700_000_000
+
+    ordered_paths: list[Path] = []
+    for offset, name in enumerate(ordered_names):
+        path = projects_dir / name
+        mtime = base_mtime + offset
+        os.utime(path, (mtime, mtime))
+        ordered_paths.append(path)
+
+    agent_file = projects_dir / "agent-newest.jsonl"
+    agent_file.write_text(
+        json.dumps(
+            {
+                "type": "user",
+                "sessionId": "dddd4444-ambiguous-beta",
+                "message": {"role": "user", "content": "agent noise"},
+            }
+        )
+        + "\n"
+    )
+    os.utime(agent_file, (base_mtime + 99, base_mtime + 99))
+
+    return {
+        "ordered_paths": ordered_paths,
+        "newest_main": ordered_paths[-1],
+        "second_newest_main": ordered_paths[-2],
+        "agent_file": agent_file,
+    }
 
 
 # =============================================================================
@@ -162,6 +203,32 @@ class TestSingleWordPrefixMatch:
 
         assert path is not None
         assert "aaaa1111" in str(path)
+
+
+class TestNegativeRecentIndexResolution:
+    """Negative numeric identifiers resolve by global recency."""
+
+    def test_minus_one_resolves_most_recent_main_conversation(
+        self, temp_claude_home, set_recent_order
+    ):
+        """-1 should resolve to the newest non-agent conversation file."""
+        result = resolve_conversation_file("-1")
+
+        assert result == set_recent_order["newest_main"], (
+            "Expected '-1' to resolve to the most recently modified main "
+            f"conversation. Got: {result!s}"
+        )
+
+    def test_minus_two_resolves_second_most_recent_main_conversation(
+        self, temp_claude_home, set_recent_order
+    ):
+        """-2 should resolve to the second newest non-agent conversation file."""
+        result = resolve_conversation_file("-2")
+
+        assert result == set_recent_order["second_newest_main"], (
+            "Expected '-2' to resolve to the second most recently modified "
+            f"main conversation. Got: {result!s}"
+        )
 
 
 # =============================================================================

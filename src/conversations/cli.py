@@ -9,6 +9,7 @@ from pathlib import Path
 from .commands import cmd_catalog, cmd_parse, cmd_rename, cmd_rm, cmd_search
 from .console import init_module_console
 from .model import ConversationFlags
+from .ordering import is_single_negative_index
 from .tool_filter import ToolFilter, parse_tool_spec
 
 
@@ -156,7 +157,8 @@ def main():
             description="Rename a conversation by updating its display name",
         )
         parser.add_argument(
-            "conversation_id", help="Conversation UUID, summary prefix, or file path"
+            "conversation_id",
+            help="Conversation UUID, summary prefix, recent negative index, or file path",
         )
         parser.add_argument("new_name", help="New display name for the conversation")
 
@@ -198,7 +200,7 @@ def main():
         parser.add_argument(
             "input",
             nargs="?",
-            help="Input file path, conversation ID, or use stdin if omitted",
+            help="Input file path, conversation ID, recent negative index, or use stdin if omitted",
         )
         parser.add_argument(
             "slice",
@@ -298,11 +300,17 @@ def main():
                 for p in parts
             )
 
-        # Check if unknown[0] looks like a slice and args.slice wasn't set
-        if unknown and args.slice is None:
+        # Check if unknown[0] is either a recent-session selector or a slice.
+        if unknown:
             candidate = unknown[0]
-            # Valid slice patterns: "0", "-1", "2:", ":-2", "4:-7", "-5:", etc.
-            if _looks_like_slice(candidate):
+            if (
+                args.input is None
+                and args.slice is None
+                and is_single_negative_index(candidate)
+                and sys.stdin.isatty()
+            ):
+                args.input = candidate
+            elif args.slice is None and _looks_like_slice(candidate):
                 args.slice = candidate
 
         # Fix for nargs='?' consuming positional arg:
@@ -319,6 +327,8 @@ def main():
             if os.path.exists(candidate):
                 should_swap = True
             elif candidate.endswith(".jsonl") or "/" in candidate or os.sep in candidate:
+                should_swap = True
+            elif is_single_negative_index(candidate):
                 should_swap = True
             elif re.match(r"^[0-9a-f-]{36}$", candidate):
                 should_swap = True

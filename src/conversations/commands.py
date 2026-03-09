@@ -5,7 +5,7 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +21,7 @@ from .formatting import (
     render_messages_with_rich,
 )
 from .model import ConversationFlags, ConversationMetadata, Message
+from .ordering import resolve_negative_index, sort_by_modified
 from .parsing import (
     detect_format,
     extract_custom_titles_from_content,
@@ -69,6 +70,57 @@ def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]
     return agent_files
 
 
+ConversationMetadataOrder = Callable[
+    [Iterable[ConversationMetadata]],
+    list[ConversationMetadata],
+]
+
+
+def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
+    """Load created/modified timestamps for a conversation file."""
+    ctime, mtime = get_jsonl_timestamps(conv_file)
+
+    if ctime is None or mtime is None:
+        try:
+            stat = conv_file.stat()
+            if ctime is None:
+                ctime = datetime.fromtimestamp(stat.st_birthtime)
+            if mtime is None:
+                mtime = datetime.fromtimestamp(stat.st_mtime)
+        except OSError:
+            pass
+
+    return ConversationMetadata(conv_file, ctime, mtime)
+
+
+def _order_metadata_by_modified_time(
+    metadata_items: Iterable[ConversationMetadata],
+) -> list[ConversationMetadata]:
+    """Order conversation metadata from oldest to newest by mtime."""
+    return sort_by_modified(metadata_items, modified_at=lambda item: item.mtime)
+
+
+def _build_conversation_metadata(
+    conversation_files: Iterable[Path],
+    *,
+    order: ConversationMetadataOrder = _order_metadata_by_modified_time,
+) -> list[ConversationMetadata]:
+    """Build ordered metadata for conversation files."""
+    return order(_load_conversation_metadata(conv_file) for conv_file in conversation_files)
+
+
+def _resolve_recent_conversation_file(
+    identifier: str,
+    conversation_files: Iterable[Path],
+) -> Path | None:
+    """Resolve a negative index like '-1' against globally recent conversations."""
+    ordered_metadata = _build_conversation_metadata(conversation_files)
+    ordered_main_conversations = [
+        meta.path for meta in ordered_metadata if not meta.path.name.startswith("agent-")
+    ]
+    return resolve_negative_index(identifier, ordered_main_conversations)
+
+
 def _try_resolve_conversation_file(
     identifier: str,
     conversation_files: Iterable[Path] | None = None,
@@ -78,8 +130,9 @@ def _try_resolve_conversation_file(
 
     Resolution order:
     1. Direct file path (if exists)
-    2. UUID exact match (single-word only)
-    3. Summary prefix match (case-insensitive)
+    2. Recent negative index (e.g. -1 for most recently modified)
+    3. UUID exact match (single-word only)
+    4. Summary prefix match (case-insensitive)
 
     Returns:
         Tuple of (resolved_path, ambiguous_matches):
@@ -104,6 +157,9 @@ def _try_resolve_conversation_file(
 
     # Materialize generator to allow multiple iterations
     conversation_files = list(conversation_files)
+
+    if recent_path := _resolve_recent_conversation_file(stripped, conversation_files):
+        return recent_path, []
 
     # Try exact match by conversation ID (single-word queries only)
     if len(stripped.split()) == 1:
@@ -173,8 +229,9 @@ def resolve_conversation_file(conversation_id: str) -> Path:
 
     Resolution order:
     1. Direct file path (if exists)
-    2. UUID exact match (single-word only)
-    3. Summary prefix match (case-insensitive)
+    2. Recent negative index (e.g. -1 for most recently modified)
+    3. UUID exact match (single-word only)
+    4. Summary prefix match (case-insensitive)
     """
     resolved_path, ambiguous_matches = _try_resolve_conversation_file(conversation_id)
 
@@ -196,6 +253,7 @@ def resolve_conversation_file(conversation_id: str) -> Path:
     console.print(
         "  * A conversation UUID (e.g., 4a3a84d0-3a14-453f-8984-05a8607164d6)"
     )
+    console.print("  * A recent negative index (e.g., -1 for the most recent conversation)")
     console.print("  * A summary prefix (e.g., 'Locate SFTP')")
     console.print("  * A file path to a .jsonl file")
     sys.exit(1)
@@ -210,6 +268,8 @@ def display_search_result(
     *,
     list_only: bool,
     emit_metadata: bool,
+    created_at: datetime | None = None,
+    modified_at: datetime | None = None,
     matching_summaries: list[str] | None = None,
     last_custom_title: str | None = None,
 ) -> None:
@@ -223,6 +283,8 @@ def display_search_result(
             match_count,
             matching_summaries,
             last_custom_title=last_custom_title,
+            created_at=created_at,
+            modified_at=modified_at,
             color=flags.color,
             dedupe_frontmatter_separators=False,
         )
@@ -266,32 +328,10 @@ def cmd_search(
 
     projects_dir = Path.home() / ".claude" / "projects"
     conversation_files = find_all_conversations(projects_dir)
-
-    # Build metadata list once (avoiding multiple stats/reads)
-    # We fallback to stat() if jsonl timestamps are missing (e.g. raw transcripts)
-    metadata_list = []
-    for conv_file in conversation_files:
-        ctime, mtime = get_jsonl_timestamps(conv_file)
-        
-        # Fallback to OS stat if timestamps not found in content
-        if ctime is None or mtime is None:
-            try:
-                stat = conv_file.stat()
-                if ctime is None:
-                    ctime = datetime.fromtimestamp(stat.st_birthtime)
-                if mtime is None:
-                    mtime = datetime.fromtimestamp(stat.st_mtime)
-            except OSError:
-                pass
-        
-        metadata_list.append(ConversationMetadata(conv_file, ctime, mtime))
+    metadata_list = _build_conversation_metadata(conversation_files)
 
     if not metadata_list:
         sys.exit(1)
-
-    # Sort by modification time (oldest first, most recent last)
-    # Handle None by putting them first (oldest)
-    metadata_list.sort(key=lambda m: m.mtime or datetime.min)
 
     found_any = False
     pager_ctx = get_console().pager(styles=True) if flags.paging else nullcontext()
@@ -325,6 +365,8 @@ def cmd_search(
                         flags,
                         list_only=list_only,
                         emit_metadata=emit_metadata,
+                        created_at=meta.ctime,
+                        modified_at=meta.mtime,
                         matching_summaries=matching_summaries,
                         last_custom_title=last_custom_title,
                     )
@@ -810,12 +852,15 @@ def cmd_parse(
     ):
         custom_titles = extract_custom_titles_from_content(content) if format_type == "jsonl" else []
         last_custom_title = custom_titles[-1] if custom_titles else None
+        metadata = _load_conversation_metadata(input_file_path)
 
         print_metadata(
             input_file_path,
             cwd,
             len(messages),
             last_custom_title=last_custom_title,
+            created_at=metadata.ctime,
+            modified_at=metadata.mtime,
             color=flags.color,
         )
 

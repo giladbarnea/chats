@@ -42,4 +42,35 @@ OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" "1" --color=never -f json 2>/dev/null)
 assert_success
 assert_contains "$OUTPUT" '"role":'
 
+# Test 6: Negative session index resolves as input, not slice
+echo "Test 6: Negative session index input..."
+TEMP_HOME=$(mktemp -d)
+TEMP_PROJECTS="$TEMP_HOME/.claude/projects/test-project"
+mkdir -p "$TEMP_PROJECTS"
+cp tests/data/rename_fixtures/projects/test-project/*.jsonl "$TEMP_PROJECTS"/
+
+# Oldest -> newest main conversations
+touch -t 202401010101 "$TEMP_PROJECTS/aaaa1111-with-summary.jsonl"
+touch -t 202401010102 "$TEMP_PROJECTS/bbbb2222-without-summary.jsonl"
+touch -t 202401010103 "$TEMP_PROJECTS/cccc3333-ambiguous-alpha.jsonl"
+touch -t 202401010104 "$TEMP_PROJECTS/dddd4444-ambiguous-beta.jsonl"
+
+# Newer agent file must not steal the recent-session selector
+cat > "$TEMP_PROJECTS/agent-newest.jsonl" << 'EOF'
+{"type":"user","sessionId":"dddd4444-ambiguous-beta","message":{"role":"user","content":"agent noise"}}
+EOF
+touch -t 202401010199 "$TEMP_PROJECTS/agent-newest.jsonl"
+
+OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD -1 --color=never 2>/dev/null)
+assert_success
+assert_contains "$OUTPUT" "session_id: dddd4444-ambiguous-beta"
+
+# Test 7: Bare -t must not steal the recent session selector
+echo "Test 7: Negative session index after bare -t..."
+OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD -t -1 --color=never 2>/dev/null)
+assert_success
+assert_contains "$OUTPUT" "session_id: dddd4444-ambiguous-beta"
+
+rm -rf "$TEMP_HOME"
+
 echo "✅ CLI seam tests passed"

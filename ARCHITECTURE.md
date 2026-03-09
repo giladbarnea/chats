@@ -162,6 +162,9 @@ No heuristics, no "looking at multiple lines". First non-empty line determines f
 Old design (`get_visible_content`) returned a string with embedded XML tags. This caused Rich's Markdown parser to treat tags as HTML and strip them.
 New design (`iter_visible_parts`) yields `(kind, data)` tuples. This keeps data "malleable" until the very last moment, allowing the renderer to decide how to format tags (as XML strings or styled Text objects) without ambiguity.
 
+### Why a domainless ordering helper?
+Recent-session selectors like `-1` and the `search` command both depend on the same global modified-time ordering. The shared helper in `ordering.py` keeps that ordering logic generic and injectable via a callback (`modified_at=...`), while conversation-specific code stays responsible only for producing `ConversationMetadata`.
+
 ---
 
 ## Module Structure
@@ -178,6 +181,7 @@ src/conversations/
 ├── parsing.py                        # detect_format + parse_jsonl/raw + extract_*
 ├── formatting.py                     # xml/json/raw formatting + Rich rendering
 ├── model.py                          # Message + ConversationFlags
+├── ordering.py                       # Generic modified-time ordering + negative-index resolution
 ├── tools.py                          # tool_to_parts + tool renderers
 ├── registry.py                       # ContentBlockType + TOOL_SCHEMAS
 ├── parts.py                          # MessagePartKind + ToolParts + MessagePart

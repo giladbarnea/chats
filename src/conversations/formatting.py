@@ -143,12 +143,12 @@ def print_metadata(
     matching_summaries: list[str] | None = None,
     *,
     last_custom_title: str | None = None,
+    created_at: datetime | None = None,
+    modified_at: datetime | None = None,
     color: bool = False,
     dedupe_frontmatter_separators: bool = False,
 ) -> None:
     """Print conversation metadata to stdout in YAML format."""
-    stat = file_path.stat()
-
     yaml_lines = [f"session_id: {file_path.stem}"]
 
     if cwd:
@@ -156,14 +156,29 @@ def print_metadata(
 
     yaml_lines.append(f"history_path: {collapse_home(str(file_path))}")
 
-    try:
-        created = datetime.fromtimestamp(stat.st_birthtime).strftime("%Y-%m-%d %H:%M")
-        yaml_lines.append(f'created: "{created}"')
-    except AttributeError:
-        pass
+    stat = None
+    if created_at is None or modified_at is None:
+        try:
+            stat = file_path.stat()
+        except OSError:
+            stat = None
 
-    modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
-    yaml_lines.append(f'modified: "{modified}"')
+    resolved_created_at = created_at
+    if resolved_created_at is None and stat is not None:
+        try:
+            resolved_created_at = datetime.fromtimestamp(stat.st_birthtime)
+        except AttributeError:
+            pass
+
+    if resolved_created_at is not None:
+        yaml_lines.append(f'created: "{resolved_created_at.strftime("%Y-%m-%d %H:%M")}"')
+
+    resolved_modified_at = modified_at
+    if resolved_modified_at is None and stat is not None:
+        resolved_modified_at = datetime.fromtimestamp(stat.st_mtime)
+
+    if resolved_modified_at is not None:
+        yaml_lines.append(f'modified: "{resolved_modified_at.strftime("%Y-%m-%d %H:%M")}"')
     yaml_lines.append(f"messages: {total_messages}")
 
     if matched_messages is not None:

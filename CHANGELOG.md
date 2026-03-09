@@ -3,6 +3,18 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-03-08] Add recent negative session selectors
+
+### Added
+
+- Support resolving `-1`, `-2`, ... as globally recent conversation selectors for parse/rename-style conversation resolution.
+
+### Changed
+
+- Extracted a domainless modified-time ordering helper so conversation resolution and `search` share the same oldest→newest ordering behavior.
+- Negative recent selectors exclude agent sidechain files.
+
+---
 ## 2026-01-04 Feat: `-ca,--cafter` and `-ma,--mafter` for Created/Modified After filter
 
 ---

@@ -40,9 +40,12 @@ Convert conversation files to XML-tagged markdown.
 
 **Input Resolution:**
 1. Full file path: `/path/to/conversation.jsonl`
-2. Conversation UUID or filename: `b177e4f8-bb24-43e9-8a53-4e064be4457d`
-3. Summary text (case-insensitive prefix match): `"Extract PII"`
-4. Stdin: `cat file.jsonl | ccc`
+2. Recent negative index: `-1` (most recently modified conversation), `-2`, ...
+3. Conversation UUID or filename: `b177e4f8-bb24-43e9-8a53-4e064be4457d`
+4. Summary text (case-insensitive prefix match): `"Extract PII"`
+5. Stdin: `cat file.jsonl | ccc`
+
+Negative recent indices use the same global modified-time ordering as `ccc search`: oldest first, newest last, so `-1` means “the newest conversation”. Agent sidechain files are excluded from this selector.
 
 Conversations can have multiple summary entries (prepended as conversation evolves), each with a unique `leafUuid` tracking the conversation endpoint. Summary matching searches all summaries in all files.
 
@@ -51,6 +54,8 @@ Conversations can have multiple summary entries (prepended as conversation evolv
 Optional second argument uses Python slice notation to select message ranges:
 
 ```bash
+ccc -1              # Most recently modified conversation
+ccc -2              # Second most recently modified conversation
 ccc <id> "1"       # First message only
 ccc <id> "-1"      # Last message only
 ccc <id> "5:"      # From index 5 to end
@@ -253,6 +258,7 @@ This mutates the conversation file by appending `custom-title` and `agent-name` 
 
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`
+- **Recent negative index**: `-1`, `-2`, ...
 - **Session UUID**: `5078a7c7-0646-43cc-9412-7e1454a282b4`
 
 ### Catalog Mode
@@ -391,6 +397,7 @@ Note: when modifying this tool, go over the files associated with the `/export` 
 - `print_metadata()` - Unified metadata output to stderr
 - `parse_slice_notation()` - Convert slice strings to indices
 - `find_all_conversations()` - Find all .jsonl files in projects
+- `sort_by_modified()` - Domainless oldest→newest ordering helper for recency-aware flows
 - `extract_cwd_from_jsonl()` - Extract working directory from JSONL
 - `cmd_search()` - Search with rich display
 - `cmd_rm()` - Remove session and all associated files
