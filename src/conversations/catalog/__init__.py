@@ -91,10 +91,14 @@ def catalog_sessions(args: list[str]) -> None:
         else:
             provided_greppable_values.append(arg)
 
+    piped_content: str | None = None
     if not sys.stdin.isatty():
-        provided_greppable_values.append(sys.stdin.read())
+        piped_content = sys.stdin.read()
+        provided_greppable_values.append(piped_content)
 
     session_ids = list(provided_session_ids)
+    preloaded_content: dict[str, str] = {}
+
     if provided_greppable_values:
         combined_text = "\n".join(provided_greppable_values)
         matches = re.findall(r"^session_id:\s*([0-9a-fA-F-]{36})", combined_text, re.MULTILINE)
@@ -102,6 +106,16 @@ def catalog_sessions(args: list[str]) -> None:
             m = m.strip()
             if m not in session_ids:
                 session_ids.append(m)
+
+    # Fallback: piped content has a session_id that isn't a standard UUID.
+    # Use the piped content directly as pre-rendered session output.
+    if not session_ids and piped_content:
+        metadata = _extract_metadata(piped_content)
+        sid = metadata.get("session_id")
+        if sid:
+            sid = str(sid)
+            session_ids.append(sid)
+            preloaded_content[sid] = piped_content
 
     if not session_ids:
         print_error("No session IDs or file paths provided and no piped input")
@@ -111,8 +125,8 @@ def catalog_sessions(args: list[str]) -> None:
 
     for i, session_id in enumerate(session_ids, 1):
         console.print(f"\n[bold cyan]Processing session {i} of {len(session_ids)}: {session_id}[/bold cyan]")
-        
-        content = _get_session_content(session_id)
+
+        content = _get_session_content(session_id) or preloaded_content.get(session_id)
         if not content:
             console.print(f"[yellow]└── Failed to get session content for {session_id}. Skipping...[/yellow]")
             continue

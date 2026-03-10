@@ -27,6 +27,15 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Mar 09 26
+  dc43ce9c-4948-4d17-aa19-866fc4389772:
+    description: "Fixed `cxc <codex-id> | ccc catalog` failing with 'No session IDs or file paths provided' — root cause was the UUID regex not matching Codex-format session IDs (e.g. `rollout-2026-...`); added a fallback that parses YAML frontmatter for any-format session_id and stores piped content as `preloaded_content`; refined so `_get_session_content()` is always attempted first, falling back to preloaded content only on failure."
+    directories: [~/dev/conversations]
+    keywords: [catalog, piped-input, codex-sessions]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 26
+    edited_files: [src/conversations/catalog/__init__.py]
+    branch: main
   # Mar 07 26
   9fc38f50-14fd-48ae-9318-e68075228131:
     description: "Added `name` attribute to `tool-output` XML tags to match the existing `name` on `tool-input` tags, by threading `id_map` through `tool_to_parts()` and `_tool_result_to_parts()` in `tools.py` and `model.py`; updated one test assertion."
