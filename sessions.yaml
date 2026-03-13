@@ -27,6 +27,15 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Mar 13 26
+  368d87c9-03a1-42a4-9610-d64aaaed9505:
+    description: "Enhanced `ccc rm` confirmation preview with richer metadata: files now show human-readable size (with commas) and line/message count; directories render as a recursive ASCII tree with per-file sizes and line counts. Implemented via four new helpers (`_human_size`, `_line_count`, `_file_meta`, `_render_dir_tree`) in `commands.py`; all 172 tests pass."
+    directories: [~/dev/conversations]
+    keywords: [ccc-rm, preview-metadata, ascii-tree]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 18
+    edited_files: [src/conversations/commands.py]
+    branch: main
   # Mar 09 26
   dc43ce9c-4948-4d17-aa19-866fc4389772:
     description: "Fixed `cxc <codex-id> | ccc catalog` failing with 'No session IDs or file paths provided' — root cause was the UUID regex not matching Codex-format session IDs (e.g. `rollout-2026-...`); added a fallback that parses YAML frontmatter for any-format session_id and stores piped content as `preloaded_content`; refined so `_get_session_content()` is always attempted first, falling back to preloaded content only on failure."

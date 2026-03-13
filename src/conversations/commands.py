@@ -646,6 +646,68 @@ def _filter_history_lines(
     return filtered, removed
 
 
+def _human_size(size_bytes: int) -> str:
+    """Format byte count as human-readable size with commas for large numbers."""
+    if size_bytes < 1024:
+        return f"{size_bytes:,} B"
+    elif size_bytes < 1024 * 1024:
+        kb = size_bytes / 1024
+        return f"{kb:,.1f} KB"
+    else:
+        mb = size_bytes / (1024 * 1024)
+        return f"{mb:,.1f} MB"
+
+
+def _line_count(path: Path) -> int:
+    """Count lines in a file."""
+    try:
+        return sum(1 for _ in open(path, "rb"))
+    except OSError:
+        return 0
+
+
+def _file_meta(path: Path) -> str:
+    """Return human-readable metadata string for a file."""
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return ""
+    parts = [_human_size(size)]
+    lines = _line_count(path)
+    if lines:
+        suffix = path.suffix.lower()
+        label = "messages" if suffix == ".jsonl" else "lines"
+        parts.append(f"{lines:,} {label}")
+    return ", ".join(parts)
+
+
+def _render_dir_tree(base: Path, claude_dir: Path) -> list[str]:
+    """Render a recursive ASCII tree of directory contents with file metadata."""
+    lines: list[str] = []
+
+    def _walk(directory: Path, prefix: str) -> None:
+        try:
+            entries = sorted(directory.iterdir(), key=lambda e: e.name)
+        except OSError:
+            return
+        dirs = [e for e in entries if e.is_dir()]
+        files = [e for e in entries if e.is_file()]
+        items = files + dirs
+        for i, entry in enumerate(items):
+            is_last = i == len(items) - 1
+            connector = "└── " if is_last else "├── "
+            if entry.is_file():
+                meta = _file_meta(entry)
+                lines.append(f"{prefix}{connector}{entry.name}  [dim]({meta})[/dim]")
+            else:
+                lines.append(f"{prefix}{connector}{entry.name}/")
+                extension = "    " if is_last else "│   "
+                _walk(entry, prefix + extension)
+
+    _walk(base, "      ")
+    return lines
+
+
 def _display_rm_preview(
     session_uuid: str,
     project_dir_name: str,
@@ -669,7 +731,9 @@ def _display_rm_preview(
     if existing_files:
         console.print("[bold]Files to remove:[/bold]")
         for f in existing_files:
-            console.print(f"  [red]x[/red] ~/.claude/{f.relative_to(claude_dir)}")
+            meta = _file_meta(f)
+            meta_str = f"  [dim]({meta})[/dim]" if meta else ""
+            console.print(f"  [red]x[/red] ~/.claude/{f.relative_to(claude_dir)}{meta_str}")
 
     if missing_files and preview_mode:
         console.print("\n[dim]Files not found (will be skipped):[/dim]")
@@ -680,6 +744,8 @@ def _display_rm_preview(
         console.print("\n[bold]Directories to remove:[/bold]")
         for d in existing_dirs:
             console.print(f"  [red]x[/red] ~/.claude/{d.relative_to(claude_dir)}/")
+            for tree_line in _render_dir_tree(d, claude_dir):
+                console.print(tree_line)
 
     if missing_dirs and preview_mode:
         console.print("\n[dim]Directories not found (will be skipped):[/dim]")
