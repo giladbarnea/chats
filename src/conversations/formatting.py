@@ -30,8 +30,7 @@ def render_message_inner_xml(
     def flush_tools() -> None:
         nonlocal tool_parts
         if tool_parts:
-            # Tools are joined with \n (no blank line between them), prefixed with \n
-            output_parts.append("\n" + "\n".join(tool_parts))
+            output_parts.append("\n".join(tool_parts))
             tool_parts = []
 
     for part in msg.iter_visible_parts(flags, tool_id_map):
@@ -42,7 +41,7 @@ def render_message_inner_xml(
         elif part.kind == MessagePartKind.THINKING:
             flush_tools()
             tag = ContentBlockType.THINKING.value.xml_tag
-            output_parts.append(f"\n<{tag}>\n{part.data}\n</{tag}>")
+            output_parts.append(f"<{tag}>\n{part.data}\n</{tag}>")
 
         elif part.kind == MessagePartKind.TOOL:
             tool_parts.append(render_tool_xml(part.data))

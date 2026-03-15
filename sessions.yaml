@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Mar 15 26
+  34bf1e8a-f47c-49a2-bdb6-19c7371e9b31:
+    description:
+      - "Fixed three visual bugs in Rich-colored output (`--color=always`): double blank line after message headings, empty line before closing XML tags, and leading space on non-first opening tags. Root cause was `console.print()` defaulting to `sep=\" \"` combined with `Markdown()` adding block-level newlines; fixed by adjusting separators, header text, and closing tag format in `formatting.py`."
+      - "Discovered the fix didn't generalize to tool calls with `--all --color=never`: double blank lines appeared after `# Assistant` when followed by `<thinking>` tags. Root cause was upstream in `render_message_inner_xml` prepending `\\n` to THINKING and TOOL parts; removed those leading newlines so both XML and Rich paths render consistently. Extended `test_rich_whitespace.sh` to cover all four flag combos; all tests pass."
+    directories: [~/dev/conversations]
+    keywords: [rich-rendering, whitespace-bugs, tdd]
+    prominent_tech_stack: [Rich]
+    updated_when_message_count_was: 61
+    new_files: [tests/test_rich_whitespace.sh, tests/data/1e446a9f-08fd-43ac-be72-8ce337d01dcd.jsonl]
+    edited_files: [src/conversations/formatting.py, tests/lib.sh, tests/run_all.sh, tests/data/golden_xml_output.txt]
+    branch: main
   # Mar 13 26
   368d87c9-03a1-42a4-9610-d64aaaed9505:
     description: "Enhanced `ccc rm` confirmation preview with richer metadata: files now show human-readable size (with commas) and line/message count; directories render as a recursive ASCII tree with per-file sizes and line counts. Implemented via four new helpers (`_human_size`, `_line_count`, `_file_meta`, `_render_dir_tree`) in `commands.py`; all 172 tests pass."
