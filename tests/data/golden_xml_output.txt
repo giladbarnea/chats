@@ -1,8 +1,8 @@
 ---
 session_id: synthetic_flags
 history_path: tests/data/synthetic_flags.jsonl
-created: "2025-11-23 15:14"
-modified: "2025-11-23 15:14"
+created: "2025-11-23 11:29"
+modified: "2025-11-23 11:29"
 messages: 4
 ---
 <user-message i="1">
@@ -30,7 +30,7 @@ I should reply hello
 # Assistant
 
 
-<tool-input name="test"></tool-input>
+<tool-input name="test" id="1"></tool-input>
 </assistant-response>
 
 ---
@@ -39,7 +39,7 @@ I should reply hello
 # User
 
 
-<tool-output>
+<tool-output name="test" id="1">
 ```
 result
 ```

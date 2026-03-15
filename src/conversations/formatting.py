@@ -227,7 +227,7 @@ def render_messages_with_rich(
             continue
 
         if i > 0:
-            print_targets.append(Text("\n---\n\n", style="dim"))
+            print_targets.append(Text("\n\n---\n\n", style="dim"))
 
         wrapper_type = msg.get_wrapper_type()
         tag = wrapper_type.value.xml_tag
@@ -238,7 +238,7 @@ def render_messages_with_rich(
         print_targets.append(Text(f"<{tag} {attrs}>", style="dim"))
 
         if header:
-            print_targets.append(Text(f"\n{header}\n\n", style=header_style))
+            print_targets.append(Text(f"\n{header}\n", style=header_style))
 
         for part in parts:
             if part.kind == MessagePartKind.TEXT:
@@ -259,7 +259,6 @@ def render_messages_with_rich(
                 print_targets.append(Text("\n", style="dim"))
                 print_targets.extend(render_tool_rich(part.data))
 
-        print_targets.append(Text(f"\n</{tag}>", style="dim"))
-        print_targets.append(Text("\n", style="dim"))
+        print_targets.append(Text(f"</{tag}>", style="dim"))
 
-    get_console().print(*print_targets)
+    get_console().print(*print_targets, sep="")

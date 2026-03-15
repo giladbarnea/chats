@@ -27,3 +27,13 @@ If the user asks to read the source code as well, read it all, besides `tests/da
 Again, *read files that have proven relevant in full.*
 
 </relevancy>
+
+---
+
+<dev-cycle>
+
+1. Run `./tests/run_all.sh | cat`.
+2. Red/Green TDD.
+3. Upon completion, run the `post-implementation` Skill.
+
+</dev-cycle>

@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
+setopt EXTENDED_GLOB
 
 # Define data files relative to the test script location (assuming running from skill root)
 # But tests are usually run from skill root: ~/.claude/skills/conversations/
@@ -73,4 +74,10 @@ assert_no_colors() {
     echo "$1" | head -n 5 | od -c
     exit 1
   fi
+}
+
+decolor() {
+  local text="${1:-$(<&0)}"
+  text=${text//$'\e'\[(<0-9>##;#)##m/}
+  print -r -- "$text"
 }
