@@ -4,11 +4,22 @@
 import json
 import os
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 from conversations import ConversationFlags, cmd_parse, cmd_search
+
+
+def _utc_to_local_display(utc_iso: str) -> str:
+    """Convert a UTC ISO timestamp to the local-time display string used in metadata.
+
+    E.g. "2025-02-03T04:05:06.000Z" in IST (UTC+2) → '"2025-02-03 06:05"'
+    """
+    dt = datetime.fromisoformat(utc_iso.replace("Z", "+00:00"))
+    local = dt.astimezone().replace(tzinfo=None)
+    return local.strftime("%Y-%m-%d %H:%M")
 
 
 FIXTURES_DIR = Path(__file__).parent / "data" / "rename_fixtures"
@@ -64,9 +75,10 @@ def test_cmd_parse_metadata_prefers_jsonl_timestamps_over_file_stat(tmp_path, ca
     )
 
     captured = capsys.readouterr()
-    assert 'modified: "2025-02-03 04:05"' in captured.out, (
+    expected_time = _utc_to_local_display("2025-02-03T04:05:06.000Z")
+    assert f'modified: "{expected_time}"' in captured.out, (
         "Expected parse metadata to use the conversation timestamp for "
-        f"modified time. Got output:\n{captured.out}\n{captured.err}"
+        f"modified time (expected {expected_time}). Got output:\n{captured.out}\n{captured.err}"
     )
     assert 'modified: "2024-01-02 00:00"' not in captured.out, (
         "Expected parse metadata not to fall back to the stale filesystem "
@@ -123,9 +135,10 @@ def test_cmd_search_metadata_prefers_jsonl_timestamps_over_file_stat(
     )
 
     captured = capsys.readouterr()
-    assert 'modified: "2025-03-04 05:06"' in captured.out, (
+    expected_time = _utc_to_local_display("2025-03-04T05:06:07.000Z")
+    assert f'modified: "{expected_time}"' in captured.out, (
         "Expected search metadata to use the conversation timestamp for "
-        f"modified time. Got output:\n{captured.out}\n{captured.err}"
+        f"modified time (expected {expected_time}). Got output:\n{captured.out}\n{captured.err}"
     )
     assert 'modified: "2024-01-02 00:00"' not in captured.out, (
         "Expected search metadata not to show the stale filesystem mtime "

@@ -92,14 +92,20 @@ def _find_last_timestamp(file_path: Path, chunk_size: int = 4096) -> str | None:
 
 
 def _parse_iso_timestamp(ts_str: str) -> datetime | None:
-    """Parse ISO timestamp string to datetime."""
+    """Parse ISO timestamp string to naive local-time datetime.
+
+    JSONL timestamps are typically UTC (trailing 'Z'). We convert to local time
+    so comparisons with datetime.now() (used by relative date filters) are correct.
+    """
     if not ts_str:
         return None
     try:
-        # Handle trailing 'Z' if present
         if ts_str.endswith("Z"):
-            ts_str = ts_str[:-1]
-        return datetime.fromisoformat(ts_str)
+            ts_str = ts_str[:-1] + "+00:00"
+        dt = datetime.fromisoformat(ts_str)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone().replace(tzinfo=None)
+        return dt
     except ValueError:
         return None
 
