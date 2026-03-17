@@ -207,6 +207,6 @@ class Message:
             attrs.append(f'agent_id="{self.agent_id}"')
             if self.subagent_type:
                 attrs.append(f'subagent_type="{self.subagent_type}"')
-            if self.model:
-                attrs.append(f'model="{self.model}"')
+        if self.model:
+            attrs.append(f'model="{self.model.removeprefix("claude-")}"')
         return " ".join(attrs)

@@ -51,6 +51,45 @@ def test_non_meta_user_message_has_no_meta_wrapper_attrs():
     )
 
 
+def test_assistant_and_agent_messages_include_model_attribute():
+    """Assistant messages (regular and agent) render model attr with claude- prefix stripped."""
+    content = "\n".join([
+        '{"type":"user","message":{"role":"user","content":"hello"}}',
+        '{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"hi"}]}}',
+        '{"type":"assistant","agentId":"agent-abc123","message":{"role":"assistant","model":"claude-sonnet-4-5-20250929","content":[{"type":"text","text":"agent reply"}]}}',
+    ])
+    flags = ConversationFlags(show_agents=True, color="never")
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert 'model="opus-4-6"' in output, (
+        f"Expected assistant message to include model attr with 'claude-' stripped. Got:\n{output}"
+    )
+    assert 'agent_id="agent-abc123"' in output, (
+        f"Expected agent message to retain agent_id attr. Got:\n{output}"
+    )
+    assert 'model="sonnet-4-5-20250929"' in output, (
+        f"Expected agent message to include model attr with 'claude-' stripped. Got:\n{output}"
+    )
+
+
+def test_user_messages_have_no_model_attribute():
+    """User messages never render a model attr, even when adjacent to assistant with model."""
+    content = "\n".join([
+        '{"type":"user","message":{"role":"user","content":"hello"}}',
+        '{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"reply"}]}}',
+    ])
+    flags = ConversationFlags(color="never")
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    user_tag_line = [line for line in output.splitlines() if "<user-message" in line]
+    assert len(user_tag_line) == 1, f"Expected exactly 1 user-message tag. Got:\n{output}"
+    assert "model=" not in user_tag_line[0], (
+        f"User message must not have a model attribute. Got tag: {user_tag_line[0]}"
+    )
+
+
 def test_cmd_parse_slice_preserves_tool_name_on_tool_output(tmp_path, capsys):
     """Sliced parse output should still know the originating tool name."""
     content = """{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_013cAqxRaJroBvWdutKHWm47","name":"Skill","input":{"prompt":"go"}}]}}
