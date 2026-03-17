@@ -27,6 +27,15 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Mar 17 26
+  0f24e0cc-0cab-4011-9cfa-6f92fb016da5:
+    description: "Investigated which JSONL message shapes carry a `model` field (script over 50 project dirs confirmed only `assistant` entries have it at `message.model`); moved the `model` XML attribute from being gated behind `agent_id` to all assistant messages with `.removeprefix('claude-')`; added two tests — one asserting regular and agent assistant messages include `model=`, one asserting user messages never do."
+    directories: [~/dev/conversations]
+    keywords: [model-attribute, xml-metadata, jsonl-analysis]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 23
+    edited_files: [src/conversations/model.py, tests/test_meta_user_messages.py]
+    branch: main
   # Mar 15 26
   34bf1e8a-f47c-49a2-bdb6-19c7371e9b31:
     description:
