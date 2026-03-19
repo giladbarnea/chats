@@ -1,18 +1,25 @@
 from __future__ import annotations
 
-import textwrap
 from pathlib import Path
 from typing import Any
 
 
-def shorten_data(data: Any, width: int = 120, placeholder: str = "[...]") -> Any:
-    """Recursively traverse data and shorten string values."""
+def truncate_middle(s: str, max_len: int = 120) -> str:
+    """Shorten a string by keeping first 25% and last 25%, replacing the middle with '...'."""
+    if len(s) <= max_len:
+        return s
+    quarter = len(s) // 4
+    return s[:quarter] + "..." + s[-quarter:] if quarter > 0 else "..."
+
+
+def shorten_data(data: Any, width: int = 120) -> Any:
+    """Recursively traverse data and shorten string values via middle truncation."""
     if isinstance(data, dict):
-        return {k: shorten_data(v, width, placeholder) for k, v in data.items()}
+        return {k: shorten_data(v, width) for k, v in data.items()}
     if isinstance(data, list):
-        return [shorten_data(item, width, placeholder) for item in data]
+        return [shorten_data(item, width) for item in data]
     if isinstance(data, str):
-        return textwrap.shorten(data, width=width, placeholder=placeholder)
+        return truncate_middle(data, max_len=width)
     return data
 
 

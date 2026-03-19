@@ -87,10 +87,10 @@ echo '{"type":"user","message":{"role":"user","content":"This is a very long mes
 
 OUTPUT_S=$($CC_CMD -s tests/data/long_message.jsonl)
 assert_success
-# Should contain the placeholder
-assert_contains "$OUTPUT_S" "[...]"
-# Should NOT contain the full text (end of it)
-assert_not_contains "$OUTPUT_S" "margin."
+# Should contain the middle-truncation ellipsis
+assert_contains "$OUTPUT_S" "..."
+# Middle truncation preserves start and end, removes the middle
+assert_not_contains "$OUTPUT_S" "definitely be shortened"
 
 # -s: Slice parsing (index + range)
 echo "Testing -s with index slice..."

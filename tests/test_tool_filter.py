@@ -291,6 +291,81 @@ class TestPerToolShortening:
         parts = tool_parts_from(msg, flags, ID_MAP)
 
         result_content = parts[1].data.content
-        assert "[...]" in result_content or len(result_content) < len(long_content), (
+        assert "..." in result_content or len(result_content) < len(long_content), (
             f"Global --short should truncate; got {len(result_content)} chars"
         )
+
+
+# =============================================================================
+# truncate_middle: unit tests
+# =============================================================================
+
+from conversations.utils import truncate_middle
+
+
+class TestTruncateMiddle:
+    """truncate_middle keeps first 25% + '...' + last 25%, replacing the middle."""
+
+    def test_short_string_unchanged(self):
+        assert truncate_middle("hello", max_len=100) == "hello"
+
+    def test_exact_length_unchanged(self):
+        s = "a" * 120
+        assert truncate_middle(s, max_len=120) == s
+
+    def test_long_string_keeps_start_and_end(self):
+        s = "A" * 40 + "B" * 40 + "C" * 40 + "D" * 40  # 160 chars
+        result = truncate_middle(s, max_len=100)
+        # quarter = 160 // 4 = 40
+        assert result.startswith("A" * 40), f"Should start with first quarter. Got: {result[:50]}"
+        assert result.endswith("D" * 40), f"Should end with last quarter. Got: {result[-50:]}"
+        assert "..." in result
+        assert len(result) == 40 + 3 + 40, f"Expected 83 chars, got {len(result)}"
+
+    def test_placeholder_is_ellipsis_not_bracket(self):
+        result = truncate_middle("x" * 200, max_len=100)
+        assert "..." in result
+        assert "[...]" not in result
+
+
+# =============================================================================
+# Message-level shortening: --short uses middle truncation
+# =============================================================================
+
+class TestMessageMiddleTruncation:
+    """--short flag middle-truncates message text, preserving both start and end."""
+
+    def test_text_preserves_start_and_end(self):
+        start = "START_MARKER "
+        end = " END_MARKER"
+        middle = "m" * 200
+        long_text = start + middle + end
+
+        msg = Message(role="assistant", text=long_text)
+        flags = ConversationFlags(shorten=True)
+        parts = msg.iter_visible_parts(flags)
+
+        text_parts = [p for p in parts if p.kind == MessagePartKind.TEXT]
+        assert len(text_parts) == 1, f"Expected 1 text part, got {len(text_parts)}"
+        shortened = text_parts[0].data
+
+        assert "START_MARKER" in shortened, f"Start should be preserved. Got: {shortened[:60]}"
+        assert "END_MARKER" in shortened, f"End should be preserved. Got: {shortened[-60:]}"
+        assert "..." in shortened, f"Should contain ellipsis placeholder"
+
+    def test_thinking_preserves_start_and_end(self):
+        start = "FIRST_THOUGHT "
+        end = " FINAL_THOUGHT"
+        middle = "t" * 200
+        long_thinking = start + middle + end
+
+        msg = Message(role="assistant", text="x", thinking=long_thinking)
+        flags = ConversationFlags(shorten=True, show_thinking=True)
+        parts = msg.iter_visible_parts(flags)
+
+        thinking_parts = [p for p in parts if p.kind == MessagePartKind.THINKING]
+        assert len(thinking_parts) == 1
+        shortened = thinking_parts[0].data
+
+        assert "FIRST_THOUGHT" in shortened, f"Start should be preserved. Got: {shortened[:60]}"
+        assert "FINAL_THOUGHT" in shortened, f"End should be preserved. Got: {shortened[-60:]}"
