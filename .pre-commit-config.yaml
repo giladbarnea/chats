@@ -1,0 +1,6 @@
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/giladbarnea/sync-agent-skills
+    rev: v1.0.0
+    hooks:
+      - id: sync-agent-skills

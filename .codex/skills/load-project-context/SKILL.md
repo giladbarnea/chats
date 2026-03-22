@@ -14,12 +14,26 @@ The instruction to read files in full is intentional - truly do that.
 If the user asks to read the source code as well, read it all, besides `tests/data/*`, which has huge files. 
 
 <relevancy>
+
 **Global rule for reading docs, files and gathering context:** always maintain a mental "relevancy" weight for each resource. This is to be able to home in on relevant resources — resources that touch upon the Sphere-Of-Influence(d) of the subject at hand — and not bloat the context window with unequivocally irrelevant resources. Note the language I've used now: The threshold for a resource to qualify as 'relevant' is *low*. Recall has precedence over precision.
+
 **Criteria that make up the 'Relevancy' weight:**
-1. Time. The older, the less relevant. Code and documentation rot and drift over time. Authoritative timestamp resources:
+1. **Time**. The older, the less relevant. Code and documentation rot and drift over time. Authoritative timestamp resources:
     a. YAML frontmatter in Markdown files. Isn't always present.
     b. Git: last updated and creation time
-2. File path. Does it semantically match the current effort?
-3. Surgical, recursive grep matching. Recursively `grep`ing the codebase to exhaustively climb up and down dependency chains is extremely effective and encouraged to mark relevant files.
+2. **File path**. Does it semantically match the current effort?
+3. Surgical, **recursive grep matching**. Recursively `grep`ing the codebase to exhaustively climb up and down dependency chains is extremely effective and encouraged to mark relevant files.
+
 Again, *read files that have proven relevant in full.*
+
 </relevancy>
+
+---
+
+<dev-cycle>
+
+1. Run `./tests/run_all.sh | cat`.
+2. Red/Green TDD.
+3. Upon completion, run the `post-implementation` Skill.
+
+</dev-cycle>
