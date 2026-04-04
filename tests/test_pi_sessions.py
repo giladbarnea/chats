@@ -18,6 +18,15 @@ def _write_pi_session(path: Path, entries: list[dict]) -> None:
     )
 
 
+def _write_claude_session(path: Path, entries: list[dict]) -> None:
+    """Write compact JSONL entries to a Claude session fixture path."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+
+
 def test_cmd_parse_supports_basic_text_from_pi_session_path(
     tmp_path: Path,
     monkeypatch,
@@ -97,6 +106,214 @@ def test_cmd_parse_supports_basic_text_from_pi_session_path(
     )
     assert "hi from pi" in captured.out, (
         "Expected PI assistant text content to be preserved in XML output. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_supports_pi_session_id_after_claude_lookup_is_exhausted(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A PI session id should resolve only after Claude Code lookup finds no match."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    _write_claude_session(
+        temp_home
+        / ".claude"
+        / "projects"
+        / "demo-project"
+        / "unrelated-claude-session.jsonl",
+        [
+            {
+                "type": "summary",
+                "summary": "Unrelated Claude session",
+                "leafUuid": "leaf-1",
+            },
+            {
+                "type": "user",
+                "message": {"role": "user", "content": "claude user"},
+                "uuid": "claude-user-1",
+            },
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "claude assistant"}],
+                },
+            },
+        ],
+    )
+
+    session_id = "9a27c7d8-d58f-4179-bf0a-a4657c7dca64"
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / f"2026-04-04T12-24-33-963Z_{session_id}.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": session_id,
+                "timestamp": "2026-04-04T12:24:33.963Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": session_id,
+                "timestamp": "2026-04-04T12:25:47.187Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "hello from pi by id"}],
+                    "timestamp": 1775305547146,
+                },
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-04-04T12:25:48.467Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "hi from pi by id"}],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                    "stopReason": "stop",
+                    "timestamp": 1775305547188,
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        session_id,
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+    )
+
+    captured = capsys.readouterr()
+    assert "hello from pi by id" in captured.out, (
+        "Expected the PI session id to resolve through fallback lookup and render the "
+        f"PI user message. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "hi from pi by id" in captured.out, (
+        "Expected the PI session id to resolve through fallback lookup and render the "
+        f"PI assistant message. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert (
+        "history_path: ~/.pi/agent/sessions/--tmp-project--/"
+        f"2026-04-04T12-24-33-963Z_{session_id}.jsonl"
+    ) in captured.out, (
+        "Expected metadata to prove the session id resolved to the PI session file. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_prefers_claude_session_before_pi_fallback_for_same_identifier(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Claude session ids should win before adapter fallback is tried."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_id = "9a27c7d8-d58f-4179-bf0a-a4657c7dca64"
+    _write_claude_session(
+        temp_home / ".claude" / "projects" / "demo-project" / f"{session_id}.jsonl",
+        [
+            {
+                "type": "summary",
+                "summary": "Claude should win",
+                "leafUuid": "leaf-1",
+            },
+            {
+                "type": "user",
+                "message": {"role": "user", "content": "hello from claude by id"},
+                "uuid": "claude-user-1",
+                "timestamp": "2026-04-04T12:25:47.187Z",
+                "cwd": "/tmp/claude-project",
+                "sessionId": session_id,
+            },
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "hi from claude by id"}],
+                },
+                "timestamp": "2026-04-04T12:25:48.467Z",
+                "cwd": "/tmp/claude-project",
+                "sessionId": session_id,
+            },
+        ],
+    )
+
+    _write_pi_session(
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / f"2026-04-04T12-24-33-963Z_{session_id}.jsonl",
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": session_id,
+                "timestamp": "2026-04-04T12:24:33.963Z",
+                "cwd": "/tmp/pi-project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": session_id,
+                "timestamp": "2026-04-04T12:25:47.187Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "hello from pi by id"}],
+                    "timestamp": 1775305547146,
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        session_id,
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+    )
+
+    captured = capsys.readouterr()
+    assert "hello from claude by id" in captured.out, (
+        "Expected Claude's exact session id match to win before PI fallback. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "hi from claude by id" in captured.out, (
+        "Expected Claude assistant content when the same identifier exists in both "
+        f"ecosystems. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "hello from pi by id" not in captured.out, (
+        "Expected PI fallback not to run once Claude already matched the session id. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert (
+        f"history_path: ~/.claude/projects/demo-project/{session_id}.jsonl"
+    ) in captured.out, (
+        "Expected metadata to prove the identifier resolved to the Claude session file. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 

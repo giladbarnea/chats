@@ -31,6 +31,7 @@ from .parsing import (
     get_jsonl_timestamps,
     parse_jsonl,
     parse_raw_cli_transcript,
+    resolve_session_identifier_via_adapters,
 )
 
 
@@ -141,6 +142,7 @@ def _try_resolve_conversation_file(
         - If not found: (None, [])
     """
     stripped = identifier.strip()
+    allow_adapter_fallback = conversation_files is None
 
     # Try direct file path
     try:
@@ -180,6 +182,9 @@ def _try_resolve_conversation_file(
         return matches[0][0], []
     if len(matches) > 1:
         return None, matches
+
+    if allow_adapter_fallback:
+        return resolve_session_identifier_via_adapters(stripped)
 
     return None, []
 

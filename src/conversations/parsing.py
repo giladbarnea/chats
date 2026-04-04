@@ -18,6 +18,7 @@ class JsonlSessionAdapter:
     name: str
     matches: Callable[[Path | None], bool]
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
+    find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
 
 
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
@@ -323,11 +324,58 @@ def _is_pi_jsonl_path(source_path: Path | None) -> bool:
     return True
 
 
+def _extract_pi_session_id(session_file: Path) -> str | None:
+    """Extract the PI session id from the file's session entry or filename."""
+    try:
+        with open(session_file, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    continue
+
+                if entry.get("type") == "session":
+                    session_id = entry.get("id")
+                    if isinstance(session_id, str) and session_id:
+                        return session_id
+                    break
+                break
+    except OSError:
+        pass
+
+    stem = session_file.stem
+    prefix, separator, suffix = stem.rpartition("_")
+    if prefix and separator and suffix:
+        return suffix
+    return None
+
+
+def _find_pi_session_matches(identifier: str) -> list[tuple[Path, str]]:
+    """Find PI session files that match a PI session id."""
+    if len(identifier.split()) != 1:
+        return []
+
+    sessions_dir = Path.home() / ".pi" / "agent" / "sessions"
+    if not sessions_dir.exists():
+        return []
+
+    matches: list[tuple[Path, str]] = []
+    for session_file in sorted(sessions_dir.rglob("*.jsonl")):
+        if _extract_pi_session_id(session_file) != identifier:
+            continue
+        matches.append((session_file, f"PI session {identifier}"))
+    return matches
+
+
 JSONL_SESSION_ADAPTERS = [
     JsonlSessionAdapter(
         name="pi",
         matches=_is_pi_jsonl_path,
         parse_messages=_parse_pi_jsonl,
+        find_session_matches=_find_pi_session_matches,
     ),
     JsonlSessionAdapter(
         name="default",
@@ -353,6 +401,23 @@ def parse_jsonl(
     """Parse a JSONL conversation via the matching session adapter."""
     adapter = _select_jsonl_session_adapter(source_path)
     return adapter.parse_messages(content, flags)
+
+
+def resolve_session_identifier_via_adapters(
+    identifier: str,
+) -> tuple[Path | None, list[tuple[Path, str]]]:
+    """Resolve a non-Claude session identifier by trying adapter matchers in order."""
+    for adapter in JSONL_SESSION_ADAPTERS:
+        if adapter.find_session_matches is None:
+            continue
+
+        matches = adapter.find_session_matches(identifier)
+        if len(matches) == 1:
+            return matches[0][0], []
+        if len(matches) > 1:
+            return None, matches
+
+    return None, []
 
 
 def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Message | None:
