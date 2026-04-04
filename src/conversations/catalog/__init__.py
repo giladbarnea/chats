@@ -178,7 +178,7 @@ def catalog_sessions(args: list[str]) -> None:
         filled_prompt = f"<real-task>\n{PROMPT_TEMPLATE.format(sessions_path=sessions_yaml_path)}\n</real-task>"
         full_prompt = f"{tagged_session_content}\n\n---\n\n{filled_prompt}"
 
-        oauth_token_path = Path.home() / ".claude-code-oauth-token"
+        oauth_token_path = Path.home() / ".claude-code-personal-1y-oauth-token"
         api_key_path = Path.home() / ".anthropic-api-key-hearai-gilad-local-dev"
         env = os.environ.copy()
         if oauth_token_path.is_file():
