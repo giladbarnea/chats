@@ -2,11 +2,22 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from collections.abc import Callable
 
 from .model import ConversationFlags, Message
 from .utils import shorten_tool_use_id
+
+
+@dataclass(frozen=True)
+class JsonlSessionAdapter:
+    """A parser adapter for one JSONL session shape."""
+
+    name: str
+    matches: Callable[[Path | None], bool]
+    parse_messages: Callable[[str, ConversationFlags], list[Message]]
 
 
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
@@ -219,10 +230,9 @@ def detect_format(content: str) -> str:
     return "raw"
 
 
-def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
-    """Parse JSONL format conversation."""
-    messages = []
-    index = 1
+def _iter_jsonl_entries(content: str) -> list[dict]:
+    """Parse a JSONL string into a list of JSON object entries."""
+    entries: list[dict] = []
 
     for line in content.split("\n"):
         line = line.strip()
@@ -234,6 +244,35 @@ def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
         except json.JSONDecodeError:
             continue
 
+        if isinstance(entry, dict):
+            entries.append(entry)
+
+    return entries
+
+
+def _extract_text_blocks(content_data: object) -> list[str]:
+    """Collect text blocks from a message content field."""
+    if isinstance(content_data, str):
+        return [content_data] if content_data else []
+
+    if not isinstance(content_data, list):
+        return []
+
+    text_blocks: list[str] = []
+    for item in content_data:
+        if not isinstance(item, dict):
+            continue
+        if text := item.get("text", "").strip():
+            text_blocks.append(text)
+    return text_blocks
+
+
+def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse the existing Claude-style JSONL conversation shape."""
+    messages = []
+    index = 1
+
+    for entry in _iter_jsonl_entries(content):
         entry_type = entry.get("type")
 
         if entry_type == "user":
@@ -250,6 +289,70 @@ def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
             index += 1
 
     return messages
+
+
+def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse PI JSONL sessions into the shared Message model."""
+    messages = []
+    index = 1
+
+    for entry in _iter_jsonl_entries(content):
+        if entry.get("type") != "message":
+            continue
+
+        msg = _parse_pi_message_entry(entry, index, flags)
+        if msg and msg.has_content():
+            messages.append(msg)
+            index += 1
+
+    return messages
+
+
+def _is_pi_jsonl_path(source_path: Path | None) -> bool:
+    """Return True when the source path is inside ~/.pi/."""
+    if source_path is None:
+        return False
+
+    try:
+        source_path.resolve().relative_to((Path.home() / ".pi").resolve())
+    except ValueError:
+        return False
+    except OSError:
+        return False
+
+    return True
+
+
+JSONL_SESSION_ADAPTERS = [
+    JsonlSessionAdapter(
+        name="pi",
+        matches=_is_pi_jsonl_path,
+        parse_messages=_parse_pi_jsonl,
+    ),
+    JsonlSessionAdapter(
+        name="default",
+        matches=lambda _source_path: True,
+        parse_messages=_parse_default_jsonl,
+    ),
+]
+
+
+def _select_jsonl_session_adapter(source_path: Path | None) -> JsonlSessionAdapter:
+    """Select the first JSONL adapter whose matcher accepts the source path."""
+    for adapter in JSONL_SESSION_ADAPTERS:
+        if adapter.matches(source_path):
+            return adapter
+    return JSONL_SESSION_ADAPTERS[-1]
+
+
+def parse_jsonl(
+    content: str,
+    flags: ConversationFlags,
+    source_path: Path | None = None,
+) -> list[Message]:
+    """Parse a JSONL conversation via the matching session adapter."""
+    adapter = _select_jsonl_session_adapter(source_path)
+    return adapter.parse_messages(content, flags)
 
 
 def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Message | None:
@@ -275,14 +378,9 @@ def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Mess
     if isinstance(content_data, str):
         msg.text = content_data
     elif isinstance(content_data, list):
-        text_blocks = []
+        text_blocks = _extract_text_blocks(content_data)
         for item in content_data:
-            if not isinstance(item, dict):
-                continue
-            if item.get("type") == "text":
-                if text := item.get("text", "").strip():
-                    text_blocks.append(text)
-            elif flags.show_tools and item.get("type") == "tool_result":
+            if isinstance(item, dict) and flags.show_tools and item.get("type") == "tool_result":
                 msg.tools.append(item)
 
         if text_blocks:
@@ -335,6 +433,92 @@ def _parse_assistant_entry(entry: dict, index: int, flags: ConversationFlags) ->
 
     if text_blocks:
         msg.text = "\n\n".join(text_blocks)
+
+    return msg
+
+
+def _normalize_pi_tool_name(name: str | None) -> str:
+    """Map PI tool names to the canonical names used by the shared renderer."""
+    if not name:
+        return "Unknown"
+
+    known_names = {
+        "bash": "Bash",
+        "read": "Read",
+        "write": "Write",
+        "edit": "Edit",
+        "grep": "Grep",
+        "glob": "Glob",
+        "task": "Task",
+        "webfetch": "WebFetch",
+        "websearch": "WebSearch",
+    }
+    return known_names.get(name.lower(), name)
+
+
+def _parse_pi_message_entry(
+    entry: dict,
+    index: int,
+    flags: ConversationFlags,
+) -> Message | None:
+    """Parse a PI `type=message` entry."""
+    message_data = entry.get("message", {})
+    role = message_data.get("role")
+
+    if role == "user":
+        msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
+    elif role == "assistant":
+        msg = Message(
+            role="assistant",
+            index=index,
+            timestamp=entry.get("timestamp"),
+            model=message_data.get("model"),
+        )
+    elif role == "toolResult":
+        if not flags.show_tools:
+            return None
+
+        msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
+        msg.tools.append(
+            {
+                "type": "tool_result",
+                "tool_use_id": message_data.get("toolCallId"),
+                "content": message_data.get("content", []),
+                "is_error": message_data.get("isError", False),
+            }
+        )
+        return msg
+    else:
+        return None
+
+    content_items = message_data.get("content", [])
+    text_blocks = _extract_text_blocks(content_items)
+    if text_blocks:
+        msg.text = "\n\n".join(text_blocks)
+
+    if role == "assistant" and isinstance(content_items, list):
+        thinking_blocks: list[str] = []
+
+        for item in content_items:
+            if not isinstance(item, dict):
+                continue
+
+            item_type = item.get("type")
+            if item_type == "thinking" and flags.show_thinking:
+                if thinking := item.get("thinking", "").strip():
+                    thinking_blocks.append(thinking)
+            elif item_type == "toolCall" and flags.show_tools:
+                msg.tools.append(
+                    {
+                        "type": "tool_use",
+                        "id": item.get("id"),
+                        "name": _normalize_pi_tool_name(item.get("name")),
+                        "input": item.get("arguments", {}),
+                    }
+                )
+
+        if thinking_blocks:
+            msg.thinking = "\n\n".join(thinking_blocks)
 
     return msg
 

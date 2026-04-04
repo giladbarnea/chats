@@ -412,7 +412,7 @@ def _search_conversation(
     format_type = detect_format(content)
 
     if format_type == "jsonl":
-        messages = parse_jsonl(content, flags)
+        messages = parse_jsonl(content, flags, source_path=conv_file)
         cwd = extract_cwd_from_jsonl(content)
     else:
         messages = parse_raw_cli_transcript(content, flags)
@@ -883,7 +883,7 @@ def cmd_parse(
     # Parse conversation
     format_type = detect_format(content)
     if format_type == "jsonl":
-        messages = parse_jsonl(content, flags)
+        messages = parse_jsonl(content, flags, source_path=input_file_path)
         cwd = extract_cwd_from_jsonl(content)
     else:
         messages = parse_raw_cli_transcript(content, flags)
@@ -970,7 +970,7 @@ def _merge_agent_messages(
     for agent_file in agent_files:
         try:
             agent_content = agent_file.read_text(encoding="utf-8")
-            agent_messages = parse_jsonl(agent_content, flags)
+            agent_messages = parse_jsonl(agent_content, flags, source_path=agent_file)
             if not agent_messages or not agent_messages[0].timestamp:
                 continue
 
