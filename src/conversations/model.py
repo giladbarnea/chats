@@ -24,10 +24,13 @@ class ConversationMetadata:
 class ConversationFlags:
     """Flags controlling what content to include."""
 
+    show_user_messages: bool
+    show_assistant_messages: bool
     show_thinking: bool
     show_tools: bool | list[ToolFilter]
     show_agents: bool
     show_plans: bool
+    allow_empty_output: bool
     shorten: bool
     color: bool
     paging: bool
@@ -35,18 +38,24 @@ class ConversationFlags:
     def __init__(
         self,
         *,
+        show_user_messages: bool = True,
+        show_assistant_messages: bool = True,
         show_thinking: bool = False,
         show_tools: bool | list[ToolFilter] = False,
         show_agents: bool = False,
         show_plans: bool = True,
+        allow_empty_output: bool = False,
         shorten: bool = False,
         color: bool = False,
         paging: bool | None = None,
     ):
+        self.show_user_messages = show_user_messages
+        self.show_assistant_messages = show_assistant_messages
         self.show_thinking = show_thinking
         self.show_tools = show_tools
         self.show_agents = show_agents
         self.show_plans = show_plans
+        self.allow_empty_output = allow_empty_output
         self.shorten = shorten
         self.color = (color == "always") or (color == "auto" and sys.stdout.isatty())
         # Paging defaults to color value unless explicitly set
@@ -58,9 +67,12 @@ class ConversationFlags:
 
     def __repr__(self) -> str:
         return (
-            f"ConversationFlags(show_thinking={self.show_thinking}, "
+            f"ConversationFlags(show_user_messages={self.show_user_messages}, "
+            f"show_assistant_messages={self.show_assistant_messages}, "
+            f"show_thinking={self.show_thinking}, "
             f"show_tools={self.show_tools}, show_agents={self.show_agents}, "
-            f"show_plans={self.show_plans}, shorten={self.shorten}, "
+            f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
+            f"shorten={self.shorten}, "
             f"color={self.color}, paging={self.paging})"
         )
 

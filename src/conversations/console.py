@@ -5,6 +5,7 @@ from rich.console import Console
 # Module-level console instance for consistent formatting
 _console: Console | None = None
 _error_console: Console | None = None
+_warning_console: Console | None = None
 
 
 def init_module_console(*, force_color: bool | None = None) -> Console:
@@ -29,3 +30,10 @@ def print_error(*print_args) -> None:
         _error_console = Console(stderr=True)
     _error_console.print(*print_args, style="red")
 
+
+def print_warning(*print_args) -> None:
+    """Print warning message to stderr in yellow."""
+    global _warning_console
+    if _warning_console is None:
+        _warning_console = Console(stderr=True)
+    _warning_console.print(*print_args, style="yellow")

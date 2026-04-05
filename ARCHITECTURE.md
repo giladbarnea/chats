@@ -31,6 +31,12 @@ class Message:
 
 Key method: `iter_visible_parts(flags)` → Yields structured `MessagePart` objects (TEXT, THINKING, TOOL) based on flags
 
+`ConversationFlags` also carries role-level visibility for the regular parse-mode defaults:
+- `show_user_messages`
+- `show_assistant_messages`
+
+Those flags hide only the default text/plan content for each role. Thinking, tools, and agent sidechains stay orthogonal so combinations like `--no-user --tools` and `--no-assistant --agents` compose without downstream contradiction handling.
+
 ---
 
 ## Content Block Type Registry

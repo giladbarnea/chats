@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from .commands import cmd_catalog, cmd_parse, cmd_rename, cmd_rm, cmd_search
-from .console import init_module_console
+from .console import init_module_console, print_warning
 from .model import ConversationFlags
 from .ordering import is_single_negative_index
 from .tool_filter import ToolFilter, parse_tool_spec
@@ -32,6 +32,81 @@ def _resolve_show_tools(
         return True  # only bare --tools with no filters
 
     return [parse_tool_spec(s) for s in specs]
+
+
+def _warn_only_override(only_flag: str, disabled_flags: list[str]) -> None:
+    """Emit a consistent warning when an `--only-*` flag overrides extras."""
+    joined = ", ".join(disabled_flags)
+    print_warning(f"Warning: {only_flag} overrides {joined}; disabling those options.")
+
+
+def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
+    """Normalize contradictory parse-mode visibility flags before building ConversationFlags."""
+    only_assistant_disabled = []
+    if args.all:
+        only_assistant_disabled.append("`--all`")
+    if args.thinking:
+        only_assistant_disabled.append("`--thinking`")
+    if args.tools is not None:
+        only_assistant_disabled.append("`--tools`")
+    if args.agents:
+        only_assistant_disabled.append("`--agents`")
+    if args.only_assistant and only_assistant_disabled:
+        _warn_only_override("`--only-assistant`", only_assistant_disabled)
+        args.all = False
+        args.thinking = False
+        args.tools = None
+        args.agents = False
+
+    only_user_disabled = []
+    if args.all:
+        only_user_disabled.append("`--all`")
+    if args.thinking:
+        only_user_disabled.append("`--thinking`")
+    if args.tools is not None:
+        only_user_disabled.append("`--tools`")
+    if args.agents:
+        only_user_disabled.append("`--agents`")
+    if args.only_user and only_user_disabled:
+        _warn_only_override("`--only-user`", only_user_disabled)
+        args.all = False
+        args.thinking = False
+        args.tools = None
+        args.agents = False
+
+    if args.only_user and args.only_assistant:
+        print_warning(
+            "Warning: `--only-user` and `--only-assistant` are contradictory; "
+            "continuing with both filters active."
+        )
+    if args.only_user and args.no_user:
+        print_warning(
+            "Warning: `--only-user` and `--no-user` are contradictory; "
+            "continuing with both filters active."
+        )
+    if args.only_assistant and args.no_assistant:
+        print_warning(
+            "Warning: `--only-assistant` and `--no-assistant` are contradictory; "
+            "continuing with both filters active."
+        )
+
+
+def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
+    """Convert normalized parse-mode args into ConversationFlags."""
+    return ConversationFlags(
+        show_user_messages=not args.only_assistant and not args.no_user,
+        show_assistant_messages=not args.only_user and not args.no_assistant,
+        show_thinking=args.thinking or args.all,
+        show_tools=_resolve_show_tools(args.tools, args.all),
+        show_agents=args.agents or args.all,
+        show_plans=not args.no_plans,
+        allow_empty_output=(
+            args.only_user or args.only_assistant or args.no_user or args.no_assistant
+        ),
+        shorten=args.short,
+        color=args.color,
+        paging=args.paging,
+    )
 
 
 def main():
@@ -218,6 +293,26 @@ def main():
             "-T", "--thinking", action="store_true", help="Show thinking tokens"
         )
         parser.add_argument(
+            "--only-user",
+            action="store_true",
+            help="Show only regular user messages",
+        )
+        parser.add_argument(
+            "--only-assistant",
+            action="store_true",
+            help="Show only regular assistant messages",
+        )
+        parser.add_argument(
+            "--no-user",
+            action="store_true",
+            help="Hide regular user messages",
+        )
+        parser.add_argument(
+            "--no-assistant",
+            action="store_true",
+            help="Hide regular assistant messages",
+        )
+        parser.add_argument(
             "-t",
             "--tools",
             action="append",
@@ -349,15 +444,8 @@ def main():
                 args.slice = candidate
                 args.tools = [True]
 
-        flags = ConversationFlags(
-            show_thinking=args.thinking or args.all,
-            show_tools=_resolve_show_tools(args.tools, args.all),
-            show_agents=args.agents or args.all,
-            show_plans=not args.no_plans,
-            shorten=args.short,
-            color=args.color,
-            paging=args.paging,
-        )
+        _normalize_parse_visibility_args(args)
+        flags = _build_parse_flags(args)
 
         output_format = "raw" if args.raw else args.format
         emit_metadata = not (args.no_metadata or args.raw or output_format == "raw")

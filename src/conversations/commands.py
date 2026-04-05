@@ -899,6 +899,8 @@ def cmd_parse(
         messages = _merge_agent_messages(messages, content, input_file_path, flags)
 
     if not messages:
+        if flags.allow_empty_output:
+            return
         print_error("No messages found in input.")
         sys.exit(0)
 
@@ -942,6 +944,9 @@ def cmd_parse(
         formatted = format_to_raw(messages, flags, tool_id_map)
     else:
         formatted = format_to_xml(messages, flags, tool_id_map)
+
+    if not formatted:
+        return
 
     # Emit output
     if output_file:

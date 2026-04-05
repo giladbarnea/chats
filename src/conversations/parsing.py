@@ -280,7 +280,7 @@ def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message
             msg = _parse_user_entry(entry, index, flags)
         elif entry_type == "assistant":
             msg = _parse_assistant_entry(entry, index, flags)
-        elif entry_type == "custom-title":
+        elif entry_type == "custom-title" and flags.show_assistant_messages:
             msg = _parse_custom_title_entry(entry, index)
         else:
             msg = None
@@ -440,7 +440,7 @@ def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Mess
         source_tool_user_id=shorten_tool_use_id(source_tool_use_id),
     )
 
-    if isinstance(content_data, str):
+    if isinstance(content_data, str) and flags.show_user_messages:
         msg.text = content_data
     elif isinstance(content_data, list):
         text_blocks = _extract_text_blocks(content_data)
@@ -448,7 +448,7 @@ def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Mess
             if isinstance(item, dict) and flags.show_tools and item.get("type") == "tool_result":
                 msg.tools.append(item)
 
-        if text_blocks:
+        if text_blocks and flags.show_user_messages:
             msg.text = "\n\n".join(text_blocks)
 
     return msg
@@ -463,6 +463,8 @@ def _parse_assistant_entry(entry: dict, index: int, flags: ConversationFlags) ->
     agent_id = entry.get("agentId")
     if agent_id and not flags.show_agents:
         return None
+
+    show_message_text = flags.show_agents if agent_id else flags.show_assistant_messages
 
     content_data = message_data.get("content", [])
     if not isinstance(content_data, list):
@@ -491,12 +493,14 @@ def _parse_assistant_entry(entry: dict, index: int, flags: ConversationFlags) ->
         elif item_type == "tool_use":
             tool_name = item.get("name")
             if tool_name == "ExitPlanMode":
-                if plan_content := item.get("input", {}).get("plan", ""):
+                if show_message_text and (
+                    plan_content := item.get("input", {}).get("plan", "")
+                ):
                     msg.plan = plan_content
             elif flags.show_tools:
                 msg.tools.append(item)
 
-    if text_blocks:
+    if text_blocks and show_message_text:
         msg.text = "\n\n".join(text_blocks)
 
     return msg
@@ -558,7 +562,9 @@ def _parse_pi_message_entry(
 
     content_items = message_data.get("content", [])
     text_blocks = _extract_text_blocks(content_items)
-    if text_blocks:
+    if role == "user" and text_blocks and flags.show_user_messages:
+        msg.text = "\n\n".join(text_blocks)
+    elif role == "assistant" and text_blocks and flags.show_assistant_messages:
         msg.text = "\n\n".join(text_blocks)
 
     if role == "assistant" and isinstance(content_items, list):
@@ -602,7 +608,7 @@ def _is_system_message(line: str) -> bool:
 
 def parse_raw_cli_transcript(
     content: str,
-    flags: ConversationFlags,  # noqa: ARG001 - reserved for future use
+    flags: ConversationFlags,
 ) -> list[Message]:
     """
     Parse raw CLI transcript format.
@@ -618,6 +624,12 @@ def parse_raw_cli_transcript(
     def save_current_message() -> None:
         nonlocal index, current_lines
         if current_role and current_lines:
+            if current_role == "user" and not flags.show_user_messages:
+                current_lines = []
+                return
+            if current_role == "assistant" and not flags.show_assistant_messages:
+                current_lines = []
+                return
             messages.append(
                 Message(role=current_role, text="\n".join(current_lines), index=index)
             )

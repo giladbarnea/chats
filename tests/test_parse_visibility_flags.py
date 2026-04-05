@@ -1,0 +1,369 @@
+#!/usr/bin/env python3
+"""CLI integration tests for parse-mode user/assistant visibility flags."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+from conversations.cli import main
+
+
+def _write_session(path: Path) -> None:
+    """Write a compact fixture that exercises text, thinking, tools, plans, and agents."""
+    entries = [
+        {
+            "type": "user",
+            "timestamp": "2026-04-05T09:00:00.000Z",
+            "message": {"role": "user", "content": "plain user"},
+        },
+        {
+            "type": "assistant",
+            "timestamp": "2026-04-05T09:00:01.000Z",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "thinking", "thinking": "private thought"},
+                    {"type": "text", "text": "plain assistant"},
+                    {
+                        "type": "tool_use",
+                        "id": "toolu_read_1",
+                        "name": "Read",
+                        "input": {"file_path": "notes.txt"},
+                    },
+                    {
+                        "type": "tool_use",
+                        "id": "toolu_plan_1",
+                        "name": "ExitPlanMode",
+                        "input": {"plan": "# Plan\nstay calm"},
+                    },
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "timestamp": "2026-04-05T09:00:02.000Z",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "toolu_read_1",
+                        "content": "notes body",
+                    }
+                ],
+            },
+        },
+        {
+            "type": "assistant",
+            "agentId": "agent-007",
+            "timestamp": "2026-04-05T09:00:03.000Z",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "agent assistant"}],
+            },
+        },
+    ]
+    path.write_text(
+        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+
+
+def _write_session_with_custom_title(path: Path) -> None:
+    """Write a fixture that includes a default-visible rename block."""
+    entries = [
+        {
+            "type": "user",
+            "timestamp": "2026-04-05T09:00:00.000Z",
+            "message": {"role": "user", "content": "plain user"},
+        },
+        {
+            "type": "custom-title",
+            "timestamp": "2026-04-05T09:00:01.000Z",
+            "customTitle": "renamed session",
+        },
+    ]
+    path.write_text(
+        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+
+
+def _run_cli(monkeypatch, capsys, *argv: str) -> tuple[int, str, str]:
+    """Execute the real CLI entrypoint and capture exit code + stdio."""
+    monkeypatch.setattr(sys, "argv", ["ccc", *argv])
+    exit_code = 0
+
+    try:
+        main()
+    except SystemExit as exc:  # pragma: no cover - exercised by CLI behavior
+        exit_code = exc.code if isinstance(exc.code, int) else 1
+
+    captured = capsys.readouterr()
+    return exit_code, captured.out, captured.err
+
+
+def test_only_assistant_overrides_thinking_with_warning(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--only-assistant` should disable contradictory extras upstream and keep assistant-only output."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--only-assistant",
+        "--thinking",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert "warning" in stderr.lower(), (
+        "Expected a warning when `--only-assistant` overrides `--thinking`. "
+        f"Got stderr:\n{stderr}"
+    )
+    assert "plain assistant" in stdout, (
+        "Expected regular assistant text to remain visible. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "plain user" not in stdout, (
+        "Expected user text to be hidden by `--only-assistant`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "<thinking>" not in stdout, (
+        "Expected contradictory thinking output to be disabled upstream. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert 'name="Read"' not in stdout, (
+        "Expected tool visibility to remain off for `--only-assistant`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "agent assistant" not in stdout, (
+        "Expected agent messages to remain hidden unless `--agents` survives normalization. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_only_user_and_only_assistant_warn_but_end_with_empty_output(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Contradictory `--only-*` flags should warn, then fall through to empty output without a no-messages error."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--only-user",
+        "--only-assistant",
+        str(session_path),
+    )
+
+    assert exit_code == 0, (
+        "Expected the contradictory `--only-*` combination to stay a successful no-op. "
+        f"Got exit_code={exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert stdout == "", (
+        "Expected the contradictory `--only-*` filters to match nothing and print nothing. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "warning" in stderr.lower(), (
+        "Expected a warning for contradictory `--only-user` + `--only-assistant`. "
+        f"Got stderr:\n{stderr}"
+    )
+    assert "No messages found in input." not in stderr, (
+        "Expected the flow to end organically without a no-messages error. "
+        f"Got stderr:\n{stderr}"
+    )
+
+
+def test_only_user_overrides_tools_and_agents_with_warning(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--only-user` should disable contradictory extras and leave only regular user output."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--only-user",
+        "--tools",
+        "--agents",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert "warning" in stderr.lower(), (
+        "Expected a warning when `--only-user` overrides extra visibility options. "
+        f"Got stderr:\n{stderr}"
+    )
+    assert "plain user" in stdout, (
+        "Expected regular user text to remain visible. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "plain assistant" not in stdout, (
+        "Expected assistant text to be hidden by `--only-user`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert 'name="Read"' not in stdout, (
+        "Expected tool visibility to be disabled upstream by `--only-user`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "agent assistant" not in stdout, (
+        "Expected agent visibility to be disabled upstream by `--only-user`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_only_user_hides_session_rename_blocks(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--only-user` should not leak default-visible rename blocks."""
+    session_path = tmp_path / "rename-fixture.jsonl"
+    _write_session_with_custom_title(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--only-user",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert "plain user" in stdout, (
+        "Expected regular user text to remain visible. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "renamed session" not in stdout, (
+        "Expected session-rename blocks to hide alongside other default assistant-side output. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_no_assistant_still_shows_agents_when_requested(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--no-assistant` should hide regular assistant output without disabling explicit agent visibility."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--no-assistant",
+        "--agents",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert "plain assistant" not in stdout, (
+        "Expected regular assistant text to be hidden by `--no-assistant`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "agent assistant" in stdout, (
+        "Expected `--agents` to keep agent messages visible even when regular assistant text is hidden. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_no_user_hides_regular_user_text_but_keeps_tool_output(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--no-user` should hide normal user text without suppressing explicitly requested tools."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--no-user",
+        "--tools",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert "plain user" not in stdout, (
+        "Expected regular user text to be hidden by `--no-user`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "plain assistant" in stdout, (
+        "Expected regular assistant text to remain visible. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert '<tool-input name="Read"' in stdout, (
+        "Expected assistant tool input to remain visible when `--tools` is enabled. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert '<tool-output name="Read"' in stdout, (
+        "Expected user-side tool output to remain visible even when regular user text is hidden. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_no_assistant_can_show_thinking_tools_and_agents_together(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--no-assistant` should hide regular assistant text while preserving explicitly requested extras."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--no-assistant",
+        "--thinking",
+        "--tools",
+        "--agents",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert stderr == "", f"Expected no warning for a valid combination. Got stderr:\n{stderr}"
+    assert "plain assistant" not in stdout, (
+        "Expected regular assistant text to be hidden by `--no-assistant`. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "<thinking>" in stdout, (
+        "Expected thinking blocks to remain visible when explicitly enabled. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert '<tool-input name="Read"' in stdout, (
+        "Expected tool inputs to remain visible when explicitly enabled. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "agent assistant" in stdout, (
+        "Expected agent messages to remain visible when `--agents` is enabled. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )

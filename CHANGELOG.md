@@ -3,6 +3,19 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-05] Add parse-mode role visibility flags
+
+### Added
+
+- Support `--only-user`, `--only-assistant`, `--no-user`, and `--no-assistant` in default parse mode.
+
+### Changed
+
+- Role visibility is now normalized in the CLI before `ConversationFlags` are built, so contradictory `--only-*` combinations warn once, disable impossible extras upstream, and let the parse/render pipeline stay unaware of CLI validity rules.
+- `--no-user` hides only regular user text, so explicit tool visibility can still surface user-side tool results.
+- `--no-assistant` hides only regular assistant text/plan content, while explicit `--thinking`, `--tools`, and `--agents` can still show assistant-side extras.
+
+---
 ## [2026-03-08] Add recent negative session selectors
 
 ### Added

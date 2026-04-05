@@ -87,6 +87,10 @@ Automatically detects input format by examining **first non-empty line only** (d
 -r, --raw            # Alias for: -f raw (implies --no-metadata)
 --no-metadata        # Disable outputting metadata frontmatter
 -T, --thinking       # Include thinking tokens
+--only-user          # Show only regular user messages
+--only-assistant     # Show only regular assistant messages
+--no-user            # Hide regular user messages
+--no-assistant       # Hide regular assistant messages
 -t, --tools [SPEC]   # Include tool use/result details. Filter with modifiers:
                      #   Name:    -t Bash, -t Read, -t !Bash (exclude)
                      #   Direction: -t i (inputs), -t o (outputs), -t Bash:i
@@ -102,6 +106,10 @@ Automatically detects input format by examining **first non-empty line only** (d
 
 -o FILE          # Save output to file
 ```
+
+`--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
+
+`--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ccc --no-user --tools ...` still shows tool outputs from user turns, and `ccc --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages.
 
 **Output Formats:**
 
@@ -143,7 +151,7 @@ JSON array to stdout (no metadata; always valid JSON):
 JSON format:
 - Always outputs plain JSON (no Rich formatting)
 - Only includes text content from user/assistant messages
-- Respects content visibility flags (-T, -t, -a, -A)
+- Respects parse-mode visibility flags (`--only-user`, `--only-assistant`, `--no-user`, `--no-assistant`, `-T`, `-t`, `-a`, `-A`)
 - Suitable for programmatic processing
 
 **Raw Format:**
