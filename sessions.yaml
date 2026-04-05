@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 04 26
+  rollout-2026-04-04T22-59-20-019d5a14-1c98-7601-939e-637746986944:
+    description:
+      - "Introduced a `JsonlSessionAdapter` registry in `parsing.py` — the first adapter being PI (`~/.pi/...` paths) — enabling JSONL session formats from agents other than Claude to plug into the shared `Message` model without branching the core pipeline. PI adapter supports user/assistant text, thinking blocks, tool calls, and tool results. TDD throughout; 183 tests passing."
+      - "Extended `ccc <session-id>` with a fallback cascade: Claude Code sessions are searched first, then each adapter's own session-matching logic is tried in registry order (currently Claude → PI). Confirmed with real PI UUID `9a27c7d8-d58f-4179-bf0a-a4657c7dca64`; 185 tests passing. Follow-up discussion revealed that while the PI parser correctly iterates the ordered `message.content` list, the bucketed `Message` model fields (`text`, `thinking`, `tools`) lose the original inter-item order — a known gap."
+    directories: [~/dev/conversations]
+    keywords: [pi-sessions, jsonl-adapter, session-resolution]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 50
+    new_files: [tests/test_pi_sessions.py]
+    edited_files: [src/conversations/parsing.py, src/conversations/commands.py]
+    branch: main
   # Mar 17 26
   0f24e0cc-0cab-4011-9cfa-6f92fb016da5:
     description: "Investigated which JSONL message shapes carry a `model` field (script over 50 project dirs confirmed only `assistant` entries have it at `message.model`); moved the `model` XML attribute from being gated behind `agent_id` to all assistant messages with `.removeprefix('claude-')`; added two tests — one asserting regular and agent assistant messages include `model=`, one asserting user messages never do."
