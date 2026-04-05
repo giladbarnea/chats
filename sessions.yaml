@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 05 26
+  rollout-2026-04-05T13-56-06-019d5d49-210f-7c70-a302-e70162ba68bb:
+    description:
+      - "Added role-visibility CLI flags (`--only-user`, `--only-assistant`, `--no-user`, `--no-assistant`) to default parse mode, composing cleanly with the existing `--thinking`, `--tools`, and `--agents` additive flags. Contradiction handling (e.g. `--only-user` with `--thinking`) is normalized upstream in `cli.py` with a warning and explicit flag disabling; the downstream pipeline receives clean booleans and needs no branching logic."
+      - "TDD via vertical slices covering all contradiction combinations — `--only-assistant` overriding additive flags, `--only-user --only-assistant` naturally yielding nothing, `--no-assistant --thinking` showing only thinking blocks. Full suite green; README, ARCHITECTURE, and CHANGELOG updated."
+    directories: [~/dev/conversations]
+    keywords: [cli, role-visibility, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 31
+    new_files: [tests/test_parse_visibility_flags.py]
+    edited_files: [src/conversations/cli.py, src/conversations/model.py, src/conversations/parsing.py, src/conversations/commands.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    branch: main
   # Apr 04 26
   rollout-2026-04-04T22-59-20-019d5a14-1c98-7601-939e-637746986944:
     description:
