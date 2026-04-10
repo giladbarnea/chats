@@ -35,7 +35,7 @@ assert_not_contains "$OUTPUT" "<tool-"
 
 # Colors check
 # Use Python subprocess with PTY (properly closes file descriptors to avoid hanging)
-OUTPUT_TTY=$(TERM=xterm-256color python3.11 -c "
+OUTPUT_TTY=$(TERM=xterm-256color $PY_CMD -c "
 import subprocess, os, pty
 
 master, slave = pty.openpty()

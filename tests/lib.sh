@@ -12,6 +12,11 @@ cc_cmd() {
 }
 CC_CMD="cc_cmd"
 
+py_cmd() {
+  uv run python "$@"
+}
+PY_CMD="py_cmd"
+
 # For tests that need the actual command array (like pty.spawn)
 CC_CMD_BASE=("uv" "run" "ccc")
 

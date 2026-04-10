@@ -12,7 +12,7 @@ echo "Running format tests (JSON output)..."
 validate_json() {
   if ! printf '%s\n' "$1" | jq empty 2>/dev/null; then
     # jq failed, try python as fallback
-    if printf '%s\n' "$1" | python3.11 -m json.tool >/dev/null 2>&1; then
+    if printf '%s\n' "$1" | $PY_CMD -m json.tool >/dev/null 2>&1; then
       # Python validates OK, jq just has issues with some characters
       return 0
     else
@@ -27,7 +27,7 @@ assert_json_array() {
   local type=$(printf '%s\n' "$1" | jq -r 'type' 2>/dev/null || echo "error")
   if [[ "$type" != "array" ]]; then
     # Fallback to python check
-    if printf '%s\n' "$1" | python3.11 -c "import json, sys; data=json.load(sys.stdin); sys.exit(0 if isinstance(data, list) else 1)" 2>/dev/null; then
+    if printf '%s\n' "$1" | $PY_CMD -c "import json, sys; data=json.load(sys.stdin); sys.exit(0 if isinstance(data, list) else 1)" 2>/dev/null; then
       # Python confirms it's an array
       return 0
     fi
@@ -38,7 +38,7 @@ assert_json_array() {
 
 # Helper function to count JSON array elements
 json_array_length() {
-  printf '%s\n' "$1" | jq 'length' 2>/dev/null || printf '%s\n' "$1" | python3.11 -c "import json, sys; print(len(json.load(sys.stdin)))"
+  printf '%s\n' "$1" | jq 'length' 2>/dev/null || printf '%s\n' "$1" | $PY_CMD -c "import json, sys; print(len(json.load(sys.stdin)))"
 }
 
 # Helper function to get JSON array element field
@@ -46,7 +46,7 @@ json_get_field() {
   local json="$1"
   local index="$2"
   local field="$3"
-  printf '%s\n' "$json" | jq -r ".[$index].$field" 2>/dev/null || printf '%s\n' "$json" | python3.11 -c "import json, sys; data=json.load(sys.stdin); print(data[$index]['$field'])"
+  printf '%s\n' "$json" | jq -r ".[$index].$field" 2>/dev/null || printf '%s\n' "$json" | $PY_CMD -c "import json, sys; data=json.load(sys.stdin); print(data[$index]['$field'])"
 }
 
 # 1. Basic JSON output
@@ -177,7 +177,7 @@ fi
 # Count user messages in XML
 XML_USER_COUNT=$(printf '%s\n' "$OUTPUT_XML" | grep -c "^<${USER_MESSAGE_TAG}")
 # Count user messages in JSON (use python for reliable counting)
-JSON_USER_COUNT=$(printf '%s\n' "$OUTPUT_JSON" | python3.11 -c "import json, sys; data=json.load(sys.stdin); print(len([m for m in data if m.get('role')=='user']))")
+JSON_USER_COUNT=$(printf '%s\n' "$OUTPUT_JSON" | $PY_CMD -c "import json, sys; data=json.load(sys.stdin); print(len([m for m in data if m.get('role')=='user']))")
 
 if [[ $XML_USER_COUNT -ne $JSON_USER_COUNT ]]; then
   echo "❌ XML has $XML_USER_COUNT user messages, JSON has $JSON_USER_COUNT"
@@ -216,8 +216,8 @@ if [[ $COMPLEX_LENGTH -ne 2 ]]; then
 fi
 
 # Check for both roles (use python for reliable counting)
-HAS_USER=$(printf '%s\n' "$OUTPUT_JSON_COMPLEX" | python3.11 -c "import json, sys; data=json.load(sys.stdin); print(len([m for m in data if m.get('role')=='user']))")
-HAS_ASSISTANT=$(printf '%s\n' "$OUTPUT_JSON_COMPLEX" | python3.11 -c "import json, sys; data=json.load(sys.stdin); print(len([m for m in data if m.get('role')=='assistant']))")
+HAS_USER=$(printf '%s\n' "$OUTPUT_JSON_COMPLEX" | $PY_CMD -c "import json, sys; data=json.load(sys.stdin); print(len([m for m in data if m.get('role')=='user']))")
+HAS_ASSISTANT=$(printf '%s\n' "$OUTPUT_JSON_COMPLEX" | $PY_CMD -c "import json, sys; data=json.load(sys.stdin); print(len([m for m in data if m.get('role')=='assistant']))")
 
 if [[ $HAS_USER -eq 0 ]]; then
   echo "❌ JSON output has no user messages"

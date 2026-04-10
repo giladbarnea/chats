@@ -309,6 +309,137 @@ def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
     return messages
 
 
+def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse Codex JSONL sessions into the shared Message model."""
+    messages = []
+    index = 1
+    current_assistant: Message | None = None
+
+    def flush_assistant() -> None:
+        nonlocal current_assistant, index
+        if current_assistant and current_assistant.has_content():
+            current_assistant.index = index
+            messages.append(current_assistant)
+            index += 1
+        current_assistant = None
+
+    def ensure_assistant(timestamp: str | None) -> Message:
+        nonlocal current_assistant
+        if current_assistant is None:
+            current_assistant = Message(role="assistant", timestamp=timestamp)
+        elif current_assistant.timestamp is None:
+            current_assistant.timestamp = timestamp
+        return current_assistant
+
+    for entry in _iter_jsonl_entries(content):
+        if entry.get("type") != "response_item":
+            continue
+
+        payload = entry.get("payload", {})
+        payload_type = payload.get("type")
+        timestamp = entry.get("timestamp")
+
+        if payload_type == "message":
+            role = payload.get("role")
+            if role == "user":
+                text_blocks = _extract_codex_text_blocks(payload.get("content"))
+                visible_blocks = [
+                    text for text in text_blocks if not _is_codex_preamble_text(text)
+                ]
+                if not flags.show_user_messages or not visible_blocks:
+                    continue
+
+                flush_assistant()
+                messages.append(
+                    Message(
+                        role="user",
+                        index=index,
+                        text="\n\n".join(visible_blocks),
+                        timestamp=timestamp,
+                    )
+                )
+                index += 1
+                continue
+
+            if role == "assistant":
+                if not flags.show_assistant_messages:
+                    continue
+
+                text_blocks = _extract_codex_text_blocks(payload.get("content"))
+                visible_blocks = [text for text in text_blocks if text.strip()]
+                if not visible_blocks:
+                    continue
+
+                assistant = ensure_assistant(timestamp)
+                assistant.text = _append_codex_block(
+                    assistant.text,
+                    "\n\n".join(visible_blocks),
+                )
+                continue
+
+            continue
+
+        if payload_type == "reasoning" and flags.show_thinking:
+            thinking_text = _extract_codex_reasoning_text(payload)
+            if not thinking_text:
+                continue
+
+            assistant = ensure_assistant(timestamp)
+            assistant.thinking = _append_codex_block(assistant.thinking, thinking_text)
+            continue
+
+        if payload_type == "function_call" and flags.show_tools:
+            assistant = ensure_assistant(timestamp)
+            assistant.tools.append(
+                {
+                    "type": "tool_use",
+                    "id": payload.get("call_id"),
+                    "name": payload.get("name", "Unknown"),
+                    "input": _parse_codex_tool_input(payload.get("arguments")),
+                }
+            )
+            continue
+
+        if payload_type == "function_call_output" and flags.show_tools:
+            assistant = ensure_assistant(timestamp)
+            assistant.tools.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": payload.get("call_id"),
+                    "content": payload.get("output", ""),
+                    "is_error": False,
+                }
+            )
+            continue
+
+        if payload_type == "custom_tool_call" and flags.show_tools:
+            assistant = ensure_assistant(timestamp)
+            assistant.tools.append(
+                {
+                    "type": "tool_use",
+                    "id": payload.get("call_id"),
+                    "name": payload.get("name", "Unknown"),
+                    "input": _parse_codex_tool_input(payload.get("input")),
+                }
+            )
+            continue
+
+        if payload_type == "custom_tool_call_output" and flags.show_tools:
+            assistant = ensure_assistant(timestamp)
+            assistant.tools.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": payload.get("call_id"),
+                    "content": payload.get("output", ""),
+                    "is_error": False,
+                }
+            )
+            continue
+
+    flush_assistant()
+    return messages
+
+
 def _is_pi_jsonl_path(source_path: Path | None) -> bool:
     """Return True when the source path is inside ~/.pi/."""
     if source_path is None:
@@ -316,6 +447,21 @@ def _is_pi_jsonl_path(source_path: Path | None) -> bool:
 
     try:
         source_path.resolve().relative_to((Path.home() / ".pi").resolve())
+    except ValueError:
+        return False
+    except OSError:
+        return False
+
+    return True
+
+
+def _is_codex_jsonl_path(source_path: Path | None) -> bool:
+    """Return True when the source path is inside ~/.codex/sessions/."""
+    if source_path is None:
+        return False
+
+    try:
+        source_path.resolve().relative_to((Path.home() / ".codex" / "sessions").resolve())
     except ValueError:
         return False
     except OSError:
@@ -353,6 +499,33 @@ def _extract_pi_session_id(session_file: Path) -> str | None:
     return None
 
 
+def _extract_codex_session_id(session_file: Path) -> str | None:
+    """Extract the Codex session id from the file's session_meta entry."""
+    try:
+        with open(session_file, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    continue
+
+                if entry.get("type") != "session_meta":
+                    break
+
+                payload = entry.get("payload", {})
+                session_id = payload.get("id")
+                if isinstance(session_id, str) and session_id:
+                    return session_id
+                break
+    except OSError:
+        pass
+
+    return None
+
+
 def _find_pi_session_matches(identifier: str) -> list[tuple[Path, str]]:
     """Find PI session files that match a PI session id."""
     if len(identifier.split()) != 1:
@@ -370,12 +543,35 @@ def _find_pi_session_matches(identifier: str) -> list[tuple[Path, str]]:
     return matches
 
 
+def _find_codex_session_matches(identifier: str) -> list[tuple[Path, str]]:
+    """Find Codex session files that match a Codex session id."""
+    if len(identifier.split()) != 1:
+        return []
+
+    sessions_dir = Path.home() / ".codex" / "sessions"
+    if not sessions_dir.exists():
+        return []
+
+    matches: list[tuple[Path, str]] = []
+    for session_file in sorted(sessions_dir.rglob("*.jsonl")):
+        if _extract_codex_session_id(session_file) != identifier:
+            continue
+        matches.append((session_file, f"Codex session {identifier}"))
+    return matches
+
+
 JSONL_SESSION_ADAPTERS = [
     JsonlSessionAdapter(
         name="pi",
         matches=_is_pi_jsonl_path,
         parse_messages=_parse_pi_jsonl,
         find_session_matches=_find_pi_session_matches,
+    ),
+    JsonlSessionAdapter(
+        name="codex",
+        matches=_is_codex_jsonl_path,
+        parse_messages=_parse_codex_jsonl,
+        find_session_matches=_find_codex_session_matches,
     ),
     JsonlSessionAdapter(
         name="default",
@@ -594,6 +790,119 @@ def _parse_pi_message_entry(
     return msg
 
 
+def _extract_codex_text_blocks(content_data: object) -> list[str]:
+    """Collect text blocks from Codex message payload content."""
+    if not isinstance(content_data, list):
+        return []
+
+    text_blocks: list[str] = []
+    for item in content_data:
+        if not isinstance(item, dict):
+            continue
+        item_type = item.get("type")
+        if item_type not in {"input_text", "output_text"}:
+            continue
+        if text := item.get("text", "").strip():
+            text_blocks.append(text)
+    return text_blocks
+
+
+def _extract_codex_reasoning_text(payload: dict) -> str:
+    """Extract visible reasoning summary text from a Codex reasoning payload."""
+    summary = payload.get("summary", [])
+    if not isinstance(summary, list):
+        return ""
+
+    text_blocks: list[str] = []
+    for item in summary:
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") != "summary_text":
+            continue
+        if text := item.get("text", "").strip():
+            text_blocks.append(text)
+
+    return "\n\n".join(text_blocks)
+
+
+def _parse_codex_tool_input(raw_input: object) -> dict:
+    """Normalize Codex tool input into a dict for the shared tool renderer."""
+    if isinstance(raw_input, dict):
+        return raw_input
+
+    if isinstance(raw_input, list):
+        return {"input": raw_input}
+
+    if not isinstance(raw_input, str):
+        return {}
+
+    stripped = raw_input.strip()
+    if not stripped:
+        return {}
+
+    if stripped.startswith("{") or stripped.startswith("["):
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            return {"input": raw_input}
+        if isinstance(parsed, dict):
+            return parsed
+        return {"input": parsed}
+
+    return {"input": raw_input}
+
+
+def _append_codex_block(existing: str | None, new_text: str) -> str:
+    """Append a non-empty Codex content block with paragraph spacing."""
+    if not existing:
+        return new_text
+    return f"{existing}\n\n{new_text}"
+
+
+def _is_codex_preamble_text(text: str) -> bool:
+    """Return True when a Codex user text block is protocol/setup noise."""
+    stripped = text.strip()
+    if not stripped:
+        return True
+    if stripped.startswith("# AGENTS.md instructions for "):
+        return True
+    if stripped.startswith("<environment_context>"):
+        return True
+    return False
+
+
+def _extract_cwd_from_codex_entry(entry: dict) -> str | None:
+    """Extract cwd from Codex session metadata or environment preamble."""
+    if entry.get("type") == "session_meta":
+        payload = entry.get("payload", {})
+        cwd = payload.get("cwd")
+        if isinstance(cwd, str) and cwd:
+            return cwd
+        return None
+
+    if entry.get("type") != "response_item":
+        return None
+
+    payload = entry.get("payload", {})
+    if payload.get("type") != "message" or payload.get("role") != "user":
+        return None
+
+    for text in _extract_codex_text_blocks(payload.get("content")):
+        stripped = text.strip()
+        if not stripped.startswith("<environment_context>"):
+            continue
+
+        match = re.search(r"<cwd>(.*?)</cwd>", stripped, re.DOTALL)
+        if not match:
+            continue
+
+        cwd = match.group(1).strip()
+        if cwd:
+            return cwd
+
+    return None
+
+
 def _parse_custom_title_entry(entry: dict, index: int) -> Message | None:
     """Parse a custom-title JSONL entry."""
     if custom_title := entry.get("customTitle", "").strip():
@@ -676,6 +985,8 @@ def extract_cwd_from_jsonl(content: str) -> str | None:
         try:
             entry = json.loads(line)
             if cwd := entry.get("cwd"):
+                return cwd
+            if cwd := _extract_cwd_from_codex_entry(entry):
                 return cwd
         except json.JSONDecodeError:
             continue

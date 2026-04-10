@@ -13,7 +13,7 @@ assert_has_colors "$OUTPUT_ALWAYS"
 # 2. --color never
 echo "Testing --color never..."
 # Use Python subprocess with PTY (properly closes file descriptors to avoid hanging)
-OUTPUT_NEVER=$(TERM=xterm-256color python3.11 -c "
+OUTPUT_NEVER=$(TERM=xterm-256color $PY_CMD -c "
 import subprocess, os, pty
 
 master, slave = pty.openpty()

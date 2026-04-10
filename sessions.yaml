@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 10 26
+  019d76a2-cbed-72d0-9551-ea5a8ad568de:
+    description:
+      - "Added Codex-session support to `ccc` after researching real Codex JSONL history alongside `codexchats`, so Codex conversations can be parsed and resolved much like Claude and PI sessions."
+      - "Covered the new behavior with TDD-style tests, clarified the default Codex preamble filtering policy, and aligned shell tests with the project's Python 3.13+ runtime; full suite green."
+    directories: [~/dev/conversations, ~/dev/codexchats, ~/dev/gchat]
+    keywords: [codex-sessions, jsonl-adapter, py313-tests]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 53
+    new_files: [tests/test_codex_sessions.py]
+    edited_files: [src/conversations/parsing.py, src/conversations/commands.py, tests/lib.sh, tests/test_basic.sh, tests/test_colors.sh, tests/test_format.sh]
+    branch: main
   # Apr 05 26
   rollout-2026-04-05T13-56-06-019d5d49-210f-7c70-a302-e70162ba68bb:
     description:

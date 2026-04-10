@@ -155,7 +155,10 @@ def _try_resolve_conversation_file(
     # Fetch conversation files if not provided
     if conversation_files is None:
         projects_dir = Path.home() / ".claude" / "projects"
-        conversation_files = find_all_conversations(projects_dir)
+        if projects_dir.exists():
+            conversation_files = find_all_conversations(projects_dir)
+        else:
+            conversation_files = []
 
     # Materialize generator to allow multiple iterations
     conversation_files = list(conversation_files)
