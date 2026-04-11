@@ -169,7 +169,7 @@ Old design (`get_visible_content`) returned a string with embedded XML tags. Thi
 New design (`iter_visible_parts`) yields `(kind, data)` tuples. This keeps data "malleable" until the very last moment, allowing the renderer to decide how to format tags (as XML strings or styled Text objects) without ambiguity.
 
 ### Why a domainless ordering helper?
-Recent-session selectors like `-1` and the `search` command both depend on the same global modified-time ordering. The shared helper in `ordering.py` keeps that ordering logic generic and injectable via a callback (`modified_at=...`), while conversation-specific code stays responsible only for producing `ConversationMetadata`.
+Recent-session selectors like `-1` and the `search` command both depend on the same global modified-time ordering across the supported session space. The shared helper in `ordering.py` keeps that ordering logic generic and injectable via a callback (`modified_at=...`), while ecosystem-specific discovery stays responsible only for producing `ConversationMetadata`.
 
 ---
 

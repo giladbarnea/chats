@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-11] Unify supported-session search space
+
+### Changed
+
+- Negative recent selectors (`-1`, `-2`, ...) now resolve across the same supported-session universe as direct file paths and adapter-backed session IDs, rather than only traversing Claude Code history.
+- `ccc search` now scans supported Claude Code, Codex, and PI session files through the same shared discovery path used by recency-aware resolution.
+
+---
 ## [2026-04-05] Add parse-mode role visibility flags
 
 ### Added

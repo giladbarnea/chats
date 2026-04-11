@@ -233,7 +233,7 @@ def main():
         )
         parser.add_argument(
             "conversation_id",
-            help="Conversation UUID, summary prefix, recent negative index, or file path",
+            help="Conversation/session ID, summary prefix, recent negative index, or file path",
         )
         parser.add_argument("new_name", help="New display name for the conversation")
 
@@ -268,14 +268,14 @@ def main():
         # Default parse behavior
         parser = argparse.ArgumentParser(
             prog="ccc",
-            description="Parse and format Claude Code conversations",
+            description="Parse and format supported AI CLI conversation histories",
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
 
         parser.add_argument(
             "input",
             nargs="?",
-            help="Input file path, conversation ID, recent negative index, or use stdin if omitted",
+            help="Input file path, conversation/session ID, recent negative index, or use stdin if omitted",
         )
         parser.add_argument(
             "slice",

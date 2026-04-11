@@ -1,4 +1,4 @@
-"""CLI for parsing and querying Claude Code conversations."""
+"""CLI for parsing and querying supported AI CLI conversation histories."""
 
 from .commands import (  # noqa: F401
     _try_resolve_conversation_file,

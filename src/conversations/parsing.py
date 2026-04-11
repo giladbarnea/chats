@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from collections.abc import Callable
+import re
 
 from .model import ConversationFlags, Message
 from .utils import shorten_tool_use_id
@@ -18,7 +19,9 @@ class JsonlSessionAdapter:
     name: str
     matches: Callable[[Path | None], bool]
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
+    find_session_files: Callable[[], list[Path]] | None = None
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
+    is_sidechain_path: Callable[[Path], bool] = lambda _path: False
 
 
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
@@ -543,6 +546,14 @@ def _find_pi_session_matches(identifier: str) -> list[tuple[Path, str]]:
     return matches
 
 
+def _find_pi_session_files() -> list[Path]:
+    """List PI session JSONL files."""
+    sessions_dir = Path.home() / ".pi" / "agent" / "sessions"
+    if not sessions_dir.exists():
+        return []
+    return sorted(sessions_dir.rglob("*.jsonl"))
+
+
 def _find_codex_session_matches(identifier: str) -> list[tuple[Path, str]]:
     """Find Codex session files that match a Codex session id."""
     if len(identifier.split()) != 1:
@@ -560,23 +571,56 @@ def _find_codex_session_matches(identifier: str) -> list[tuple[Path, str]]:
     return matches
 
 
+def _find_codex_session_files() -> list[Path]:
+    """List Codex session JSONL files."""
+    sessions_dir = Path.home() / ".codex" / "sessions"
+    if not sessions_dir.exists():
+        return []
+    return sorted(sessions_dir.rglob("*.jsonl"))
+
+
+def find_all_supported_session_files(*, include_sidechains: bool = True) -> list[Path]:
+    """List all known session files across Claude, PI, and Codex."""
+    claude_projects_dir = Path.home() / ".claude" / "projects"
+    claude_files = (
+        sorted(claude_projects_dir.glob("*/*.jsonl"))
+        if claude_projects_dir.exists()
+        else []
+    )
+
+    adapter_files: list[Path] = []
+    for adapter in JSONL_SESSION_ADAPTERS:
+        if adapter.find_session_files is None:
+            continue
+        adapter_files.extend(adapter.find_session_files())
+
+    session_files = claude_files + adapter_files
+    if include_sidechains:
+        return session_files
+
+    return [path for path in session_files if not is_sidechain_session_file(path)]
+
+
 JSONL_SESSION_ADAPTERS = [
     JsonlSessionAdapter(
         name="pi",
         matches=_is_pi_jsonl_path,
         parse_messages=_parse_pi_jsonl,
+        find_session_files=_find_pi_session_files,
         find_session_matches=_find_pi_session_matches,
     ),
     JsonlSessionAdapter(
         name="codex",
         matches=_is_codex_jsonl_path,
         parse_messages=_parse_codex_jsonl,
+        find_session_files=_find_codex_session_files,
         find_session_matches=_find_codex_session_matches,
     ),
     JsonlSessionAdapter(
         name="default",
         matches=lambda _source_path: True,
         parse_messages=_parse_default_jsonl,
+        is_sidechain_path=lambda path: path.name.startswith("agent-"),
     ),
 ]
 
@@ -587,6 +631,11 @@ def _select_jsonl_session_adapter(source_path: Path | None) -> JsonlSessionAdapt
         if adapter.matches(source_path):
             return adapter
     return JSONL_SESSION_ADAPTERS[-1]
+
+
+def is_sidechain_session_file(session_file: Path) -> bool:
+    """Return True when a session file belongs to an adapter-specific sidechain."""
+    return _select_jsonl_session_adapter(session_file).is_sidechain_path(session_file)
 
 
 def parse_jsonl(

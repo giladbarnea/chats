@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 11 26
+  rollout-2026-04-11T16-31-11-019d7cbd-4424-7360-ac86-fcb3c982cbd3:
+    description:
+      - "Unified `ccc`'s supported-session search space so negative recent selectors and `search` now traverse Claude Code, Codex, and PI sessions together instead of keeping recency resolution Claude-only."
+      - "Drove the fix with a new cross-ecosystem regression test that simulates Claude, PI, and Codex session fixtures with deliberate recency ordering, then aligned the docs to describe the shared discovery model and adapter-owned sidechain filtering."
+    directories: [~/dev/conversations, ~/dev/gchat, ~/dev/codexchats]
+    keywords: [search-space, codex-sessions, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 7
+    new_files: [tests/test_session_search_space.py]
+    edited_files: [src/conversations/parsing.py, src/conversations/commands.py, src/conversations/cli.py, src/conversations/__init__.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    branch: main
   # Apr 10 26
   019d76a2-cbed-72d0-9551-ea5a8ad568de:
     description:

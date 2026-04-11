@@ -28,7 +28,9 @@ from .parsing import (
     extract_summaries_from_content,
     extract_summaries_from_jsonl,
     extract_cwd_from_jsonl,
+    find_all_supported_session_files,
     get_jsonl_timestamps,
+    is_sidechain_session_file,
     parse_jsonl,
     parse_raw_cli_transcript,
     resolve_session_identifier_via_adapters,
@@ -114,10 +116,10 @@ def _resolve_recent_conversation_file(
     identifier: str,
     conversation_files: Iterable[Path],
 ) -> Path | None:
-    """Resolve a negative index like '-1' against globally recent conversations."""
+    """Resolve a negative index like '-1' against globally recent supported sessions."""
     ordered_metadata = _build_conversation_metadata(conversation_files)
     ordered_main_conversations = [
-        meta.path for meta in ordered_metadata if not meta.path.name.startswith("agent-")
+        meta.path for meta in ordered_metadata if not is_sidechain_session_file(meta.path)
     ]
     return resolve_negative_index(identifier, ordered_main_conversations)
 
@@ -127,11 +129,11 @@ def _try_resolve_conversation_file(
     conversation_files: Iterable[Path] | None = None,
 ) -> tuple[Path | None, list[tuple[Path, str]]]:
     """
-    Try to resolve a conversation identifier to a file path.
+    Try to resolve a conversation/session identifier to a file path.
 
     Resolution order:
     1. Direct file path (if exists)
-    2. Recent negative index (e.g. -1 for most recently modified)
+    2. Recent negative index (e.g. -1 for the most recently modified supported session)
     3. UUID exact match (single-word only)
     4. Summary prefix match (case-insensitive)
 
@@ -154,11 +156,7 @@ def _try_resolve_conversation_file(
 
     # Fetch conversation files if not provided
     if conversation_files is None:
-        projects_dir = Path.home() / ".claude" / "projects"
-        if projects_dir.exists():
-            conversation_files = find_all_conversations(projects_dir)
-        else:
-            conversation_files = []
+        conversation_files = find_all_supported_session_files()
 
     # Materialize generator to allow multiple iterations
     conversation_files = list(conversation_files)
@@ -166,7 +164,7 @@ def _try_resolve_conversation_file(
     if recent_path := _resolve_recent_conversation_file(stripped, conversation_files):
         return recent_path, []
 
-    # Try exact match by conversation ID (single-word queries only)
+    # Try exact match by filename/stem (single-word queries only)
     if len(stripped.split()) == 1:
         for conv_file in conversation_files:
             if conv_file.stem == stripped or conv_file.name == stripped:
@@ -220,10 +218,10 @@ def get_input_content(input_arg: str | None) -> str:
 
 
 def _print_ambiguous_error(identifier: str, matches: list[tuple[Path, str]]) -> None:
-    """Print error message for ambiguous conversation identifier."""
+    """Print error message for an ambiguous conversation/session identifier."""
     console = get_console()
-    console.print("[red]Error: Ambiguous conversation identifier[/red]")
-    console.print(f"[yellow]'{identifier}'[/yellow] matches multiple conversations:")
+    console.print("[red]Error: Ambiguous conversation/session identifier[/red]")
+    console.print(f"[yellow]'{identifier}'[/yellow] matches multiple sessions:")
     console.print()
     for conv_file, summary in matches:
         console.print(f"  * [cyan]{conv_file.stem}[/cyan]: {summary}")
@@ -233,11 +231,11 @@ def _print_ambiguous_error(identifier: str, matches: list[tuple[Path, str]]) -> 
 
 def resolve_conversation_file(conversation_id: str) -> Path:
     """
-    Resolve conversation identifier to file path.
+    Resolve a conversation/session identifier to a file path.
 
     Resolution order:
     1. Direct file path (if exists)
-    2. Recent negative index (e.g. -1 for most recently modified)
+    2. Recent negative index (e.g. -1 for the most recently modified supported session)
     3. UUID exact match (single-word only)
     4. Summary prefix match (case-insensitive)
     """
@@ -254,14 +252,14 @@ def resolve_conversation_file(conversation_id: str) -> Path:
 
     # Not found
     console.print(
-        f"[red]Error: Conversation not found: [yellow]{conversation_id}[/yellow][/red]"
+        f"[red]Error: Conversation/session not found: [yellow]{conversation_id}[/yellow][/red]"
     )
     console.print()
     console.print("[dim]Try one of:[/dim]")
+    console.print("  * A Claude/Codex/PI session identifier or filename")
     console.print(
-        "  * A conversation UUID (e.g., 4a3a84d0-3a14-453f-8984-05a8607164d6)"
+        "  * A recent negative index (e.g., -1 for the most recent supported session)"
     )
-    console.print("  * A recent negative index (e.g., -1 for the most recent conversation)")
     console.print("  * A summary prefix (e.g., 'Locate SFTP')")
     console.print("  * A file path to a .jsonl file")
     sys.exit(1)
@@ -334,9 +332,9 @@ def cmd_search(
             re.escape(pattern_arg), re.IGNORECASE | re.MULTILINE | re.DOTALL
         )
 
-    projects_dir = Path.home() / ".claude" / "projects"
-    conversation_files = find_all_conversations(projects_dir)
-    metadata_list = _build_conversation_metadata(conversation_files)
+    metadata_list = _build_conversation_metadata(
+        find_all_supported_session_files(include_sidechains=flags.show_agents)
+    )
 
     if not metadata_list:
         sys.exit(1)
@@ -346,9 +344,6 @@ def cmd_search(
 
     with pager_ctx:
         for meta in metadata_list:
-            if not flags.show_agents and meta.path.name.startswith("agent-"):
-                continue
-
             if not _passes_date_filters(meta, mafter_dt, cafter_dt):
                 continue
 

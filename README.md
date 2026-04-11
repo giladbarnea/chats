@@ -1,6 +1,6 @@
 ---
 name: conversations
-description: Format, search, and manage conversation history files from ~/.claude/projects/ directory. Use this skill when users request formatting, converting, or reading .jsonl conversation history files, searching across conversations for specific content, or removing/deleting old conversation sessions. The script extracts user messages and assistant text responses (excluding tool calls by default).
+description: Format, search, and manage supported AI CLI conversation history files from Claude Code, Codex, and PI JSONL session directories. Use this skill when users request formatting, converting, or reading .jsonl conversation history files, searching across sessions for specific content, or removing/deleting old Claude conversation sessions. The script extracts user messages and assistant text responses (excluding tool calls by default).
 ---
 
 # Conversations
@@ -9,7 +9,7 @@ description: Format, search, and manage conversation history files from ~/.claud
 
 ## Overview
 
-Format and search Claude Code conversation history files. The `ccc` CLI converts conversation files to readable XML format with markdown rendering and provides powerful search capabilities across all conversations.
+Format and search supported AI CLI conversation history files. The `ccc` CLI converts session files to readable XML format with markdown rendering and provides powerful search capabilities across Claude Code, Codex, and PI sessions.
 
 **Core functions:**
 - **Parse**: Convert conversation history to XML-tagged markdown
@@ -24,13 +24,13 @@ Format and search Claude Code conversation history files. The `ccc` CLI converts
 Use this skill when the user asks to:
 - Format or convert a .jsonl conversation history file
 - Parse raw conversation transcripts (with ⏺ and > prefixes)
-- Search across all conversations for specific content or patterns
+- Search across all supported sessions for specific content or patterns
 - Find conversations mentioning specific topics
 - Export conversation history
 - Delete or remove conversation sessions
 - Clean up old conversations
 - Catalog or organize conversation sessions
-- Work with files from `~/.claude/projects/*/` directories
+- Work with files from `~/.claude/projects/*/`, `~/.codex/sessions/**`, or `~/.pi/agent/sessions/**`
 
 ## Commands
 
@@ -40,12 +40,12 @@ Convert conversation files to XML-tagged markdown.
 
 **Input Resolution:**
 1. Full file path: `/path/to/conversation.jsonl`
-2. Recent negative index: `-1` (most recently modified conversation), `-2`, ...
-3. Conversation UUID or filename: `b177e4f8-bb24-43e9-8a53-4e064be4457d`
+2. Recent negative index: `-1` (most recently modified supported session), `-2`, ...
+3. Conversation/session ID or filename: `b177e4f8-bb24-43e9-8a53-4e064be4457d`
 4. Summary text (case-insensitive prefix match): `"Extract PII"`
 5. Stdin: `cat file.jsonl | ccc`
 
-Negative recent indices use the same global modified-time ordering as `ccc search`: oldest first, newest last, so `-1` means “the newest conversation”. Agent sidechain files are excluded from this selector.
+Negative recent indices use the same global modified-time ordering as `ccc search` across Claude, PI, and Codex sessions: oldest first, newest last, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
 
 Conversations can have multiple summary entries (prepended as conversation evolves), each with a unique `leafUuid` tracking the conversation endpoint. Summary matching searches all summaries in all files.
 
@@ -54,8 +54,8 @@ Conversations can have multiple summary entries (prepended as conversation evolv
 Optional second argument uses Python slice notation to select message ranges:
 
 ```bash
-ccc -1              # Most recently modified conversation
-ccc -2              # Second most recently modified conversation
+ccc -1              # Most recently modified supported session
+ccc -2              # Second most recently modified supported session
 ccc <id> "1"       # First message only
 ccc <id> "-1"      # Last message only
 ccc <id> "5:"      # From index 5 to end
@@ -164,7 +164,7 @@ Markdown-only output intended for piping into files or other tools.
 
 ### Search Mode
 
-Search all conversations using regex patterns.
+Search all supported sessions using regex patterns.
 
 ```bash
 ccc search [OPTIONS] <pattern>
@@ -196,7 +196,7 @@ ccc search --cafter=1w --mafter=1d "."  # Created last week, modified today
 - Case-insensitive regex (multiline, DOTALL)
 - Searches both message content and conversation summaries
 - Invalid regex patterns treated as literal strings (like `grep -F`)
-- Results sorted by modification time ascending
+- Results sorted by modification time ascending across Claude, PI, and Codex sessions
 - Extracts working directory from conversation files
 - Full markdown rendering with syntax highlighting
 
@@ -266,7 +266,7 @@ This mutates the conversation file by appending `custom-title` and `agent-name` 
 
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`
-- **Recent negative index**: `-1`, `-2`, ...
+- **Recent negative index**: `-1`, `-2`, ... across the unified supported-session space
 - **Session UUID**: `5078a7c7-0646-43cc-9412-7e1454a282b4`
 
 ### Catalog Mode
@@ -396,7 +396,7 @@ Note: when modifying this tool, go over the files associated with the `/export` 
 
 **Key Functions:**
 - `extract_summaries_from_jsonl()` - Extract all summary fields from file
-- `get_input_content()` - Resolve input from CLI arg, stdin, or conversation ID
+- `get_input_content()` - Resolve input from CLI arg, stdin, or conversation/session ID
 - `detect_format()` - Deterministic format detection (first line only)
 - `parse_jsonl()` - Parse JSONL conversation files
 - `parse_raw_cli_transcript()` - Parse raw CLI transcripts
