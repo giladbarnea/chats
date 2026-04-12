@@ -20,6 +20,7 @@ from .formatting import (
     render_message_inner_xml,
     render_messages_with_rich,
 )
+from .utils import collapse_home
 from .model import ConversationFlags, ConversationMetadata, Message
 from .ordering import resolve_negative_index, sort_by_modified
 from .parsing import (
@@ -502,6 +503,16 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
     console.print(f"  [dim]Title:[/dim] [bold]{new_name}[/bold]")
 
 
+def _is_claude_session_path(conv_file: Path) -> bool:
+    """Return True when conv_file is under ~/.claude/."""
+    claude_dir = Path.home() / ".claude"
+    try:
+        conv_file.resolve().relative_to(claude_dir.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
 def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
     """Remove a conversation session and all associated files."""
     conv_file = _resolve_session_for_rm(session_id)
@@ -509,12 +520,20 @@ def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
     project_dir_name = conv_file.parent.name
     claude_dir = Path.home() / ".claude"
 
+    is_claude = _is_claude_session_path(conv_file)
+
     # Collect paths to remove
-    files_to_remove = _collect_session_files(conv_file, session_uuid, claude_dir)
-    dirs_to_remove = _collect_session_dirs(session_uuid, project_dir_name, claude_dir)
-    filtered_lines, history_lines_to_remove = _filter_history_lines(
-        claude_dir / "history.jsonl", session_uuid
-    )
+    if is_claude:
+        files_to_remove = _collect_session_files(conv_file, session_uuid, claude_dir)
+        dirs_to_remove = _collect_session_dirs(session_uuid, project_dir_name, claude_dir)
+        filtered_lines, history_lines_to_remove = _filter_history_lines(
+            claude_dir / "history.jsonl", session_uuid
+        )
+    else:
+        files_to_remove = [conv_file]
+        dirs_to_remove = []
+        filtered_lines = None
+        history_lines_to_remove = 0
 
     # Display what will be removed (always show preview)
     _display_rm_preview(
@@ -547,8 +566,9 @@ def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
         sys.exit(0)
 
     # Execute removal
+    history_file = claude_dir / "history.jsonl" if is_claude else None
     removed_files, removed_dirs = _execute_removal(
-        files_to_remove, dirs_to_remove, filtered_lines, claude_dir / "history.jsonl"
+        files_to_remove, dirs_to_remove, filtered_lines, history_file
     )
 
     console.print(
@@ -736,24 +756,24 @@ def _display_rm_preview(
         for f in existing_files:
             meta = _file_meta(f)
             meta_str = f"  [dim]({meta})[/dim]" if meta else ""
-            console.print(f"  [red]x[/red] ~/.claude/{f.relative_to(claude_dir)}{meta_str}")
+            console.print(f"  [red]x[/red] {collapse_home(str(f))}{meta_str}")
 
     if missing_files and preview_mode:
         console.print("\n[dim]Files not found (will be skipped):[/dim]")
         for f in missing_files:
-            console.print(f"  [dim]  ~/.claude/{f.relative_to(claude_dir)}[/dim]")
+            console.print(f"  [dim]  {collapse_home(str(f))}[/dim]")
 
     if existing_dirs:
         console.print("\n[bold]Directories to remove:[/bold]")
         for d in existing_dirs:
-            console.print(f"  [red]x[/red] ~/.claude/{d.relative_to(claude_dir)}/")
+            console.print(f"  [red]x[/red] {collapse_home(str(d))}/")
             for tree_line in _render_dir_tree(d, claude_dir):
                 console.print(tree_line)
 
     if missing_dirs and preview_mode:
         console.print("\n[dim]Directories not found (will be skipped):[/dim]")
         for d in missing_dirs:
-            console.print(f"  [dim]  ~/.claude/{d.relative_to(claude_dir)}/[/dim]")
+            console.print(f"  [dim]  {collapse_home(str(d))}/[/dim]")
 
     if history_lines > 0:
         console.print(
@@ -765,7 +785,7 @@ def _execute_removal(
     files: list[Path],
     dirs: list[Path],
     filtered_history: list[str] | None,
-    history_file: Path,
+    history_file: Path | None,
 ) -> tuple[int, int]:
     """Execute file and directory removal. Returns (removed_files, removed_dirs)."""
     import shutil
@@ -789,7 +809,7 @@ def _execute_removal(
             except OSError as e:
                 print_error(f"Error removing {d}: {e}")
 
-    if filtered_history is not None:
+    if filtered_history is not None and history_file is not None:
         try:
             history_file.write_text("".join(filtered_history), encoding="utf-8")
         except OSError as e:

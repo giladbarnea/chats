@@ -385,6 +385,123 @@ class TestRmConfirmation:
         assert setup["conv_file"].exists()
 
 
+class TestRmNonClaude:
+    """Test rm with PI and Codex session paths."""
+
+    def test_dry_run_codex_session_by_direct_path(self, tmp_path, monkeypatch, capsys):
+        """rm --dry-run on a Codex session path should not crash."""
+        temp_home = tmp_path / "home"
+        monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+        session_path = (
+            temp_home
+            / ".codex"
+            / "sessions"
+            / "2026"
+            / "04"
+            / "10"
+            / "rollout-2026-04-10T10-00-00-01961abc-rm-codex.jsonl"
+        )
+        session_path.parent.mkdir(parents=True, exist_ok=True)
+        session_path.write_text(
+            json.dumps({
+                "timestamp": "2026-04-10T07:00:00.000Z",
+                "type": "session_meta",
+                "payload": {"id": "01961abc-rm-codex", "cwd": "/tmp/codex"},
+            }) + "\n"
+            + json.dumps({
+                "timestamp": "2026-04-10T07:00:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "hello"}],
+                },
+            }) + "\n",
+            encoding="utf-8",
+        )
+
+        cmd_rm(str(session_path), dry_run=True)
+
+        captured = capsys.readouterr()
+        assert "Dry run" in captured.out, (
+            "Expected dry-run message for Codex session. "
+            f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        )
+
+    def test_dry_run_pi_session_by_direct_path(self, tmp_path, monkeypatch, capsys):
+        """rm --dry-run on a PI session path should not crash."""
+        temp_home = tmp_path / "home"
+        monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+        session_path = (
+            temp_home
+            / ".pi"
+            / "agent"
+            / "sessions"
+            / "--tmp--"
+            / "2026-04-04T12-00-00_rm-pi-test.jsonl"
+        )
+        session_path.parent.mkdir(parents=True, exist_ok=True)
+        session_path.write_text(
+            json.dumps({
+                "type": "session",
+                "version": 3,
+                "id": "rm-pi-test",
+                "timestamp": "2026-04-04T12:00:00.000Z",
+                "cwd": "/tmp/pi",
+            }) + "\n"
+            + json.dumps({
+                "type": "message",
+                "id": "user-1",
+                "parentId": "rm-pi-test",
+                "timestamp": "2026-04-04T12:00:01.000Z",
+                "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]},
+            }) + "\n",
+            encoding="utf-8",
+        )
+
+        cmd_rm(str(session_path), dry_run=True)
+
+        captured = capsys.readouterr()
+        assert "Dry run" in captured.out, (
+            "Expected dry-run message for PI session. "
+            f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        )
+
+    def test_rm_codex_session_removes_file(self, tmp_path, monkeypatch, capsys):
+        """rm on a Codex session path should delete the session file."""
+        temp_home = tmp_path / "home"
+        monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+        session_path = (
+            temp_home
+            / ".codex"
+            / "sessions"
+            / "2026"
+            / "04"
+            / "10"
+            / "rollout-2026-04-10T10-00-00-01961abc-rm-codex2.jsonl"
+        )
+        session_path.parent.mkdir(parents=True, exist_ok=True)
+        session_path.write_text(
+            json.dumps({
+                "timestamp": "2026-04-10T07:00:00.000Z",
+                "type": "session_meta",
+                "payload": {"id": "01961abc-rm-codex2", "cwd": "/tmp/codex"},
+            }) + "\n",
+            encoding="utf-8",
+        )
+
+        assert session_path.exists()
+        with patch("builtins.input", return_value="y"):
+            cmd_rm(str(session_path), dry_run=False)
+
+        assert not session_path.exists(), (
+            "Expected Codex session file to be removed after rm"
+        )
+
+
 if __name__ == "__main__":
     import subprocess
     result = subprocess.run(
