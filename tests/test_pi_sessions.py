@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from conversations import ConversationFlags, cmd_parse
+from conversations import ConversationFlags, cmd_parse, cmd_rename
 
 
 def _write_pi_session(path: Path, entries: list[dict]) -> None:
@@ -505,5 +505,83 @@ def test_cmd_parse_emits_metadata_for_pi_session_path(
     )
     assert "messages: 1" in captured.out, (
         "Expected PI session metadata to report the normalized message count. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_rename_makes_title_visible_in_pi_parse_output(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """After renaming a PI session, the custom title should render as a session-rename block."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-04-04T12-24-33-963Z_session-rename.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-rename-test",
+                "timestamp": "2026-04-04T12:24:33.963Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "session-rename-test",
+                "timestamp": "2026-04-04T12:25:47.187Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "hello from pi rename test"}],
+                    "timestamp": 1775305547146,
+                },
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-04-04T12:25:48.467Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "pi assistant reply"}],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                    "stopReason": "stop",
+                    "timestamp": 1775305547188,
+                },
+            },
+        ],
+    )
+
+    cmd_rename(str(session_path), "My PI Title")
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "My PI Title" in captured.out, (
+        "Expected the custom title written by cmd_rename to render as visible content "
+        "when parsing a PI session. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<session-rename" in captured.out, (
+        "Expected the custom title to render through the standard session-rename XML tag. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

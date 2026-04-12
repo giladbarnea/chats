@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from conversations import ConversationFlags, cmd_parse
+from conversations import ConversationFlags, cmd_parse, cmd_rename
 
 
 def _write_codex_session(path: Path, entries: list[dict]) -> None:
@@ -502,5 +502,84 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
     )
     assert "messages: 1" in captured.out, (
         "Expected Codex metadata to report the normalized message count. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_rename_makes_title_visible_in_codex_parse_output(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """After renaming a Codex session, the custom title should render as a session-rename block."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "04"
+        / "10"
+        / "rollout-2026-04-10T10-00-00-01961abc-def0-7123-89ab-codexrename001.jsonl"
+    )
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-04-10T07:00:00.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": "01961abc-def0-7123-89ab-codexrename001",
+                    "timestamp": "2026-04-10T07:00:00.000Z",
+                    "cwd": "/tmp/codex-project",
+                    "originator": "codex_cli_rs",
+                    "cli_version": "0.99.0",
+                    "source": "cli",
+                    "model_provider": "openai",
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:00:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "Hello from codex rename test."}],
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:00:02.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "Codex assistant reply."}],
+                },
+            },
+        ],
+    )
+
+    cmd_rename(str(session_path), "My Codex Title")
+
+    # Now parse — the title should be visible
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "My Codex Title" in captured.out, (
+        "Expected the custom title written by cmd_rename to render as visible content "
+        "when parsing a Codex session. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<session-rename" in captured.out, (
+        "Expected the custom title to render through the standard session-rename XML tag. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

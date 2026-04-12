@@ -301,10 +301,15 @@ def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
     index = 1
 
     for entry in _iter_jsonl_entries(content):
-        if entry.get("type") != "message":
-            continue
+        entry_type = entry.get("type")
 
-        msg = _parse_pi_message_entry(entry, index, flags)
+        if entry_type == "custom-title" and flags.show_assistant_messages:
+            msg = _parse_custom_title_entry(entry, index)
+        elif entry_type == "message":
+            msg = _parse_pi_message_entry(entry, index, flags)
+        else:
+            msg = None
+
         if msg and msg.has_content():
             messages.append(msg)
             index += 1
@@ -335,7 +340,17 @@ def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
         return current_assistant
 
     for entry in _iter_jsonl_entries(content):
-        if entry.get("type") != "response_item":
+        entry_type = entry.get("type")
+
+        if entry_type == "custom-title" and flags.show_assistant_messages:
+            flush_assistant()
+            msg = _parse_custom_title_entry(entry, index)
+            if msg and msg.has_content():
+                messages.append(msg)
+                index += 1
+            continue
+
+        if entry_type != "response_item":
             continue
 
         payload = entry.get("payload", {})
