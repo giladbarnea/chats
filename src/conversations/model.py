@@ -9,7 +9,7 @@ from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
 from .tool_filter import ToolFilter
 from .tools import tool_to_parts
-from .utils import shorten_data
+from .utils import shorten_data, truncate_middle
 
 
 @dataclass
@@ -102,7 +102,7 @@ class Message:
         This is the single source of truth for:
         - What content is visible (flag-based filtering)
         - Content ordering (text, thinking, tools, plan)
-        - Shortening (applies shorten_data if flags.shorten)
+        - Shortening (text/thinking/plan via shorten_data; tool bodies via truncate_middle)
 
         Plans are represented as TOOL parts with name="ExitPlanMode".
         """
@@ -156,9 +156,13 @@ class Message:
             show, filter_short = self._should_show_tool(tool, filters, id_map)
             if not show:
                 continue
+
+            tool_parts = tool_to_parts(tool, id_map)
             should_shorten = flags.shorten or filter_short
-            tool_data = shorten_data(tool) if should_shorten else tool
-            parts.append(MessagePart(MessagePartKind.TOOL, tool_to_parts(tool_data, id_map)))
+            if should_shorten and tool_parts.content:
+                tool_parts = tool_parts._replace(content=truncate_middle(tool_parts.content))
+
+            parts.append(MessagePart(MessagePartKind.TOOL, tool_parts))
 
     def _should_show_tool(
         self,

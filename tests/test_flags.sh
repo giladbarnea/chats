@@ -82,15 +82,22 @@ assert_message_count "$OUTPUT_A_RANGE" 2
 
 # -s: Shorten
 echo "Testing -s (Shorten)..."
-# Create a file with long content
-echo '{"type":"user","message":{"role":"user","content":"This is a very long message that should definitely be shortened because it exceeds the default width limit of 40 characters by quite a margin."},"timestamp":"2025-11-23T09:29:08.354Z"}' > tests/data/long_message.jsonl
+# Create a file with content that exceeds the 495-char shortening threshold.
+LONG_PREFIX=$(printf 'p%.0s' {1..240})
+LONG_REMOVED=$(printf 'm%.0s' {1..200})
+LONG_SUFFIX=$(printf 's%.0s' {1..240})
+LONG_TEXT="SHORT_START ${LONG_PREFIX} REMOVED_MIDDLE_MARKER ${LONG_REMOVED} ANOTHER_REMOVED_MARKER ${LONG_SUFFIX} SHORT_END"
+printf '{"type":"user","message":{"role":"user","content":"%s"},"timestamp":"2025-11-23T09:29:08.354Z"}\n' "$LONG_TEXT" > tests/data/long_message.jsonl
 
 OUTPUT_S=$($CC_CMD -s tests/data/long_message.jsonl)
 assert_success
 # Should contain the middle-truncation ellipsis
 assert_contains "$OUTPUT_S" "..."
 # Middle truncation preserves start and end, removes the middle
-assert_not_contains "$OUTPUT_S" "definitely be shortened"
+assert_contains "$OUTPUT_S" "SHORT_START"
+assert_contains "$OUTPUT_S" "SHORT_END"
+assert_not_contains "$OUTPUT_S" "REMOVED_MIDDLE_MARKER"
+assert_not_contains "$OUTPUT_S" "ANOTHER_REMOVED_MARKER"
 
 # -s: Slice parsing (index + range)
 echo "Testing -s with index slice..."

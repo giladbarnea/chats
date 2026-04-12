@@ -4,15 +4,26 @@ from pathlib import Path
 from typing import Any
 
 
-def truncate_middle(s: str, max_len: int = 120) -> str:
-    """Shorten a string by keeping first 25% and last 25%, replacing the middle with '...'."""
-    if len(s) <= max_len:
+def truncate_middle(s: str, max_len: int = 500) -> str:
+    """Shorten a string by replacing its middle with an ellipsis block."""
+    placeholder = "\n...\n"
+    if max_len < len(placeholder):
+        placeholder = "..."[:max_len]
+
+    if len(s) <= max_len - len(placeholder):
         return s
-    quarter = len(s) // 4
-    return s[:quarter] + "..." + s[-quarter:] if quarter > 0 else "..."
+
+    if max_len <= len(placeholder):
+        return placeholder[:max_len]
+
+    remaining = max_len - len(placeholder)
+    first_half = remaining // 2 + (remaining % 2)
+    second_half = remaining // 2
+
+    return s[:first_half] + placeholder + s[-second_half:]
 
 
-def shorten_data(data: Any, width: int = 120) -> Any:
+def shorten_data(data: Any, width: int = 500) -> Any:
     """Recursively traverse data and shorten string values via middle truncation."""
     if isinstance(data, dict):
         return {k: shorten_data(v, width) for k, v in data.items()}

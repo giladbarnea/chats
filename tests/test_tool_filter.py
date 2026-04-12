@@ -254,8 +254,8 @@ class TestFilterIntegration:
 class TestPerToolShortening:
     """The :s modifier shortens only matching tools, not others."""
 
-    def test_short_flag_truncates(self):
-        long_content = "A" * 500
+    def test_short_flag_truncates_rendered_tool_output_to_500_chars(self):
+        long_content = "READ_START-" + ("A" * 1000) + "-READ_END"
         msg = make_message(
             {"type": "tool_use", "name": "Read", "id": "toolu_02", "input": {"file_path": "f.txt"}},
             {"type": "tool_result", "tool_use_id": "toolu_02", "content": long_content},
@@ -274,13 +274,28 @@ class TestPerToolShortening:
 
         short_result = parts_short[1].data.content
         full_result = parts_full[1].data.content
-        assert len(short_result) < len(full_result), (
-            f"short ({len(short_result)} chars) should be < full ({len(full_result)} chars)"
+        assert short_result is not None, "Expected shortened tool output content to be present."
+        assert full_result is not None, "Expected full tool output content to be present."
+        assert len(short_result) == 500, (
+            f"Expected :s to truncate the rendered tool body to 500 chars. Got {len(short_result)}."
+        )
+        assert len(full_result) > len(short_result), (
+            f"Expected shortened content to be smaller than full content. "
+            f"Got short={len(short_result)} full={len(full_result)}."
+        )
+        assert "\n...\n" in short_result, (
+            "Expected shortened tool output to use the line-broken ellipsis placeholder."
+        )
+        assert "READ_START-" in short_result[:260], (
+            f"Expected the start of the rendered tool body to be preserved. Got: {short_result[:260]!r}"
+        )
+        assert "READ_END" in short_result[-260:], (
+            f"Expected the end of the rendered tool body to be preserved. Got: {short_result[-260:]!r}"
         )
 
     def test_global_short_overrides(self):
         """Global --short shortens everything; per-tool :s is redundant but harmless."""
-        long_content = "B" * 500
+        long_content = "BASH_START-" + ("B" * 1000) + "-BASH_END"
         msg = make_message(
             {"type": "tool_use", "name": "Bash", "id": "toolu_01", "input": {"command": "echo " + long_content}},
             {"type": "tool_result", "tool_use_id": "toolu_01", "content": long_content},
@@ -290,9 +305,21 @@ class TestPerToolShortening:
         flags = ConversationFlags(show_tools=[ToolFilter(name="Bash", short=True)], shorten=True)
         parts = tool_parts_from(msg, flags, ID_MAP)
 
+        input_content = parts[0].data.content
         result_content = parts[1].data.content
-        assert "..." in result_content or len(result_content) < len(long_content), (
-            f"Global --short should truncate; got {len(result_content)} chars"
+        assert input_content is not None, "Expected Bash tool-input content to be present."
+        assert result_content is not None, "Expected Bash tool-output content to be present."
+        assert len(input_content) == 500, (
+            f"Expected global --short to truncate tool-input content to 500 chars. Got {len(input_content)}."
+        )
+        assert len(result_content) == 500, (
+            f"Expected global --short to truncate tool-output content to 500 chars. Got {len(result_content)}."
+        )
+        assert "BASH_START-" in input_content[:260], (
+            f"Expected shortened tool-input content to preserve the start. Got: {input_content[:260]!r}"
+        )
+        assert "BASH_END" in result_content[-260:], (
+            f"Expected shortened tool-output content to preserve the end. Got: {result_content[-260:]!r}"
         )
 
 
@@ -304,23 +331,37 @@ from conversations.utils import truncate_middle
 
 
 class TestTruncateMiddle:
-    """truncate_middle keeps first 25% + '...' + last 25%, replacing the middle."""
+    """truncate_middle truncates exactly to max_len, replacing the middle with a placeholder."""
 
     def test_short_string_unchanged(self):
         assert truncate_middle("hello", max_len=100) == "hello"
 
-    def test_exact_length_unchanged(self):
-        s = "a" * 120
+    def test_length_at_threshold_unchanged(self):
+        s = "a" * 115
         assert truncate_middle(s, max_len=120) == s
+
+    def test_length_above_threshold_truncates_to_exact_max_len(self):
+        result = truncate_middle("a" * 116, max_len=120)
+        assert len(result) == 120, f"Expected 120 chars exactly, got {len(result)}"
+        assert "\n...\n" in result, (
+            f"Expected the line-broken ellipsis placeholder in truncated output. Got: {result!r}"
+        )
 
     def test_long_string_keeps_start_and_end(self):
         s = "A" * 40 + "B" * 40 + "C" * 40 + "D" * 40  # 160 chars
         result = truncate_middle(s, max_len=100)
-        # quarter = 160 // 4 = 40
         assert result.startswith("A" * 40), f"Should start with first quarter. Got: {result[:50]}"
         assert result.endswith("D" * 40), f"Should end with last quarter. Got: {result[-50:]}"
         assert "..." in result
-        assert len(result) == 40 + 3 + 40, f"Expected 83 chars, got {len(result)}"
+        assert len(result) == 100, f"Expected 100 chars exactly, got {len(result)}"
+
+    def test_default_500_char_behavior_uses_248_ellipsis_247_split(self):
+        source = ("S" * 248) + ("M" * 1000) + ("E" * 247)
+        result = truncate_middle(source)
+        assert result == ("S" * 248) + "\n...\n" + ("E" * 247), (
+            "Expected default truncation to keep 248 leading chars, then '\\n...\\n', "
+            "then 247 trailing chars."
+        )
 
     def test_placeholder_is_ellipsis_not_bracket(self):
         result = truncate_middle("x" * 200, max_len=100)
@@ -338,7 +379,7 @@ class TestMessageMiddleTruncation:
     def test_text_preserves_start_and_end(self):
         start = "START_MARKER "
         end = " END_MARKER"
-        middle = "m" * 200
+        middle = "m" * 1000
         long_text = start + middle + end
 
         msg = Message(role="assistant", text=long_text)
@@ -356,7 +397,7 @@ class TestMessageMiddleTruncation:
     def test_thinking_preserves_start_and_end(self):
         start = "FIRST_THOUGHT "
         end = " FINAL_THOUGHT"
-        middle = "t" * 200
+        middle = "t" * 1000
         long_thinking = start + middle + end
 
         msg = Message(role="assistant", text="x", thinking=long_thinking)

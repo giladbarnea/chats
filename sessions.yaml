@@ -28,6 +28,16 @@
 # Example sessions.yaml file:
 sessions:
   # Apr 12 26
+  rollout-2026-04-12T13-41-58-019d8148-b1e3-7741-9a0e-321c48d1c346:
+    description: "Finished the broken partial implementation of `-t:s` tool-body truncation left by a previous agent: fixed a missing `truncate_middle` import in `model.py`, changed tool shortening from recursive `shorten_data` on raw dicts to `truncate_middle` on the rendered `ToolParts.content` string, rewrote `truncate_middle` to use a 500-char budget with `\n...\n` placeholder and a 495-char activation threshold, rewrote cross-ecosystem integration tests (`Claude`/`Codex`/`PI`) with canonical session shapes, and updated the shell `-s` seam test to generate payloads exceeding the new threshold. Full suite green."
+    directories: [~/dev/conversations]
+    keywords: [tool-shortening, truncate_middle, bugfix]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 1
+    new_files: [tests/test_short_modifier.py]
+    edited_files: [src/conversations/model.py, src/conversations/utils.py, tests/test_tool_filter.py, tests/test_flags.sh]
+    branch: main
+
   c7a08580-595f-45c7-95f3-29f4c5ac3adb:
     description:
       - "Loaded project context for `conversations` and planned cross-ecosystem parity work by dispatching 5 parallel gpt-5.4 research subagents across domains (resolution/identity, object-level parse/search, inter-object relations, rename/lifecycle, session topology) to produce concrete discrepancy matrices and TDD plans."
