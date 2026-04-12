@@ -367,3 +367,54 @@ def test_no_assistant_can_show_thinking_tools_and_agents_together(
         "Expected agent messages to remain visible when `--agents` is enabled. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
     )
+
+
+def test_thinking_short_modifier_truncates_only_thinking_blocks(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--thinking=short` should truncate thinking blocks while keeping the block visible."""
+    session_path = tmp_path / "thinking-short-fixture.jsonl"
+    long_thinking = "THINK_START-" + ("x" * 1000) + "-THINK_END"
+    entries = [
+        {
+            "type": "assistant",
+            "timestamp": "2026-04-05T09:00:01.000Z",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "thinking", "thinking": long_thinking},
+                    {"type": "text", "text": "assistant text"},
+                ],
+            },
+        }
+    ]
+    session_path.write_text(
+        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--thinking=short",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert stderr == "", f"Expected no warning for valid --thinking=short usage. Got stderr:\n{stderr}"
+    assert "<thinking>" in stdout, (
+        "Expected thinking blocks to be shown when `--thinking=short` is enabled. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert stdout.count("\n...\n") == 1, (
+        "Expected shortened thinking output to contain one line-broken ellipsis placeholder. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert "THINK_START-" in stdout and "THINK_END" in stdout, (
+        "Expected shortened thinking output to preserve both prefix and suffix. "
+        f"Got stdout:\n{stdout}"
+    )
