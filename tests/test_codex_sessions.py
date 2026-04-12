@@ -506,6 +506,103 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
     )
 
 
+def test_codex_skill_payloads_hidden_by_default(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Codex user messages containing <skill> protocol payloads should be filtered out."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "04"
+        / "10"
+        / "rollout-2026-04-10T10-30-00-01961abc-def0-7123-89ab-codexskill0001.jsonl"
+    )
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-04-10T07:30:00.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": "01961abc-def0-7123-89ab-codexskill0001",
+                    "timestamp": "2026-04-10T07:30:00.000Z",
+                    "cwd": "/tmp/codex-project",
+                    "originator": "codex_cli_rs",
+                    "cli_version": "0.99.0",
+                    "source": "cli",
+                    "model_provider": "openai",
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:30:00.100Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "<skill>\n<name>tdd</name>\n<path>/some/path/SKILL.md</path>\nTest-driven development skill content.\n</skill>",
+                        }
+                    ],
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:30:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "Real user prompt."}],
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:30:02.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "Real assistant reply."}],
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "Real user prompt." in captured.out, (
+        "Expected the real user prompt to remain visible. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "Real assistant reply." in captured.out, (
+        "Expected the assistant reply to remain visible. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<skill>" not in captured.out, (
+        "Expected Codex skill protocol payloads to be hidden by default. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "Test-driven development skill content." not in captured.out, (
+        "Expected skill content to be hidden by default. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
 def test_cmd_rename_makes_title_visible_in_codex_parse_output(
     tmp_path: Path,
     monkeypatch,

@@ -932,6 +932,8 @@ def _is_codex_preamble_text(text: str) -> bool:
         return True
     if stripped.startswith("<environment_context>"):
         return True
+    if stripped.startswith("<skill>"):
+        return True
     return False
 
 
