@@ -41,18 +41,14 @@ You're on a Mac M4 Pro running Tahoe 26.0. In addition to base Unix coreutils an
   Always read files in full, even if only parts of them (allegedly) are relevant. Wider context is good.
 </tool-usage>
 
-<python-nodejs>
-### Python and Node.js
+<python>
+### Python
 - Avoid running bare `python` or `python3` commands. If the current working directory is a project with a `pyproject.toml` file, always use `uv run -p python3` to run Python scripts. If you're not in a project with a `pyproject.toml` file, use `uv run -p python3` to run Python scripts.
 - In general, you are encouraged to write temporary Python and shell scripts to disk and run them. This is the best approach for more complex tasks. Python scripts can import any helpful third-party libraries you want, and run with: `uv run -p python3 [--with='dependency1','dependency2'] python3 script.py`. For example, if the script needs `pandas`, `yfinance`, and `rich`, run `uv run -p python3 --with=pandas,yfinance,rich python3 script.py`. Scripts have network access. Just remember to remove the scripts after you no longer need them.
-- Never modify global system state: no `npm install --global`, no `brew install`, no `pip install`, etc. Always prefer transient execution with `uvx -p python3` or `npx -y`.
+- Never modify global system state: no `brew install`, no `pip install`, etc. Always prefer transient execution with `uvx -p python3`.
 - If a library doesn't support python3, adjust `-p python3.*` accordingly. In projects with pyproject.toml or .venv/ directory, just run `uv run ...` without the `-p ...` flag (version already defined at project level).
 - For some cleanliness static analysis, you can run `FORCE_OMZ=1 /usr/bin/env zsh -ic 'ruffc dir/or/filepath'`. Take the diagnostics with a big grain of salt, only fix what hints at real problems.
-</python-nodejs>
-
-<typescript-react-js>
-You have access to `typescript-lsp`. The most powerful operations are `findReferences`, `incomingCalls`, `outgoingCalls`. Use all three in the beginning of a new session to understand the reach of a particular symbol or component — what it's coupled to, what dependencies it has, etc.
-</typescript-react-js>
+</python>
 
 <web-fetching>
 ### Fetching Web Pages & Files
@@ -81,6 +77,7 @@ Then run the script with `uv run script.py`. No need to specify the Python versi
 ---
 
 <using-sub-agents>
+
 ## Using (Sub-)Agents
 Dispatch an agent whenever you need to either:
 a) explore a particular system or a major domain within the codebase (`codebase-analyzer:single-subsystem`); or
@@ -117,6 +114,8 @@ Sharing only why it's been dispatched, and what you hope to achieve by the time 
 
 ---
 
+<development-rules>
+  
 ## Development Rules
 
 ### Be Bold, Precise and Minimalistic
@@ -127,6 +126,14 @@ Sharing only why it's been dispatched, and what you hope to achieve by the time 
 5. No nested `if` statements.
 6. Write declarative, upfront code. The more the source code feels like a high-level configuration rather than an implementation, the better. Thought experiement: what’s more easy to understand: a Pydantic BaseModel definition, or a manually-written class with an `__init__`, value and type validation, manual state setting, etc.?
 7. No squirmy code. Don’t carry over cascading uncertainty via defensive programming. Be straightforward and explicit.
+
+### A Cautious Note About Refactoring
+
+If throughout the development cycle you encounter some aspect of the software design or architecture that is a meaningful annoyance increasing the friction between you and solving the problem, and it could be relatively easily redesigned to significantly relieve that friction without requiring so much change that it constitutes an adventure of its own, please go ahead and make this refactor. I prefer that over you needing to do acrobatics to overcome a past, now irrelevant design decision.
+
+</development-rules>
+
+---
 
 <python-type-annotations>
 ### Python Type Annotations
@@ -183,26 +190,3 @@ with patch(module.function): ...
 </tests-must-not-cause-exceptions-themselves>
 
 </testing-tenets>
-
----
-
-<company-product>
-## The Company's Product
-
-We're a small startup (20-30 people) centered around automating voice data work with AI. Currently, it's mainly processing call/support center audio data. We're trying to find product market fit.
-We have about nine paying customers—some are large Israeli firms in insurance and finance, and others are mid-sized Israeli companies. We also have a few design partners who are essentially trying us out for free until they decide whether to move forward.
-After a recent modest funding round, we’re focused on expanding into the U.S. market, with a strong emphasis on our sales function.
-On the more long-term, speculative side, we're imagining supporting other voice-based workflows, more advanced types of automation (AI as call support agent; internal tools for analysis and the system self-improving its own output over time; AI implement-feature-on-request via Hubspot-like tickets, etc.), but that's not in any concrete roadmap. 
-Our main product currently is a web GUI and dashboard for tenant data, called the Platform—voice calls, audio, transcripts, and analysis results—along with aggregated analytics, reports and insights. It connects to the database, tailors queries, and analyzes data on the fly with a code interpreter. A proactive, ubiquitous, system-wide AI with natural-language features (chat, definitions) can read, manipulate, create, delete, and schedule, nearly emulating a human operator in the dashboard. It saves users from time-consuming manual tasks, eliminates the need to learn system-specific quirks, and provides precise answers to data and product questions. It's very flakey though, and often just doesn't work, or does unexpected things.
-The Platform’s overall customer value is hit-or-miss, and for some users it can feel half-baked. It offers many features, but most users won’t use most of them—and even the ones they do use may not be valuable or as usable as they are for others. The UX is also not great. That said, this isn’t our main focus, which is expected for an early-stage, fast-paced startup.
-</company-product>
-
-<company-technical-business-information>
-There's general technical knowledge from the business perspective of the company in `/Users/giladbarnea/dev/domain-context/*`. Good to know in any case.
-</company-technical-business-information>
-
-<about-me>
-## About Me
-
-I’m an AI/software engineer. I’m most comfortable with Python, backend work, and LLMs, but my boss and I both want me to broaden my skill set. That means getting comfortable with frontend development (Node.js/React/Client-work mental models and state management) and hands-on DevOps work (Docker, Kubernetes, AWS, GCP, etc.), and MLOps (training and deploying our own LLM's).
-</about-me>
