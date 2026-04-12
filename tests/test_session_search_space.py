@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, cmd_parse, cmd_search
+from conversations import ConversationFlags, cmd_parse, cmd_rename, cmd_search
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -276,4 +276,42 @@ def test_cmd_search_uses_all_supported_sessions(
     ) in captured.out, (
         "Expected `search` to include matching Codex sessions in the unified search space. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_search_matches_custom_title_across_ecosystems(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Search should find a session whose custom title matches the query, even
+    when assistant messages are hidden (so custom-title entries aren't parsed
+    as messages).  Custom titles should be a first-class search dimension like
+    summaries, not matched incidentally through message content."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+    paths = _build_supported_session_space(temp_home)
+
+    # Rename the PI session with a unique custom title
+    cmd_rename(str(paths["pi"]), "xyzzy-unique-title-token")
+
+    # Search with show_assistant_messages=False — custom-title entries won't
+    # be parsed as messages, so matching must happen via the dedicated
+    # custom-title extraction path.
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "xyzzy-unique-title-token",
+            ConversationFlags(color="never", paging=False, show_assistant_messages=False),
+            list_only=True,
+            emit_metadata=True,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected search to find the PI session via its custom title. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "pi" in captured.out.lower(), (
+        "Expected PI session path in output. "
+        f"Got stdout:\n{captured.out}"
     )

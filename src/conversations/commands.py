@@ -278,11 +278,12 @@ def display_search_result(
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
     matching_summaries: list[str] | None = None,
+    matching_custom_titles: list[str] | None = None,
     last_custom_title: str | None = None,
 ) -> None:
     """Display a single search result in unified XML format."""
     if emit_metadata:
-        match_count = len(matches) + (len(matching_summaries) if matching_summaries else 0)
+        match_count = len(matches) + (len(matching_summaries) if matching_summaries else 0) + (len(matching_custom_titles) if matching_custom_titles else 0)
         print_metadata(
             conv_file,
             cwd,
@@ -353,9 +354,9 @@ def cmd_search(
                 if result is None:
                     continue
 
-                messages, matches, cwd, matching_summaries, last_custom_title = result
+                messages, matches, cwd, matching_summaries, matching_custom_titles, last_custom_title = result
 
-                if matches or matching_summaries:
+                if matches or matching_summaries or matching_custom_titles:
                     found_any = True
                     # Make sure rule is displayed first, acting as a title, followed by the session's metadata
                     get_console().rule(
@@ -372,6 +373,7 @@ def cmd_search(
                         created_at=meta.ctime,
                         modified_at=meta.mtime,
                         matching_summaries=matching_summaries,
+                        matching_custom_titles=matching_custom_titles,
                         last_custom_title=last_custom_title,
                     )
 
@@ -405,7 +407,7 @@ def _search_conversation(
     regex: re.Pattern,
     flags: ConversationFlags,
     dir_filter: str | None,
-) -> tuple[list[Message], list[Message], str | None, list[str], str | None] | None:
+) -> tuple[list[Message], list[Message], str | None, list[str], list[str], str | None] | None:
     """
     Search a single conversation file.
 
@@ -435,6 +437,7 @@ def _search_conversation(
     matching_summaries = [s for s in summaries if regex.search(s)]
 
     custom_titles = extract_custom_titles_from_content(content)
+    matching_custom_titles = [t for t in custom_titles if regex.search(t)]
     last_custom_title = custom_titles[-1] if custom_titles else None
 
     tool_id_map = _build_tool_id_map(messages)
@@ -445,7 +448,7 @@ def _search_conversation(
         if regex.search(render_message_inner_xml(msg, flags, tool_id_map))
     ]
 
-    return messages, matches, cwd, matching_summaries, last_custom_title
+    return messages, matches, cwd, matching_summaries, matching_custom_titles, last_custom_title
 
 
 def cmd_rename(conversation_id: str, new_name: str) -> None:
