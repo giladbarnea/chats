@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 12 26
+  c7a08580-595f-45c7-95f3-29f4c5ac3adb:
+    description:
+      - "Loaded project context for `conversations` and planned cross-ecosystem parity work by dispatching 5 parallel gpt-5.4 research subagents across domains (resolution/identity, object-level parse/search, inter-object relations, rename/lifecycle, session topology) to produce concrete discrepancy matrices and TDD plans."
+      - "Synthesized the 5 domain reports and implemented 6 vertical TDD slices: (1) rename parity — PI/Codex parsers surface `custom-title` as `session-rename` blocks; (2) filter Codex `<skill>` protocol payloads; (3) `rm` parity — non-Claude paths no longer crash in preview; (4) `catalog` accepts non-UUID identifiers; (5) `rm` resolver routes through the shared resolver; (6) search matches custom titles as a first-class dimension. 6 checkpoint commits; test count grew 198→211."
+    directories: [~/dev/conversations]
+    keywords: [codex-pi-parity, tdd, cross-ecosystem]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 55
+    new_files: []
+    edited_files: [src/conversations/parsing.py, src/conversations/commands.py, src/conversations/catalog/__init__.py, tests/test_codex_sessions.py, tests/test_pi_sessions.py, tests/test_rm.py, tests/test_catalog.py, tests/test_session_search_space.py]
+    branch: main
   # Apr 11 26
   rollout-2026-04-11T16-31-11-019d7cbd-4424-7360-ac86-fcb3c982cbd3:
     description:
