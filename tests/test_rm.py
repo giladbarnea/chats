@@ -469,6 +469,48 @@ class TestRmNonClaude:
             f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
         )
 
+    def test_dry_run_codex_session_by_adapter_id(self, tmp_path, monkeypatch, capsys):
+        """rm --dry-run should resolve a Codex session via adapter ID fallback."""
+        temp_home = tmp_path / "home"
+        monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+        session_id = "01961abc-def0-7123-89ab-codexrm0005"
+        session_path = (
+            temp_home
+            / ".codex"
+            / "sessions"
+            / "2026"
+            / "04"
+            / "10"
+            / f"rollout-2026-04-10T10-00-00-{session_id}.jsonl"
+        )
+        session_path.parent.mkdir(parents=True, exist_ok=True)
+        session_path.write_text(
+            json.dumps({
+                "timestamp": "2026-04-10T07:00:00.000Z",
+                "type": "session_meta",
+                "payload": {"id": session_id, "cwd": "/tmp/codex"},
+            }) + "\n"
+            + json.dumps({
+                "timestamp": "2026-04-10T07:00:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "hello"}],
+                },
+            }) + "\n",
+            encoding="utf-8",
+        )
+
+        cmd_rm(session_id, dry_run=True)
+
+        captured = capsys.readouterr()
+        assert "Dry run" in captured.out, (
+            "Expected dry-run to succeed when resolving Codex session by adapter ID. "
+            f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        )
+
     def test_rm_codex_session_removes_file(self, tmp_path, monkeypatch, capsys):
         """rm on a Codex session path should delete the session file."""
         temp_home = tmp_path / "home"

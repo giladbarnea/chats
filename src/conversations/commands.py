@@ -578,31 +578,23 @@ def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
 
 
 def _resolve_session_for_rm(session_id: str) -> Path:
-    """Resolve session identifier to file path (direct path or UUID only)."""
+    """Resolve session identifier to file path via the shared resolver."""
     stripped = session_id.strip()
     console = get_console()
 
-    try:
-        path = Path(stripped)
-        if path.exists() and path.is_file():
-            return path
-    except (OSError, ValueError):
-        console.print(
-            f"[red]Error: Invalid session identifier: [yellow]{session_id}[/yellow][/red]"
-        )
-        sys.exit(1)
+    resolved_path, ambiguous_matches = _try_resolve_conversation_file(stripped)
+    if resolved_path:
+        return resolved_path
 
-    # Try UUID match
-    projects_dir = Path.home() / ".claude" / "projects"
-    for conv in find_all_conversations(projects_dir):
-        if conv.stem == stripped or conv.name == stripped:
-            return conv
+    if ambiguous_matches:
+        _print_ambiguous_error(stripped, ambiguous_matches)
+        sys.exit(1)
 
     # Not found
     console.print(f"[red]Error: Session not found: [yellow]{session_id}[/yellow][/red]")
     console.print()
     console.print("[dim]Provide:[/dim]")
-    console.print("  * A session UUID (e.g., 5078a7c7-0646-43cc-9412-7e1454a282b4)")
+    console.print("  * A session UUID or identifier (e.g., 5078a7c7-0646-43cc-9412-7e1454a282b4)")
     console.print("  * A file path to a .jsonl file")
     sys.exit(1)
 
