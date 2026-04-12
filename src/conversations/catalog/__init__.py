@@ -23,7 +23,18 @@ A good mental model to think about long sessions is “chapters” — cohesive 
 Edge case: the session can be practically empty, or is short and has little to no meaningful information, in which case append it to the 'ignored' list."""
 
 def _is_session_id(value: str) -> bool:
-    return bool(re.match(r"^[0-9a-fA-F-]{36}$", value))
+    """Return True for single-word identifiers that look like session IDs or file stems.
+
+    Accepts UUIDs, ULIDs, Codex rollout stems, and any other single-word
+    identifier the shared resolver can try. Multi-word strings are treated
+    as search/greppable text instead.
+    """
+    stripped = value.strip()
+    if not stripped or " " in stripped:
+        return False
+    if _is_file_path(stripped):
+        return False
+    return len(stripped.split()) == 1
 
 def _is_file_path(value: str) -> bool:
     try:
