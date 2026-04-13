@@ -17,6 +17,11 @@ run_search() {
     HOME="$TEMP_HOME" $CC_CMD search "$@"
 }
 
+echo "Test 0: help text documents paging implication..."
+HELP_OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD search --help 2>&1)
+assert_contains "$HELP_OUTPUT" "implies --no-paging"
+echo "  ✓ help text mentions paging implication"
+
 echo "Test 1: --only-id prints just the session id..."
 OUTPUT=$(run_search --only-id "needle" 2>&1) || true
 assert_success
