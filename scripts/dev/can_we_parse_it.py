@@ -4,7 +4,7 @@ Iterative message model discovery for Claude conversation files.
 Accepts a JSON string from stdin and attempts to parse it into a dataclass. Prints if fails.
 Usage:
 for i in {0..$(jq length /path/to/messages.jsonl)}; do
-  ./scripts/dev/truncate-jsonl-strings.sh /path/to/messages.jsonl | jq -s ".[$i]" | python3.12 scripts/dev/can_we_parse_it.py || break
+  python3 scripts/dev/truncate_json_strings.py /path/to/messages.jsonl | jq -s ".[$i]" | python3.12 scripts/dev/can_we_parse_it.py || break
 done
 """
 import sys
