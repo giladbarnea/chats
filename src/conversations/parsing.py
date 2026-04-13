@@ -544,6 +544,8 @@ def _extract_codex_session_id(session_file: Path) -> str | None:
     return None
 
 
+# NOTE: This centralizes a cross-adapter metadata/display concern that should probably be adapter-owned metadata semantics, not command-owned special casing.
+# NOTE: Treat the current approach as a temporary smell marker, not as the desired long-term ownership boundary.
 def get_display_session_id(session_file: Path) -> str:
     """Return the user-facing session id for a session file."""
     if _is_codex_jsonl_path(session_file):
