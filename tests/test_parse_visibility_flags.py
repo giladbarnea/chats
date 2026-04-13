@@ -418,3 +418,44 @@ def test_thinking_short_modifier_truncates_only_thinking_blocks(
         "Expected shortened thinking output to preserve both prefix and suffix. "
         f"Got stdout:\n{stdout}"
     )
+
+
+def test_bare_thinking_flag_keeps_following_slice_positional(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--thinking` should not consume a following numeric slice argument."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--thinking",
+        "2",
+        str(session_path),
+    )
+
+    assert exit_code == 0, (
+        "Expected `--thinking 2 <file>` to treat `2` as the positional slice, "
+        f"not as an invalid thinking mode. Got exit_code={exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert stderr == "", (
+        "Expected no CLI error when a slice follows bare `--thinking`. "
+        f"Got stderr:\n{stderr}"
+    )
+    assert "plain assistant" in stdout, (
+        "Expected slice `2` to select the assistant turn. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert "<thinking>" in stdout, (
+        "Expected the selected assistant turn to keep its thinking block visible. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert "plain user" not in stdout, (
+        "Expected slice `2` to exclude the first user turn. "
+        f"Got stdout:\n{stdout}"
+    )

@@ -411,13 +411,6 @@ def main():
         # 2. Positional args after --flag=value end up in unknown with nargs='?'
         args, unknown = parser.parse_known_args()
 
-        if args.input is None and isinstance(args.thinking, str):
-            if args.thinking in {"full", "short"}:
-                pass
-            else:
-                args.input = args.thinking
-                args.thinking = "full"
-
         def _looks_like_slice(candidate: str) -> bool:
             """Check if candidate is a numeric slice (not a tool filter spec).
 
@@ -431,6 +424,15 @@ def main():
                 not p or p.isdigit() or (p.startswith("-") and len(p) > 1 and p[1:].isdigit())
                 for p in parts
             )
+
+        if isinstance(args.thinking, str) and args.thinking not in {"full", "short"}:
+            thinking_candidate = args.thinking
+            if args.input is None:
+                args.input = thinking_candidate
+                args.thinking = "full"
+            elif args.slice is None and _looks_like_slice(thinking_candidate):
+                args.slice = thinking_candidate
+                args.thinking = "full"
 
         # Check if unknown[0] is either a recent-session selector or a slice.
         if unknown:
