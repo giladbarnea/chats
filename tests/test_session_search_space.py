@@ -341,7 +341,7 @@ def test_cmd_search_only_id_prints_plain_session_id(
         "Expected `search --only-id` to exit successfully when a Codex session matches. "
         f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert captured.out.strip() == paths["codex"].stem, (
+    assert captured.out.strip() == "019d7b61-53d7-7891-9033-ad646f9d2ce7", (
         "Expected `--only-id` to print only the matching session id, with no "
         f"metadata or content. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

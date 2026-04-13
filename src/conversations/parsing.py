@@ -544,6 +544,13 @@ def _extract_codex_session_id(session_file: Path) -> str | None:
     return None
 
 
+def get_display_session_id(session_file: Path) -> str:
+    """Return the user-facing session id for a session file."""
+    if _is_codex_jsonl_path(session_file):
+        return _extract_codex_session_id(session_file) or session_file.stem
+    return session_file.stem
+
+
 def _find_pi_session_matches(identifier: str) -> list[tuple[Path, str]]:
     """Find PI session files that match a PI session id."""
     if len(identifier.split()) != 1:

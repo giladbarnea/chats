@@ -485,8 +485,8 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
     )
 
     captured = capsys.readouterr()
-    assert "session_id: rollout-2026-04-10T09-27-00-01961abc-def0-7123-89ab-codexsession0004" in captured.out, (
-        "Expected Codex metadata to include the standard session_id field derived from the file stem. "
+    assert "session_id: 01961abc-def0-7123-89ab-codexsession0004" in captured.out, (
+        "Expected Codex metadata to include the canonical Codex session id from session_meta.payload.id. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "directory: /tmp/codex-project" in captured.out, (
@@ -503,6 +503,66 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
     assert "messages: 1" in captured.out, (
         "Expected Codex metadata to report the normalized message count. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_rename_persists_canonical_codex_session_id_in_appended_entries(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """Codex rename metadata should keep the canonical short session id, not the rollout-prefixed filename stem."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_id = "01961abc-def0-7123-89ab-codexrename002"
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "04"
+        / "10"
+        / f"rollout-2026-04-10T10-05-00-{session_id}.jsonl"
+    )
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-04-10T07:05:00.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": session_id,
+                    "timestamp": "2026-04-10T07:05:00.000Z",
+                    "cwd": "/tmp/codex-project",
+                    "originator": "codex_cli_rs",
+                    "cli_version": "0.99.0",
+                    "source": "cli",
+                    "model_provider": "openai",
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:05:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "Rename this codex session."}],
+                },
+            },
+        ],
+    )
+
+    cmd_rename(str(session_path), "Canonical Codex Title")
+
+    appended_entries = [
+        json.loads(line)
+        for line in session_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ][-2:]
+    assert [entry["sessionId"] for entry in appended_entries] == [session_id, session_id], (
+        "Expected cmd_rename to append custom-title and agent-name entries that use the "
+        "canonical Codex session id rather than the rollout-prefixed filename stem. "
+        f"Got entries: {appended_entries}"
     )
 
 

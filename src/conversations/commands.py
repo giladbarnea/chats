@@ -30,6 +30,7 @@ from .parsing import (
     extract_summaries_from_jsonl,
     extract_cwd_from_jsonl,
     find_all_supported_session_files,
+    get_display_session_id,
     get_jsonl_timestamps,
     is_sidechain_session_file,
     parse_jsonl,
@@ -225,7 +226,7 @@ def _print_ambiguous_error(identifier: str, matches: list[tuple[Path, str]]) -> 
     console.print(f"[yellow]'{identifier}'[/yellow] matches multiple sessions:")
     console.print()
     for conv_file, summary in matches:
-        console.print(f"  * [cyan]{conv_file.stem}[/cyan]: {summary}")
+        console.print(f"  * [cyan]{get_display_session_id(conv_file)}[/cyan]: {summary}")
     console.print()
     console.print("[dim]Use a more specific prefix or the full UUID[/dim]")
 
@@ -284,7 +285,7 @@ def display_search_result(
 ) -> None:
     """Display a single search result in unified XML format."""
     if only_id:
-        get_console().print(conv_file.stem, markup=False)
+        get_console().print(get_display_session_id(conv_file), markup=False)
         return
 
     if emit_metadata:
@@ -367,7 +368,8 @@ def cmd_search(
                     if not only_id:
                         # Make sure rule is displayed first, acting as a title, followed by the session's metadata
                         get_console().rule(
-                            title=f"[bold white]{meta.path.stem}[/]", style="#00ffba"
+                            title=f"[bold white]{get_display_session_id(meta.path)}[/]",
+                            style="#00ffba",
                         )
                     display_search_result(
                         meta.path,
@@ -469,7 +471,7 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
         sys.exit(1)
 
     conv_file = resolve_conversation_file(conversation_id)
-    session_id = conv_file.stem
+    session_id = get_display_session_id(conv_file)
 
     # Read content to extract project path (cwd) before appending
     content = conv_file.read_text(encoding="utf-8")
@@ -527,7 +529,7 @@ def _is_claude_session_path(conv_file: Path) -> bool:
 def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
     """Remove a conversation session and all associated files."""
     conv_file = _resolve_session_for_rm(session_id)
-    session_uuid = conv_file.stem
+    session_uuid = get_display_session_id(conv_file)
     project_dir_name = conv_file.parent.name
     claude_dir = Path.home() / ".claude"
 
@@ -990,7 +992,7 @@ def _merge_agent_messages(
     flags: ConversationFlags,
 ) -> list[Message]:
     """Merge agent messages into main conversation timeline."""
-    session_id = input_file_path.stem
+    session_id = get_display_session_id(input_file_path)
     agent_files = find_agent_files_for_session(input_file_path, session_id)
 
     # Extract Task tool dispatches (timestamp -> subagent_type)

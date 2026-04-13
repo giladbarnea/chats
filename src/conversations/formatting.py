@@ -10,6 +10,7 @@ from rich.text import Text
 
 from .console import get_console
 from .model import ConversationFlags, Message
+from .parsing import get_display_session_id
 from .parts import MessagePartKind
 from .registry import ContentBlockType
 from .tools import render_tool_rich, render_tool_xml
@@ -148,7 +149,7 @@ def print_metadata(
     dedupe_frontmatter_separators: bool = False,
 ) -> None:
     """Print conversation metadata to stdout in YAML format."""
-    yaml_lines = [f"session_id: {file_path.stem}"]
+    yaml_lines = [f"session_id: {get_display_session_id(file_path)}"]
 
     if cwd:
         yaml_lines.append(f"directory: {collapse_home(cwd)}")

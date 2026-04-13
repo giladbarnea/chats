@@ -428,6 +428,14 @@ class TestRmNonClaude:
             "Expected dry-run message for Codex session. "
             f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
         )
+        assert "01961abc-rm-codex" in captured.out, (
+            "Expected Codex rm preview to display the canonical short session id. "
+            f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        )
+        assert "Session: rollout-2026-04-10T10-00-00-01961abc-rm-codex" not in captured.out, (
+            "Expected Codex rm preview not to present the rollout-prefixed filename stem in the session label. "
+            f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        )
 
     def test_dry_run_pi_session_by_direct_path(self, tmp_path, monkeypatch, capsys):
         """rm --dry-run on a PI session path should not crash."""
