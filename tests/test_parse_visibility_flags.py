@@ -367,3 +367,95 @@ def test_no_assistant_can_show_thinking_tools_and_agents_together(
         "Expected agent messages to remain visible when `--agents` is enabled. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
     )
+
+
+def test_thinking_short_modifier_truncates_only_thinking_blocks(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--thinking=short` should truncate thinking blocks while keeping the block visible."""
+    session_path = tmp_path / "thinking-short-fixture.jsonl"
+    long_thinking = "THINK_START-" + ("x" * 1000) + "-THINK_END"
+    entries = [
+        {
+            "type": "assistant",
+            "timestamp": "2026-04-05T09:00:01.000Z",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "thinking", "thinking": long_thinking},
+                    {"type": "text", "text": "assistant text"},
+                ],
+            },
+        }
+    ]
+    session_path.write_text(
+        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--thinking=short",
+        str(session_path),
+    )
+
+    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert stderr == "", f"Expected no warning for valid --thinking=short usage. Got stderr:\n{stderr}"
+    assert "<thinking>" in stdout, (
+        "Expected thinking blocks to be shown when `--thinking=short` is enabled. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert stdout.count("\n...\n") == 1, (
+        "Expected shortened thinking output to contain one line-broken ellipsis placeholder. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert "THINK_START-" in stdout and "THINK_END" in stdout, (
+        "Expected shortened thinking output to preserve both prefix and suffix. "
+        f"Got stdout:\n{stdout}"
+    )
+
+
+def test_bare_thinking_flag_keeps_following_slice_positional(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--thinking` should not consume a following numeric slice argument."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--thinking",
+        "2",
+        str(session_path),
+    )
+
+    assert exit_code == 0, (
+        "Expected `--thinking 2 <file>` to treat `2` as the positional slice, "
+        f"not as an invalid thinking mode. Got exit_code={exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert stderr == "", (
+        "Expected no CLI error when a slice follows bare `--thinking`. "
+        f"Got stderr:\n{stderr}"
+    )
+    assert "plain assistant" in stdout, (
+        "Expected slice `2` to select the assistant turn. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert "<thinking>" in stdout, (
+        "Expected the selected assistant turn to keep its thinking block visible. "
+        f"Got stdout:\n{stdout}"
+    )
+    assert "plain user" not in stdout, (
+        "Expected slice `2` to exclude the first user turn. "
+        f"Got stdout:\n{stdout}"
+    )

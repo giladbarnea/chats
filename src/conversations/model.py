@@ -32,6 +32,7 @@ class ConversationFlags:
     show_plans: bool
     allow_empty_output: bool
     shorten: bool
+    shorten_thinking: bool
     color: bool
     paging: bool
 
@@ -46,6 +47,7 @@ class ConversationFlags:
         show_plans: bool = True,
         allow_empty_output: bool = False,
         shorten: bool = False,
+        shorten_thinking: bool = False,
         color: bool = False,
         paging: bool | None = None,
     ):
@@ -57,6 +59,7 @@ class ConversationFlags:
         self.show_plans = show_plans
         self.allow_empty_output = allow_empty_output
         self.shorten = shorten
+        self.shorten_thinking = shorten_thinking
         self.color = (color == "always") or (color == "auto" and sys.stdout.isatty())
         # Paging defaults to color value unless explicitly set
         self.paging = paging if paging is not None else self.color
@@ -73,6 +76,7 @@ class ConversationFlags:
             f"show_tools={self.show_tools}, show_agents={self.show_agents}, "
             f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
             f"shorten={self.shorten}, "
+            f"shorten_thinking={self.shorten_thinking}, "
             f"color={self.color}, paging={self.paging})"
         )
 
@@ -115,7 +119,10 @@ class Message:
 
         # Thinking block
         if flags.show_thinking and self.thinking:
-            thinking = shorten_data(self.thinking) if flags.shorten else self.thinking
+            should_shorten_thinking = flags.shorten or flags.shorten_thinking
+            thinking = (
+                truncate_middle(self.thinking) if should_shorten_thinking else self.thinking
+            )
             parts.append(MessagePart(MessagePartKind.THINKING, thinking))
 
         # Tools

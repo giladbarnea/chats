@@ -13,6 +13,19 @@ from .ordering import is_single_negative_index
 from .tool_filter import ToolFilter, parse_tool_spec
 
 
+def _resolve_thinking_mode(raw_thinking: str | None, show_all: bool) -> tuple[bool, bool]:
+    """Return (show_thinking, shorten_thinking) from raw CLI args."""
+    if show_all:
+        return True, False
+    if raw_thinking is None:
+        return False, False
+    if raw_thinking not in {"full", "short"}:
+        raise ValueError(
+            f"Invalid thinking mode: {raw_thinking!r}. Expected one of: full, short."
+        )
+    return True, raw_thinking == "short"
+
+
 def _resolve_show_tools(
     raw_tools: list[bool | str] | None, show_all: bool
 ) -> bool | list[ToolFilter]:
@@ -54,7 +67,7 @@ def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
     if args.only_assistant and only_assistant_disabled:
         _warn_only_override("`--only-assistant`", only_assistant_disabled)
         args.all = False
-        args.thinking = False
+        args.thinking = None
         args.tools = None
         args.agents = False
 
@@ -70,7 +83,7 @@ def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
     if args.only_user and only_user_disabled:
         _warn_only_override("`--only-user`", only_user_disabled)
         args.all = False
-        args.thinking = False
+        args.thinking = None
         args.tools = None
         args.agents = False
 
@@ -93,10 +106,11 @@ def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
 
 def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
     """Convert normalized parse-mode args into ConversationFlags."""
+    show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
     return ConversationFlags(
         show_user_messages=not args.only_assistant and not args.no_user,
         show_assistant_messages=not args.only_user and not args.no_assistant,
-        show_thinking=args.thinking or args.all,
+        show_thinking=show_thinking,
         show_tools=_resolve_show_tools(args.tools, args.all),
         show_agents=args.agents or args.all,
         show_plans=not args.no_plans,
@@ -104,6 +118,7 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
             args.only_user or args.only_assistant or args.no_user or args.no_assistant
         ),
         shorten=args.short,
+        shorten_thinking=shorten_thinking,
         color=args.color,
         paging=args.paging,
     )
@@ -152,7 +167,12 @@ def main():
             help="Only conversations created after DATE",
         )
         parser.add_argument(
-            "-T", "--thinking", action="store_true", help="Show thinking tokens"
+            "-T",
+            "--thinking",
+            nargs="?",
+            const="full",
+            default=None,
+            help="Show thinking tokens (optional: short)",
         )
         parser.add_argument(
             "-t",
@@ -207,12 +227,17 @@ def main():
 
         args = parser.parse_args(sys.argv[2:])
 
+        try:
+            show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
+        except ValueError as exc:
+            parser.error(str(exc))
         flags = ConversationFlags(
-            show_thinking=args.thinking or args.all,
+            show_thinking=show_thinking,
             show_tools=_resolve_show_tools(args.tools, args.all),
             show_agents=args.agents or args.all,
             show_plans=not args.no_plans,
             shorten=args.short,
+            shorten_thinking=shorten_thinking,
             color=args.color,
             paging=args.paging,
         )
@@ -290,7 +315,12 @@ def main():
             help="Output file path (uses Rich display if omitted)",
         )
         parser.add_argument(
-            "-T", "--thinking", action="store_true", help="Show thinking tokens"
+            "-T",
+            "--thinking",
+            nargs="?",
+            const="full",
+            default=None,
+            help="Show thinking tokens (optional: short)",
         )
         parser.add_argument(
             "--only-user",
@@ -395,6 +425,15 @@ def main():
                 for p in parts
             )
 
+        if isinstance(args.thinking, str) and args.thinking not in {"full", "short"}:
+            thinking_candidate = args.thinking
+            if args.input is None:
+                args.input = thinking_candidate
+                args.thinking = "full"
+            elif args.slice is None and _looks_like_slice(thinking_candidate):
+                args.slice = thinking_candidate
+                args.thinking = "full"
+
         # Check if unknown[0] is either a recent-session selector or a slice.
         if unknown:
             candidate = unknown[0]
@@ -445,7 +484,10 @@ def main():
                 args.tools = [True]
 
         _normalize_parse_visibility_args(args)
-        flags = _build_parse_flags(args)
+        try:
+            flags = _build_parse_flags(args)
+        except ValueError as exc:
+            parser.error(str(exc))
 
         output_format = "raw" if args.raw else args.format
         emit_metadata = not (args.no_metadata or args.raw or output_format == "raw")
