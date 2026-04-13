@@ -274,6 +274,7 @@ def display_search_result(
     flags: ConversationFlags,
     *,
     list_only: bool,
+    only_id: bool,
     emit_metadata: bool,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
@@ -282,6 +283,10 @@ def display_search_result(
     last_custom_title: str | None = None,
 ) -> None:
     """Display a single search result in unified XML format."""
+    if only_id:
+        get_console().print(conv_file.stem, markup=False)
+        return
+
     if emit_metadata:
         match_count = len(matches) + (len(matching_summaries) if matching_summaries else 0) + (len(matching_custom_titles) if matching_custom_titles else 0)
         print_metadata(
@@ -316,6 +321,7 @@ def cmd_search(
     pattern_arg: str,
     flags: ConversationFlags,
     list_only: bool,
+    only_id: bool = False,
     dir_filter: str | None = None,
     mafter: str | None = None,
     cafter: str | None = None,
@@ -358,10 +364,11 @@ def cmd_search(
 
                 if matches or matching_summaries or matching_custom_titles:
                     found_any = True
-                    # Make sure rule is displayed first, acting as a title, followed by the session's metadata
-                    get_console().rule(
-                        title=f"[bold white]{meta.path.stem}[/]", style="#00ffba"
-                    )
+                    if not only_id:
+                        # Make sure rule is displayed first, acting as a title, followed by the session's metadata
+                        get_console().rule(
+                            title=f"[bold white]{meta.path.stem}[/]", style="#00ffba"
+                        )
                     display_search_result(
                         meta.path,
                         messages,
@@ -369,6 +376,7 @@ def cmd_search(
                         cwd,
                         flags,
                         list_only=list_only,
+                        only_id=only_id,
                         emit_metadata=emit_metadata,
                         created_at=meta.ctime,
                         modified_at=meta.mtime,

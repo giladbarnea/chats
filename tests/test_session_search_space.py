@@ -315,3 +315,37 @@ def test_cmd_search_matches_custom_title_across_ecosystems(
         "Expected PI session path in output. "
         f"Got stdout:\n{captured.out}"
     )
+
+
+def test_cmd_search_only_id_prints_plain_session_id(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--only-id` should emit just the matching session identifier."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+    paths = _build_supported_session_space(temp_home)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "codex-search-token",
+            ConversationFlags(color="never", paging=False),
+            list_only=False,
+            emit_metadata=True,
+            only_id=True,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected `search --only-id` to exit successfully when a Codex session matches. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == paths["codex"].stem, (
+        "Expected `--only-id` to print only the matching session id, with no "
+        f"metadata or content. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "history_path:" not in captured.out, (
+        "Expected `--only-id` to suppress search metadata. "
+        f"Got stdout:\n{captured.out}"
+    )

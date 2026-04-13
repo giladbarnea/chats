@@ -144,6 +144,12 @@ def main():
             help="List mode - show only paths and metadata",
         )
         parser.add_argument(
+            "-ll",
+            "--only-id",
+            action="store_true",
+            help="Show only matching session IDs",
+        )
+        parser.add_argument(
             "-d",
             "--dir",
             type=str,
@@ -245,6 +251,7 @@ def main():
             args.pattern,
             flags,
             args.list,
+            args.only_id,
             args.dir,
             args.mafter,
             args.cafter,

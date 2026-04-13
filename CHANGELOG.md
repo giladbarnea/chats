@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-13] Add search-only-id mode
+
+### Added
+
+- `ccc search --only-id` and its `-ll` shorthand now print only matching session IDs, one per line, instead of the full search metadata block.
+
+---
 ## [2026-04-11] Unify supported-session search space
 
 ### Changed

@@ -172,6 +172,7 @@ ccc search [OPTIONS] <pattern>
 
 **Options:**
 - `-l`: List mode - show only file paths and metadata
+- `-ll`, `--only-id`: Show only matching session IDs
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE
 - `-ca, --cafter DATE`: Only conversations created after DATE
@@ -186,6 +187,7 @@ ccc search [OPTIONS] <pattern>
 ccc search "error message"              # Case-insensitive search
 ccc search "implement.*feature"         # Regex pattern
 ccc search -l "bug fix"                 # List matching files only
+ccc search -ll "bug fix"                # Print only matching session IDs
 ccc search -d ~/dev/project "feature"   # Filter by directory
 ccc search --mafter=1d "TODO"           # Modified in last day
 ccc search --mafter=2024-12-01 "deploy" # Modified since Dec 1
