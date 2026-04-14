@@ -1,3 +1,9 @@
+---
+name: architecture
+description: Document the architecture of the `ccc` CLI tool.
+last_updated: 2026-04-14, 796506c
+---
+
 # ARCHITECTURE.md
 
 ## Architecture Diagram (Space)
