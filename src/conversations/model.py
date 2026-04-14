@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
-from .tool_filter import ToolFilter
+from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_to_parts
 from .utils import shorten_data, truncate_middle
 
@@ -177,32 +177,8 @@ class Message:
         filter_value: bool | list[ToolFilter],
         id_map: dict[str, str],
     ) -> tuple[bool, bool]:
-        """Determine if a tool should be shown and whether to shorten it.
-
-        Returns (show, filter_short).
-
-        Negative filters are AND'd as a blocklist: if ANY negative filter's
-        criteria match, the tool is excluded.
-        Positive filters are OR'd as an allowlist: at least one must match.
-        If only negative filters exist, the tool is shown (unless blocked).
-        """
-        if isinstance(filter_value, bool):
-            return filter_value, False
-
-        # Blocklist: any negative filter whose criteria match → exclude
-        for f in filter_value:
-            if f.negate and f._matches_criteria(tool, id_map):
-                return False, False
-
-        # Allowlist: positive filters OR'd
-        positive = [f for f in filter_value if not f.negate]
-        if not positive:
-            return True, False
-
-        for f in positive:
-            if f._matches_criteria(tool, id_map):
-                return True, f.short
-        return False, False
+        """Determine if a tool should be shown and whether to shorten it."""
+        return resolve_tool_visibility(tool, filter_value, id_map)
 
     def has_content(self) -> bool:
         """Check if message has any displayable content."""

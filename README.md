@@ -13,6 +13,7 @@ Format and search supported AI CLI conversation history files. The `ccc` CLI con
 
 **Core functions:**
 - **Parse**: Convert conversation history to XML-tagged markdown
+- **Fork**: Duplicate a session into a thinner resumable copy
 - **Search**: Find conversations using regex patterns with rich display
 - **Format**: Convert between JSONL and raw transcript formats
 - **Remove**: Safely delete conversation sessions and all associated files
@@ -201,6 +202,35 @@ ccc search --cafter=1w --mafter=1d "."  # Created last week, modified today
 - Results sorted by modification time ascending across Claude, PI, and Codex sessions
 - Extracts working directory from conversation files
 - Full markdown rendering with syntax highlighting
+
+### Fork Mode
+
+Create a new supported session file that keeps only the parts of the conversation you want to carry forward.
+
+```bash
+ccc fork [OPTIONS] <session>
+```
+
+`fork` resolves the input session the same way parse does for file paths, recent negative indices, session identifiers, and summary prefixes, then writes a new native session file back to disk. The fork keeps the original ecosystem’s on-disk format:
+
+- Claude forks become new `~/.claude/projects/.../<session-id>.jsonl` files
+- Codex forks keep their `rollout-...-<session-id>.jsonl` filename shape
+- PI forks keep their timestamp-prefixed `<timestamp>_<session-id>.jsonl` filename shape
+
+By default, `fork` strips thinking, tool payloads, and Claude sidechains, which makes the new session much smaller than the original transcript. You can opt content back in with the same visibility knobs as parse:
+
+```bash
+ccc fork -1
+ccc fork -t session-id
+ccc fork -T short -t Read:o:s -t Bash:i session-id
+ccc fork -A session-id
+```
+
+**Options:**
+- `-T, --thinking [full|short]`: Include thinking content, optionally shortened
+- `-t, --tools [SPEC]`: Include tool use/result content, with the same filter syntax as parse
+- `-a, --agents`: Include Claude sidechain agent sessions and keep Task linkage intact
+- `-A, --all`: Include thinking, tools, and agents
 
 **Display:**
 - File paths: cyan bold

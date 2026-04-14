@@ -3,6 +3,7 @@
 from .commands import (  # noqa: F401
     _try_resolve_conversation_file,
     cmd_catalog,
+    cmd_fork,
     cmd_parse,
     cmd_rename,
     cmd_rm,

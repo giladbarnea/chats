@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import json
-import os
 import re
-import subprocess
 import sys
 from collections.abc import Callable, Iterable
 from contextlib import nullcontext
@@ -12,6 +10,7 @@ from pathlib import Path
 
 from .console import get_console, print_error
 from .date_filters import parse_date_filter
+from .forking import fork_session
 from .formatting import (
     format_to_json,
     format_to_raw,
@@ -31,6 +30,7 @@ from .parsing import (
     extract_cwd_from_jsonl,
     find_all_supported_session_files,
     get_display_session_id,
+    get_native_session_id,
     get_jsonl_timestamps,
     is_sidechain_session_file,
     parse_jsonl,
@@ -471,7 +471,7 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
         sys.exit(1)
 
     conv_file = resolve_conversation_file(conversation_id)
-    session_id = get_display_session_id(conv_file)
+    session_id = get_native_session_id(conv_file)
 
     # Read content to extract project path (cwd) before appending
     content = conv_file.read_text(encoding="utf-8")
@@ -514,6 +514,18 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
     console = get_console()
     console.print(f"[green]v[/green] Added custom title to [cyan]{conv_file.name}[/cyan]")
     console.print(f"  [dim]Title:[/dim] [bold]{new_name}[/bold]")
+
+
+def cmd_fork(session_id: str, flags: ConversationFlags) -> Path:
+    """Fork a supported session into a thinner resumable copy."""
+    conv_file = resolve_conversation_file(session_id)
+    target_path = fork_session(conv_file, flags)
+
+    console = get_console()
+    console.print(
+        f"[green]v[/green] Forked [cyan]{conv_file.name}[/cyan] -> [cyan]{target_path.name}[/cyan]"
+    )
+    return target_path
 
 
 def _is_claude_session_path(conv_file: Path) -> bool:

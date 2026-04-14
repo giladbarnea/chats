@@ -22,6 +22,7 @@ class JsonlSessionAdapter:
     find_session_files: Callable[[], list[Path]] | None = None
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
     is_sidechain_path: Callable[[Path], bool] = lambda _path: False
+    extract_session_id: Callable[[Path], str | None] = lambda path: path.stem
 
 
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
@@ -553,6 +554,12 @@ def get_display_session_id(session_file: Path) -> str:
     return session_file.stem
 
 
+def get_native_session_id(session_file: Path) -> str:
+    """Return the canonical in-band session id for a session file."""
+    adapter = _select_jsonl_session_adapter(session_file)
+    return adapter.extract_session_id(session_file) or session_file.stem
+
+
 def _find_pi_session_matches(identifier: str) -> list[tuple[Path, str]]:
     """Find PI session files that match a PI session id."""
     if len(identifier.split()) != 1:
@@ -632,6 +639,7 @@ JSONL_SESSION_ADAPTERS = [
         parse_messages=_parse_pi_jsonl,
         find_session_files=_find_pi_session_files,
         find_session_matches=_find_pi_session_matches,
+        extract_session_id=_extract_pi_session_id,
     ),
     JsonlSessionAdapter(
         name="codex",
@@ -639,12 +647,14 @@ JSONL_SESSION_ADAPTERS = [
         parse_messages=_parse_codex_jsonl,
         find_session_files=_find_codex_session_files,
         find_session_matches=_find_codex_session_matches,
+        extract_session_id=_extract_codex_session_id,
     ),
     JsonlSessionAdapter(
         name="default",
         matches=lambda _source_path: True,
         parse_messages=_parse_default_jsonl,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),
+        extract_session_id=lambda path: path.stem,
     ),
 ]
 
@@ -655,6 +665,11 @@ def _select_jsonl_session_adapter(source_path: Path | None) -> JsonlSessionAdapt
         if adapter.matches(source_path):
             return adapter
     return JSONL_SESSION_ADAPTERS[-1]
+
+
+def get_jsonl_session_adapter(source_path: Path | None) -> JsonlSessionAdapter:
+    """Return the adapter that owns the given session path."""
+    return _select_jsonl_session_adapter(source_path)
 
 
 def is_sidechain_session_file(session_file: Path) -> bool:

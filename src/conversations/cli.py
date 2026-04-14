@@ -6,6 +6,7 @@ import re
 import sys
 from pathlib import Path
 
+from . import commands as commands_module
 from .commands import cmd_catalog, cmd_parse, cmd_rename, cmd_rm, cmd_search
 from .console import init_module_console, print_warning
 from .model import ConversationFlags
@@ -122,6 +123,85 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         color=args.color,
         paging=args.paging,
     )
+
+
+def _build_fork_flags(args: argparse.Namespace) -> ConversationFlags:
+    """Convert fork-mode args into ConversationFlags."""
+    show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
+    return ConversationFlags(
+        show_thinking=show_thinking,
+        show_tools=_resolve_show_tools(args.tools, args.all),
+        show_agents=args.agents or args.all,
+        shorten_thinking=shorten_thinking,
+        color=False,
+        paging=False,
+    )
+
+
+def _looks_like_slice(candidate: str) -> bool:
+    """Check if candidate is a numeric slice (not a tool filter spec)."""
+    parts = candidate.split(":")
+    if len(parts) > 2:
+        return False
+    return all(
+        not p or p.isdigit() or (p.startswith("-") and len(p) > 1 and p[1:].isdigit())
+        for p in parts
+    )
+
+
+def _looks_like_session_input(candidate: str) -> bool:
+    """Check if candidate plausibly names a session/file rather than a tool filter."""
+    if os.path.exists(candidate):
+        return True
+    if candidate.endswith(".jsonl") or "/" in candidate or os.sep in candidate:
+        return True
+    if is_single_negative_index(candidate):
+        return True
+    return bool(re.match(r"^[0-9a-f-]{36}$", candidate))
+
+
+def _repair_visibility_option_positionals(
+    args: argparse.Namespace,
+    *,
+    input_attr: str,
+    allow_slice: bool,
+) -> None:
+    """Undo argparse swallowing positionals into `-T/--thinking` or `-t/--tools`."""
+    input_value = getattr(args, input_attr)
+
+    if isinstance(args.thinking, str) and args.thinking not in {"full", "short"}:
+        thinking_candidate = args.thinking
+        if input_value is None:
+            setattr(args, input_attr, thinking_candidate)
+            args.thinking = "full"
+            input_value = thinking_candidate
+        elif allow_slice and getattr(args, "slice", None) is None and _looks_like_slice(thinking_candidate):
+            args.slice = thinking_candidate
+            args.thinking = "full"
+
+    if (
+        input_value is None
+        and args.tools is not None
+        and len(args.tools) == 1
+        and isinstance(args.tools[0], str)
+    ):
+        candidate = args.tools[0]
+        if _looks_like_session_input(candidate):
+            setattr(args, input_attr, candidate)
+            args.tools = [True]
+            input_value = candidate
+
+    if (
+        allow_slice
+        and getattr(args, "slice", None) is None
+        and args.tools is not None
+        and len(args.tools) == 1
+        and isinstance(args.tools[0], str)
+    ):
+        candidate = args.tools[0]
+        if _looks_like_slice(candidate):
+            args.slice = candidate
+            args.tools = [True]
 
 
 def main():
@@ -274,6 +354,55 @@ def main():
         args = parser.parse_args(sys.argv[2:])
 
         cmd_rename(args.conversation_id, args.new_name)
+    elif len(sys.argv) > 1 and sys.argv[1] == "fork":
+        parser = argparse.ArgumentParser(
+            prog="ccc fork",
+            description="Duplicate a supported session into a thinner resumable fork",
+        )
+        parser.add_argument(
+            "session",
+            nargs="?",
+            help="Conversation/session ID, summary prefix, recent negative index, or file path",
+        )
+        parser.add_argument(
+            "-T",
+            "--thinking",
+            nargs="?",
+            const="full",
+            default=None,
+            help="Include thinking tokens (optional: short)",
+        )
+        parser.add_argument(
+            "-t",
+            "--tools",
+            action="append",
+            nargs="?",
+            const=True,
+            default=None,
+            help="Include tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
+        )
+        parser.add_argument(
+            "-a", "--agents", action="store_true", help="Include agent sidechain messages"
+        )
+        parser.add_argument(
+            "-A",
+            "--all",
+            action="store_true",
+            help="Show everything (thinking, tools, agents)",
+        )
+
+        args, _unknown = parser.parse_known_args(sys.argv[2:])
+        _repair_visibility_option_positionals(args, input_attr="session", allow_slice=False)
+
+        if args.session is None:
+            parser.error("the following arguments are required: session")
+
+        try:
+            flags = _build_fork_flags(args)
+        except ValueError as exc:
+            parser.error(str(exc))
+
+        commands_module.cmd_fork(args.session, flags)
     elif len(sys.argv) > 1 and sys.argv[1] == "rm":
         # Parse rm arguments
         parser = argparse.ArgumentParser(
@@ -420,28 +549,7 @@ def main():
         # 2. Positional args after --flag=value end up in unknown with nargs='?'
         args, unknown = parser.parse_known_args()
 
-        def _looks_like_slice(candidate: str) -> bool:
-            """Check if candidate is a numeric slice (not a tool filter spec).
-
-            Valid slices: "1", "-1", "2:", ":-2", "2:5", "-5:".
-            NOT slices: "Bash:i", "Read:o:s" (contain non-numeric parts).
-            """
-            parts = candidate.split(":")
-            if len(parts) > 2:
-                return False
-            return all(
-                not p or p.isdigit() or (p.startswith("-") and len(p) > 1 and p[1:].isdigit())
-                for p in parts
-            )
-
-        if isinstance(args.thinking, str) and args.thinking not in {"full", "short"}:
-            thinking_candidate = args.thinking
-            if args.input is None:
-                args.input = thinking_candidate
-                args.thinking = "full"
-            elif args.slice is None and _looks_like_slice(thinking_candidate):
-                args.slice = thinking_candidate
-                args.thinking = "full"
+        _repair_visibility_option_positionals(args, input_attr="input", allow_slice=True)
 
         # Check if unknown[0] is either a recent-session selector or a slice.
         if unknown:
@@ -455,42 +563,6 @@ def main():
                 args.input = candidate
             elif args.slice is None and _looks_like_slice(candidate):
                 args.slice = candidate
-
-        # Fix for nargs='?' consuming positional arg:
-        # With action="append", args.tools is None or a list.
-        # If args.tools has a single string that looks like a file/session ID, swap it.
-        if (
-            args.input is None
-            and args.tools is not None
-            and len(args.tools) == 1
-            and isinstance(args.tools[0], str)
-        ):
-            candidate = args.tools[0]
-            should_swap = False
-            if os.path.exists(candidate):
-                should_swap = True
-            elif candidate.endswith(".jsonl") or "/" in candidate or os.sep in candidate:
-                should_swap = True
-            elif is_single_negative_index(candidate):
-                should_swap = True
-            elif re.match(r"^[0-9a-f-]{36}$", candidate):
-                should_swap = True
-
-            if should_swap:
-                args.input = candidate
-                args.tools = [True]
-
-        # Fix for nargs='?' consuming slice argument:
-        if (
-            args.slice is None
-            and args.tools is not None
-            and len(args.tools) == 1
-            and isinstance(args.tools[0], str)
-        ):
-            candidate = args.tools[0]
-            if _looks_like_slice(candidate):
-                args.slice = candidate
-                args.tools = [True]
 
         _normalize_parse_visibility_args(args)
         try:
