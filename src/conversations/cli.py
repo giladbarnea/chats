@@ -227,7 +227,7 @@ def main():
             "-ll",
             "--only-id",
             action="store_true",
-            help="Show only matching session IDs (implies --no-paging)",
+            help="Show only matching session IDs (implies --color never and --no-paging)",
         )
         parser.add_argument(
             "-d",
@@ -321,6 +321,7 @@ def main():
         args = parser.parse_args(sys.argv[2:])
         if args.only_id:
             args.paging = False
+            args.color = "never"
 
         try:
             show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)

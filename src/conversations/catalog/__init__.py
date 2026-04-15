@@ -112,9 +112,9 @@ def catalog_sessions(args: list[str]) -> None:
 
     if provided_greppable_values:
         combined_text = "\n".join(provided_greppable_values)
-        matches = re.findall(r"^session_id:\s*([0-9a-fA-F-]{36})", combined_text, re.MULTILINE)
-        for m in matches:
-            m = m.strip()
+        match = re.search(r"^session_id:\s*([0-9a-fA-F-]{36})", combined_text, re.MULTILINE)
+        if match:
+            m = match.group(1).strip()
             if m not in session_ids:
                 session_ids.append(m)
 

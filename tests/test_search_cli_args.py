@@ -6,8 +6,8 @@ from __future__ import annotations
 from conversations import cli
 
 
-def test_search_only_id_disables_paging_but_keeps_color(monkeypatch) -> None:
-    """`search --only-id` should force paging off without changing color selection."""
+def test_search_only_id_forces_plain_output(monkeypatch) -> None:
+    """`search --only-id` should force plain output regardless of color/paging flags."""
     captured: dict[str, object] = {}
 
     def fake_cmd_search(
@@ -40,7 +40,9 @@ def test_search_only_id_disables_paging_but_keeps_color(monkeypatch) -> None:
     assert captured["pattern"] == "needle"
     assert captured["only_id"] is True
     flags = captured["flags"]
-    assert flags.color is True, "Expected --color always to keep Rich color enabled."
+    assert flags.color is False, (
+        "Expected --only-id to force plain output even when --color always was passed."
+    )
     assert flags.paging is False, (
         "Expected --only-id to force paging off even if --paging was also passed."
     )

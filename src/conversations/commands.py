@@ -288,7 +288,7 @@ def display_search_result(
 ) -> None:
     """Display a single search result in unified XML format."""
     if only_id:
-        get_console().print(get_display_session_id(conv_file), markup=False)
+        print(get_display_session_id(conv_file))
         return
 
     if emit_metadata:
@@ -355,7 +355,11 @@ def cmd_search(
         sys.exit(1)
 
     found_any = False
-    pager_ctx = get_console().pager(styles=True) if flags.paging else nullcontext()
+    pager_ctx = (
+        nullcontext()
+        if only_id or not flags.paging
+        else get_console().pager(styles=True)
+    )
 
     with pager_ctx:
         for meta in metadata_list:

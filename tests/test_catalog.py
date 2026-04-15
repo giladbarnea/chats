@@ -48,9 +48,10 @@ class TestCatalogSessionsGreppable:
         )
         collected_ids: list[str] = []
 
-        original_get_content = conversations.catalog._get_session_content
+        import conversations.catalog
 
         def fake_get_session_content(sid: str):
+            nonlocal collected_ids
             collected_ids.append(sid)
             # Return content matching the first session
             return (
@@ -62,7 +63,6 @@ class TestCatalogSessionsGreppable:
                 "<content1/>"
             )
 
-        import conversations.catalog
         with patch.object(conversations.catalog, "_get_session_content", side_effect=fake_get_session_content), \
              patch("conversations.catalog.subprocess.run") as mock_run, \
              patch("sys.stdin") as mock_stdin, \

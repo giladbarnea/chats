@@ -173,7 +173,7 @@ ccc search [OPTIONS] <pattern>
 
 **Options:**
 - `-l`: List mode - show only file paths and metadata
-- `-ll`, `--only-id`: Show only matching session IDs
+- `-ll`, `--only-id`: Show only matching session IDs (implies `--color never` and `--no-paging`)
 - `-p, --provider claude|pi|codex`: Restrict search to sessions from a specific provider
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE

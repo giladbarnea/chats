@@ -19,8 +19,9 @@ run_search() {
 
 echo "Test 0: help text documents paging implication..."
 HELP_OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD search --help 2>&1)
-assert_contains "$HELP_OUTPUT" "implies --no-paging"
-echo "  ✓ help text mentions paging implication"
+assert_contains "$HELP_OUTPUT" "implies --color never"
+assert_contains "$HELP_OUTPUT" "and --no-paging"
+echo "  ✓ help text mentions plain-output implication"
 
 echo "Test 1: --only-id prints just the session id..."
 OUTPUT=$(run_search --only-id "needle" 2>&1) || true
@@ -33,6 +34,17 @@ fi
 assert_not_contains "$OUTPUT" "session_id:"
 assert_not_contains "$OUTPUT" "history_path:"
 echo "  ✓ --only-id prints just the session id"
+
+echo "Test 1b: --only-id stays plain even with --color always..."
+OUTPUT=$(run_search --only-id --color always "needle" 2>&1) || true
+assert_success
+if [[ "$OUTPUT" != "match-session" ]]; then
+    echo "❌ Expected --only-id --color always output to be exactly 'match-session'"
+    echo "Got: $OUTPUT"
+    exit 1
+fi
+assert_no_colors "$OUTPUT"
+echo "  ✓ --only-id bypasses Rich even with --color always"
 
 echo "Test 2: -ll is accepted as shorthand..."
 OUTPUT=$(run_search -ll "needle" 2>&1) || true

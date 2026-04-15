@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-15] Make search-only-id fully plain
+
+### Changed
+
+- `ccc search --only-id` now forces plain output end to end: no Rich color, no pager, and direct stdout printing of session IDs even if `--color always` was passed.
+- Tightened the CLI seam and shell coverage so `--only-id --color always` still emits a bare session ID with no ANSI escapes.
+
+---
 ## [2026-04-15] Add `-p/--provider` filter to search
 
 ### Added
