@@ -47,6 +47,7 @@ Convert conversation files to XML-tagged markdown.
 5. Stdin: `cat file.jsonl | ccc`
 
 Negative recent indices use the same global modified-time ordering as `ccc search` across Claude, PI, and Codex sessions: oldest first, newest last, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
+Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass.
 
 Conversations can have multiple summary entries (prepended as conversation evolves), each with a unique `leafUuid` tracking the conversation endpoint. Summary matching searches all summaries in all files.
 

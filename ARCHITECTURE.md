@@ -42,8 +42,7 @@ last_updated: 2026-04-14, 796506c
 │  │  ┌─────────────────────────────────────────┐    │        │            │  │
 │  │  │ _try_resolve_conversation_file()        │    │        │            │  │
 │  │  │  1. Direct path  2. Negative index      │    │        │            │  │
-│  │  │  3. UUID match   4. Summary prefix      │    │        │            │  │
-│  │  │  5. Adapter fallback (PI/Codex)         │    │        │            │  │
+│  │  │  3. Exact ID/name  4. Summary prefix    │    │        │            │  │
 │  │  └─────────────────────────────────────────┘    │        │            │  │
 │  └─────────────────────────────────────────────────┼────────┼────────────┘  │
 │                   │          │                      │        │               │
@@ -122,17 +121,17 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  main()                   cmd_parse(flags, input, slice, out, fmt)   ──► commands.py
 │
-├───►  cmd_parse                get_input_content(input_arg)               ──► commands.py
+├───►  cmd_parse                _resolve_input_content(input_arg)          ──► commands.py
 │      │                        ├── _try_resolve_conversation_file()
 │      │                        │   ├── Try Path(input).exists()
-│      │                        │   ├── _resolve_recent_conversation_file()
-│      │                        │   │   ├── find_all_supported_session_files()
-│      │                        │   │   ├── _build_conversation_metadata()
-│      │                        │   │   └── resolve_negative_index()
-│      │                        │   ├── Match by stem/filename (UUID)
+│      │                        │   ├── is_single_negative_index()
+│      │                        │   │   └── _resolve_recent_conversation_file()
+│      │                        │   │       ├── find_all_supported_session_files()
+│      │                        │   │       ├── _build_conversation_metadata()
+│      │                        │   │       └── resolve_negative_index()
+│      │                        │   ├── Match by exact filename/native session id
 │      │                        │   ├── Match by summary prefix
-│      │                        │   └── resolve_session_identifier_via_adapters()
-│      │                        └── Returns file content string
+│      │                        └── Returns file content string + source path
 │
 ├───►  cmd_parse                detect_format(content)                     ──► "jsonl" | "raw"
 │
@@ -365,11 +364,6 @@ Negative index (e.g. -1) ──► │ Sort all files │           │         
 Summary prefix ────────────► │ Scan summaries │           │  └─ "raw"        │
                              │ case-insensitive│          │    (CLI xscript) │
                              └───────┬────────┘           └────────┬─────────┘
-                             ┌───────▼────────┐                    │
-Adapter fallback ──────────► │ PI / Codex     │                    ▼
-(non-Claude IDs)             │ session match  │           ┌──────────────────┐
-                             └───────┬────────┘           │ list[Message]    │
-                                     │                    │  .role           │
                                      │                    │  .text           │       ┌──────────────┐
                                      ▼                    │  .thinking       │──────►│ XML format   │
                               .jsonl file content         │  .tools[]        │       ├──────────────┤
@@ -429,8 +423,9 @@ Adapter fallback ──────────► │ PI / Codex     │       
                         └──────┬──────────┘        → RESOLVED (Path) or NOT_FOUND
                                │ no
                         ┌──────▼──────────┐  yes
-                        │ Single word?    │──────► Scan all .jsonl stems
-                        │ UUID/stem match?│        → RESOLVED (Path)
+                        │ Single word?    │──────► Scan the unified session pool for
+                        │ Exact ID/name?  │        exact filename/native session id
+                        │                 │        → RESOLVED (Path)
                         └──────┬──────────┘          or fall through
                                │ no match
                         ┌──────▼──────────┐  1 match
@@ -439,12 +434,6 @@ Adapter fallback ──────────► │ PI / Codex     │       
                         │ insensitive)    │──────────► AMBIGUOUS (error)
                         └──────┬──────────┘
                                │ 0 matches
-                        ┌──────▼──────────┐  found
-                        │ Adapter         │──────────► RESOLVED (Path)
-                        │ fallback        │  >1 match
-                        │ (PI, Codex)     │──────────► AMBIGUOUS (error)
-                        └──────┬──────────┘
-                               │ not found
                                ▼
                           NOT_FOUND (error)
 ```
@@ -608,29 +597,25 @@ cli.py:main()
 │   └── is_single_negative_index(candidate)
 │
 cmd_parse(flags, input_arg, slice_str, output_file, output_format, emit_metadata)
-├── get_input_content(input_arg)
+├── _resolve_input_content(input_arg)
 │   ├── _try_resolve_conversation_file(identifier)
 │   │   ├── Path(identifier).exists()
-│   │   ├── _resolve_recent_conversation_file(identifier, files)
-│   │   │   ├── _build_conversation_metadata(files)
-│   │   │   │   ├── _load_conversation_metadata(conv_file)
-│   │   │   │   │   └── get_jsonl_timestamps(conv_file)
-│   │   │   │   │       ├── _find_first_timestamp()
-│   │   │   │   │       ├── _find_last_timestamp()
-│   │   │   │   │       └── _parse_iso_timestamp()
-│   │   │   │   └── _order_metadata_by_modified_time()
-│   │   │   │       └── sort_by_modified()
-│   │   │   └── resolve_negative_index(identifier, ordered)
-│   │   │       └── is_single_negative_index()
-│   │   ├── conv_file.stem == identifier (UUID exact match)
+│   │   ├── is_single_negative_index(identifier)
+│   │   │   └── _resolve_recent_conversation_file(identifier, files)
+│   │   │       ├── _build_conversation_metadata(files)
+│   │   │       │   ├── _load_conversation_metadata(conv_file)
+│   │   │       │   │   └── get_jsonl_timestamps(conv_file)
+│   │   │       │   │       ├── _find_first_timestamp()
+│   │   │       │   │       ├── _find_last_timestamp()
+│   │   │       │   │       └── _parse_iso_timestamp()
+│   │   │       │   └── _order_metadata_by_modified_time()
+│   │   │       │       └── sort_by_modified()
+│   │   │       └── resolve_negative_index(identifier, ordered)
+│   │   ├── _resolve_exact_session_identifier(identifier, files)
+│   │   │   └── get_native_session_id(conv_file)
 │   │   ├── extract_summaries_from_jsonl(conv_file) (prefix match)
 │   │   │   └── _extract_field_from_jsonl()
 │   │   │       └── _extract_field_from_content()
-│   │   └── resolve_session_identifier_via_adapters(identifier)
-│   │       ├── _find_pi_session_matches()
-│   │       │   └── _extract_pi_session_id()
-│   │       └── _find_codex_session_matches()
-│   │           └── _extract_codex_session_id()
 │   └── path.read_text()
 │
 ├── detect_format(content) → "jsonl" | "raw"
@@ -836,4 +821,4 @@ cli.py
 5. **Tool ID Map Lifecycle**: `_build_tool_id_map` is deliberately called *before* applying slicing bounds in `cmd_parse`. This ensures that even if a `tool_use` input is sliced out, its corresponding `tool_result` can still properly resolve its display name.
 6. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based inference to merge sidechain agents into the main timeline, rather than relying on a strict relational join constraint. It traces `Task` dispatch timestamps to interleave blocks chronologically.
 7. **Catalog API Coupling**: The `catalog` module relies heavily on parsing `cmd_parse` stdout to capture structured/pre-rendered context, acting essentially as an internal CLI API. Furthermore, the summarization invokes an external process (`subprocess.run(["claude", ...])`) rather than using an in-memory API client.
-8. **Asymmetrical Removal**: `cmd_rm` behaves asymmetrically. For native Claude sessions, it deletes sidecar artifacts, debug logs, file history, and rewrites the history JSONL index. For non-Claude fallback sessions (PI/Codex), it simply deletes the single resolved JSONL file.
+8. **Asymmetrical Removal**: `cmd_rm` behaves asymmetrically. For native Claude sessions, it deletes sidecar artifacts, debug logs, file history, and rewrites the history JSONL index. For non-Claude resolved sessions (PI/Codex), it simply deletes the single resolved JSONL file.

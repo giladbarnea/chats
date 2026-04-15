@@ -19,6 +19,7 @@ from unittest.mock import patch
 
 import pytest
 
+import conversations.commands as commands
 from conversations import (
     _try_resolve_conversation_file,
     resolve_conversation_file,
@@ -68,6 +69,47 @@ def add_single_word_fixture(temp_claude_home):
             f.write(json.dumps(line) + "\n")
 
     return fixture_file
+
+
+@pytest.fixture
+def add_pi_session(temp_claude_home):
+    """Add a PI session fixture keyed by its in-band session id."""
+    session_id = "9a27c7d8-d58f-4179-bf0a-a4657c7dca64"
+    session_path = (
+        temp_claude_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / f"2026-04-04T12-24-33-963Z_{session_id}.jsonl"
+    )
+    session_path.parent.mkdir(parents=True, exist_ok=True)
+    session_path.write_text(
+        "".join(
+            json.dumps(entry) + "\n"
+            for entry in [
+                {
+                    "type": "session",
+                    "version": 3,
+                    "id": session_id,
+                    "timestamp": "2026-04-04T12:24:33.963Z",
+                    "cwd": "/tmp/project",
+                },
+                {
+                    "type": "message",
+                    "id": "user-1",
+                    "parentId": session_id,
+                    "timestamp": "2026-04-04T12:25:47.187Z",
+                    "message": {
+                        "role": "user",
+                        "content": [{"type": "text", "text": "hello from pi by id"}],
+                    },
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return session_id, session_path
 
 
 @pytest.fixture
@@ -228,6 +270,60 @@ class TestNegativeRecentIndexResolution:
         assert result == set_recent_order["second_newest_main"], (
             "Expected '-2' to resolve to the second most recently modified "
             f"main conversation. Got: {result!s}"
+        )
+
+
+class TestExactIdentifierResolution:
+    """Exact session ids should stay on the cheap path."""
+
+    def test_pi_session_id_skips_recent_and_summary_scans(
+        self,
+        temp_claude_home,
+        add_pi_session,
+    ):
+        """A native PI id should resolve from the unified pool without expensive fallbacks."""
+        session_id, session_path = add_pi_session
+
+        with (
+            patch.object(commands, "_resolve_recent_conversation_file") as recent_lookup,
+            patch.object(commands, "extract_summaries_from_jsonl") as summary_lookup,
+        ):
+            resolved_path, ambiguous = _try_resolve_conversation_file(session_id)
+
+        assert resolved_path == session_path
+        assert ambiguous == []
+        recent_lookup.assert_not_called()
+        summary_lookup.assert_not_called()
+
+    def test_cmd_parse_resolves_identifier_once(
+        self,
+        temp_claude_home,
+        add_pi_session,
+        capsys,
+    ):
+        """Parse mode should reuse the first resolution result for content and metadata."""
+        session_id, _ = add_pi_session
+        original_try_resolve = commands._try_resolve_conversation_file
+
+        with patch.object(
+            commands,
+            "_try_resolve_conversation_file",
+            wraps=original_try_resolve,
+        ) as resolver:
+            commands.cmd_parse(
+                commands.ConversationFlags(color="never", paging=False),
+                session_id,
+                slice_str=None,
+                output_file=None,
+                output_format="xml",
+                emit_metadata=True,
+            )
+
+        captured = capsys.readouterr()
+        assert "hello from pi by id" in captured.out
+        assert resolver.call_count == 1, (
+            "Expected parse mode to resolve the identifier once and reuse that path "
+            "for metadata/output instead of re-running the full resolver."
         )
 
 

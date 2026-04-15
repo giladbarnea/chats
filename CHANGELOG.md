@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-15] Speed up exact session-id resolution
+
+### Changed
+
+- Exact single-token identifiers are now resolved against the unified supported-session pool by filename/native session id before any summary scan, so PI and Codex ids no longer pay for a Claude-first fallback walk.
+- Negative-index metadata scans now run only for real `-N` selectors instead of every identifier lookup.
+- `cmd_parse` now resolves the input once and reuses the resolved path for both content loading and metadata emission.
+
+---
 ## [2026-04-15] Catalog only first session
 
 ### Changed

@@ -21,7 +21,7 @@ from .formatting import (
 )
 from .utils import collapse_home
 from .model import ConversationFlags, ConversationMetadata, Message, Provider
-from .ordering import resolve_negative_index, sort_by_modified
+from .ordering import is_single_negative_index, resolve_negative_index, sort_by_modified
 from .parsing import (
     detect_format,
     extract_custom_titles_from_content,
@@ -36,7 +36,6 @@ from .parsing import (
     is_sidechain_session_file,
     parse_jsonl,
     parse_raw_cli_transcript,
-    resolve_session_identifier_via_adapters,
 )
 
 
@@ -128,6 +127,25 @@ def _resolve_recent_conversation_file(
     return resolve_negative_index(identifier, ordered_main_conversations)
 
 
+def _resolve_exact_session_identifier(
+    identifier: str,
+    conversation_files: Iterable[Path],
+) -> Path | None:
+    """Resolve a single-token identifier against the unified session pool."""
+    if len(identifier.split()) != 1:
+        return None
+
+    for conv_file in conversation_files:
+        if conv_file.stem == identifier or conv_file.name == identifier:
+            return conv_file
+
+    for conv_file in conversation_files:
+        if get_native_session_id(conv_file) == identifier:
+            return conv_file
+
+    return None
+
+
 def _try_resolve_conversation_file(
     identifier: str,
     conversation_files: Iterable[Path] | None = None,
@@ -148,7 +166,6 @@ def _try_resolve_conversation_file(
         - If not found: (None, [])
     """
     stripped = identifier.strip()
-    allow_adapter_fallback = conversation_files is None
 
     # Try direct file path
     try:
@@ -165,14 +182,12 @@ def _try_resolve_conversation_file(
     # Materialize generator to allow multiple iterations
     conversation_files = list(conversation_files)
 
-    if recent_path := _resolve_recent_conversation_file(stripped, conversation_files):
-        return recent_path, []
+    if is_single_negative_index(stripped):
+        if recent_path := _resolve_recent_conversation_file(stripped, conversation_files):
+            return recent_path, []
 
-    # Try exact match by filename/stem (single-word queries only)
-    if len(stripped.split()) == 1:
-        for conv_file in conversation_files:
-            if conv_file.stem == stripped or conv_file.name == stripped:
-                return conv_file, []
+    if exact_match := _resolve_exact_session_identifier(stripped, conversation_files):
+        return exact_match, []
 
     # Try matching by summary prefix
     query_lower = stripped.lower()
@@ -188,14 +203,11 @@ def _try_resolve_conversation_file(
     if len(matches) > 1:
         return None, matches
 
-    if allow_adapter_fallback:
-        return resolve_session_identifier_via_adapters(stripped)
-
     return None, []
 
 
-def get_input_content(input_arg: str | None) -> str:
-    """Get input content from CLI argument or stdin."""
+def _resolve_input_content(input_arg: str | None) -> tuple[str, Path | None]:
+    """Resolve CLI input to raw content and its backing session path, if any."""
     if input_arg:
         content_or_path = input_arg
     elif sys.stdin.isatty():
@@ -212,13 +224,19 @@ def get_input_content(input_arg: str | None) -> str:
         content_or_path.strip()
     )
     if resolved_path:
-        return resolved_path.read_text(encoding="utf-8")
+        return resolved_path.read_text(encoding="utf-8"), resolved_path
 
     if ambiguous_matches:
         _print_ambiguous_error(content_or_path.strip(), ambiguous_matches)
         sys.exit(1)
 
-    return content_or_path
+    return content_or_path, None
+
+
+def get_input_content(input_arg: str | None) -> str:
+    """Get input content from CLI argument or stdin."""
+    content, _ = _resolve_input_content(input_arg)
+    return content
 
 
 def _print_ambiguous_error(identifier: str, matches: list[tuple[Path, str]]) -> None:
@@ -919,10 +937,7 @@ def cmd_parse(
 ) -> None:
     """Handle parse command (default behavior)."""
     try:
-        content = get_input_content(input_arg)
-        input_file_path = None
-        if input_arg:
-            input_file_path, _ = _try_resolve_conversation_file(input_arg.strip())
+        content, input_file_path = _resolve_input_content(input_arg)
     except Exception as e:
         print_error(f"Error reading input: {e}.")
         sys.exit(1)
