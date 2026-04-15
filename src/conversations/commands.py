@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sys
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
@@ -117,7 +117,7 @@ def _build_conversation_metadata(
 
 def _resolve_recent_conversation_file(
     identifier: str,
-    conversation_files: Iterable[Path],
+    conversation_files: Sequence[Path],
 ) -> Path | None:
     """Resolve a negative index like '-1' against globally recent supported sessions."""
     ordered_metadata = _build_conversation_metadata(conversation_files)
@@ -129,16 +129,25 @@ def _resolve_recent_conversation_file(
 
 def _resolve_exact_session_identifier(
     identifier: str,
-    conversation_files: Iterable[Path],
+    conversation_files: Sequence[Path],
 ) -> Path | None:
     """Resolve a single-token identifier against the unified session pool."""
     if len(identifier.split()) != 1:
         return None
 
+    # Fast path 1: Exact stem or filename match (Claude)
     for conv_file in conversation_files:
         if conv_file.stem == identifier or conv_file.name == identifier:
             return conv_file
 
+    # Fast path 2: Stem contains identifier (PI/Codex)
+    for conv_file in conversation_files:
+        if identifier not in conv_file.stem:
+            continue
+        if get_native_session_id(conv_file) == identifier:
+            return conv_file
+
+    # Slow path: Fallback for renamed files
     for conv_file in conversation_files:
         if get_native_session_id(conv_file) == identifier:
             return conv_file
@@ -148,7 +157,7 @@ def _resolve_exact_session_identifier(
 
 def _try_resolve_conversation_file(
     identifier: str,
-    conversation_files: Iterable[Path] | None = None,
+    conversation_files: Sequence[Path] | None = None,
 ) -> tuple[Path | None, list[tuple[Path, str]]]:
     """
     Try to resolve a conversation/session identifier to a file path.
@@ -179,15 +188,16 @@ def _try_resolve_conversation_file(
     if conversation_files is None:
         conversation_files = find_all_supported_session_files()
 
-    # Materialize generator to allow multiple iterations
-    conversation_files = list(conversation_files)
-
     if is_single_negative_index(stripped):
         if recent_path := _resolve_recent_conversation_file(stripped, conversation_files):
             return recent_path, []
 
     if exact_match := _resolve_exact_session_identifier(stripped, conversation_files):
         return exact_match, []
+
+    # If it's a UUID-like identifier that didn't match, don't fallback to scanning all file summaries
+    if len(stripped) >= 32 and "-" in stripped:
+        return None, []
 
     # Try matching by summary prefix
     query_lower = stripped.lower()

@@ -181,10 +181,24 @@ def _extract_field_from_content(
 def _extract_field_from_jsonl(
     file_path: Path, entry_type: str, field_name: str
 ) -> list[str]:
-    """Extract field values from a jsonl file."""
+    """Extract field values from a jsonl file without loading it entirely."""
+    values = []
     try:
-        content = file_path.read_text(encoding="utf-8")
-        return _extract_field_from_content(content, entry_type, field_name)
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.startswith("{"):
+                    continue
+                # Fast path: skip JSON parsing if entry_type isn't in the raw string
+                if f'"{entry_type}"' not in line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if isinstance(entry, dict) and entry.get("type") == entry_type:
+                        if value := entry.get(field_name):
+                            values.append(value)
+                except json.JSONDecodeError:
+                    pass
+        return values
     except OSError:
         return []
 
