@@ -318,7 +318,7 @@ This command uses an AI model (via the `claudesn` CLI) to analyze conversation s
 - **Direct session IDs**: `ccc catalog 00000000-0000-0000-0000-000000000000`
 - **File paths**: `ccc catalog path/to/session.jsonl`
 - **Piped input**: `ccc search -ca 1d . -l | ccc catalog`
-- **Multiple sessions**: All input methods can handle multiple sessions
+- **Multiple sessions**: Accepts multiple sessions but **only catalogs the first one found**.
 
 **Features:**
 - Automatically creates sessions.yaml if it doesn't exist
@@ -328,17 +328,9 @@ This command uses an AI model (via the `claudesn` CLI) to analyze conversation s
 - Supports an 'ignored' list for empty/meaningless sessions
 
 **Examples:**
-
-```bash
-# Catalog a specific session
-ccc catalog 5078a7c7-0646-43cc-9412-7e1454a282b4
-
-# Catalog from search results (sessions modified in last day)
-ccc search -ca 1d . -l | ccc catalog
-
-# Catalog multiple sessions
-ccc catalog session-id-1 session-id-2 path/to/session.jsonl
-```
+- Catalog a specific session: `ccc catalog 5078a7c7-0646-43cc-9412-7e1454a282b4`
+- Catalog from search results (uses only first result): `ccc search -ca 1d . -l | ccc catalog`
+- Catalog from multiple IDs (uses only first ID): `ccc catalog id1 id2`
 
 **Note:** This command requires the `claudesn` CLI to be configured in the user's environment.
 

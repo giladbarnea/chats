@@ -132,7 +132,7 @@ def catalog_sessions(args: list[str]) -> None:
         print_error("No session IDs or file paths provided and no piped input")
         sys.exit(1)
 
-    session_ids = list(dict.fromkeys(session_ids))
+    session_ids = [list(dict.fromkeys(session_ids))[0]]
 
     for i, session_id in enumerate(session_ids, 1):
         console.print(f"\n[bold cyan]Processing session {i} of {len(session_ids)}: {session_id}[/bold cyan]")

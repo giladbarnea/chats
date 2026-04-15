@@ -548,11 +548,12 @@ Adapter fallback ──────────► │ PI / Codex     │       
                                   no IDs ──► exit(1)
                                                   │
                                          ┌────────▼─────────┐
-                                         │ Per session_id:  │
+                                         │ First session_id │
+                                         │ only:            │
                                          └────────┬─────────┘
                                                   │
                                          ┌────────▼─────────┐
-                                     no  │ Get content?     │──► SKIP (log warning)
+                                     no  │ Get content?     │──► exit
                                          │ _get_session_    │
                                          │ content() or     │
                                          │ preloaded        │

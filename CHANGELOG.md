@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-15] Catalog only first session
+
+### Changed
+
+- `ccc catalog` now only processes the first session ID it finds in the input (arguments, piped content, or greppable text). This prevents accidentally batch-cataloging many sessions at once.
+
+---
 ## [2026-04-15] Make search-only-id fully plain
 
 ### Changed

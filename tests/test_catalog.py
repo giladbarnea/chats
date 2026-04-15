@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -73,6 +72,27 @@ class TestCatalogSessionsGreppable:
 
         # Only the first session_id should have been processed
         assert collected_ids == ["11111111-1111-1111-1111-111111111111"]
+
+
+    def test_finds_only_first_session_id_in_args(self, tmp_path):
+        """When multiple session IDs are provided as arguments, only the first is cataloged."""
+        collected_ids: list[str] = []
+
+        import conversations.catalog
+
+        def fake_get_session_content(sid: str):
+            nonlocal collected_ids
+            collected_ids.append(sid)
+            return "---\nsession_id: " + sid + "\n---\n<content/>"
+
+        with patch.object(conversations.catalog, "_get_session_content", side_effect=fake_get_session_content), \
+             patch("conversations.catalog.subprocess.run"), \
+             patch("sys.stdin") as mock_stdin, \
+             patch("sys.exit"):
+            mock_stdin.isatty.return_value = True
+            catalog_sessions(["id1", "id2"])
+
+        assert collected_ids == ["id1"]
 
 
 class TestIsSessionId:
