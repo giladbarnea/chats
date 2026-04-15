@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SOURCE="$REPO_ROOT/.agents/skills"
+TARGETS=(.claude .gemini .codex .pi)
+
+if [ ! -d "$SOURCE" ]; then
+  exit 0
+fi
+
+for target in "${TARGETS[@]}"; do
+  target_skills="$REPO_ROOT/$target/skills"
+  mkdir -p "$target_skills"
+
+  # Remove stale symlinks (point to skills no longer in .agents/skills)
+  for link in "$target_skills"/*/; do
+    [ -d "$link" ] || continue
+    name="$(basename "$link")"
+    if [ ! -d "$SOURCE/$name" ]; then
+      rm -f "$target_skills/$name"
+    fi
+  done
+
+  # Create/update symlinks for each skill
+  for skill in "$SOURCE"/*/; do
+    [ -d "$skill" ] || continue
+    name="$(basename "$skill")"
+    ln -sfn "$skill" "$target_skills/$name"
+  done
+
+  # Stage the skills dir so the symlinks are committed
+  git add "$target_skills"
+done

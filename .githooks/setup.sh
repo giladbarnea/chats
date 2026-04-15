@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+git config --local core.hooksPath "$REPO_ROOT/.githooks"
+echo "Git hooks path set to $REPO_ROOT/.githooks"
