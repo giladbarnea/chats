@@ -4,7 +4,7 @@ set -euo pipefail
 # --- skills-sync: .agents → .claude,.pi,.gemini,.codex ---
 _repo_root="$(git rev-parse --show-toplevel)"
 _skills_source="$_repo_root/.agents/skills"
-_skills_targets=(".claude" ".pi" ".gemini" ".codex")
+_skills_targets=(".claude" ".pi/agent" ".gemini" ".codex")
 if [ -d "$_skills_source" ]; then
   for _t in "${_skills_targets[@]}"; do
     _target_skills="$_repo_root/$_t/skills"

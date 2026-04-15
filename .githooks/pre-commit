@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 SOURCE="$REPO_ROOT/.agents/skills"
-TARGETS=(.claude .gemini .codex .pi)
+TARGETS=(.claude .gemini .codex .pi/agent)
 
 if [ ! -d "$SOURCE" ]; then
   exit 0
