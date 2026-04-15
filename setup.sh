@@ -32,3 +32,4 @@ fi
 
 echo ""
 echo "  Setup complete."
+git config --local core.hooksPath "$(git rev-parse --show-toplevel)/.githooks"
