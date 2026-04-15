@@ -20,7 +20,7 @@ from .formatting import (
     render_messages_with_rich,
 )
 from .utils import collapse_home
-from .model import ConversationFlags, ConversationMetadata, Message
+from .model import ConversationFlags, ConversationMetadata, Message, Provider
 from .ordering import resolve_negative_index, sort_by_modified
 from .parsing import (
     detect_format,
@@ -30,6 +30,7 @@ from .parsing import (
     extract_cwd_from_jsonl,
     find_all_supported_session_files,
     get_display_session_id,
+    get_jsonl_session_adapter,
     get_native_session_id,
     get_jsonl_timestamps,
     is_sidechain_session_file,
@@ -95,7 +96,8 @@ def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
         except OSError:
             pass
 
-    return ConversationMetadata(conv_file, ctime, mtime)
+    provider = get_jsonl_session_adapter(conv_file).name
+    return ConversationMetadata(conv_file, ctime, mtime, provider=provider)
 
 
 def _order_metadata_by_modified_time(
@@ -277,6 +279,7 @@ def display_search_result(
     list_only: bool,
     only_id: bool,
     emit_metadata: bool,
+    provider: Provider | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
     matching_summaries: list[str] | None = None,
@@ -296,6 +299,7 @@ def display_search_result(
             len(messages),
             match_count,
             matching_summaries,
+            provider=provider,
             last_custom_title=last_custom_title,
             created_at=created_at,
             modified_at=modified_at,
@@ -380,6 +384,7 @@ def cmd_search(
                         list_only=list_only,
                         only_id=only_id,
                         emit_metadata=emit_metadata,
+                        provider=meta.provider,
                         created_at=meta.ctime,
                         modified_at=meta.mtime,
                         matching_summaries=matching_summaries,
@@ -966,6 +971,7 @@ def cmd_parse(
             input_file_path,
             cwd,
             len(messages),
+            provider=metadata.provider,
             last_custom_title=last_custom_title,
             created_at=metadata.ctime,
             modified_at=metadata.mtime,

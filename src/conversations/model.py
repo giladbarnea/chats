@@ -4,12 +4,16 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
 from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_to_parts
 from .utils import shorten_data, truncate_middle
+
+
+Provider = Literal["claude", "pi", "codex"]
 
 
 @dataclass
@@ -19,6 +23,7 @@ class ConversationMetadata:
     path: Path
     ctime: datetime | None
     mtime: datetime | None
+    provider: Provider
 
 
 class ConversationFlags:

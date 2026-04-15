@@ -650,7 +650,7 @@ JSONL_SESSION_ADAPTERS = [
         extract_session_id=_extract_codex_session_id,
     ),
     JsonlSessionAdapter(
-        name="default",
+        name="claude",
         matches=lambda _source_path: True,
         parse_messages=_parse_default_jsonl,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),

@@ -9,7 +9,7 @@ from rich.markdown import Markdown
 from rich.text import Text
 
 from .console import get_console
-from .model import ConversationFlags, Message
+from .model import ConversationFlags, Message, Provider
 from .parsing import get_display_session_id
 from .parts import MessagePartKind
 from .registry import ContentBlockType
@@ -142,6 +142,7 @@ def print_metadata(
     matched_messages: int | None = None,
     matching_summaries: list[str] | None = None,
     *,
+    provider: Provider | None = None,
     last_custom_title: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
@@ -150,6 +151,9 @@ def print_metadata(
 ) -> None:
     """Print conversation metadata to stdout in YAML format."""
     yaml_lines = [f"session_id: {get_display_session_id(file_path)}"]
+
+    if provider is not None:
+        yaml_lines.append(f"provider: {provider}")
 
     if cwd:
         yaml_lines.append(f"directory: {collapse_home(cwd)}")
