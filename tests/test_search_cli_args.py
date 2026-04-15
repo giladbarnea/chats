@@ -20,6 +20,7 @@ def test_search_only_id_disables_paging_but_keeps_color(monkeypatch) -> None:
         cafter: str | None = None,
         *,
         emit_metadata: bool = True,
+        provider_filter=None,
     ) -> None:
         captured["pattern"] = pattern_arg
         captured["flags"] = flags

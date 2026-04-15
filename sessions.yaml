@@ -37,6 +37,16 @@ sessions:
     new_files: [tests/test_provider_metadata.py]
     edited_files: [src/conversations/model.py, src/conversations/parsing.py, src/conversations/commands.py, src/conversations/formatting.py]
     branch: main
+  b7ef205a-4400-49c2-aa0c-673e6986bb75:
+    description: "Added `-p`/`--provider` CLI flag to `ccc search` that filters sessions by provider (`claude`, `pi`, `codex`) before loading metadata — so unmatched sessions skip all stat/timestamp I/O. Peer review caught two improvements: typed `JsonlSessionAdapter.name` as `Provider` (was `str`) for static safety, and pushed the filter to the file-path level rather than the post-metadata level. 9 new integration tests cover all three provider values, no-match exit-1, and CLI seam; full suite 249 passed."
+    directories: [~/dev/conversations]
+    keywords: [provider-filter, cli-args, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 29
+    new_files: [tests/test_provider_filter.py]
+    edited_files: [src/conversations/cli.py, src/conversations/commands.py, src/conversations/parsing.py, tests/test_search_cli_args.py, README.md, CHANGELOG.md]
+    branch: main
+    forked: 229ad818-eb68-44e2-b9a7-378ff552a7ee
   # Apr 14 26
   rollout-2026-04-14T17-58-43-70583a99-e247-4e3b-a5ec-589918fd23ff:
     description: "Added an adapter-aware `ccc fork` command that duplicates Claude, Codex, and PI sessions into thinner resumable copies, then tightened CLI wiring, docs, and coverage before publishing the change."

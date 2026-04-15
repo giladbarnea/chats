@@ -3,6 +3,22 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-15] Add `-p/--provider` filter to search
+
+### Added
+
+- `ccc search -p claude|pi|codex` restricts search to sessions from a specific provider. Filtering happens before metadata loading, so unmatched sessions incur no I/O overhead.
+
+---
+## [2026-04-15] Add `provider` metadata field
+
+### Added
+
+- `ConversationMetadata` now carries a `provider: Provider` field (`"claude"`, `"pi"`, or `"codex"`), derived from the session's adapter at load time.
+- `print_metadata()` emits `provider:` in the YAML frontmatter for both `parse` and `search` output.
+- `JsonlSessionAdapter.name` is now typed as `Provider` rather than `str`, giving static protection against unrecognized adapter names.
+
+---
 ## [2026-04-13] Add search-only-id mode
 
 ### Added

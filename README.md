@@ -174,6 +174,7 @@ ccc search [OPTIONS] <pattern>
 **Options:**
 - `-l`: List mode - show only file paths and metadata
 - `-ll`, `--only-id`: Show only matching session IDs
+- `-p, --provider claude|pi|codex`: Restrict search to sessions from a specific provider
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE
 - `-ca, --cafter DATE`: Only conversations created after DATE
@@ -193,6 +194,8 @@ ccc search -d ~/dev/project "feature"   # Filter by directory
 ccc search --mafter=1d "TODO"           # Modified in last day
 ccc search --mafter=2024-12-01 "deploy" # Modified since Dec 1
 ccc search --cafter=1w --mafter=1d "."  # Created last week, modified today
+ccc search -p claude "bug fix"          # Search only Claude sessions
+ccc search -p codex "TODO"              # Search only Codex sessions
 ```
 
 **Search Features:**

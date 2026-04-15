@@ -332,6 +332,7 @@ def cmd_search(
     cafter: str | None = None,
     *,
     emit_metadata: bool = True,
+    provider_filter: Provider | None = None,
 ) -> None:
     """Handle search subcommand."""
     mafter_dt = parse_date_filter(mafter)
@@ -345,9 +346,10 @@ def cmd_search(
             re.escape(pattern_arg), re.IGNORECASE | re.MULTILINE | re.DOTALL
         )
 
-    metadata_list = _build_conversation_metadata(
-        find_all_supported_session_files(include_sidechains=flags.show_agents)
-    )
+    all_files = find_all_supported_session_files(include_sidechains=flags.show_agents)
+    if provider_filter is not None:
+        all_files = (f for f in all_files if get_jsonl_session_adapter(f).name == provider_filter)
+    metadata_list = _build_conversation_metadata(all_files)
 
     if not metadata_list:
         sys.exit(1)

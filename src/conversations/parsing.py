@@ -8,7 +8,7 @@ from pathlib import Path
 from collections.abc import Callable
 import re
 
-from .model import ConversationFlags, Message
+from .model import ConversationFlags, Message, Provider
 from .utils import shorten_tool_use_id
 
 
@@ -16,7 +16,7 @@ from .utils import shorten_tool_use_id
 class JsonlSessionAdapter:
     """A parser adapter for one JSONL session shape."""
 
-    name: str
+    name: Provider
     matches: Callable[[Path | None], bool]
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
     find_session_files: Callable[[], list[Path]] | None = None

@@ -310,6 +310,13 @@ def main():
             action="store_true",
             help="Disable outputting metadata frontmatter",
         )
+        parser.add_argument(
+            "-p",
+            "--provider",
+            choices=["claude", "pi", "codex"],
+            default=None,
+            help="Restrict search to sessions from a specific provider (claude, pi, codex)",
+        )
 
         args = parser.parse_args(sys.argv[2:])
         if args.only_id:
@@ -338,6 +345,7 @@ def main():
             args.mafter,
             args.cafter,
             emit_metadata=not args.no_metadata,
+            provider_filter=args.provider,
         )
     elif len(sys.argv) > 1 and sys.argv[1] == "rename":
         # Parse rename arguments
@@ -433,6 +441,14 @@ def main():
             prog="ccc",
             description="Parse and format supported AI CLI conversation histories",
             formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""\
+Commands:
+  search   Search conversations with regex patterns
+  rename   Assign a custom display name to a conversation
+  fork     Duplicate a session into a thinner resumable copy
+  rm       Remove a conversation session and all associated files
+  catalog  AI-powered session cataloging
+""",
         )
 
         parser.add_argument(

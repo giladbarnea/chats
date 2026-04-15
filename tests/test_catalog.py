@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
-from conversations.catalog import _extract_metadata, _is_session_id
+from conversations.catalog import _extract_metadata, _is_session_id, catalog_sessions
 
 def test_extract_metadata():
     content = """---
@@ -23,6 +24,55 @@ def test_extract_metadata_no_frontmatter():
 """
     meta = _extract_metadata(content)
     assert meta == {}
+
+
+class TestCatalogSessionsGreppable:
+    """Test that catalog_sessions only catalogs the FIRST session ID found in greppable input."""
+
+    def test_finds_only_first_session_id_in_piped_content(self, tmp_path):
+        """When piped content contains multiple session_id lines, only the first is cataloged."""
+        piped = (
+            "---\n"
+            "session_id: 11111111-1111-1111-1111-111111111111\n"
+            "directory: ~/dir1\n"
+            "messages: 5\n"
+            "---\n"
+            "<content1/>\n"
+            "\n"
+            "---\n"
+            "session_id: 22222222-2222-2222-2222-222222222222\n"
+            "directory: ~/dir2\n"
+            "messages: 10\n"
+            "---\n"
+            "<content2/>"
+        )
+        collected_ids: list[str] = []
+
+        original_get_content = conversations.catalog._get_session_content
+
+        def fake_get_session_content(sid: str):
+            collected_ids.append(sid)
+            # Return content matching the first session
+            return (
+                "---\n"
+                "session_id: 11111111-1111-1111-1111-111111111111\n"
+                "directory: ~/dir1\n"
+                "messages: 5\n"
+                "---\n"
+                "<content1/>"
+            )
+
+        import conversations.catalog
+        with patch.object(conversations.catalog, "_get_session_content", side_effect=fake_get_session_content), \
+             patch("conversations.catalog.subprocess.run") as mock_run, \
+             patch("sys.stdin") as mock_stdin, \
+             patch("sys.exit"):
+            mock_stdin.isatty.return_value = False
+            mock_stdin.read.return_value = piped
+            catalog_sessions([])
+
+        # Only the first session_id should have been processed
+        assert collected_ids == ["11111111-1111-1111-1111-111111111111"]
 
 
 class TestIsSessionId:
