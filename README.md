@@ -5,7 +5,7 @@ description: Format, search, and manage supported AI CLI conversation history fi
 
 # Conversations
 
-> Verified true as of 25-12-22 13PM IST, 1fbb406
+> Verified true as of 26-04-16, working tree after 3cd8c1b
 
 ## Overview
 
@@ -166,7 +166,7 @@ Markdown-only output intended for piping into files or other tools.
 
 ### Search Mode
 
-Search all supported sessions using regex patterns.
+Search all supported sessions using regex patterns against visible rendered message content, summaries, and custom titles.
 
 ```bash
 ccc search [OPTIONS] <pattern>
@@ -180,7 +180,7 @@ ccc search [OPTIONS] <pattern>
 - `-ma, --mafter DATE`: Only conversations modified after DATE
 - `-ca, --cafter DATE`: Only conversations created after DATE
 - `--no-metadata`: Disable outputting metadata frontmatter
-- Reuses standard display flags (`-T`, `-t`, `-a`, `-A`) to control match output
+- Reuses standard display flags (`-T`, `-t`, `-a`, `-A`, `--no-plans`) to control both what counts as a match and what gets rendered
 
 **Date formats:** ISO dates (`2024-12-15`, `24-12-15`), with time (`2024-12-15T14:30`, `2024-12-15 14:30:45`), or relative (`1h`, `2d`, `3w`, `4m`, `5y`).
 
@@ -201,8 +201,11 @@ ccc search -p codex "TODO"              # Search only Codex sessions
 
 **Search Features:**
 - Case-insensitive regex (multiline, DOTALL)
-- Searches both message content and conversation summaries
+- Searches visible rendered message content, conversation summaries, and custom titles
+- Visibility flags affect search semantics: hidden thinking/tools/agents/plans do not count as matches
+- `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)
+- Plain-literal queries get a cheap candidate prefilter before the normal rendered-content confirmation pass
 - Results sorted by modification time ascending across Claude, PI, and Codex sessions
 - Extracts working directory from conversation files
 - Full markdown rendering with syntax highlighting
@@ -424,17 +427,19 @@ Note: when modifying this tool, go over the files associated with the `/export` 
 
 **Key Functions:**
 - `extract_summaries_from_jsonl()` - Extract all summary fields from file
+- `SessionPool.discover()` - Build the unified supported-session inventory for one invocation
+- `SessionScan.from_content()` - Decode one session once into search facets and visible messages
 - `get_input_content()` - Resolve input from CLI arg, stdin, or conversation/session ID
 - `detect_format()` - Deterministic format detection (first line only)
-- `parse_jsonl()` - Parse JSONL conversation files
+- `parse_jsonl()` / `parse_jsonl_entries()` - Parse JSONL conversation files
 - `parse_raw_cli_transcript()` - Parse raw CLI transcripts
 - `format_to_xml()` - Convert messages to XML format
 - `render_messages_with_rich()` - Rich markdown rendering
 - `print_metadata()` - Unified metadata output to stderr
 - `parse_slice_notation()` - Convert slice strings to indices
-- `find_all_conversations()` - Find all .jsonl files in projects
+- `find_all_supported_session_files()` - Find all supported Claude, PI, and Codex session files
 - `sort_by_modified()` - Domainless oldest→newest ordering helper for recency-aware flows
-- `extract_cwd_from_jsonl()` - Extract working directory from JSONL
+- `extract_cwd_from_jsonl()` / `extract_cwd_from_entries()` - Extract working directory from JSONL
 - `cmd_search()` - Search with rich display
 - `cmd_rm()` - Remove session and all associated files
 - `display_search_result()` - Rich console output for search
@@ -448,6 +453,7 @@ Note: when modifying this tool, go over the files associated with the `/export` 
 **Known Edge Cases:**
 - Message content with markdown (backticks, etc.) renders differently in display vs source
 - Searching rendered text won't match source formatting
+- Search candidate prefiltering only applies to plain-literal queries; render-dependent queries still fall through to the full rendered-content matcher
 - No current solution (complexity vs benefit trade-off)
 
 ---
