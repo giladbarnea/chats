@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 16 26
+  019d90d0-0895-7df1-97e6-b7878b0b158c:
+    description:
+      - "Reframed `ccc` session lookup and search around the idea that Claude, PI, and Codex histories form one unified pool, then drove the next performance work as narrow TDD slices instead of a broad refactor."
+      - "Added `SessionPool` and `SessionScan`, made search metadata loading lazy, introduced a plain-literal candidate prefilter that preserves search semantics, and refreshed the README and architecture docs around the new model."
+    directories: [~/dev/conversations]
+    keywords: [search-performance, session-pool, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 41
+    new_files: [src/conversations/session_pool.py, src/conversations/session_scan.py, tests/test_session_scan.py, tests/test_search_orchestration.py, tests/test_search_visibility.py]
+    edited_files: [README.md, ARCHITECTURE.md, src/conversations/__init__.py, src/conversations/commands.py, src/conversations/parsing.py, tests/test_session_search_space.py]
+    branch: main
   # Apr 15 26
   229ad818-eb68-44e2-b9a7-378ff552a7ee:
     description: "Added a `provider` metadata field (`claude`, `pi`, `codex`) to session YAML frontmatter: introduced a `Provider` type alias (`Literal[...]`) in `model.py`, added it as a required field on `ConversationMetadata`, derived it from the adapter's name in `_load_conversation_metadata()`, emitted it via `print_metadata()`, and threaded it through the parse/search pipelines. Peer-reviewed and hardened with 10 tests covering per-adapter derivation and parse/search emission."
