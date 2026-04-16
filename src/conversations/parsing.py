@@ -178,6 +178,20 @@ def _extract_field_from_content(
     return values
 
 
+def _extract_field_from_entries(
+    entries: list[dict], entry_type: str, field_name: str
+) -> list[str]:
+    """Extract field values from parsed JSONL entries."""
+    values: list[str] = []
+    for entry in entries:
+        if entry.get("type") != entry_type:
+            continue
+        value = entry.get(field_name)
+        if isinstance(value, str) and value:
+            values.append(value)
+    return values
+
+
 def _extract_field_from_jsonl(
     file_path: Path, entry_type: str, field_name: str
 ) -> list[str]:
@@ -208,6 +222,11 @@ def extract_summaries_from_content(content: str) -> list[str]:
     return _extract_field_from_content(content, "summary", "summary")
 
 
+def extract_summaries_from_entries(entries: list[dict]) -> list[str]:
+    """Extract all summary fields from parsed JSONL entries."""
+    return _extract_field_from_entries(entries, "summary", "summary")
+
+
 def extract_summaries_from_jsonl(file_path: Path) -> list[str]:
     """Extract all summary fields from a jsonl conversation file."""
     return _extract_field_from_jsonl(file_path, "summary", "summary")
@@ -216,6 +235,11 @@ def extract_summaries_from_jsonl(file_path: Path) -> list[str]:
 def extract_custom_titles_from_content(content: str) -> list[str]:
     """Extract all custom-title fields from JSONL content string."""
     return _extract_field_from_content(content, "custom-title", "customTitle")
+
+
+def extract_custom_titles_from_entries(entries: list[dict]) -> list[str]:
+    """Extract all custom-title fields from parsed JSONL entries."""
+    return _extract_field_from_entries(entries, "custom-title", "customTitle")
 
 
 def extract_custom_titles_from_jsonl(file_path: Path) -> list[str]:
@@ -269,6 +293,11 @@ def _iter_jsonl_entries(content: str) -> list[dict]:
     return entries
 
 
+def decode_jsonl_entries(content: str) -> list[dict]:
+    """Decode JSONL content into parsed object entries."""
+    return _iter_jsonl_entries(content)
+
+
 def _extract_text_blocks(content_data: object) -> list[str]:
     """Collect text blocks from a message content field."""
     if isinstance(content_data, str):
@@ -286,12 +315,14 @@ def _extract_text_blocks(content_data: object) -> list[str]:
     return text_blocks
 
 
-def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
-    """Parse the existing Claude-style JSONL conversation shape."""
+def _parse_default_jsonl_entries(
+    entries: list[dict], flags: ConversationFlags
+) -> list[Message]:
+    """Parse Claude-style JSONL entries into the shared Message model."""
     messages = []
     index = 1
 
-    for entry in _iter_jsonl_entries(content):
+    for entry in entries:
         entry_type = entry.get("type")
 
         if entry_type == "user":
@@ -310,12 +341,17 @@ def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message
     return messages
 
 
-def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
-    """Parse PI JSONL sessions into the shared Message model."""
+def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse the existing Claude-style JSONL conversation shape."""
+    return _parse_default_jsonl_entries(_iter_jsonl_entries(content), flags)
+
+
+def _parse_pi_jsonl_entries(entries: list[dict], flags: ConversationFlags) -> list[Message]:
+    """Parse PI JSONL entries into the shared Message model."""
     messages = []
     index = 1
 
-    for entry in _iter_jsonl_entries(content):
+    for entry in entries:
         entry_type = entry.get("type")
 
         if entry_type == "custom-title" and flags.show_assistant_messages:
@@ -332,8 +368,15 @@ def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
     return messages
 
 
-def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
-    """Parse Codex JSONL sessions into the shared Message model."""
+def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse PI JSONL sessions into the shared Message model."""
+    return _parse_pi_jsonl_entries(_iter_jsonl_entries(content), flags)
+
+
+def _parse_codex_jsonl_entries(
+    entries: list[dict], flags: ConversationFlags
+) -> list[Message]:
+    """Parse Codex JSONL entries into the shared Message model."""
     messages = []
     index = 1
     current_assistant: Message | None = None
@@ -354,7 +397,7 @@ def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
             current_assistant.timestamp = timestamp
         return current_assistant
 
-    for entry in _iter_jsonl_entries(content):
+    for entry in entries:
         entry_type = entry.get("type")
 
         if entry_type == "custom-title" and flags.show_assistant_messages:
@@ -471,6 +514,11 @@ def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
 
     flush_assistant()
     return messages
+
+
+def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse Codex JSONL sessions into the shared Message model."""
+    return _parse_codex_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
 def _is_pi_jsonl_path(source_path: Path | None) -> bool:
@@ -697,8 +745,21 @@ def parse_jsonl(
     source_path: Path | None = None,
 ) -> list[Message]:
     """Parse a JSONL conversation via the matching session adapter."""
+    return parse_jsonl_entries(_iter_jsonl_entries(content), flags, source_path=source_path)
+
+
+def parse_jsonl_entries(
+    entries: list[dict],
+    flags: ConversationFlags,
+    source_path: Path | None = None,
+) -> list[Message]:
+    """Parse already-decoded JSONL entries via the matching session adapter."""
     adapter = _select_jsonl_session_adapter(source_path)
-    return adapter.parse_messages(content, flags)
+    if adapter.name == "pi":
+        return _parse_pi_jsonl_entries(entries, flags)
+    if adapter.name == "codex":
+        return _parse_codex_jsonl_entries(entries, flags)
+    return _parse_default_jsonl_entries(entries, flags)
 
 
 def resolve_session_identifier_via_adapters(
@@ -1081,18 +1142,15 @@ def parse_raw_cli_transcript(
 
 def extract_cwd_from_jsonl(content: str) -> str | None:
     """Extract the working directory (cwd) from JSONL conversation."""
-    for line in content.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
+    return extract_cwd_from_entries(_iter_jsonl_entries(content))
 
-        try:
-            entry = json.loads(line)
-            if cwd := entry.get("cwd"):
-                return cwd
-            if cwd := _extract_cwd_from_codex_entry(entry):
-                return cwd
-        except json.JSONDecodeError:
-            continue
 
+def extract_cwd_from_entries(entries: list[dict]) -> str | None:
+    """Extract cwd from already-decoded JSONL entries."""
+    for entry in entries:
+        cwd = entry.get("cwd")
+        if isinstance(cwd, str) and cwd:
+            return cwd
+        if cwd := _extract_cwd_from_codex_entry(entry):
+            return cwd
     return None

@@ -25,7 +25,6 @@ from .ordering import is_single_negative_index, resolve_negative_index, sort_by_
 from .parsing import (
     detect_format,
     extract_custom_titles_from_content,
-    extract_summaries_from_content,
     extract_summaries_from_jsonl,
     extract_cwd_from_jsonl,
     find_all_supported_session_files,
@@ -37,6 +36,8 @@ from .parsing import (
     parse_jsonl,
     parse_raw_cli_transcript,
 )
+from .session_pool import SessionPool
+from .session_scan import SessionScan
 
 
 def _build_tool_id_map(messages: list[Message]) -> dict[str, str]:
@@ -127,34 +128,6 @@ def _resolve_recent_conversation_file(
     return resolve_negative_index(identifier, ordered_main_conversations)
 
 
-def _resolve_exact_session_identifier(
-    identifier: str,
-    conversation_files: Sequence[Path],
-) -> Path | None:
-    """Resolve a single-token identifier against the unified session pool."""
-    if len(identifier.split()) != 1:
-        return None
-
-    # Fast path 1: Exact stem or filename match (Claude)
-    for conv_file in conversation_files:
-        if conv_file.stem == identifier or conv_file.name == identifier:
-            return conv_file
-
-    # Fast path 2: Stem contains identifier (PI/Codex)
-    for conv_file in conversation_files:
-        if identifier not in conv_file.stem:
-            continue
-        if get_native_session_id(conv_file) == identifier:
-            return conv_file
-
-    # Slow path: Fallback for renamed files
-    for conv_file in conversation_files:
-        if get_native_session_id(conv_file) == identifier:
-            return conv_file
-
-    return None
-
-
 def _try_resolve_conversation_file(
     identifier: str,
     conversation_files: Sequence[Path] | None = None,
@@ -184,15 +157,18 @@ def _try_resolve_conversation_file(
     except (OSError, ValueError):
         pass
 
-    # Fetch conversation files if not provided
-    if conversation_files is None:
-        conversation_files = find_all_supported_session_files()
+    pool = (
+        SessionPool.discover()
+        if conversation_files is None
+        else SessionPool.from_files(conversation_files)
+    )
+    conversation_files = pool.files
 
     if is_single_negative_index(stripped):
         if recent_path := _resolve_recent_conversation_file(stripped, conversation_files):
             return recent_path, []
 
-    if exact_match := _resolve_exact_session_identifier(stripped, conversation_files):
+    if exact_match := pool.resolve_exact_identifier(stripped):
         return exact_match, []
 
     # If it's a UUID-like identifier that didn't match, don't fallback to scanning all file summaries
@@ -463,15 +439,9 @@ def _search_conversation(
     Returns tuple of (messages, matches, cwd, matching_summaries, last_custom_title)
     or None if the conversation should be skipped.
     """
-    content = conv_file.read_text(encoding="utf-8")
-    format_type = detect_format(content)
-
-    if format_type == "jsonl":
-        messages = parse_jsonl(content, flags, source_path=conv_file)
-        cwd = extract_cwd_from_jsonl(content)
-    else:
-        messages = parse_raw_cli_transcript(content, flags)
-        cwd = None
+    scan = SessionScan.from_file(conv_file, flags)
+    messages = list(scan.messages)
+    cwd = scan.cwd
 
     # Apply directory filter
     if dir_filter is not None:
@@ -482,12 +452,12 @@ def _search_conversation(
         except ValueError:
             return None
 
-    summaries = extract_summaries_from_content(content)
-    matching_summaries = [s for s in summaries if regex.search(s)]
-
-    custom_titles = extract_custom_titles_from_content(content)
-    matching_custom_titles = [t for t in custom_titles if regex.search(t)]
-    last_custom_title = custom_titles[-1] if custom_titles else None
+    matching_summaries = [summary for summary in scan.summaries if regex.search(summary)]
+    matching_custom_titles = [
+        custom_title
+        for custom_title in scan.custom_titles
+        if regex.search(custom_title)
+    ]
 
     tool_id_map = _build_tool_id_map(messages)
 
@@ -497,7 +467,14 @@ def _search_conversation(
         if regex.search(render_message_inner_xml(msg, flags, tool_id_map))
     ]
 
-    return messages, matches, cwd, matching_summaries, matching_custom_titles, last_custom_title
+    return (
+        messages,
+        matches,
+        cwd,
+        matching_summaries,
+        matching_custom_titles,
+        scan.last_custom_title,
+    )
 
 
 def cmd_rename(conversation_id: str, new_name: str) -> None:

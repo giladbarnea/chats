@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, cmd_parse, cmd_rename, cmd_search
+from conversations import ConversationFlags, SessionPool, cmd_parse, cmd_rename, cmd_search
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -211,6 +211,47 @@ def _build_supported_session_space(temp_home: Path) -> dict[str, Path]:
     os.utime(codex_path, (1_700_000_003, 1_700_000_003))
 
     return {"claude": claude_path, "pi": pi_path, "codex": codex_path}
+
+
+def test_session_pool_discovers_one_unified_inventory_and_resolves_exact_ids(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """SessionPool should treat Claude, PI, and Codex sessions as one provider-neutral pool."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+    paths = _build_supported_session_space(temp_home)
+
+    pool = SessionPool.discover()
+
+    assert set(pool.files) == set(paths.values()), (
+        "Expected SessionPool.files to include the full supported-session inventory. "
+        f"Got: {pool.files!r}"
+    )
+    assert pool.by_provider["claude"] == (paths["claude"],), (
+        "Expected SessionPool to group Claude sessions under the 'claude' provider. "
+        f"Got: {pool.by_provider['claude']!r}"
+    )
+    assert pool.by_provider["pi"] == (paths["pi"],), (
+        "Expected SessionPool to group PI sessions under the 'pi' provider. "
+        f"Got: {pool.by_provider['pi']!r}"
+    )
+    assert pool.by_provider["codex"] == (paths["codex"],), (
+        "Expected SessionPool to group Codex sessions under the 'codex' provider. "
+        f"Got: {pool.by_provider['codex']!r}"
+    )
+    assert pool.resolve_exact_identifier("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") == paths["claude"], (
+        "Expected exact Claude ids to resolve from the unified pool. "
+        f"Got: {pool.resolve_exact_identifier('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')!r}"
+    )
+    assert pool.resolve_exact_identifier("pi-session-id") == paths["pi"], (
+        "Expected exact PI native ids to resolve from the unified pool. "
+        f"Got: {pool.resolve_exact_identifier('pi-session-id')!r}"
+    )
+    assert pool.resolve_exact_identifier("019d7b61-53d7-7891-9033-ad646f9d2ce7") == paths["codex"], (
+        "Expected exact Codex native ids to resolve from the unified pool. "
+        f"Got: {pool.resolve_exact_identifier('019d7b61-53d7-7891-9033-ad646f9d2ce7')!r}"
+    )
 
 
 def test_cmd_parse_recent_negative_index_uses_all_supported_sessions(
