@@ -95,6 +95,10 @@ class SearchHit:
     last_custom_title: str | None
 
 
+_RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
+_REGEX_META_CHARACTERS = frozenset(".^$*+?{}[]\\|()")
+
+
 def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
     """Load created/modified timestamps for a conversation file."""
     ctime, mtime = get_jsonl_timestamps(conv_file)
@@ -354,14 +358,18 @@ def cmd_search(
     """Handle search subcommand."""
     mafter_dt = parse_date_filter(mafter)
     cafter_dt = parse_date_filter(cafter)
+    literal_candidate = None
 
     # Compile regex (treat invalid regex as literal string like grep -F)
     try:
         regex = re.compile(pattern_arg, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+        if _is_plain_literal_search_pattern(pattern_arg):
+            literal_candidate = pattern_arg.casefold()
     except re.error:
         regex = re.compile(
             re.escape(pattern_arg), re.IGNORECASE | re.MULTILINE | re.DOTALL
         )
+        literal_candidate = pattern_arg.casefold()
 
     pool = SessionPool.discover(include_sidechains=flags.show_agents)
     search_files = (
@@ -378,6 +386,8 @@ def cmd_search(
             hit = _search_hit_for_file(
                 conv_file,
                 regex,
+                pattern_arg,
+                literal_candidate,
                 flags,
                 dir_filter,
                 mafter_dt,
@@ -431,13 +441,19 @@ def cmd_search(
 def _search_hit_for_file(
     conv_file: Path,
     regex: re.Pattern,
+    pattern_arg: str,
+    literal_candidate: str | None,
     flags: ConversationFlags,
     dir_filter: str | None,
     mafter_dt: datetime | None,
     cafter_dt: datetime | None,
 ) -> SearchHit | None:
     """Return one search hit with metadata, or None when the file should not be shown."""
-    result = _search_conversation(conv_file, regex, flags, dir_filter)
+    content = conv_file.read_text(encoding="utf-8")
+    if not _search_candidate_matches(content, pattern_arg, literal_candidate, flags):
+        return None
+
+    result = _search_conversation_content(conv_file, content, regex, flags, dir_filter)
     if result is None:
         return None
 
@@ -485,6 +501,39 @@ def _passes_date_filters(
     return True
 
 
+def _search_candidate_matches(
+    content: str,
+    pattern_arg: str,
+    literal_candidate: str | None,
+    flags: ConversationFlags,
+) -> bool:
+    """Return True when raw content is a plausible superset match candidate."""
+    if any(token in pattern_arg for token in _RENDER_DEPENDENT_SEARCH_TOKENS):
+        return True
+    if literal_candidate is None:
+        return True
+
+    if literal_candidate in content.casefold():
+        return True
+
+    markers: list[str] = []
+    if flags.show_thinking:
+        markers.append("thinking")
+    if flags.show_tools or flags.show_plans:
+        markers.append("tool-input")
+    if flags.show_tools:
+        markers.append("tool-output")
+    if flags.show_plans:
+        markers.append("ExitPlanMode")
+
+    return any(literal_candidate in marker.casefold() for marker in markers)
+
+
+def _is_plain_literal_search_pattern(pattern: str) -> bool:
+    """Return True when a search pattern contains no regex metacharacters."""
+    return not any(character in _REGEX_META_CHARACTERS for character in pattern)
+
+
 def _search_conversation(
     conv_file: Path,
     regex: re.Pattern,
@@ -497,7 +546,19 @@ def _search_conversation(
     Returns tuple of (messages, matches, cwd, matching_summaries, last_custom_title)
     or None if the conversation should be skipped.
     """
-    scan = SessionScan.from_file(conv_file, flags)
+    content = conv_file.read_text(encoding="utf-8")
+    return _search_conversation_content(conv_file, content, regex, flags, dir_filter)
+
+
+def _search_conversation_content(
+    conv_file: Path,
+    content: str,
+    regex: re.Pattern,
+    flags: ConversationFlags,
+    dir_filter: str | None,
+) -> tuple[list[Message], list[Message], str | None, list[str], list[str], str | None] | None:
+    """Search already-read conversation content."""
+    scan = SessionScan.from_content(content, flags, source_path=conv_file)
     messages = list(scan.messages)
     cwd = scan.cwd
 

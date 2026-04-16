@@ -90,3 +90,53 @@ def test_cmd_search_succeeds_when_unrelated_nonmatch_metadata_would_fail(
         "Expected the unrelated nonmatching session not to appear in output. "
         f"Got stdout:\n{stdout}"
     )
+
+
+def test_cmd_search_does_not_render_noncandidate_sessions(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A rare-token search should skip expensive render confirmation for noncandidate files."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    matching_path = home / ".claude" / "projects" / "proj" / "match.jsonl"
+    noncandidate_path = home / ".claude" / "projects" / "proj" / "other.jsonl"
+    _write_session(matching_path, "slice-4-render-skip-needle")
+    _write_session(noncandidate_path, "slice-4-render-skip-noncandidate")
+
+    real_render_message_inner_xml = commands.render_message_inner_xml
+    rendered_texts: list[str] = []
+
+    def render_message_inner_xml(message, flags, tool_id_map=None):
+        rendered_texts.append(message.text)
+        return real_render_message_inner_xml(message, flags, tool_id_map)
+
+    monkeypatch.setattr(
+        commands,
+        "render_message_inner_xml",
+        render_message_inner_xml,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "slice-4-render-skip-needle",
+            ConversationFlags(color="never", paging=False),
+            list_only=True,
+            emit_metadata=True,
+        )
+
+    assert exc_info.value.code == 0, (
+        "Expected search to succeed while avoiding render confirmation for "
+        f"noncandidate files. Got exit code: {exc_info.value.code}"
+    )
+    stdout = capsys.readouterr().out
+    assert "match" in stdout, (
+        "Expected the matching session to remain visible after introducing "
+        f"candidate/confirm search. Got stdout:\n{stdout}"
+    )
+    assert "slice-4-render-skip-noncandidate" not in rendered_texts, (
+        "Expected cmd_search not to XML-render messages from files whose raw "
+        f"content cannot match the query. Got rendered texts: {rendered_texts!r}"
+    )
