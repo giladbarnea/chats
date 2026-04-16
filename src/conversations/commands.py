@@ -5,6 +5,7 @@ import re
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import nullcontext
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -27,7 +28,6 @@ from .parsing import (
     extract_custom_titles_from_content,
     extract_summaries_from_jsonl,
     extract_cwd_from_jsonl,
-    find_all_supported_session_files,
     get_display_session_id,
     get_jsonl_session_adapter,
     get_native_session_id,
@@ -80,6 +80,19 @@ ConversationMetadataOrder = Callable[
     [Iterable[ConversationMetadata]],
     list[ConversationMetadata],
 ]
+
+
+@dataclass
+class SearchHit:
+    """One matched conversation ready for ordered display."""
+
+    metadata: ConversationMetadata
+    messages: list[Message]
+    matches: list[Message]
+    cwd: str | None
+    matching_summaries: list[str]
+    matching_custom_titles: list[str]
+    last_custom_title: str | None
 
 
 def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
@@ -350,15 +363,37 @@ def cmd_search(
             re.escape(pattern_arg), re.IGNORECASE | re.MULTILINE | re.DOTALL
         )
 
-    all_files = find_all_supported_session_files(include_sidechains=flags.show_agents)
-    if provider_filter is not None:
-        all_files = (f for f in all_files if get_jsonl_session_adapter(f).name == provider_filter)
-    metadata_list = _build_conversation_metadata(all_files)
-
-    if not metadata_list:
+    pool = SessionPool.discover(include_sidechains=flags.show_agents)
+    search_files = (
+        pool.by_provider[provider_filter]
+        if provider_filter is not None
+        else pool.files
+    )
+    if not search_files:
         sys.exit(1)
 
-    found_any = False
+    hits: list[SearchHit] = []
+    for conv_file in search_files:
+        try:
+            hit = _search_hit_for_file(
+                conv_file,
+                regex,
+                flags,
+                dir_filter,
+                mafter_dt,
+                cafter_dt,
+            )
+        except Exception as e:
+            print_error(f"Error processing conversation file {conv_file}: {e}")
+            continue
+        if hit is None:
+            continue
+        hits.append(hit)
+
+    if not hits:
+        sys.exit(1)
+
+    ordered_hits = sort_by_modified(hits, modified_at=lambda hit: hit.metadata.mtime)
     pager_ctx = (
         nullcontext()
         if only_id or not flags.paging
@@ -366,47 +401,70 @@ def cmd_search(
     )
 
     with pager_ctx:
-        for meta in metadata_list:
-            if not _passes_date_filters(meta, mafter_dt, cafter_dt):
-                continue
+        for hit in ordered_hits:
+            meta = hit.metadata
+            if not only_id:
+                get_console().rule(
+                    title=f"[bold white]{get_display_session_id(meta.path)}[/]",
+                    style="#00ffba",
+                )
+            display_search_result(
+                meta.path,
+                hit.messages,
+                hit.matches,
+                hit.cwd,
+                flags,
+                list_only=list_only,
+                only_id=only_id,
+                emit_metadata=emit_metadata,
+                provider=meta.provider,
+                created_at=meta.ctime,
+                modified_at=meta.mtime,
+                matching_summaries=hit.matching_summaries,
+                matching_custom_titles=hit.matching_custom_titles,
+                last_custom_title=hit.last_custom_title,
+            )
 
-            try:
-                result = _search_conversation(meta.path, regex, flags, dir_filter)
-                if result is None:
-                    continue
+    sys.exit(0)
 
-                messages, matches, cwd, matching_summaries, matching_custom_titles, last_custom_title = result
 
-                if matches or matching_summaries or matching_custom_titles:
-                    found_any = True
-                    if not only_id:
-                        # Make sure rule is displayed first, acting as a title, followed by the session's metadata
-                        get_console().rule(
-                            title=f"[bold white]{get_display_session_id(meta.path)}[/]",
-                            style="#00ffba",
-                        )
-                    display_search_result(
-                        meta.path,
-                        messages,
-                        matches,
-                        cwd,
-                        flags,
-                        list_only=list_only,
-                        only_id=only_id,
-                        emit_metadata=emit_metadata,
-                        provider=meta.provider,
-                        created_at=meta.ctime,
-                        modified_at=meta.mtime,
-                        matching_summaries=matching_summaries,
-                        matching_custom_titles=matching_custom_titles,
-                        last_custom_title=last_custom_title,
-                    )
+def _search_hit_for_file(
+    conv_file: Path,
+    regex: re.Pattern,
+    flags: ConversationFlags,
+    dir_filter: str | None,
+    mafter_dt: datetime | None,
+    cafter_dt: datetime | None,
+) -> SearchHit | None:
+    """Return one search hit with metadata, or None when the file should not be shown."""
+    result = _search_conversation(conv_file, regex, flags, dir_filter)
+    if result is None:
+        return None
 
-            except Exception as e:
-                print_error(f"Error processing conversation file {meta.path}: {e}")
-                continue
+    (
+        messages,
+        matches,
+        cwd,
+        matching_summaries,
+        matching_custom_titles,
+        last_custom_title,
+    ) = result
+    if not (matches or matching_summaries or matching_custom_titles):
+        return None
 
-    sys.exit(0 if found_any else 1)
+    metadata = _load_conversation_metadata(conv_file)
+    if not _passes_date_filters(metadata, mafter_dt, cafter_dt):
+        return None
+
+    return SearchHit(
+        metadata=metadata,
+        messages=messages,
+        matches=matches,
+        cwd=cwd,
+        matching_summaries=matching_summaries,
+        matching_custom_titles=matching_custom_titles,
+        last_custom_title=last_custom_title,
+    )
 
 
 def _passes_date_filters(
