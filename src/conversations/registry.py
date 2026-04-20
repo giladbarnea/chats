@@ -23,6 +23,7 @@ class ContentBlockType(Enum):
     USER_COMMAND_OUTPUT = ContentBlockInfo(
         "user-command-output", "# User Command Output", "bold cyan"
     )
+    RECAP = ContentBlockInfo("recap", "# Recap", "bold blue")
     ASSISTANT_RESPONSE = ContentBlockInfo(
         "assistant-response", "# Assistant", "bold green"
     )

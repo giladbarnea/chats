@@ -425,6 +425,8 @@ def _parse_default_jsonl_entries(
             msg = _parse_user_entry(entry, index, flags)
         elif entry_type == "assistant":
             msg = _parse_assistant_entry(entry, index, flags)
+        elif entry_type == "system":
+            msg = _parse_system_entry(entry, index, flags)
         elif entry_type == "custom-title" and flags.show_assistant_messages:
             msg = _parse_custom_title_entry(entry, index)
         else:
@@ -959,6 +961,31 @@ def _parse_assistant_entry(entry: dict, index: int, flags: ConversationFlags) ->
         msg.text = "\n\n".join(text_blocks)
 
     return msg
+
+
+def _parse_system_entry(entry: dict, index: int, flags: ConversationFlags) -> Message | None:
+    """Parse Claude system entries that should be surfaced as visible messages."""
+    if not flags.show_assistant_messages:
+        return None
+
+    if entry.get("subtype") != "away_summary":
+        return None
+
+    content = entry.get("content")
+    if not isinstance(content, str):
+        return None
+
+    recap = content.removesuffix(" (disable recaps in /config)").strip()
+    if not recap:
+        return None
+
+    return Message(
+        role="assistant",
+        index=index,
+        text=recap,
+        timestamp=entry.get("timestamp"),
+        wrapper_type=ContentBlockType.RECAP,
+    )
 
 
 def _normalize_pi_tool_name(name: str | None) -> str:

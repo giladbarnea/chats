@@ -219,3 +219,30 @@ def test_string_command_input_leaves_numeric_and_boolean_scalars_unquoted():
         "Expected command input scalars to quote by default while leaving numeric "
         f"and lowercase boolean values bare. Got:\n{output}"
     )
+
+
+def test_away_summary_system_message_renders_as_recap_without_disable_suffix():
+    """Claude away-summary system entries should render as Recap blocks."""
+    content = (
+        '{"type":"system","subtype":"away_summary","content":"'
+        "Fixing the Elaborate-on-selected-text feature in the mobile web client. "
+        "The overlay-closing bug is patched; next step is running a fresh "
+        'end-to-end test to confirm the fix works. (disable recaps in /config)"}'
+    )
+    flags = ConversationFlags(color="never")
+
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert '<recap i="1">' in output, (
+        f"Expected away_summary system messages to render as <recap>. Got:\n{output}"
+    )
+    assert "# Recap" in output, f"Expected recap header in output. Got:\n{output}"
+    assert "disable recaps in /config" not in output, (
+        "Expected recap suffix to be stripped from visible output. "
+        f"Got:\n{output}"
+    )
+    assert (
+        "Fixing the Elaborate-on-selected-text feature in the mobile web client."
+        in output
+    ), f"Expected recap body to be preserved. Got:\n{output}"

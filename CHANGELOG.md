@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-20] Render Claude away summaries as Recap blocks
+
+### Added
+
+- Claude `type: "system"` entries with `subtype: "away_summary"` now render as `<recap>` blocks with a `# Recap` heading instead of staying hidden.
+
+### Changed
+
+- Recap bodies strip the trailing ` (disable recaps in /config)` suffix before display.
+
+---
 ## [2026-04-19] Render Claude local command user strings as dedicated command blocks
 
 ### Added

@@ -361,7 +361,8 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 
 3. **System messages** (`type: "system"`)
    - Short XML-like command logging: `<command-name>/bashes</command-name>`
-   - Subtypes: `local_command`
+   - `subtype: "away_summary"` renders as a visible `<recap>` block with the trailing ` (disable recaps in /config)` hint stripped from the body
+   - Other subtypes like `local_command` stay hidden
    - 68-132 chars typical length
 
 4. **File history snapshots** (`type: "file-history-snapshot"`)
