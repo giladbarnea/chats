@@ -27,6 +27,17 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 20 26
+  rollout-2026-04-20T13-30-00-0c1f9bda-9afe-4ea6-9f94-befd0b8d1234:
+    description:
+      - "Recognized `<command-*>` user inputs as YAML-like command blocks and now quote every scalar unless it is numeric, negative numeric, or the literal true/false."
+      - "Documented the transformation with regression coverage and proved the change with `uv run pytest tests/test_meta_user_messages.py -q` plus `./tests/run_all.sh`."
+    directories: [~/dev/conversations]
+    keywords: [command-parsing, yaml-rendering, testing]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 24
+    edited_files: [src/conversations/parsing.py, tests/test_meta_user_messages.py]
+    branch: main
   # Apr 16 26
   019d90d0-0895-7df1-97e6-b7878b0b158c:
     description:

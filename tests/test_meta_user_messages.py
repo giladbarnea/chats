@@ -130,7 +130,7 @@ def test_string_command_input_user_message_renders_as_yaml_block():
         "Expected command-tag user string to switch from <user-message> to "
         f"<user-command-input>. Got:\n{output}"
     )
-    assert "```yaml\nname: `/model`\n  message: model\n  args: opus\n```" in output, (
+    assert '```yaml\nname: "/model"\n  message: "model"\n  args: "opus"\n```' in output, (
         "Expected command-tag user string to render as indentation-driven YAML-like "
         f"XML-like command tags. Got:\n{output}"
     )
@@ -173,7 +173,7 @@ def test_string_command_input_preserves_source_order_for_same_indent_level():
     messages = parse_jsonl(content, flags)
     output = format_to_xml(messages, flags)
 
-    assert "```yaml\nmessage: export is running…\nname: `/export`\n```" in output, (
+    assert '```yaml\nmessage: "export is running…"\nname: "/export"\n```' in output, (
         "Expected command input YAML-like output to preserve source line order when "
         f"source tags arrive in a different order. Got:\n{output}"
     )
@@ -192,7 +192,30 @@ def test_string_command_input_supports_multiple_indentation_levels():
     messages = parse_jsonl(content, flags)
     output = format_to_xml(messages, flags)
 
-    assert "```yaml\nname: `/agent`\n  message: run\n    args: full\n```" in output, (
+    assert '```yaml\nname: "/agent"\n  message: "run"\n    args: "full"\n```' in output, (
         "Expected indentation depth in command-tag input to carry through into the "
         f"rendered YAML-like hierarchy. Got:\n{output}"
+    )
+
+
+def test_string_command_input_leaves_numeric_and_boolean_scalars_unquoted():
+    """Numeric and lowercase boolean command values should stay as bare YAML scalars."""
+    content = (
+        '{"type":"user","message":{"role":"user","content":"'
+        '<command-name>/config</command-name>\\n'
+        '<command-count>-42</command-count>\\n'
+        '<command-enabled>true</command-enabled>\\n'
+        '<command-note>alpha</command-note>"}}'
+    )
+    flags = ConversationFlags(color="never")
+
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert (
+        '```yaml\nname: "/config"\ncount: -42\nenabled: true\nnote: "alpha"\n```'
+        in output
+    ), (
+        "Expected command input scalars to quote by default while leaving numeric "
+        f"and lowercase boolean values bare. Got:\n{output}"
     )

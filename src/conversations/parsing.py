@@ -359,11 +359,20 @@ def _render_command_yaml_line_with_indent(key: str, value: str, level: int) -> s
     """Render one command line with indentation derived from the source tree."""
     indent = "  " * level
     if "\n" not in value:
-        return f"{indent}{key}: {value}"
+        return f"{indent}{key}: {_render_command_yaml_scalar(value)}"
 
     block_indent = indent + "  "
     indented_value = textwrap.indent(value, block_indent)
     return f"{indent}{key}: |-\n{indented_value}"
+
+
+def _render_command_yaml_scalar(value: str) -> str:
+    """Quote scalar command values unless they already look like YAML primitives."""
+    if value.isnumeric() or value.removeprefix("-").isnumeric() or value in ("true", "false"):
+        return value
+
+    escaped_value = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped_value}"'
 
 
 def _render_user_command_input(content: str) -> str | None:
@@ -378,8 +387,6 @@ def _render_user_command_input(content: str) -> str | None:
 
     yaml_lines: list[str] = []
     for indent, key, value in parsed_lines:
-        if key == "name":
-            value = f"`{value}`"
         level = indent_levels[indent - base_indent]
         yaml_lines.append(_render_command_yaml_line_with_indent(key, value, level))
 
