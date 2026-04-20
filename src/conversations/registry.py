@@ -17,6 +17,12 @@ class ContentBlockType(Enum):
 
     # Message wrappers (outer)
     USER_MESSAGE = ContentBlockInfo("user-message", "# User", "bold cyan")
+    USER_COMMAND_INPUT = ContentBlockInfo(
+        "user-command-input", "# User Command Input", "bold cyan"
+    )
+    USER_COMMAND_OUTPUT = ContentBlockInfo(
+        "user-command-output", "# User Command Output", "bold cyan"
+    )
     ASSISTANT_RESPONSE = ContentBlockInfo(
         "assistant-response", "# Assistant", "bold green"
     )
@@ -51,4 +57,3 @@ TOOL_SCHEMAS: dict[str, ToolSchema] = {
     "WebFetch": ToolSchema(["url"], "prompt", None),
     "WebSearch": ToolSchema(["query"], None, None),
 }
-

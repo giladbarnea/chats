@@ -346,6 +346,8 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 
 1. **User messages** (`type: "user"`)
    - `message.content`: string or array (can include tool results)
+   - Claude string content made only of `<command-*>...</command-*>` tags renders as `<user-command-input>` with a YAML-like code block body derived dynamically from those tags, preserving source line order and relative indentation
+   - Claude string content wrapped in `<local-command-stdout>...</local-command-stdout>` renders as `<user-command-output>` with the wrapper tags stripped
    - Common fields: `cwd`, `sessionId`, `version`, `gitBranch`, `uuid`, `parentUuid`, `timestamp`
 
 2. **Assistant messages** (`type: "assistant"`)

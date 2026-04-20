@@ -14,13 +14,19 @@ echo "Running CLI seam tests..."
 echo "Test 1: Basic invocation (file + slice)..."
 OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" "1" --color=never 2>/dev/null)
 assert_success
-assert_contains "$OUTPUT" "<${USER_MESSAGE_TAG}"
+if ! printf '%s\n' "$OUTPUT" | grep -Eq "^<(${PIPE_JOINED_USER_ORIGIN_MESSAGE_TAGS})"; then
+  echo "❌ Expected first sliced message to render as a user-origin wrapper"
+  exit 1
+fi
 
 # Test 2: Slice argument ordering - slice after flags
 echo "Test 2: Slice after flags..."
 OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" --color=never "1" 2>/dev/null)
 assert_success
-assert_contains "$OUTPUT" "<${USER_MESSAGE_TAG}"
+if ! printf '%s\n' "$OUTPUT" | grep -Eq "^<(${PIPE_JOINED_USER_ORIGIN_MESSAGE_TAGS})"; then
+  echo "❌ Expected first sliced message to render as a user-origin wrapper"
+  exit 1
+fi
 
 # Test 3: Negative slice with -- separator
 echo "Test 3: Negative slice with -- separator..."

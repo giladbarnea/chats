@@ -7,8 +7,10 @@ from datetime import datetime
 from pathlib import Path
 from collections.abc import Callable
 import re
+import textwrap
 
 from .model import ConversationFlags, Message, Provider
+from .registry import ContentBlockType
 from .utils import shorten_tool_use_id
 
 
@@ -313,6 +315,93 @@ def _extract_text_blocks(content_data: object) -> list[str]:
         if text := item.get("text", "").strip():
             text_blocks.append(text)
     return text_blocks
+
+
+_COMMAND_TAG_LINE_PATTERN = re.compile(
+    r"(?P<indent>[ \t]*)<(?P<tag>command-[a-z0-9-]+)>(?P<value>.*?)</(?P=tag)>[ \t]*",
+    re.DOTALL,
+)
+_LOCAL_COMMAND_STDOUT_PATTERN = re.compile(
+    r"\s*<local-command-stdout>(?P<value>.*?)</local-command-stdout>\s*",
+    re.DOTALL,
+)
+
+
+def _normalize_command_tag_value(raw_value: str) -> str:
+    """Trim outer whitespace while preserving meaningful internal indentation."""
+    stripped = raw_value.strip()
+    if "\n" not in stripped:
+        return stripped
+    return textwrap.dedent(stripped).strip()
+
+
+def _parse_command_tag_lines(content: str) -> list[tuple[int, str, str]] | None:
+    """Parse pure command-tag lines while preserving their relative indentation."""
+    parsed_lines: list[tuple[int, str, str]] = []
+
+    for raw_line in content.splitlines():
+        if not raw_line.strip():
+            continue
+
+        match = _COMMAND_TAG_LINE_PATTERN.fullmatch(raw_line)
+        if match is None:
+            return None
+
+        indent = len(match.group("indent").expandtabs(4))
+        key = match.group("tag").removeprefix("command-")
+        value = _normalize_command_tag_value(match.group("value"))
+        parsed_lines.append((indent, key, value))
+
+    return parsed_lines or None
+
+
+def _render_command_yaml_line_with_indent(key: str, value: str, level: int) -> str:
+    """Render one command line with indentation derived from the source tree."""
+    indent = "  " * level
+    if "\n" not in value:
+        return f"{indent}{key}: {value}"
+
+    block_indent = indent + "  "
+    indented_value = textwrap.indent(value, block_indent)
+    return f"{indent}{key}: |-\n{indented_value}"
+
+
+def _render_user_command_input(content: str) -> str | None:
+    """Convert pure `<command-*>` user strings into a YAML code block."""
+    parsed_lines = _parse_command_tag_lines(content)
+    if parsed_lines is None:
+        return None
+
+    base_indent = min(indent for indent, _, _ in parsed_lines)
+    relative_indents = sorted({indent - base_indent for indent, _, _ in parsed_lines})
+    indent_levels = {indent: level for level, indent in enumerate(relative_indents)}
+
+    yaml_lines: list[str] = []
+    for indent, key, value in parsed_lines:
+        if key == "name":
+            value = f"`{value}`"
+        level = indent_levels[indent - base_indent]
+        yaml_lines.append(_render_command_yaml_line_with_indent(key, value, level))
+
+    if not yaml_lines:
+        return None
+
+    return "```yaml\n" + "\n".join(yaml_lines) + "\n```"
+
+
+def _parse_user_string_content(
+    content: str,
+) -> tuple[str, ContentBlockType | None]:
+    """Detect special Claude user string content that needs wrapper/content overrides."""
+    stdout_match = _LOCAL_COMMAND_STDOUT_PATTERN.fullmatch(content)
+    if stdout_match:
+        return stdout_match.group("value"), ContentBlockType.USER_COMMAND_OUTPUT
+
+    command_yaml = _render_user_command_input(content)
+    if command_yaml is not None:
+        return command_yaml, ContentBlockType.USER_COMMAND_INPUT
+
+    return content, None
 
 
 def _parse_default_jsonl_entries(
@@ -800,7 +889,7 @@ def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Mess
     )
 
     if isinstance(content_data, str) and flags.show_user_messages:
-        msg.text = content_data
+        msg.text, msg.wrapper_type = _parse_user_string_content(content_data)
     elif isinstance(content_data, list):
         text_blocks = _extract_text_blocks(content_data)
         for item in content_data:

@@ -23,6 +23,8 @@ CC_CMD_BASE=("uv" "run" "ccc")
 # Supported message tags (centralized source of truth)
 declare -A SUPPORTED_MESSAGE_TAGS=(
   [user-message]=user-message
+  [user-command-input]=user-command-input
+  [user-command-output]=user-command-output
   [assistant-response]=assistant-response
   [agent]=agent
   [session-rename]=session-rename
@@ -31,6 +33,14 @@ declare -A SUPPORTED_MESSAGE_TAGS=(
 _SUPPORTED_TAG_VALUES=(${(@v)SUPPORTED_MESSAGE_TAGS})
 PIPE_JOINED_MESSAGE_TAGS="${(j:|:)_SUPPORTED_TAG_VALUES}"
 unset _SUPPORTED_TAG_VALUES
+
+USER_ORIGIN_MESSAGE_TAGS=(
+  "${SUPPORTED_MESSAGE_TAGS[user-message]}"
+  "${SUPPORTED_MESSAGE_TAGS[user-command-input]}"
+  "${SUPPORTED_MESSAGE_TAGS[user-command-output]}"
+)
+PIPE_JOINED_USER_ORIGIN_MESSAGE_TAGS="${(j:|:)USER_ORIGIN_MESSAGE_TAGS}"
+unset USER_ORIGIN_MESSAGE_TAGS
 
 # Assert no error
 assert_success() {
@@ -85,4 +95,8 @@ decolor() {
   local text="${1:-$(<&0)}"
   text=${text//$'\e'\[(<0-9>##;#)##m/}
   print -r -- "$text"
+}
+
+count_user_origin_tags() {
+  printf '%s\n' "$1" | grep -E "^<(${PIPE_JOINED_USER_ORIGIN_MESSAGE_TAGS})" -c || true
 }

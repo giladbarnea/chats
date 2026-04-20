@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-19] Render Claude local command user strings as dedicated command blocks
+
+### Added
+
+- Claude `type: "user"` string content made only of `<command-*>...</command-*>` tags now renders as `<user-command-input>` with a YAML-like code block body derived dynamically from the parsed tags, preserving source line order and relative indentation.
+- Claude `type: "user"` string content wrapped in `<local-command-stdout>...</local-command-stdout>` now renders as `<user-command-output>` with the wrapper tags stripped from the visible body.
+
+---
 ## [2026-04-15] Speed up exact session-id resolution
 
 ### Changed

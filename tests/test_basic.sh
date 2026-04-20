@@ -21,8 +21,8 @@ EXPECTED_USER_MSGS=$(jq 'select(.type=="user" and .message?.role=="user") | sele
   end
 )' "$DATA_FILE_SIMPLE" | jq -s length)
 
-# Count tags in output (anchor to start of line to avoid matching content)
-ACTUAL_USER_TAGS=$(echo "$OUTPUT" | grep -c "^<${USER_MESSAGE_TAG}")
+# Count rendered user-origin wrappers in output (anchor to start of line to avoid matching content)
+ACTUAL_USER_TAGS=$(count_user_origin_tags "$OUTPUT")
 
 if [[ "$ACTUAL_USER_TAGS" -ne "$EXPECTED_USER_MSGS" ]]; then
   echo "❌ Expected $EXPECTED_USER_MSGS user messages, got $ACTUAL_USER_TAGS"
@@ -63,7 +63,7 @@ echo "Testing naive stdin input..."
 OUTPUT_STDIN=$(cat "$DATA_FILE_SIMPLE" | $CC_CMD)
 assert_success
 # Same checks
-ACTUAL_USER_TAGS_STDIN=$(echo "$OUTPUT_STDIN" | grep -c "^<${USER_MESSAGE_TAG}")
+ACTUAL_USER_TAGS_STDIN=$(count_user_origin_tags "$OUTPUT_STDIN")
 if [[ "$ACTUAL_USER_TAGS_STDIN" -ne "$EXPECTED_USER_MSGS" ]]; then
   echo "❌ Stdin: Expected $EXPECTED_USER_MSGS user messages, got $ACTUAL_USER_TAGS_STDIN"
   exit 1

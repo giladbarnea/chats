@@ -147,8 +147,8 @@ fi
 # 6. JSON should NOT contain XML tags (as structural elements)
 echo "Testing JSON doesn't contain XML tags as structure..."
 # Check that JSON doesn't start lines with XML tags (which would indicate XML structure)
-if printf '%s\n' "$OUTPUT_JSON" | grep -q "^<${USER_MESSAGE_TAG}"; then
-  echo "❌ JSON output contains XML user-message tags"
+if printf '%s\n' "$OUTPUT_JSON" | grep -Eq "^<(${PIPE_JOINED_USER_ORIGIN_MESSAGE_TAGS})"; then
+  echo "❌ JSON output contains XML user-origin wrapper tags"
   exit 1
 fi
 if printf '%s\n' "$OUTPUT_JSON" | grep -q "^<${ASSISTANT_RESPONSE_TAG}"; then
@@ -175,7 +175,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Count user messages in XML
-XML_USER_COUNT=$(printf '%s\n' "$OUTPUT_XML" | grep -c "^<${USER_MESSAGE_TAG}")
+XML_USER_COUNT=$(count_user_origin_tags "$OUTPUT_XML")
 # Count user messages in JSON (use python for reliable counting)
 JSON_USER_COUNT=$(printf '%s\n' "$OUTPUT_JSON" | $PY_CMD -c "import json, sys; data=json.load(sys.stdin); print(len([m for m in data if m.get('role')=='user']))")
 

@@ -111,3 +111,88 @@ def test_cmd_parse_slice_preserves_tool_name_on_tool_output(tmp_path, capsys):
         "Expected sliced parse output to preserve the originating tool name on "
         f"tool-output tags. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
+
+
+def test_string_command_input_user_message_renders_as_yaml_block():
+    """Claude command input strings should render as indentation-driven pseudo-YAML."""
+    content = (
+        '{"type":"user","message":{"role":"user","content":"'
+        '<command-name>/model</command-name>\\n'
+        '            <command-message>model</command-message>\\n'
+        '            <command-args>opus</command-args>"}}'
+    )
+    flags = ConversationFlags(color="never")
+
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert '<user-command-input i="1">' in output, (
+        "Expected command-tag user string to switch from <user-message> to "
+        f"<user-command-input>. Got:\n{output}"
+    )
+    assert "```yaml\nname: `/model`\n  message: model\n  args: opus\n```" in output, (
+        "Expected command-tag user string to render as indentation-driven YAML-like "
+        f"XML-like command tags. Got:\n{output}"
+    )
+
+
+def test_string_command_output_user_message_strips_stdout_wrapper():
+    """Claude local command stdout strings should render as bare command output."""
+    content = (
+        '{"type":"user","message":{"role":"user","content":"'
+        '<local-command-stdout>Set model to \\u001b[1mOpus 4.7\\u001b[22m</local-command-stdout>"}}'
+    )
+    flags = ConversationFlags(color="never")
+
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert '<user-command-output i="1">' in output, (
+        "Expected local-command stdout user string to switch from <user-message> "
+        f"to <user-command-output>. Got:\n{output}"
+    )
+    assert "Set model to \u001b[1mOpus 4.7\u001b[22m" in output, (
+        "Expected command output wrapper tags to be stripped while preserving the "
+        f"stdout body. Got:\n{output}"
+    )
+    assert "local-command-stdout" not in output, (
+        "Expected local-command-stdout XML tags to be removed from rendered output. "
+        f"Got:\n{output}"
+    )
+
+
+def test_string_command_input_preserves_source_order_for_same_indent_level():
+    """Command input output should preserve source order when lines share an indent level."""
+    content = (
+        '{"type":"user","message":{"role":"user","content":"'
+        '<command-message>export is running…</command-message>\\n'
+        '<command-name>/export</command-name>"}}'
+    )
+    flags = ConversationFlags(color="never")
+
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert "```yaml\nmessage: export is running…\nname: `/export`\n```" in output, (
+        "Expected command input YAML-like output to preserve source line order when "
+        f"source tags arrive in a different order. Got:\n{output}"
+    )
+
+
+def test_string_command_input_supports_multiple_indentation_levels():
+    """Deeper indentation should produce deeper rendered hierarchy levels."""
+    content = (
+        '{"type":"user","message":{"role":"user","content":"'
+        '<command-name>/agent</command-name>\\n'
+        '  <command-message>run</command-message>\\n'
+        '    <command-args>full</command-args>"}}'
+    )
+    flags = ConversationFlags(color="never")
+
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert "```yaml\nname: `/agent`\n  message: run\n    args: full\n```" in output, (
+        "Expected indentation depth in command-tag input to carry through into the "
+        f"rendered YAML-like hierarchy. Got:\n{output}"
+    )

@@ -102,6 +102,7 @@ class Message:
     model: str | None = None  # e.g., "claude-sonnet-4-5-20250929"
     is_meta: bool = False
     source_tool_user_id: str | None = None
+    wrapper_type: ContentBlockType | None = None
 
     def iter_visible_parts(
         self, flags: "ConversationFlags", tool_id_map: dict[str, str] | None = None
@@ -191,6 +192,8 @@ class Message:
 
     def get_wrapper_type(self) -> ContentBlockType:
         """Return the XML wrapper type for this message."""
+        if self.wrapper_type is not None:
+            return self.wrapper_type
         if self.role == "user":
             return ContentBlockType.USER_MESSAGE
         elif self.role == "session-rename":
