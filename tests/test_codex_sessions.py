@@ -429,6 +429,120 @@ def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_pa
     )
 
 
+def test_cmd_parse_treats_codex_commentary_messages_as_thinking(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Codex commentary updates should be hidden by default and visible only with --thinking."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "04"
+        / "20"
+        / "rollout-2026-04-20T16-01-44-019daafb-89bd-7f31-b5d4-c50993fba571.jsonl"
+    )
+    commentary_text = "`setup.sh` is still finishing its sync/build steps."
+    final_text = "The implementation review is complete."
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-04-20T13:16:40.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": "019daafb-89bd-7f31-b5d4-c50993fba571",
+                    "timestamp": "2026-04-20T13:16:40.000Z",
+                    "cwd": "/tmp/codex-project",
+                    "originator": "codex_cli_rs",
+                },
+            },
+            {
+                "timestamp": "2026-04-20T13:16:41.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "Review this feature."}],
+                },
+            },
+            {
+                "timestamp": "2026-04-20T13:16:50.327Z",
+                "type": "event_msg",
+                "payload": {
+                    "type": "agent_message",
+                    "message": commentary_text,
+                    "phase": "commentary",
+                    "memory_citation": None,
+                },
+            },
+            {
+                "timestamp": "2026-04-20T13:16:50.328Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": commentary_text}],
+                    "phase": "commentary",
+                },
+            },
+            {
+                "timestamp": "2026-04-20T13:17:50.328Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": final_text}],
+                    "phase": "final",
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    default_output = capsys.readouterr().out
+    assert commentary_text not in default_output, (
+        "Expected Codex commentary output_text blocks to stay hidden without --thinking. "
+        f"Got stdout:\n{default_output}"
+    )
+    assert final_text in default_output, (
+        "Expected final Codex assistant output_text blocks to remain visible by default. "
+        f"Got stdout:\n{default_output}"
+    )
+
+    cmd_parse(
+        ConversationFlags(show_thinking=True, color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    thinking_output = capsys.readouterr().out
+    assert "<thinking>" in thinking_output, (
+        "Expected --thinking to render Codex commentary as a thinking block. "
+        f"Got stdout:\n{thinking_output}"
+    )
+    assert commentary_text in thinking_output, (
+        "Expected Codex commentary output_text to be visible when --thinking is enabled. "
+        f"Got stdout:\n{thinking_output}"
+    )
+
+
 def test_cmd_parse_emits_metadata_for_codex_session_path(
     tmp_path: Path,
     monkeypatch,

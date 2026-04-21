@@ -360,6 +360,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
      - `{type: "tool_use", name: "ExitPlanMode", input: {plan: "..."}}` - shown by default (use `--no-plans` to hide)
      - `{type: "tool_result", ...}` - hidden by default (use `-t`), renders as `<tool-output>`
      - `{type: "image", ...}` - skipped (not rendered)
+   - Codex `type: "response_item"` assistant messages with `payload.phase: "commentary"` are treated as thinking: hidden by default and shown with `-T/--thinking`.
 
 3. **System messages** (`type: "system"`)
    - Short XML-like command logging: `<command-name>/bashes</command-name>`

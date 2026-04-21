@@ -536,18 +536,31 @@ def _parse_codex_jsonl_entries(
                 continue
 
             if role == "assistant":
-                if not flags.show_assistant_messages:
-                    continue
-
                 text_blocks = _extract_codex_text_blocks(payload.get("content"))
                 visible_blocks = [text for text in text_blocks if text.strip()]
                 if not visible_blocks:
                     continue
 
+                visible_text = "\n\n".join(visible_blocks)
+
+                if payload.get("phase") == "commentary" and flags.show_thinking:
+                    assistant = ensure_assistant(timestamp)
+                    assistant.thinking = _append_codex_block(
+                        assistant.thinking,
+                        visible_text,
+                    )
+                    continue
+
+                if payload.get("phase") == "commentary":
+                    continue
+
+                if not flags.show_assistant_messages:
+                    continue
+
                 assistant = ensure_assistant(timestamp)
                 assistant.text = _append_codex_block(
                     assistant.text,
-                    "\n\n".join(visible_blocks),
+                    visible_text,
                 )
                 continue
 

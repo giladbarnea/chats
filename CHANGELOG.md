@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-21] Treat Codex commentary messages as thinking
+
+### Fixed
+
+- Codex `response_item` assistant messages with `payload.phase: "commentary"` are now hidden by default and rendered only when `--thinking` is enabled, instead of being misclassified as regular assistant output.
+
+---
 ## [2026-04-20] Render Claude away summaries as Recap blocks
 
 ### Added
