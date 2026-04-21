@@ -61,7 +61,7 @@ TOOL_SCHEMAS: dict[str, ToolSchema] = {
     "Task": ToolSchema(["subagent_type", "model"], "prompt", None),
     "WebFetch": ToolSchema(["url"], "prompt", None),
     "WebSearch": ToolSchema(["query"], None, None),
-    "apply_patch": ToolSchema([], "input", "diff"),
+    "Patch": ToolSchema([], "input", "diff"),
 }
 
 
@@ -79,6 +79,7 @@ TOOL_NAME_ALIASES: dict[str, dict[str, str]] = {
         "websearch": "WebSearch",
     },
     "codex": {
+        "apply_patch": "Patch",
         "exec_command": "Bash",
     },
 }

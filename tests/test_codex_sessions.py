@@ -415,11 +415,11 @@ def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_pa
         "Expected a regular Codex function_call_output to normalize into a named tool-output block. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert '<tool-input name="apply_patch"' in captured.out, (
+    assert '<tool-input name="Patch"' in captured.out, (
         "Expected a Codex custom_tool_call to normalize into a tool-input block. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert '<tool-output name="apply_patch"' in captured.out, (
+    assert '<tool-output name="Patch"' in captured.out, (
         "Expected a Codex custom_tool_call_output to normalize into a named tool-output block. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -515,7 +515,7 @@ def test_codex_exec_command_input_renders_through_tool_schema(
     )
 
 
-def test_codex_apply_patch_input_and_json_wrapped_output_render_pretty(
+def test_codex_apply_patch_input_aliases_to_patch_and_renders_pretty(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -591,8 +591,8 @@ def test_codex_apply_patch_input_and_json_wrapped_output_render_pretty(
     )
 
     captured = capsys.readouterr()
-    assert '<tool-input name="apply_patch" id="call">' in captured.out, (
-        "Expected Codex apply_patch input to render as a named tool-input. "
+    assert '<tool-input name="Patch" id="call">' in captured.out, (
+        "Expected Codex apply_patch input to render as canonical Patch. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert f"```diff\n{patch_text}\n```" in captured.out, (
