@@ -5,7 +5,7 @@ description: Establish continuity with recent work. Catch up on recent project c
 
 Check which of these exist in the project, then dive into those that do:
 
-1. **Read All Root Markdown Files** - `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `PROJECT_STRUCTURE.md`, `CHANGELOG.md`, `DEVELOPMENT.md`, `sessions.yaml`. Read these files in full. Follow any context-gathering instructions in them.
+1. **Read All Root Markdown Files** - `README.md`, `AGENTS.md`, `ARCHITECTURE.md`, `CHANGELOG.md`, `DEVELOPMENT.md`, `sessions.yaml`. Read these files in full. Follow any context-gathering instructions in them.
 
 2. **Git log** - run `git log --numstat --shortstat --all --graph -<some number like 15 or 30>`. Read affected files in full, as well as commit messages and branch names. Mentally build a linear timeline of what happened when. 
 
