@@ -597,6 +597,7 @@ Commands:
                 args.input = candidate
                 unknown = unknown[1:]
 
+        # Bug: That means a typo like ccc session --colro never 1 can silently apply selector 1 instead of surfacing an option error, producing truncated output in a way that is hard to diagnose.
         for candidate in unknown:
             if _looks_like_slice(candidate):
                 slice_args.append(candidate)
