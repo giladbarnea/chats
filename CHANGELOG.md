@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-21] Allow multiple parse message selectors
+
+### Added
+
+- Default parse mode now accepts multiple message index/slice positional selectors after the session input, ORs them together, and emits each matching message once in original conversation order.
+
+---
 ## [2026-04-20] Render Claude away summaries as Recap blocks
 
 ### Added

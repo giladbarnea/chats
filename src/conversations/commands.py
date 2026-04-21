@@ -1032,10 +1032,40 @@ def _convert_slice_bound(bound_str: str, name: str) -> int | None:
     return bound
 
 
+def _normalize_slice_selectors(
+    slice_str: str | Sequence[str] | None,
+) -> list[str]:
+    """Normalize legacy single-selector input and CLI multi-selector input."""
+    if slice_str is None:
+        return []
+    if isinstance(slice_str, str):
+        return [slice_str] if slice_str else []
+    return [selector for selector in slice_str if selector]
+
+
+def _apply_slice_selectors(
+    messages: list[Message],
+    selectors: Sequence[str],
+) -> list[Message]:
+    """Apply ORed slice/index selectors while preserving original message order."""
+    selected_positions: set[int] = set()
+    message_positions = range(len(messages))
+
+    for selector in selectors:
+        start, stop = parse_slice_notation(selector)
+        selected_positions.update(message_positions[start:stop])
+
+    return [
+        message
+        for position, message in enumerate(messages)
+        if position in selected_positions
+    ]
+
+
 def cmd_parse(
     flags: ConversationFlags,
     input_arg: str | None,
-    slice_str: str | None,
+    slice_str: str | Sequence[str] | None,
     output_file: Path | None,
     *,
     output_format: str = "xml",
@@ -1075,12 +1105,12 @@ def cmd_parse(
     # even when the corresponding tool-input message is sliced out.
     tool_id_map = _build_tool_id_map(messages)
 
-    # Apply slice
-    start, stop = parse_slice_notation(slice_str)
-    if start is not None or stop is not None:
-        messages = messages[start:stop]
+    selectors = _normalize_slice_selectors(slice_str)
+    if selectors:
+        messages = _apply_slice_selectors(messages, selectors)
         if not messages:
-            print_error(f"Slice {slice_str} produced no messages.")
+            joined_selectors = " ".join(selectors)
+            print_error(f"Slice {joined_selectors} produced no messages.")
             sys.exit(0)
 
     # Print metadata for XML output

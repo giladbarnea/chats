@@ -53,7 +53,7 @@ Conversations can have multiple summary entries (prepended as conversation evolv
 
 **Message Slicing:**
 
-Optional second argument uses Python slice notation to select message ranges:
+Optional second-and-later positional arguments use Python slice notation to select message ranges. Multiple selectors are ORed: each message matching any selector is included once in original conversation order.
 
 ```bash
 ccc -1              # Most recently modified supported session
@@ -67,6 +67,8 @@ ccc <id> ":-5"     # All but last 5
 ccc <id> "2:5"     # Indices 2,3,4
 ccc <id> "2:-1"    # Index 2 to before last
 ccc <id> "-5:-1"   # 5th from end to before last
+ccc <id> "1" "2"   # First and second messages
+ccc <id> "1:7" "-2" "8:-3"
 ```
 
 **Format Detection:**
