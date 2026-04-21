@@ -93,7 +93,7 @@ Automatically detects input format by examining **first non-empty line only** (d
 --only-assistant     # Show only regular assistant messages
 --no-user            # Hide regular user messages
 --no-assistant       # Hide regular assistant messages
--t, --tools [SPEC]   # Include tool use/result details. Filter with modifiers:
+-t, --tools [SPEC]*  # Include tool use/result details. Filter with modifiers:
                      #   Name:    -t Bash, -t Read, -t !Bash (exclude)
                      #   Direction: -t i (inputs), -t o (outputs), -t Bash:i
                      #   Error:   -t e (errors only), -t Bash:e
@@ -107,6 +107,8 @@ Automatically detects input format by examining **first non-empty line only** (d
 -s, --short          # Shorten string values in output (width=40)
 
 -o FILE          # Save output to file
+
+* SPEC: Read TOOL_SPEC.md for complete and formal definition.
 ```
 
 `--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
@@ -391,34 +393,6 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 - Include `agentId` field and `isSidechain: true` at entry level
 - Agent messages render as `<agent agent_id="..." subagent_type="...">`
 - Tool results from agents include `agentId: xxx (for resuming...)` in content
-
-## Integration Points
-
-### `/export` Command
-
-Slash command at `~/.claude/commands/export.md` uses `ccc` for XML export.
-
-**Usage:**
-```bash
-/export                      # Copy to clipboard (macOS via pbcopy)
-/export path/to/output.xml   # Save to file
-```
-
-Uses `--color never` flag for plain XML output.
-
-### PreCompact Hook
-
-Auto-exports conversations before compaction (lossy operation).
-
-**Location:** `~/.claude/hooks/export-before-compact.py`
-**Config:** `~/.claude/settings.json` → `hooks.PreCompact[0]`
-**Output:** `~/.claude/projects/pre-compact/{session_id}-{timestamp}.xml`
-**Notifications:** macOS notifications via `osascript`
-**Shebang:** `#!/usr/bin/env -S uv run --with=rich python3.11`
-
-Automatically preserves full conversation history before compaction.
-
-Note: when modifying this tool, go over the files associated with the `/export` command and the PreCompact hook to make sure they are still consistent with the changes. `fd` and `rg` around `~/.claude/` for `export`, `hook`, etc.
 
 ## Technical Reference
 
