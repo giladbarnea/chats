@@ -5,7 +5,9 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from rich import box
 from rich.markdown import Markdown
+from rich.panel import Panel
 from rich.text import Text
 
 from .console import get_console
@@ -231,7 +233,7 @@ def render_messages_with_rich(
             continue
 
         if i > 0:
-            print_targets.append(Text("\n\n---\n\n", style="dim"))
+            print_targets.append(Markdown("---"))
 
         wrapper_type = msg.get_wrapper_type()
         tag = wrapper_type.value.xml_tag
@@ -239,10 +241,19 @@ def render_messages_with_rich(
         header_style = wrapper_type.value.rich_style
         attrs = msg.get_wrapper_attrs()
 
-        print_targets.append(Text(f"<{tag} {attrs}>", style="dim"))
+        print_targets.append(Text(f"<{tag} {attrs}>\n", style="dim"))
 
         if header:
-            print_targets.append(Text(f"\n{header}\n", style=header_style))
+            header_text = header.removeprefix("# ").strip()
+            print_targets.append(
+                Panel(
+                    Text(header_text, justify="center", style=header_style),
+                    box=box.HEAVY,
+                    expand=True,
+                    padding=(0, 0),
+                )
+            )
+            print_targets.append(Text("\n"))
 
         for part in parts:
             if part.kind == MessagePartKind.TEXT:

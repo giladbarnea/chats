@@ -9,14 +9,17 @@ DATA_FILE="tests/data/1e446a9f-08fd-43ac-be72-8ce337d01dcd.jsonl"
 
 check_no_double_blank_after_headings() {
     local label="$1" output="$2"
-    # Find each "# User" or "# Assistant" and check the two lines after it
     local lineno=0
     local prev_line="" prev_prev_line=""
-    local heading_line=0
+
+    is_heading_line() {
+        local line="$1"
+        echo "$line" | grep -Eq '^[[:space:]]*#?[[:space:]]*(User|Assistant)[[:space:]]*$'
+    }
+
     while IFS= read -r line; do
         lineno=$((lineno + 1))
-        if [[ "$prev_prev_line" == "# User"* || "$prev_prev_line" == "# Assistant"* ]]; then
-            # prev_prev_line was heading, prev_line should be blank, current line should NOT be blank
+        if is_heading_line "$prev_prev_line"; then
             if [[ -z "$prev_line" && -z "$line" ]]; then
                 echo "❌ [$label] Double blank line after heading '${prev_prev_line}' at line $((lineno - 2))"
                 echo "DEBUG: lines $((lineno-2))-$((lineno)):"
