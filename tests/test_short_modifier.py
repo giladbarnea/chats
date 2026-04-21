@@ -143,8 +143,8 @@ def test_short_modifier_codex_session(tmp_path: Path, monkeypatch, capsys) -> No
         emit_metadata=False,
     )
     out = capsys.readouterr().out
-    body = _extract_tool_input_body(out, "exec_command")
-    _assert_shortened_tool_body(body, '"cmd": "CODEX_START-', 'CODEX_END"')
+    body = _extract_tool_input_body(out, "Bash")
+    _assert_shortened_tool_body(body, "CODEX_START-", "CODEX_END")
 
 def test_short_modifier_pi_session(tmp_path: Path, monkeypatch, capsys) -> None:
     temp_home = tmp_path / "home"

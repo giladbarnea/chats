@@ -10,7 +10,11 @@ import re
 import textwrap
 
 from .model import ConversationFlags, Message, Provider
-from .registry import ContentBlockType
+from .registry import (
+    ContentBlockType,
+    normalize_tool_input_keys,
+    normalize_tool_name,
+)
 from .utils import shorten_tool_use_id
 
 
@@ -30,13 +34,13 @@ class JsonlSessionAdapter:
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
     """
     Efficiently extract first and last timestamps from a JSONL file.
-    
+
     Returns (created_at, modified_at) as datetime objects (or None).
     Uses optimized forward scan for start time and backward scan for end time.
     """
     first_ts = _find_first_timestamp(file_path)
     last_ts = _find_last_timestamp(file_path)
-    
+
     return (
         _parse_iso_timestamp(first_ts) if first_ts else None,
         _parse_iso_timestamp(last_ts) if last_ts else None
@@ -77,9 +81,9 @@ def _find_last_timestamp(file_path: Path, chunk_size: int = 4096) -> str | None:
                 chunk = f.read(read_size)
                 # Reset cursor to before this read for the next iteration
                 f.seek(-read_size, os.SEEK_CUR)
-                
+
                 remaining_bytes -= read_size
-                
+
                 # Prepend whatever was left from the previous (later) chunk
                 chunk += buffer
                 lines = chunk.split(b'\n')
@@ -103,7 +107,7 @@ def _find_last_timestamp(file_path: Path, chunk_size: int = 4096) -> str | None:
                             return entry['timestamp']
                     except (json.JSONDecodeError, UnicodeDecodeError):
                         continue
-                        
+
     except Exception:
         pass
     return None
@@ -564,12 +568,15 @@ def _parse_codex_jsonl_entries(
 
         if payload_type == "function_call" and flags.show_tools:
             assistant = ensure_assistant(timestamp)
+            tool_name = _normalize_codex_tool_name(payload.get("name"))
             assistant.tools.append(
                 {
                     "type": "tool_use",
                     "id": payload.get("call_id"),
-                    "name": payload.get("name", "Unknown"),
-                    "input": _parse_codex_tool_input(payload.get("arguments")),
+                    "name": tool_name,
+                    "input": _normalize_codex_tool_input(
+                        tool_name, payload.get("arguments")
+                    ),
                 }
             )
             continue
@@ -580,7 +587,7 @@ def _parse_codex_jsonl_entries(
                 {
                     "type": "tool_result",
                     "tool_use_id": payload.get("call_id"),
-                    "content": payload.get("output", ""),
+                    "content": _parse_codex_tool_output(payload.get("output", "")),
                     "is_error": False,
                 }
             )
@@ -588,12 +595,13 @@ def _parse_codex_jsonl_entries(
 
         if payload_type == "custom_tool_call" and flags.show_tools:
             assistant = ensure_assistant(timestamp)
+            tool_name = _normalize_codex_tool_name(payload.get("name"))
             assistant.tools.append(
                 {
                     "type": "tool_use",
                     "id": payload.get("call_id"),
-                    "name": payload.get("name", "Unknown"),
-                    "input": _parse_codex_tool_input(payload.get("input")),
+                    "name": tool_name,
+                    "input": _normalize_codex_tool_input(tool_name, payload.get("input")),
                 }
             )
             continue
@@ -604,7 +612,7 @@ def _parse_codex_jsonl_entries(
                 {
                     "type": "tool_result",
                     "tool_use_id": payload.get("call_id"),
-                    "content": payload.get("output", ""),
+                    "content": _parse_codex_tool_output(payload.get("output", "")),
                     "is_error": False,
                 }
             )
@@ -990,21 +998,12 @@ def _parse_system_entry(entry: dict, index: int, flags: ConversationFlags) -> Me
 
 def _normalize_pi_tool_name(name: str | None) -> str:
     """Map PI tool names to the canonical names used by the shared renderer."""
-    if not name:
-        return "Unknown"
+    return normalize_tool_name("pi", name)
 
-    known_names = {
-        "bash": "Bash",
-        "read": "Read",
-        "write": "Write",
-        "edit": "Edit",
-        "grep": "Grep",
-        "glob": "Glob",
-        "task": "Task",
-        "webfetch": "WebFetch",
-        "websearch": "WebSearch",
-    }
-    return known_names.get(name.lower(), name)
+
+def _normalize_codex_tool_name(name: str | None) -> str:
+    """Map Codex tool names to canonical names where a shared tool already exists."""
+    return normalize_tool_name("codex", name)
 
 
 def _parse_pi_message_entry(
@@ -1126,7 +1125,7 @@ def _parse_codex_tool_input(raw_input: object) -> dict:
     if not stripped:
         return {}
 
-    if stripped.startswith("{") or stripped.startswith("["):
+    if stripped.startswith(("{", "[")):
         try:
             parsed = json.loads(stripped)
         except json.JSONDecodeError:
@@ -1136,6 +1135,37 @@ def _parse_codex_tool_input(raw_input: object) -> dict:
         return {"input": parsed}
 
     return {"input": raw_input}
+
+
+def _normalize_codex_tool_input(tool_name: str, raw_input: object) -> dict:
+    """Normalize Codex tool argument keys for canonical shared tool schemas."""
+    input_data = _parse_codex_tool_input(raw_input)
+    return normalize_tool_input_keys("codex", tool_name, input_data)
+
+
+def _parse_codex_tool_output(raw_output: object) -> object:
+    """Unwrap Codex JSON-string tool outputs when the wrapper only carries display text."""
+    if not isinstance(raw_output, str):
+        return raw_output
+
+    stripped = raw_output.strip()
+    if not stripped.startswith("{"):
+        return raw_output
+
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        return raw_output
+
+    if not isinstance(parsed, dict):
+        return raw_output
+
+    for key in ("output", "content", "text"):
+        value = parsed.get(key)
+        if isinstance(value, str):
+            return value
+
+    return raw_output
 
 
 def _append_codex_block(existing: str | None, new_text: str) -> str:

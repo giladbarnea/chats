@@ -9,6 +9,7 @@ from pathlib import Path
 from .model import ConversationFlags
 from .parsing import (
     _is_codex_preamble_text,
+    _normalize_codex_tool_name,
     _normalize_pi_tool_name,
     get_jsonl_session_adapter,
     get_native_session_id,
@@ -152,7 +153,7 @@ def _build_codex_tool_name_map(entries: list[dict]) -> dict[str, str]:
         call_id = payload.get("call_id")
         tool_name = payload.get("name")
         if isinstance(call_id, str) and isinstance(tool_name, str):
-            id_map[call_id] = tool_name
+            id_map[call_id] = _normalize_codex_tool_name(tool_name)
     return id_map
 
 
@@ -563,7 +564,7 @@ def _shorten_codex_serialized_value(value: object) -> object:
         return shorten_data(value)
     if isinstance(value, str):
         stripped = value.strip()
-        if stripped.startswith("{") or stripped.startswith("["):
+        if stripped.startswith(("{", "[")):
             try:
                 parsed = json.loads(stripped)
             except json.JSONDecodeError:
@@ -693,7 +694,7 @@ def _rewrite_codex_entries(
             tool_payload = {
                 "type": "tool_use",
                 "id": payload.get("call_id"),
-                "name": payload.get("name"),
+                "name": _normalize_codex_tool_name(payload.get("name")),
                 "input": payload.get("arguments") if payload_type == "function_call" else payload.get("input"),
             }
             show_tool, should_shorten = resolve_tool_visibility(tool_payload, flags.show_tools, id_map)

@@ -597,6 +597,86 @@ def test_cmd_fork_codex_can_keep_shortened_thinking_and_tool_payloads(
     )
 
 
+def test_cmd_fork_codex_bash_filter_matches_exec_command(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "04"
+        / "14"
+        / "rollout-2026-04-14T12-00-00-codex-bash-filter-id.jsonl"
+    )
+    _write_jsonl(
+        session_path,
+        [
+            {
+                "timestamp": "2026-04-14T09:00:00.000Z",
+                "type": "session_meta",
+                "payload": {"id": "codex-bash-filter-id", "cwd": "/tmp/codex-project"},
+            },
+            {
+                "timestamp": "2026-04-14T09:00:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "name": "exec_command",
+                    "call_id": "call-1",
+                    "arguments": json.dumps({"cmd": "echo kept"}),
+                },
+            },
+            {
+                "timestamp": "2026-04-14T09:00:02.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call-1",
+                    "output": "kept",
+                },
+            },
+        ],
+    )
+
+    monkeypatch.setattr(
+        forking_module,
+        "_generate_codex_session_id",
+        lambda: "codex-bash-filter-fork",
+    )
+
+    commands_module.cmd_fork(
+        str(session_path),
+        ConversationFlags(
+            show_tools=[ToolFilter(name="Bash")],
+            color=False,
+            paging=False,
+        ),
+    )
+
+    forked_entries = _read_jsonl(
+        session_path.with_name(
+            "rollout-2026-04-14T12-00-00-codex-bash-filter-fork.jsonl"
+        )
+    )
+    payloads = [entry.get("payload", {}) for entry in forked_entries[1:]]
+    assert [payload.get("type") for payload in payloads] == [
+        "function_call",
+        "function_call_output",
+    ], (
+        "Expected fork `-t Bash` semantics to keep Codex exec_command calls and outputs. "
+        f"Got payloads: {payloads!r}"
+    )
+    assert payloads[0].get("name") == "exec_command", (
+        "Expected Codex forks to preserve the native payload name on disk while matching "
+        f"it through the canonical Bash filter. Got payload: {payloads[0]!r}"
+    )
+
+
 def test_fork_cli_treats_bare_tools_flag_like_parse_for_following_session_argument(
     tmp_path: Path,
     monkeypatch,

@@ -48,7 +48,11 @@ class ToolSchema(NamedTuple):
 
 # Tool-specific formatting schemas. Adding a new tool = adding an entry here.
 TOOL_SCHEMAS: dict[str, ToolSchema] = {
-    "Bash": ToolSchema([], "command", "sh"),
+    "Bash": ToolSchema(
+        ["workdir", "yield_time_ms", "max_output_tokens"],
+        "command",
+        "sh",
+    ),
     "Read": ToolSchema(["file_path"], None, None),
     "Glob": ToolSchema(["pattern", "path"], None, None),
     "Grep": ToolSchema(["pattern", "path", "glob", "type", "output_mode"], None, None),
@@ -57,4 +61,56 @@ TOOL_SCHEMAS: dict[str, ToolSchema] = {
     "Task": ToolSchema(["subagent_type", "model"], "prompt", None),
     "WebFetch": ToolSchema(["url"], "prompt", None),
     "WebSearch": ToolSchema(["query"], None, None),
+    "apply_patch": ToolSchema([], "input", "diff"),
 }
+
+
+# Provider-native tool names mapped to shared canonical tool names.
+TOOL_NAME_ALIASES: dict[str, dict[str, str]] = {
+    "pi": {
+        "bash": "Bash",
+        "read": "Read",
+        "write": "Write",
+        "edit": "Edit",
+        "grep": "Grep",
+        "glob": "Glob",
+        "task": "Task",
+        "webfetch": "WebFetch",
+        "websearch": "WebSearch",
+    },
+    "codex": {
+        "exec_command": "Bash",
+    },
+}
+
+
+# Provider-native input keys mapped to canonical schema keys after name aliasing.
+TOOL_INPUT_KEY_ALIASES: dict[str, dict[str, dict[str, str]]] = {
+    "codex": {
+        "Bash": {
+            "cmd": "command",
+        },
+    },
+}
+
+
+def normalize_tool_name(provider: str, name: str | None) -> str:
+    """Map a provider-native tool name to the canonical shared tool name."""
+    if not name:
+        return "Unknown"
+
+    aliases = TOOL_NAME_ALIASES.get(provider, {})
+    return aliases.get(name.lower(), name)
+
+
+def normalize_tool_input_keys(
+    provider: str,
+    tool_name: str,
+    input_data: dict,
+) -> dict:
+    """Map provider-native input keys to canonical schema keys for a tool."""
+    aliases = TOOL_INPUT_KEY_ALIASES.get(provider, {}).get(tool_name, {})
+    if not aliases:
+        return input_data
+
+    return {aliases.get(key, key): value for key, value in input_data.items()}

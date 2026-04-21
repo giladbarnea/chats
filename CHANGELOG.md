@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-21] Render common Codex tool inputs through shared schemas
+
+### Changed
+
+- Codex `exec_command` tool inputs now normalize to canonical `Bash` tool parts, putting command metadata on the `<tool-input>` tag and the shell command in a `sh` fenced body instead of falling back to raw JSON.
+- Codex `apply_patch` tool inputs now render as diff fenced bodies, and JSON-wrapped Codex tool outputs like `{"output": "..."}` render as their contained text.
+- Provider-native tool name and input-key aliases now live in the shared registry, so adapters declare canonical tool mapping instead of carrying local lookup tables.
+
+---
 ## [2026-04-21] Allow multiple parse message selectors
 
 ### Added
