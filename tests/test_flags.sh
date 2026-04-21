@@ -32,6 +32,11 @@ OUTPUT_T_INDEX=$($CC_CMD "$DATA_FILE_SYNTHETIC" -T "1" --color=never 2>/dev/null
 assert_success
 assert_message_count "$OUTPUT_T_INDEX" 1
 
+echo "Testing -T with multiple slices..."
+OUTPUT_T_MULTI=$($CC_CMD "$DATA_FILE_SYNTHETIC" -T "1" "2" --color=never 2>/dev/null)
+assert_success
+assert_message_count "$OUTPUT_T_MULTI" 2
+
 echo "Testing -T with range slice..."
 OUTPUT_T_RANGE=$($CC_CMD "$DATA_FILE_SYNTHETIC" -T "1:3" --color=never 2>/dev/null)
 assert_success
@@ -49,6 +54,11 @@ echo "Testing -t with index slice..."
 OUTPUT_t_INDEX=$($CC_CMD "$DATA_FILE_SYNTHETIC" -t "1" --color=never 2>/dev/null)
 assert_success
 assert_message_count "$OUTPUT_t_INDEX" 1
+
+echo "Testing -t with multiple slices..."
+OUTPUT_t_MULTI=$($CC_CMD "$DATA_FILE_SYNTHETIC" -t "1" "2" --color=never 2>/dev/null)
+assert_success
+assert_message_count "$OUTPUT_t_MULTI" 2
 
 echo "Testing -t with range slice..."
 OUTPUT_t_RANGE=$($CC_CMD "$DATA_FILE_SYNTHETIC" -t "1:3" --color=never 2>/dev/null)

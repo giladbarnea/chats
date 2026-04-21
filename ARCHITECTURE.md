@@ -82,12 +82,12 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 
 ## Sequence Diagrams (Time)
 
-### Feature 1: Parse (`ccc [input] [slice]`)
+### Feature 1: Parse (`ccc [input] [slice ...]`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ccc <input> [slice] [flags]`         ──► cli.py:main()
+├───►  User                     Runs `ccc <input> [slice ...] [flags]`     ──► cli.py:main()
 │
 ├───►  main()                   Detects no subcommand keyword              ──► argparse (default parse)
 │      argparse                 Parses flags; handles edge cases:          ──► args namespace
@@ -131,8 +131,8 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_parse                _build_tool_id_map(messages)               ──► {tool_id: tool_name}
 │
-├───►  cmd_parse                parse_slice_notation(slice_str)            ──► (start, stop)
-│      cmd_parse                messages = messages[start:stop]
+├───►  cmd_parse                parse_slice_notation(selector)             ──► (start, stop)
+│      cmd_parse                OR matching selector positions             ──► sliced messages
 │
 ├───►  cmd_parse                print_metadata() [if xml + not file out]   ──► stdout (YAML frontmatter)
 │
@@ -627,7 +627,8 @@ cmd_parse(flags, input_arg, slice_str, output_file, output_format, emit_metadata
 │       └── adapter-owned entry parser
 ├── _merge_agent_messages(messages, content, input_file_path, flags) [if --agents]
 ├── _build_tool_id_map(messages)
-├── parse_slice_notation(slice_str)
+├── normalize one-or-more slice selectors
+├── parse_slice_notation(selector) for each selector
 ├── _load_conversation_metadata(input_file_path) / print_metadata(...)
 └── format_to_xml/json/raw(...) or render_messages_with_rich(...)
 

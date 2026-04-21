@@ -79,4 +79,25 @@ assert_contains "$OUTPUT" "session_id: dddd4444-ambiguous-beta"
 
 rm -rf "$TEMP_HOME"
 
+# Test 8: Multiple message selectors are ORed
+echo "Test 8: Multiple message selectors..."
+OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" "1" "2" --color=never --no-metadata 2>/dev/null)
+assert_success
+if [[ "$(count_user_origin_tags "$OUTPUT")" != "2" ]]; then
+  echo "❌ Expected two user-origin messages from selectors 1 and 2"
+  exit 1
+fi
+assert_not_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"3\""
+
+# Test 9: Range and negative selectors are ORed
+echo "Test 9: Range and negative message selectors..."
+OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" "1:3" "-1" --color=never --no-metadata 2>/dev/null)
+assert_success
+MATCHED_TAG_COUNT=$(printf '%s\n' "$OUTPUT" | grep -E "^<(${PIPE_JOINED_MESSAGE_TAGS})" -c || true)
+if [[ "$MATCHED_TAG_COUNT" != "3" ]]; then
+  echo "❌ Expected three messages from selectors 1:3 and -1"
+  exit 1
+fi
+assert_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"3\""
+
 echo "✅ CLI seam tests passed"

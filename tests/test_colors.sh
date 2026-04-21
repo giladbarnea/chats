@@ -6,7 +6,7 @@ echo "Running color tests..."
 # 1. --color always
 echo "Testing --color always..."
 # Even when piped, it should have colors
-OUTPUT_ALWAYS=$($CC_CMD --color always "$DATA_FILE_SIMPLE" | cat)
+OUTPUT_ALWAYS=$((unset NO_COLOR; TERM=xterm-256color $CC_CMD --color always "$DATA_FILE_SIMPLE") | cat)
 assert_success
 assert_has_colors "$OUTPUT_ALWAYS"
 

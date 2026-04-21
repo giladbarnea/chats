@@ -160,6 +160,13 @@ def _looks_like_session_input(candidate: str) -> bool:
     return bool(re.match(r"^[0-9a-f-]{36}$", candidate))
 
 
+def _add_repaired_slice(args: argparse.Namespace, candidate: str) -> None:
+    """Record a slice-like value that argparse swallowed into an optional flag."""
+    repaired_slices: list[str] = getattr(args, "_repaired_slices", [])
+    repaired_slices.append(candidate)
+    args._repaired_slices = repaired_slices
+
+
 def _repair_visibility_option_positionals(
     args: argparse.Namespace,
     *,
@@ -175,8 +182,11 @@ def _repair_visibility_option_positionals(
             setattr(args, input_attr, thinking_candidate)
             args.thinking = "full"
             input_value = thinking_candidate
-        elif allow_slice and getattr(args, "slice", None) is None and _looks_like_slice(thinking_candidate):
-            args.slice = thinking_candidate
+        elif allow_slice and _looks_like_slice(thinking_candidate):
+            if getattr(args, "slice", None) is None:
+                args.slice = thinking_candidate
+            else:
+                _add_repaired_slice(args, thinking_candidate)
             args.thinking = "full"
 
     if (
@@ -193,14 +203,16 @@ def _repair_visibility_option_positionals(
 
     if (
         allow_slice
-        and getattr(args, "slice", None) is None
         and args.tools is not None
         and len(args.tools) == 1
         and isinstance(args.tools[0], str)
     ):
         candidate = args.tools[0]
         if _looks_like_slice(candidate):
-            args.slice = candidate
+            if getattr(args, "slice", None) is None:
+                args.slice = candidate
+            else:
+                _add_repaired_slice(args, candidate)
             args.tools = [True]
 
 
@@ -460,7 +472,8 @@ Commands:
         parser.add_argument(
             "slice",
             nargs="?",
-            help='Message slice (1-indexed): "1", "-1", "2:", ":-2", "3:5". '
+            help='Message selector (1-indexed): "1", "-1", "2:", ":-2", "3:5". '
+            'Pass more positional selectors to OR them together. '
             'For negative slices starting with -, use: -- -5: or quote: "-5:"',
         )
         parser.add_argument(
@@ -568,18 +581,26 @@ Commands:
 
         _repair_visibility_option_positionals(args, input_attr="input", allow_slice=True)
 
-        # Check if unknown[0] is either a recent-session selector or a slice.
+        slice_args = list(getattr(args, "_repaired_slices", []))
+        if args.slice is not None:
+            slice_args.append(args.slice)
+
+        # Check whether unknown positionals are either a recent-session selector or slices.
         if unknown:
             candidate = unknown[0]
             if (
                 args.input is None
-                and args.slice is None
+                and not slice_args
                 and is_single_negative_index(candidate)
                 and sys.stdin.isatty()
             ):
                 args.input = candidate
-            elif args.slice is None and _looks_like_slice(candidate):
-                args.slice = candidate
+                unknown = unknown[1:]
+
+        # Bug: That means a typo like ccc session --colro never 1 can silently apply selector 1 instead of surfacing an option error, producing truncated output in a way that is hard to diagnose.
+        for candidate in unknown:
+            if _looks_like_slice(candidate):
+                slice_args.append(candidate)
 
         _normalize_parse_visibility_args(args)
         try:
@@ -593,7 +614,7 @@ Commands:
         cmd_parse(
             flags,
             args.input,
-            slice_str=args.slice,
+            slice_str=slice_args,
             output_file=args.out,
             output_format=output_format,
             emit_metadata=emit_metadata,
