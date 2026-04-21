@@ -320,7 +320,7 @@ Catalog conversation sessions by upserting entries to a sessions.yaml file.
 ccc catalog [SESSION_IDS OR FILE_PATHS]
 ```
 
-This command uses an AI model (via the `claudesn` CLI) to analyze conversation sessions and maintain a `sessions.yaml` catalog file. The command reads session content and either creates new entries or updates existing ones with meaningful descriptions organized by date.
+This command uses an AI model (via the `claude` CLI) to analyze conversation sessions and maintain a `sessions.yaml` catalog file. The command reads session content and either creates new entries or updates existing ones with meaningful descriptions organized by date.
 
 **Input Methods:**
 - **Direct session IDs**: `ccc catalog 00000000-0000-0000-0000-000000000000`
@@ -340,7 +340,7 @@ This command uses an AI model (via the `claudesn` CLI) to analyze conversation s
 - Catalog from search results (uses only first result): `ccc search -ca 1d . -l | ccc catalog`
 - Catalog from multiple IDs (uses only first ID): `ccc catalog id1 id2`
 
-**Note:** This command requires the `claudesn` CLI to be configured in the user's environment.
+**Note:** This command requires the `claude` CLI to be configured in the user's environment.
 
 ## Conversation File Structure
 
