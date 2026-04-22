@@ -28,7 +28,7 @@ if [[ "$OUTPUT_SINGLE" != "Hi" ]]; then
   echo "Got: $OUTPUT_SINGLE"
   exit 1
 fi
-assert_not_contains "$OUTPUT_SINGLE" "# User"
+assert_not_contains "$OUTPUT_SINGLE" "## User"
 assert_not_contains "$OUTPUT_SINGLE" "<${USER_MESSAGE_TAG}"
 assert_not_contains "$OUTPUT_SINGLE" "---"
 echo "  ✓ raw single-message output is just content"
@@ -47,10 +47,10 @@ fi
 
 OUTPUT_ALIAS_MULTI=$($CC_CMD --color never -r "$DATA_FILE_SYNTHETIC" ":3" 2>/dev/null)
 assert_success
-assert_contains "$OUTPUT_ALIAS_MULTI" "# User"
+assert_contains "$OUTPUT_ALIAS_MULTI" "## User"
 assert_contains "$OUTPUT_ALIAS_MULTI" "Hi"
 assert_contains "$OUTPUT_ALIAS_MULTI" "---"
-assert_contains "$OUTPUT_ALIAS_MULTI" "# Assistant"
+assert_contains "$OUTPUT_ALIAS_MULTI" "## Assistant"
 assert_contains "$OUTPUT_ALIAS_MULTI" "Hello!"
 assert_not_contains "$OUTPUT_ALIAS_MULTI" "session_id:"
 assert_not_contains "$OUTPUT_ALIAS_MULTI" "<${USER_MESSAGE_TAG}"

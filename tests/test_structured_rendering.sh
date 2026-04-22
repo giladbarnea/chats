@@ -92,8 +92,8 @@ echo "Testing Rich output contains headers..."
 output=$($CC_CMD "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
 assert_contains "$output" "User"
 assert_contains "$output" "Assistant"
-assert_not_contains "$output" "# User"
-assert_not_contains "$output" "# Assistant"
+assert_not_contains "$output" "## User"
+assert_not_contains "$output" "## Assistant"
 echo "  ✓ Rich output contains headers"
 
 # Test 6: Rich output contains separators

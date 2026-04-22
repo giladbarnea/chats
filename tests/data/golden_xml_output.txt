@@ -7,7 +7,7 @@ modified: "2025-11-23 11:29"
 messages: 4
 ---
 <user-message i="1">
-# User
+## User
 
 Hi
 </user-message>
@@ -15,7 +15,7 @@ Hi
 ---
 
 <assistant-response i="2">
-# Assistant
+## Assistant
 
 Hello!
 
@@ -27,7 +27,7 @@ I should reply hello
 ---
 
 <assistant-response i="3">
-# Assistant
+## Assistant
 
 <tool-input name="test" id="1"></tool-input>
 </assistant-response>
@@ -35,7 +35,7 @@ I should reply hello
 ---
 
 <user-message i="4">
-# User
+## User
 
 <tool-output name="test" id="1">
 ```

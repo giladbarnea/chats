@@ -13,7 +13,7 @@ echo "Test 1: -a shows agent messages..."
 OUTPUT=$($CC_CMD -a "$DATA_FILE" --color=never 2>/dev/null)
 assert_success
 assert_contains "$OUTPUT" "<${AGENT_TAG}"
-assert_contains "$OUTPUT" "# Agent"
+assert_contains "$OUTPUT" "## Agent"
 assert_contains "$OUTPUT" 'agent_id="agent-abc-123"'
 assert_contains "$OUTPUT" 'model="claude-sonnet-4-5-20250929"'
 assert_contains "$OUTPUT" "Agent research complete: found 3 relevant files."

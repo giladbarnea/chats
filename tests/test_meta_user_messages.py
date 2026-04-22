@@ -237,7 +237,7 @@ def test_away_summary_system_message_renders_as_recap_without_disable_suffix():
     assert '<recap i="1">' in output, (
         f"Expected away_summary system messages to render as <recap>. Got:\n{output}"
     )
-    assert "# Recap" in output, f"Expected recap header in output. Got:\n{output}"
+    assert "## Recap" in output, f"Expected recap header in output. Got:\n{output}"
     assert "disable recaps in /config" not in output, (
         "Expected recap suffix to be stripped from visible output. "
         f"Got:\n{output}"

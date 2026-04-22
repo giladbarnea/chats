@@ -16,20 +16,20 @@ class ContentBlockType(Enum):
     """All XML content block types the system outputs."""
 
     # Message wrappers (outer)
-    USER_MESSAGE = ContentBlockInfo("user-message", "# User", "bold cyan")
+    USER_MESSAGE = ContentBlockInfo("user-message", "## User", "bold cyan")
     USER_COMMAND_INPUT = ContentBlockInfo(
-        "user-command-input", "# User Command Input", "bold cyan"
+        "user-command-input", "## User Command Input", "bold cyan"
     )
     USER_COMMAND_OUTPUT = ContentBlockInfo(
-        "user-command-output", "# User Command Output", "bold cyan"
+        "user-command-output", "## User Command Output", "bold cyan"
     )
-    RECAP = ContentBlockInfo("recap", "# Recap", "bold blue")
+    RECAP = ContentBlockInfo("recap", "## Recap", "bold blue")
     ASSISTANT_RESPONSE = ContentBlockInfo(
-        "assistant-response", "# Assistant", "bold green"
+        "assistant-response", "## Assistant", "bold green"
     )
-    AGENT = ContentBlockInfo("agent", "# Agent", "bold magenta")
+    AGENT = ContentBlockInfo("agent", "## Agent", "bold magenta")
     SESSION_RENAME = ContentBlockInfo(
-        "session-rename", "# Renamed Session", "bold yellow"
+        "session-rename", "## Renamed Session", "bold yellow"
     )
 
     # Content blocks (inner)
