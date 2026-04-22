@@ -50,11 +50,6 @@ if [[ "$rich" == *$'\n\n</assistant-response'* ]]; then
 fi
 echo "  ✓ [color=always] No extra blank line before closing tags"
 
-if [[ "$rich" == *$'\n <'* ]]; then
-    echo "❌ [color=always] Opening tag has leading whitespace"
-    exit 1
-fi
-echo "  ✓ [color=always] No leading whitespace on tags"
 
 # --- color=always --all (Rich with thinking/tools) ---
 rich_all=$($CC_CMD --color=always --all --short --no-metadata "$DATA_FILE" 2>/dev/null | decolor)

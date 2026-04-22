@@ -5,9 +5,9 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from rich import box
+from rich.console import Group
 from rich.markdown import Markdown
-from rich.panel import Panel
+from rich.padding import Padding
 from rich.text import Text
 
 from .console import get_console
@@ -17,6 +17,16 @@ from .parts import MessagePartKind
 from .registry import ContentBlockType
 from .tools import render_tool_rich, render_tool_xml
 from .utils import collapse_home
+
+_HEADER_BADGE_STYLE: dict[str, str] = {
+    "user-message": "bold white on #3b82f6",
+    "user-command-input": "bold white on #3b82f6",
+    "user-command-output": "bold white on #3b82f6",
+    "recap": "bold white on #1d4ed8",
+    "assistant-response": "bold white on #7c3aed",
+    "agent": "bold white on #9333ea",
+    "session-rename": "bold white on #d97706",
+}
 
 
 def render_message_inner_xml(
@@ -244,15 +254,9 @@ def render_messages_with_rich(
         print_targets.append(Text(f"<{tag} {attrs}>\n", style="dim"))
 
         if header:
-            header_text = header.removeprefix("# ").strip()
-            print_targets.append(
-                Panel(
-                    Text(header_text, justify="center", style=header_style),
-                    box=box.HEAVY,
-                    expand=True,
-                    padding=(0, 0),
-                )
-            )
+            header_text = re.sub(r"^#+\s*", "", header)
+            badge_style = _HEADER_BADGE_STYLE.get(tag, "bold white on blue")
+            print_targets.append(Text(f" {header_text} ", style=badge_style))
             print_targets.append(Text("\n"))
 
         for part in parts:
@@ -276,4 +280,4 @@ def render_messages_with_rich(
 
         print_targets.append(Text(f"</{tag}>", style="dim"))
 
-    get_console().print(*print_targets, sep="")
+    get_console().print(Padding(Group(*print_targets), pad=(0, 2, 0, 2)))

@@ -66,7 +66,7 @@ echo "Testing Rich output contains tools..."
 output=$($CC_CMD -t "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
 assert_contains "$output" "<tool-input"
 assert_contains "$output" "</tool-input>"
-assert_contains "$output" "<tool-output>"
+assert_contains "$output" "<tool-output"
 assert_contains "$output" "</tool-output>"
 assert_contains "$output" "result"
 echo "  ✓ Rich output contains tools"
@@ -96,6 +96,15 @@ assert_not_contains "$output" "## User"
 assert_not_contains "$output" "## Assistant"
 echo "  ✓ Rich output contains headers"
 
+# Test 5b: Rich headings use badge style (no heavy box drawing chars)
+echo "Testing Rich headings use badge style..."
+output=$($CC_CMD "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
+if echo "$output" | grep -qF "━"; then
+    echo "❌ Heavy box drawing char found — expected badge-style headings, not full-width panel"
+    exit 1
+fi
+echo "  ✓ Rich headings use badge style (no box chars)"
+
 # Test 6: Rich output contains separators
 echo "Testing Rich output contains separators..."
 output=$($CC_CMD "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
@@ -119,15 +128,6 @@ if [[ "$rich" == *$'\n\n</user-message'* ]]; then
 fi
 if [[ "$rich" == *$'\n\n</assistant-response'* ]]; then
     echo "❌ Bug 2: Empty line before </assistant-response> closing tag in Rich output"
-    exit 1
-fi
-
-# Bug 3: Opening tags must not have leading whitespace
-# In plain: "\n<assistant-response". Rich should not have "\n <assistant-response".
-if [[ "$rich" == *$'\n <'* ]]; then
-    echo "❌ Bug 3: Opening tag has leading whitespace in Rich output"
-    echo "DEBUG: lines with leading-space tags:"
-    echo "$rich" | grep -n '^ <'
     exit 1
 fi
 

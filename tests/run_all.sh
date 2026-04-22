@@ -14,6 +14,7 @@ chmod +x tests/test_rm.sh
 chmod +x tests/test_tool_filter.sh
 chmod +x tests/test_rich_whitespace.sh
 chmod +x tests/test_search_only_id.sh
+chmod +x tests/test_structured_rendering.sh
 
 # Run Python unit tests first (fast, comprehensive)
 echo "Running Python unit tests..."
@@ -33,5 +34,6 @@ echo ""
 ./tests/test_rm.sh
 ./tests/test_search_date.sh
 ./tests/test_search_only_id.sh
+./tests/test_structured_rendering.sh
 
 echo "\n🎉 All tests passed!"
