@@ -59,6 +59,8 @@ Optional second-and-later positional arguments use Python slice notation to sele
 ```bash
 ccc -1              # Most recently modified supported session
 ccc -2              # Second most recently modified supported session
+ccc -l -1           # Metadata only for the newest supported session
+ccc -ll -1          # Only the newest supported session id
 ccc <id> "1"       # First message only
 ccc <id> "-1"      # Last message only
 ccc <id> "5:"      # From index 5 to end
@@ -91,6 +93,8 @@ Automatically detects input format by examining **first non-empty line only** (d
 -f, --format FORMAT  # Output format: xml (default), json, or raw
 -r, --raw            # Alias for: -f raw (implies --no-metadata)
 --no-metadata        # Disable outputting metadata frontmatter
+-l, --only-metadata  # Show only metadata frontmatter (no conversation body)
+-ll, --only-id       # Show only the resolved session ID (implies --color never and --no-paging)
 -p, --provider PROVIDER
                     # Restrict recent-index lookup to claude, pi, or codex
 -T, --thinking       # Include thinking tokens
@@ -115,6 +119,8 @@ Automatically detects input format by examining **first non-empty line only** (d
 
 * SPEC: Read TOOL_SPEC.md for complete and formal definition.
 ```
+
+`--only-metadata` and `--only-id` require a resolved session/file-backed input. Raw stdin/content has no stable session identity to report.
 
 `--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
 

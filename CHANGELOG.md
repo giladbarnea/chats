@@ -3,6 +3,19 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-23] Add parse-only metadata and id modes
+
+### Added
+
+- Default parse mode now accepts `-l, --only-metadata` to emit just the resolved session metadata frontmatter without the conversation body.
+- Default parse mode now accepts `-ll, --only-id` to emit just the resolved session ID, matching `ccc search --only-id`.
+
+### Changed
+
+- Parse `--only-id` now forces plain output and disables paging, mirroring the existing search-mode behavior.
+- Parse metadata-only output preserves the existing post-slice `messages:` count semantics, so `ccc -l <session> "-1"` reports the sliced visible count rather than the full conversation length.
+
+---
 ## [2026-04-23] Display fork ancestry metadata when available
 
 ### Added

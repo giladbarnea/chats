@@ -483,6 +483,18 @@ Commands:
             help="Output file path (uses Rich display if omitted)",
         )
         parser.add_argument(
+            "-l",
+            "--only-metadata",
+            action="store_true",
+            help="Show only session metadata",
+        )
+        parser.add_argument(
+            "-ll",
+            "--only-id",
+            action="store_true",
+            help="Show only the resolved session ID (implies --color never and --no-paging)",
+        )
+        parser.add_argument(
             "-T",
             "--thinking",
             nargs="?",
@@ -609,6 +621,10 @@ Commands:
             if _looks_like_slice(candidate):
                 slice_args.append(candidate)
 
+        if args.only_id:
+            args.paging = False
+            args.color = "never"
+
         provider_filter = args.provider
         if provider_filter is not None and not (
             args.input is not None and is_single_negative_index(args.input)
@@ -636,4 +652,6 @@ Commands:
             output_format=output_format,
             emit_metadata=emit_metadata,
             provider_filter=provider_filter,
+            only_metadata=args.only_metadata,
+            only_id=args.only_id,
         )

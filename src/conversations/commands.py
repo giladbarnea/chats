@@ -13,6 +13,7 @@ from .console import get_console, print_error
 from .date_filters import parse_date_filter
 from .forking import fork_session
 from .formatting import (
+    build_metadata_text,
     format_to_json,
     format_to_raw,
     format_to_xml,
@@ -257,6 +258,28 @@ def get_input_content(input_arg: str | None) -> str:
     """Get input content from CLI argument or stdin."""
     content, _ = _resolve_input_content(input_arg)
     return content
+
+
+def _require_file_backed_input(input_file_path: Path | None, mode_name: str) -> Path:
+    """Require a resolved session/file path for output modes that depend on metadata or ids."""
+    if input_file_path is not None:
+        return input_file_path
+
+    print_error(
+        f"{mode_name} requires a resolved session or file-backed input; "
+        "raw stdin/content has no stable session identity."
+    )
+    sys.exit(1)
+
+
+def _write_parse_output(output: str, output_file: Path | None) -> None:
+    """Write parse output either to stdout or an explicit output file."""
+    if output_file is not None:
+        output_file.write_text(output + "\n", encoding="utf-8")
+        print(f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr)
+        return
+
+    print(output)
 
 
 def _print_ambiguous_error(identifier: str, matches: list[tuple[Path, str]]) -> None:
@@ -1091,6 +1114,8 @@ def cmd_parse(
     output_format: str = "xml",
     emit_metadata: bool = True,
     provider_filter: Provider | None = None,
+    only_metadata: bool = False,
+    only_id: bool = False,
 ) -> None:
     """Handle parse command (default behavior)."""
     try:
@@ -1105,6 +1130,14 @@ def cmd_parse(
     if not content.strip():
         print_error("Input is empty.")
         sys.exit(1)
+
+    if only_id:
+        resolved_path = _require_file_backed_input(input_file_path, "`--only-id`")
+        _write_parse_output(get_display_session_id(resolved_path), output_file)
+        return
+
+    if only_metadata and input_file_path is None:
+        _require_file_backed_input(input_file_path, "`--only-metadata`")
 
     # Parse conversation
     format_type = detect_format(content)
@@ -1137,6 +1170,25 @@ def cmd_parse(
             print_error(f"Slice {joined_selectors} produced no messages.")
             sys.exit(0)
 
+    custom_titles = extract_custom_titles_from_content(content) if format_type == "jsonl" else []
+    last_custom_title = custom_titles[-1] if custom_titles else None
+    metadata = _load_conversation_metadata(input_file_path) if input_file_path else None
+
+    if only_metadata:
+        resolved_path = _require_file_backed_input(input_file_path, "`--only-metadata`")
+        metadata_text = build_metadata_text(
+            resolved_path,
+            cwd,
+            len(messages),
+            provider=metadata.provider if metadata else None,
+            forked_from=metadata.forked_from if metadata else None,
+            last_custom_title=last_custom_title,
+            created_at=metadata.ctime if metadata else None,
+            modified_at=metadata.mtime if metadata else None,
+        )
+        _write_parse_output(metadata_text, output_file)
+        return
+
     # Print metadata for XML output
     if (
         emit_metadata
@@ -1144,10 +1196,6 @@ def cmd_parse(
         and not output_file
         and output_format not in ("json", "raw")
     ):
-        custom_titles = extract_custom_titles_from_content(content) if format_type == "jsonl" else []
-        last_custom_title = custom_titles[-1] if custom_titles else None
-        metadata = _load_conversation_metadata(input_file_path)
-
         print_metadata(
             input_file_path,
             cwd,

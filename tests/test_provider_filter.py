@@ -231,6 +231,8 @@ def _make_fake_cmd_parse(captured: dict):
         output_format="xml",
         emit_metadata=True,
         provider_filter=None,
+        only_metadata=False,
+        only_id=False,
     ):
         captured["input_arg"] = input_arg
         captured["provider_filter"] = provider_filter

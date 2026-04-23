@@ -100,7 +100,8 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  main()                   _build_parse_flags(args)                   ──► ConversationFlags
 │
-├───►  main()                   cmd_parse(flags, input, slice, out, fmt)   ──► commands.py
+├───►  main()                   cmd_parse(flags, input, slice, out, fmt,   ──► commands.py
+│                               only_metadata, only_id)
 │
 ├───►  cmd_parse                _resolve_input_content(input_arg)          ──► commands.py
 │      │                        ├── _try_resolve_conversation_file()
@@ -115,6 +116,8 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        │   ├── UUID-like miss short-circuit
 │      │                        │   ├── Summary prefix scan
 │      │                        └── Read resolved path or passthrough raw input
+│
+├───►  cmd_parse                [if --only-id] print session ID + exit     ──► stdout / file
 │
 ├───►  cmd_parse                detect_format(content)                     ──► "jsonl" | "raw"
 │
@@ -135,6 +138,9 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_parse                parse_slice_notation(selector)             ──► (start, stop)
 │      cmd_parse                OR matching selector positions             ──► sliced messages
+│
+├───►  cmd_parse                [if --only-metadata] emit frontmatter +    ──► stdout / file
+│                               exit
 │
 ├───►  cmd_parse                print_metadata() [if xml + not file out]   ──► stdout (YAML frontmatter)
 │
@@ -612,7 +618,10 @@ cli.py:main()
 │   ├── _build_parse_flags(args) → ConversationFlags
 │   └── is_single_negative_index(candidate)
 │
-cmd_parse(flags, input_arg, slice_str, output_file, output_format, emit_metadata, provider_filter)
+cmd_parse(
+  flags, input_arg, slice_str, output_file, output_format,
+  emit_metadata, provider_filter, only_metadata, only_id
+)
 ├── _resolve_input_content(input_arg, provider_filter)
 │   ├── _try_resolve_conversation_file(identifier, provider_filter)
 │   │   ├── Path(identifier).exists()
@@ -626,10 +635,12 @@ cmd_parse(flags, input_arg, slice_str, output_file, output_format, emit_metadata
 │   │   └── extract_summaries_from_jsonl(conv_file)
 │   ├── resolved_path.read_text()
 │   └── stdin.read() / raw input passthrough
+├── [only_id] → get_display_session_id() → stdout/file → return
 ├── detect_format(content) → "jsonl" | "raw"
 ├── parse_jsonl(content, flags, source_path) / parse_raw_cli_transcript(content, flags)
 │   └── parse_jsonl_entries(entries, flags, source_path)
 │       └── adapter-owned entry parser
+├── [only_metadata] → build_metadata_text() / print_metadata() → stdout/file → return
 ├── _merge_agent_messages(messages, content, input_file_path, flags) [if --agents]
 ├── _build_tool_id_map(messages)
 ├── normalize one-or-more slice selectors

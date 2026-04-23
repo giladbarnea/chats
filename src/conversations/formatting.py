@@ -147,7 +147,7 @@ def format_to_raw(
     return "\n\n---\n\n".join(blocks)
 
 
-def print_metadata(
+def build_metadata_text(
     file_path: Path,
     cwd: str | None,
     total_messages: int,
@@ -159,10 +159,8 @@ def print_metadata(
     last_custom_title: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
-    color: bool = False,
-    dedupe_frontmatter_separators: bool = False,
-) -> None:
-    """Print conversation metadata to stdout in YAML format."""
+) -> str:
+    """Build conversation metadata as YAML frontmatter text."""
     yaml_lines = [f"session_id: {get_display_session_id(file_path)}"]
 
     if provider is not None:
@@ -211,7 +209,37 @@ def print_metadata(
     if last_custom_title:
         yaml_lines.append(f'custom_title: "{last_custom_title}"')
 
-    content = "\n".join(["---", *yaml_lines])
+    return "\n".join(["---", *yaml_lines])
+
+
+def print_metadata(
+    file_path: Path,
+    cwd: str | None,
+    total_messages: int,
+    matched_messages: int | None = None,
+    matching_summaries: list[str] | None = None,
+    *,
+    provider: Provider | None = None,
+    forked_from: str | None = None,
+    last_custom_title: str | None = None,
+    created_at: datetime | None = None,
+    modified_at: datetime | None = None,
+    color: bool = False,
+    dedupe_frontmatter_separators: bool = False,
+) -> None:
+    """Print conversation metadata to stdout in YAML format."""
+    content = build_metadata_text(
+        file_path,
+        cwd,
+        total_messages,
+        matched_messages,
+        matching_summaries,
+        provider=provider,
+        forked_from=forked_from,
+        last_custom_title=last_custom_title,
+        created_at=created_at,
+        modified_at=modified_at,
+    )
 
     if color:
         get_console().print(Text(content, style="dim"))
