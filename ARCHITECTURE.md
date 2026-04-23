@@ -92,7 +92,8 @@ TIME   ACTOR                    ACTION                                         T
 ├───►  main()                   Detects no subcommand keyword              ──► argparse (default parse)
 │      argparse                 Parses flags; handles edge cases:          ──► args namespace
 │                               negative-index swap, tool/slice
-│                               disambiguation, nargs='?' fixups
+│                               disambiguation, provider-scoped
+│                               recent indices, nargs='?' fixups
 │
 ├───►  main()                   _normalize_parse_visibility_args(args)     ──► Resolves --only-user,
 │                               Warns on contradictions                        --only-assistant, --no-*
@@ -107,6 +108,7 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        │   ├── SessionPool.discover()/from_files()
 │      │                        │   ├── is_single_negative_index()
 │      │                        │   │   └── _resolve_recent_conversation_file()
+│      │                        │   │       ├── Applies provider filter if supplied
 │      │                        │   │       ├── _build_conversation_metadata()
 │      │                        │   │       └── resolve_negative_index()
 │      │                        │   ├── pool.resolve_exact_identifier()
@@ -412,8 +414,9 @@ Summary prefix ─────────────► │ extract_summaries_
                         └──────┬──────────┘
                                │
                         ┌──────▼──────────┐  yes
-                        │ Is negative     │──────► _build_conversation_metadata()
-                        │ index (-N)?     │        → resolve_negative_index()
+                        │ Is negative     │──────► provider scope (optional)
+                        │ index (-N)?     │        → _build_conversation_metadata()
+                        │                 │        → resolve_negative_index()
                         └──────┬──────────┘        → RESOLVED (Path) or NOT_FOUND
                                │ no
                         ┌──────▼──────────┐  yes
@@ -602,18 +605,20 @@ cli.py:main()
 │   ├── _resolve_thinking_mode(raw_thinking, show_all)
 │   ├── _resolve_show_tools(raw_tools, show_all)
 │   │   └── parse_tool_spec(spec) → ToolFilter
+│   ├── Normalize parse provider filter
+│   │   └── Warn + ignore unless input is a recent negative index
 │   ├── _normalize_parse_visibility_args(args)
 │   │   └── _warn_only_override()
 │   ├── _build_parse_flags(args) → ConversationFlags
 │   └── is_single_negative_index(candidate)
 │
-cmd_parse(flags, input_arg, slice_str, output_file, output_format, emit_metadata)
-├── _resolve_input_content(input_arg)
-│   ├── _try_resolve_conversation_file(identifier)
+cmd_parse(flags, input_arg, slice_str, output_file, output_format, emit_metadata, provider_filter)
+├── _resolve_input_content(input_arg, provider_filter)
+│   ├── _try_resolve_conversation_file(identifier, provider_filter)
 │   │   ├── Path(identifier).exists()
 │   │   ├── SessionPool.discover() / SessionPool.from_files()
 │   │   ├── is_single_negative_index(identifier)
-│   │   │   └── _resolve_recent_conversation_file(identifier, files)
+│   │   │   └── _resolve_recent_conversation_file(identifier, provider-scoped files)
 │   │   │       ├── _build_conversation_metadata(files)
 │   │   │       └── resolve_negative_index(identifier, ordered)
 │   │   ├── pool.resolve_exact_identifier(identifier)
@@ -760,4 +765,5 @@ cli.py
 10. **Tool ID Map Lifecycle**: `_build_tool_id_map()` is deliberately called before parse-mode slicing so that a surviving `tool_result` can still resolve the display name of a sliced-out `tool_use`.
 11. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based merge of Claude sidechains into the main timeline. It infers placement from `Task` dispatch timing rather than a strict relational join.
 12. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
-13. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.
+13. **Parse Provider Filter Scope**: parse-mode `-p/--provider` narrows only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay provider-neutral; the CLI warns when the flag would otherwise be ignored.
+14. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.

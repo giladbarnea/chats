@@ -520,6 +520,13 @@ Commands:
             help="Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
         )
         parser.add_argument(
+            "-p",
+            "--provider",
+            choices=["claude", "pi", "codex"],
+            default=None,
+            help="Restrict recent-index resolution to a provider when input is -1, -2, ...",
+        )
+        parser.add_argument(
             "-a", "--agents", action="store_true", help="Include agent messages"
         )
         parser.add_argument(
@@ -602,6 +609,16 @@ Commands:
             if _looks_like_slice(candidate):
                 slice_args.append(candidate)
 
+        provider_filter = args.provider
+        if provider_filter is not None and not (
+            args.input is not None and is_single_negative_index(args.input)
+        ):
+            print_warning(
+                "Warning: `--provider` only applies when parse input is a recent index "
+                "like `-1`; ignoring it."
+            )
+            provider_filter = None
+
         _normalize_parse_visibility_args(args)
         try:
             flags = _build_parse_flags(args)
@@ -618,4 +635,5 @@ Commands:
             output_file=args.out,
             output_format=output_format,
             emit_metadata=emit_metadata,
+            provider_filter=provider_filter,
         )

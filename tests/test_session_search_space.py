@@ -288,6 +288,37 @@ def test_cmd_parse_recent_negative_index_uses_all_supported_sessions(
     )
 
 
+def test_cmd_parse_provider_filter_limits_recent_negative_index_resolution(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`-p/--provider` should narrow parse's recent index only, matching search routing."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+    _build_supported_session_space(temp_home)
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        "-1",
+        slice_str="-1",
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+        provider_filter="claude",
+    )
+
+    captured = capsys.readouterr()
+    assert "history_path: ~/.claude/projects/demo-project/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jsonl" in captured.out, (
+        "Expected provider_filter='claude' to make parse resolve '-1' against "
+        f"only Claude sessions. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "claude assistant response" in captured.out, (
+        "Expected the newest Claude session's last message to render after filtering. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
 def test_cmd_search_uses_all_supported_sessions(
     tmp_path: Path,
     monkeypatch,
@@ -366,7 +397,7 @@ def test_cmd_search_only_id_prints_plain_session_id(
     """`--only-id` should emit just the matching session identifier."""
     temp_home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: temp_home)
-    paths = _build_supported_session_space(temp_home)
+    _build_supported_session_space(temp_home)
 
     with pytest.raises(SystemExit) as exc_info:
         cmd_search(

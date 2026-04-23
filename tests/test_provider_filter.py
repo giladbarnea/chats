@@ -215,3 +215,63 @@ def test_cli_no_provider_flag_defaults_to_none(monkeypatch):
     assert captured.get("provider_filter") is None, (
         f"Expected provider_filter=None when -p is omitted, got {captured.get('provider_filter')!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# CLI seam: parse -p / --provider applies only to recent index inputs
+# ---------------------------------------------------------------------------
+
+def _make_fake_cmd_parse(captured: dict):
+    def fake_cmd_parse(
+        flags,
+        input_arg,
+        slice_str,
+        output_file,
+        *,
+        output_format="xml",
+        emit_metadata=True,
+        provider_filter=None,
+    ):
+        captured["input_arg"] = input_arg
+        captured["provider_filter"] = provider_filter
+
+    return fake_cmd_parse
+
+
+def test_parse_cli_provider_filter_reaches_cmd_parse_for_recent_index(monkeypatch):
+    """`ccc -p codex -1` passes provider_filter='codex' to parse."""
+    captured: dict = {}
+    monkeypatch.setattr(cli, "cmd_parse", _make_fake_cmd_parse(captured))
+    monkeypatch.setattr(cli.sys, "argv", ["ccc", "-p", "codex", "-1"])
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True)
+
+    cli.main()
+
+    assert captured.get("input_arg") == "-1", (
+        f"Expected '-1' to remain the parse input, got {captured.get('input_arg')!r}"
+    )
+    assert captured.get("provider_filter") == "codex", (
+        f"Expected provider_filter='codex', got {captured.get('provider_filter')!r}"
+    )
+
+
+def test_parse_cli_provider_filter_warns_and_ignores_session_id(monkeypatch, capsys):
+    """`ccc -p codex session-id` should warn and keep session-id resolution provider-neutral."""
+    captured: dict = {}
+    session_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    monkeypatch.setattr(cli, "cmd_parse", _make_fake_cmd_parse(captured))
+    monkeypatch.setattr(cli.sys, "argv", ["ccc", "-p", "codex", session_id])
+
+    cli.main()
+
+    stderr = capsys.readouterr().err
+    assert captured.get("input_arg") == session_id, (
+        f"Expected parse input to stay as the session id, got {captured.get('input_arg')!r}"
+    )
+    assert captured.get("provider_filter") is None, (
+        f"Expected provider_filter to be ignored for session ids, got {captured.get('provider_filter')!r}"
+    )
+    assert "Warning:" in stderr and "--provider" in stderr and "recent index" in stderr, (
+        "Expected a warning explaining that --provider only applies to recent index inputs. "
+        f"Got stderr:\n{stderr}"
+    )

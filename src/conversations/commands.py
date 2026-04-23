@@ -148,6 +148,7 @@ def _resolve_recent_conversation_file(
 def _try_resolve_conversation_file(
     identifier: str,
     conversation_files: Sequence[Path] | None = None,
+    provider_filter: Provider | None = None,
 ) -> tuple[Path | None, list[tuple[Path, str]]]:
     """
     Try to resolve a conversation/session identifier to a file path.
@@ -182,7 +183,12 @@ def _try_resolve_conversation_file(
     conversation_files = pool.files
 
     if is_single_negative_index(stripped):
-        if recent_path := _resolve_recent_conversation_file(stripped, conversation_files):
+        recent_files = (
+            pool.by_provider[provider_filter]
+            if provider_filter is not None
+            else conversation_files
+        )
+        if recent_path := _resolve_recent_conversation_file(stripped, recent_files):
             return recent_path, []
 
     if exact_match := pool.resolve_exact_identifier(stripped):
@@ -209,7 +215,11 @@ def _try_resolve_conversation_file(
     return None, []
 
 
-def _resolve_input_content(input_arg: str | None) -> tuple[str, Path | None]:
+def _resolve_input_content(
+    input_arg: str | None,
+    *,
+    provider_filter: Provider | None = None,
+) -> tuple[str, Path | None]:
     """Resolve CLI input to raw content and its backing session path, if any."""
     if input_arg:
         content_or_path = input_arg
@@ -224,7 +234,8 @@ def _resolve_input_content(input_arg: str | None) -> tuple[str, Path | None]:
 
     # Try to resolve as conversation file
     resolved_path, ambiguous_matches = _try_resolve_conversation_file(
-        content_or_path.strip()
+        content_or_path.strip(),
+        provider_filter=provider_filter,
     )
     if resolved_path:
         return resolved_path.read_text(encoding="utf-8"), resolved_path
@@ -1070,10 +1081,14 @@ def cmd_parse(
     *,
     output_format: str = "xml",
     emit_metadata: bool = True,
+    provider_filter: Provider | None = None,
 ) -> None:
     """Handle parse command (default behavior)."""
     try:
-        content, input_file_path = _resolve_input_content(input_arg)
+        content, input_file_path = _resolve_input_content(
+            input_arg,
+            provider_filter=provider_filter,
+        )
     except Exception as e:
         print_error(f"Error reading input: {e}.")
         sys.exit(1)

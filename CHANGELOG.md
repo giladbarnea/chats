@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-23] Add provider-scoped parse recent selectors
+
+### Added
+
+- Default parse mode now accepts `-p, --provider claude|pi|codex` for recent negative selectors, so commands like `ccc -p codex -1` resolve the newest Codex session instead of the newest session overall.
+
+### Changed
+
+- Parse provider filtering is intentionally limited to recent-index inputs; when used with a session ID, path, summary, or stdin, the CLI warns and ignores the flag.
+
+---
 ## [2026-04-21] Render common Codex tool inputs through shared schemas
 
 ### Changed
