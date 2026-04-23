@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-23] Display fork ancestry metadata when available
+
+### Added
+
+- Metadata frontmatter now emits `forked_from:` when the raw session exposes a fork parent id.
+- Codex sessions populate this field from `session_meta.payload.forked_from_id`; sessions without fork ancestry omit the field entirely.
+
+---
 ## [2026-04-23] Add provider-scoped parse recent selectors
 
 ### Added

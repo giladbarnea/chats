@@ -113,8 +113,14 @@ def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
         except OSError:
             pass
 
-    provider = get_jsonl_session_adapter(conv_file).name
-    return ConversationMetadata(conv_file, ctime, mtime, provider=provider)
+    adapter = get_jsonl_session_adapter(conv_file)
+    return ConversationMetadata(
+        conv_file,
+        ctime,
+        mtime,
+        provider=adapter.name,
+        forked_from=adapter.extract_forked_from(conv_file),
+    )
 
 
 def _order_metadata_by_modified_time(
@@ -312,6 +318,7 @@ def display_search_result(
     only_id: bool,
     emit_metadata: bool,
     provider: Provider | None = None,
+    forked_from: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
     matching_summaries: list[str] | None = None,
@@ -332,6 +339,7 @@ def display_search_result(
             match_count,
             matching_summaries,
             provider=provider,
+            forked_from=forked_from,
             last_custom_title=last_custom_title,
             created_at=created_at,
             modified_at=modified_at,
@@ -439,6 +447,7 @@ def cmd_search(
                 only_id=only_id,
                 emit_metadata=emit_metadata,
                 provider=meta.provider,
+                forked_from=meta.forked_from,
                 created_at=meta.ctime,
                 modified_at=meta.mtime,
                 matching_summaries=hit.matching_summaries,
@@ -1144,6 +1153,7 @@ def cmd_parse(
             cwd,
             len(messages),
             provider=metadata.provider,
+            forked_from=metadata.forked_from,
             last_custom_title=last_custom_title,
             created_at=metadata.ctime,
             modified_at=metadata.mtime,

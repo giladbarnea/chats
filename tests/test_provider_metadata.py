@@ -154,6 +154,53 @@ def test_cmd_parse_emits_provider_codex(tmp_path, capsys, monkeypatch):
     assert "provider: codex" in captured.out, (
         f"Expected 'provider: codex' in metadata frontmatter.\nstdout:\n{captured.out}"
     )
+    assert "forked_from:" not in captured.out, (
+        "Expected forked_from metadata to be omitted when the raw session has no fork parent. "
+        f"stdout:\n{captured.out}"
+    )
+
+
+def test_cmd_parse_emits_codex_forked_from_when_present(tmp_path, capsys, monkeypatch):
+    """Codex fork metadata should appear as a provider-neutral frontmatter field."""
+    home = tmp_path / "home"
+    codex_dir = home / ".codex" / "sessions"
+    codex_dir.mkdir(parents=True)
+    session = codex_dir / "rollout-forked.jsonl"
+    forked_from_id = "019db42d-b894-7462-9de1-3229e3ccc892"
+    session.write_text(
+        json.dumps({
+            "type": "session_meta",
+            "payload": {
+                "id": "019db5f3-e555-7a70-afba-3e12469d3eb6",
+                "forked_from_id": forked_from_id,
+            },
+        }) + "\n"
+        + json.dumps({
+            "type": "response_item",
+            "timestamp": "2026-04-22T16:09:13.404Z",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "hi"}],
+            },
+        }) + "\n"
+    )
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+    )
+
+    captured = capsys.readouterr()
+    assert f"forked_from: {forked_from_id}" in captured.out, (
+        "Expected Codex fork parent id to appear as forked_from metadata. "
+        f"stdout:\n{captured.out}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -249,4 +296,49 @@ def test_cmd_search_emits_provider_codex(tmp_path, capsys, monkeypatch):
     captured = capsys.readouterr()
     assert "provider: codex" in captured.out, (
         f"Expected 'provider: codex' in search metadata.\nstdout:\n{captured.out}"
+    )
+
+
+def test_cmd_search_emits_codex_forked_from_when_present(tmp_path, capsys, monkeypatch):
+    """Search metadata should include Codex fork parent ids when the raw session has one."""
+    home = tmp_path / "home"
+    codex_dir = home / ".codex" / "sessions"
+    codex_dir.mkdir(parents=True)
+    session = codex_dir / "rollout-forked-search.jsonl"
+    forked_from_id = "019db42d-b894-7462-9de1-3229e3ccc892"
+    session.write_text(
+        json.dumps({
+            "type": "session_meta",
+            "payload": {
+                "id": "019db5f3-e555-7a70-afba-3e12469d3eb6",
+                "forked_from_id": forked_from_id,
+            },
+        }) + "\n"
+        + json.dumps({
+            "type": "response_item",
+            "timestamp": "2026-04-22T16:09:13.404Z",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "unique_search_forked_codex"}],
+            },
+        }) + "\n"
+    )
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "unique_search_forked_codex",
+            ConversationFlags(color="never", paging=False),
+            list_only=True,
+            emit_metadata=True,
+        )
+
+    assert exc_info.value.code == 0, (
+        f"Expected search to find a match; exit code: {exc_info.value.code}"
+    )
+    captured = capsys.readouterr()
+    assert f"forked_from: {forked_from_id}" in captured.out, (
+        "Expected Codex fork parent id to appear in search metadata. "
+        f"stdout:\n{captured.out}"
     )

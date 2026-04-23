@@ -155,6 +155,7 @@ def print_metadata(
     matching_summaries: list[str] | None = None,
     *,
     provider: Provider | None = None,
+    forked_from: str | None = None,
     last_custom_title: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
@@ -166,6 +167,9 @@ def print_metadata(
 
     if provider is not None:
         yaml_lines.append(f"provider: {provider}")
+
+    if forked_from:
+        yaml_lines.append(f"forked_from: {forked_from}")
 
     if cwd:
         yaml_lines.append(f"directory: {collapse_home(cwd)}")

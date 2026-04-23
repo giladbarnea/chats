@@ -24,6 +24,7 @@ class ConversationMetadata:
     ctime: datetime | None
     mtime: datetime | None
     provider: Provider
+    forked_from: str | None = None
 
 
 class ConversationFlags:

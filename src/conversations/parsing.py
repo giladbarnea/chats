@@ -29,6 +29,7 @@ class JsonlSessionAdapter:
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
     is_sidechain_path: Callable[[Path], bool] = lambda _path: False
     extract_session_id: Callable[[Path], str | None] = lambda path: path.stem
+    extract_forked_from: Callable[[Path], str | None] = lambda _path: None
 
 
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
@@ -686,8 +687,8 @@ def _extract_pi_session_id(session_file: Path) -> str | None:
     return None
 
 
-def _extract_codex_session_id(session_file: Path) -> str | None:
-    """Extract the Codex session id from the file's session_meta entry."""
+def _extract_codex_session_meta_field(session_file: Path, field_name: str) -> str | None:
+    """Extract a string field from the Codex session_meta payload."""
     try:
         with open(session_file, "r", encoding="utf-8") as handle:
             for line in handle:
@@ -703,14 +704,24 @@ def _extract_codex_session_id(session_file: Path) -> str | None:
                     break
 
                 payload = entry.get("payload", {})
-                session_id = payload.get("id")
-                if isinstance(session_id, str) and session_id:
-                    return session_id
+                value = payload.get(field_name)
+                if isinstance(value, str) and value:
+                    return value
                 break
     except OSError:
         pass
 
     return None
+
+
+def _extract_codex_session_id(session_file: Path) -> str | None:
+    """Extract the Codex session id from the file's session_meta entry."""
+    return _extract_codex_session_meta_field(session_file, "id")
+
+
+def _extract_codex_forked_from_id(session_file: Path) -> str | None:
+    """Extract the Codex fork parent id from the file's session_meta entry."""
+    return _extract_codex_session_meta_field(session_file, "forked_from_id")
 
 
 # NOTE: This centralizes a cross-adapter metadata/display concern that should probably be adapter-owned metadata semantics, not command-owned special casing.
@@ -816,6 +827,7 @@ JSONL_SESSION_ADAPTERS = [
         find_session_files=_find_codex_session_files,
         find_session_matches=_find_codex_session_matches,
         extract_session_id=_extract_codex_session_id,
+        extract_forked_from=_extract_codex_forked_from_id,
     ),
     JsonlSessionAdapter(
         name="claude",

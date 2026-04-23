@@ -120,6 +120,8 @@ Automatically detects input format by examining **first non-empty line only** (d
 
 `--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ccc --no-user --tools ...` still shows tool outputs from user turns, and `ccc --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages.
 
+Metadata frontmatter emits `forked_from:` only when the raw session exposes a fork parent id. Sessions without that data omit the field entirely.
+
 **Output Formats:**
 
 **XML Format (default):**
