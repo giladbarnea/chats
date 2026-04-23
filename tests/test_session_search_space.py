@@ -9,7 +9,15 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, SessionPool, cmd_parse, cmd_rename, cmd_search
+from conversations import (
+    ConversationFlags,
+    MessageSelection,
+    SearchOutputMode,
+    SessionPool,
+    cmd_parse,
+    cmd_rename,
+    cmd_search,
+)
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -333,7 +341,7 @@ def test_cmd_search_uses_all_supported_sessions(
         cmd_search(
             "codex-search-token",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
@@ -373,8 +381,12 @@ def test_cmd_search_matches_custom_title_across_ecosystems(
     with pytest.raises(SystemExit) as exc_info:
         cmd_search(
             "xyzzy-unique-title-token",
-            ConversationFlags(color="never", paging=False, show_assistant_messages=False),
-            list_only=True,
+            ConversationFlags(
+                color="never",
+                paging=False,
+                message_selection=MessageSelection.NO_ASSISTANT,
+            ),
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
@@ -403,9 +415,8 @@ def test_cmd_search_only_id_prints_plain_session_id(
         cmd_search(
             "codex-search-token",
             ConversationFlags(color="never", paging=False),
-            list_only=False,
+            output_mode=SearchOutputMode.ONLY_ID,
             emit_metadata=True,
-            only_id=True,
         )
 
     captured = capsys.readouterr()

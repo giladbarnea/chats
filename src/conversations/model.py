@@ -25,6 +25,25 @@ class ParseOutputMode(StrEnum):
     ONLY_ID = "only-id"
 
 
+class SearchOutputMode(StrEnum):
+    """Search result output modes."""
+
+    FULL = "full"
+    LIST = "list"
+    ONLY_ID = "only-id"
+
+
+class MessageSelection(StrEnum):
+    """Visible regular-message role selection."""
+
+    ALL = "all"
+    ONLY_USER = "only-user"
+    ONLY_ASSISTANT = "only-assistant"
+    NO_USER = "no-user"
+    NO_ASSISTANT = "no-assistant"
+    NONE = "none"
+
+
 @dataclass
 class ConversationMetadata:
     """Metadata for a conversation file to avoid repeated I/O."""
@@ -39,8 +58,7 @@ class ConversationMetadata:
 class ConversationFlags:
     """Flags controlling what content to include."""
 
-    show_user_messages: bool
-    show_assistant_messages: bool
+    message_selection: MessageSelection
     show_thinking: bool
     show_tools: bool | list[ToolFilter]
     show_agents: bool
@@ -54,8 +72,7 @@ class ConversationFlags:
     def __init__(
         self,
         *,
-        show_user_messages: bool = True,
-        show_assistant_messages: bool = True,
+        message_selection: MessageSelection = MessageSelection.ALL,
         show_thinking: bool = False,
         show_tools: bool | list[ToolFilter] = False,
         show_agents: bool = False,
@@ -66,8 +83,7 @@ class ConversationFlags:
         color: bool = False,
         paging: bool | None = None,
     ):
-        self.show_user_messages = show_user_messages
-        self.show_assistant_messages = show_assistant_messages
+        self.message_selection = message_selection
         self.show_thinking = show_thinking
         self.show_tools = show_tools
         self.show_agents = show_agents
@@ -80,12 +96,29 @@ class ConversationFlags:
         self.paging = paging if paging is not None else self.color
 
     @property
+    def show_user_messages(self) -> bool:
+        return self.message_selection in {
+            MessageSelection.ALL,
+            MessageSelection.ONLY_USER,
+            MessageSelection.NO_ASSISTANT,
+        }
+
+    @property
+    def show_assistant_messages(self) -> bool:
+        return self.message_selection in {
+            MessageSelection.ALL,
+            MessageSelection.ONLY_ASSISTANT,
+            MessageSelection.NO_USER,
+        }
+
+    @property
     def show_all(self) -> bool:
         return self.show_thinking and self.show_tools and self.show_agents
 
     def __repr__(self) -> str:
         return (
-            f"ConversationFlags(show_user_messages={self.show_user_messages}, "
+            f"ConversationFlags(message_selection={self.message_selection!r}, "
+            f"show_user_messages={self.show_user_messages}, "
             f"show_assistant_messages={self.show_assistant_messages}, "
             f"show_thinking={self.show_thinking}, "
             f"show_tools={self.show_tools}, show_agents={self.show_agents}, "

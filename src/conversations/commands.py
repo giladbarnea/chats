@@ -28,6 +28,7 @@ from .model import (
     Message,
     ParseOutputMode,
     Provider,
+    SearchOutputMode,
 )
 from .ordering import is_single_negative_index, resolve_negative_index, sort_by_modified
 from .parsing import (
@@ -343,8 +344,7 @@ def display_search_result(
     cwd: str | None,
     flags: ConversationFlags,
     *,
-    list_only: bool,
-    only_id: bool,
+    output_mode: SearchOutputMode,
     emit_metadata: bool,
     provider: Provider | None = None,
     forked_from: str | None = None,
@@ -355,7 +355,7 @@ def display_search_result(
     last_custom_title: str | None = None,
 ) -> None:
     """Display a single search result in unified XML format."""
-    if only_id:
+    if output_mode == SearchOutputMode.ONLY_ID:
         print(get_display_session_id(conv_file))
         return
 
@@ -376,7 +376,7 @@ def display_search_result(
             dedupe_frontmatter_separators=False,
         )
 
-    if list_only:
+    if output_mode == SearchOutputMode.LIST:
         return
 
     if not matches:
@@ -394,12 +394,11 @@ def display_search_result(
 def cmd_search(
     pattern_arg: str,
     flags: ConversationFlags,
-    list_only: bool,
-    only_id: bool = False,
     dir_filter: str | None = None,
     mafter: str | None = None,
     cafter: str | None = None,
     *,
+    output_mode: SearchOutputMode = SearchOutputMode.FULL,
     emit_metadata: bool = True,
     provider_filter: Provider | None = None,
 ) -> None:
@@ -454,14 +453,14 @@ def cmd_search(
     ordered_hits = sort_by_modified(hits, modified_at=lambda hit: hit.metadata.mtime)
     pager_ctx = (
         nullcontext()
-        if only_id or not flags.paging
+        if output_mode == SearchOutputMode.ONLY_ID or not flags.paging
         else get_console().pager(styles=True)
     )
 
     with pager_ctx:
         for hit in ordered_hits:
             meta = hit.metadata
-            if not only_id:
+            if output_mode != SearchOutputMode.ONLY_ID:
                 get_console().rule(
                     title=f"[bold white]{get_display_session_id(meta.path)}[/]",
                     style="#00ffba",
@@ -472,8 +471,7 @@ def cmd_search(
                 hit.matches,
                 hit.cwd,
                 flags,
-                list_only=list_only,
-                only_id=only_id,
+                output_mode=output_mode,
                 emit_metadata=emit_metadata,
                 provider=meta.provider,
                 forked_from=meta.forked_from,

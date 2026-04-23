@@ -10,7 +10,7 @@ import pytest
 
 from conversations import cli
 from conversations.commands import cmd_search
-from conversations.model import ConversationFlags
+from conversations.model import ConversationFlags, SearchOutputMode
 
 
 # ---------------------------------------------------------------------------
@@ -74,7 +74,13 @@ def test_provider_filter_claude_includes_only_claude(tmp_path, monkeypatch, caps
     monkeypatch.setattr(Path, "home", lambda: home)
 
     with pytest.raises(SystemExit) as exc_info:
-        cmd_search(NEEDLE, FLAGS, list_only=True, emit_metadata=True, provider_filter="claude")
+        cmd_search(
+            NEEDLE,
+            FLAGS,
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+            provider_filter="claude",
+        )
 
     assert exc_info.value.code == 0, f"Expected exit 0 (found match), got {exc_info.value.code}"
     out = capsys.readouterr().out
@@ -92,7 +98,13 @@ def test_provider_filter_pi_includes_only_pi(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(Path, "home", lambda: home)
 
     with pytest.raises(SystemExit) as exc_info:
-        cmd_search(NEEDLE, FLAGS, list_only=True, emit_metadata=True, provider_filter="pi")
+        cmd_search(
+            NEEDLE,
+            FLAGS,
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+            provider_filter="pi",
+        )
 
     assert exc_info.value.code == 0, f"Expected exit 0 (found match), got {exc_info.value.code}"
     out = capsys.readouterr().out
@@ -110,7 +122,13 @@ def test_provider_filter_codex_includes_only_codex(tmp_path, monkeypatch, capsys
     monkeypatch.setattr(Path, "home", lambda: home)
 
     with pytest.raises(SystemExit) as exc_info:
-        cmd_search(NEEDLE, FLAGS, list_only=True, emit_metadata=True, provider_filter="codex")
+        cmd_search(
+            NEEDLE,
+            FLAGS,
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+            provider_filter="codex",
+        )
 
     assert exc_info.value.code == 0, f"Expected exit 0 (found match), got {exc_info.value.code}"
     out = capsys.readouterr().out
@@ -126,7 +144,13 @@ def test_provider_filter_no_match_exits_1(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: home)
 
     with pytest.raises(SystemExit) as exc_info:
-        cmd_search(NEEDLE, FLAGS, list_only=True, emit_metadata=True, provider_filter="codex")
+        cmd_search(
+            NEEDLE,
+            FLAGS,
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+            provider_filter="codex",
+        )
 
     assert exc_info.value.code == 1, (
         f"Expected exit 1 (no match after provider filter), got {exc_info.value.code}"
@@ -142,7 +166,13 @@ def test_provider_filter_none_includes_all(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(Path, "home", lambda: home)
 
     with pytest.raises(SystemExit) as exc_info:
-        cmd_search(NEEDLE, FLAGS, list_only=True, emit_metadata=True, provider_filter=None)
+        cmd_search(
+            NEEDLE,
+            FLAGS,
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+            provider_filter=None,
+        )
 
     assert exc_info.value.code == 0, f"Expected exit 0 (found matches), got {exc_info.value.code}"
     out = capsys.readouterr().out
@@ -159,12 +189,11 @@ def _make_fake_cmd_search(captured: dict):
     def fake_cmd_search(
         pattern_arg,
         flags,
-        list_only,
-        only_id=False,
         dir_filter=None,
         mafter=None,
         cafter=None,
         *,
+        output_mode=SearchOutputMode.FULL,
         emit_metadata=True,
         provider_filter=None,
     ):

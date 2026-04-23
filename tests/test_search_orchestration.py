@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 import conversations.commands as commands
-from conversations import ConversationFlags
+from conversations import ConversationFlags, SearchOutputMode
 
 
 def _write_session(path: Path, text: str) -> None:
@@ -73,7 +73,7 @@ def test_cmd_search_succeeds_when_unrelated_nonmatch_metadata_would_fail(
         commands.cmd_search(
             "slice-3-lazy-metadata-needle",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
@@ -123,7 +123,7 @@ def test_cmd_search_does_not_render_noncandidate_sessions(
         commands.cmd_search(
             "slice-4-render-skip-needle",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 

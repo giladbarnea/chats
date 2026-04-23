@@ -27,6 +27,18 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # Apr 23 26
+  019dbad2-2339-7a01-9659-dbb1d134be57:
+    description:
+      - "Added parse-mode `-l/--only-metadata` and `-ll/--only-id` so default parse output matches the existing search-mode output controls."
+      - "Collapsed parse/search output-state booleans into explicit enums, then locked the refactor down with TDD coverage and a full-suite pass."
+    directories: [~/dev/conversations]
+    keywords: [parse-output-modes, metadata-frontmatter, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 2
+    new_files: [tests/test_parse_output_modes.py]
+    edited_files: [src/conversations/cli.py, src/conversations/commands.py, src/conversations/formatting.py, src/conversations/model.py, tests/test_provider_filter.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    branch: main
   # Apr 20 26
   rollout-2026-04-20T13-30-00-0c1f9bda-9afe-4ea6-9f94-befd0b8d1234:
     description:

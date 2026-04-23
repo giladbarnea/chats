@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, cmd_search
+from conversations import ConversationFlags, SearchOutputMode, cmd_search
 
 
 def _write_claude_session(path: Path, entries: list[dict]) -> None:
@@ -62,7 +62,7 @@ def test_cmd_search_agent_only_content_is_hidden_by_default_and_found_with_agent
         cmd_search(
             "slice-4-agent-only-needle",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
@@ -75,7 +75,7 @@ def test_cmd_search_agent_only_content_is_hidden_by_default_and_found_with_agent
         cmd_search(
             "slice-4-agent-only-needle",
             ConversationFlags(color="never", paging=False, show_agents=True),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
@@ -125,7 +125,7 @@ def test_cmd_search_plan_text_is_visible_by_default_and_hidden_with_no_plans(
         cmd_search(
             "slice-4-plan-needle",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
@@ -143,7 +143,7 @@ def test_cmd_search_plan_text_is_visible_by_default_and_hidden_with_no_plans(
         cmd_search(
             "slice-4-plan-needle",
             ConversationFlags(color="never", paging=False, show_plans=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
@@ -188,7 +188,7 @@ def test_cmd_search_render_dependent_plan_tag_query_still_works(
         cmd_search(
             "<tool-input",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 

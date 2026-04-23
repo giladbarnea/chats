@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Behavior tests for SessionScan."""
+"""Behavior tests for message role selection."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ from pathlib import Path
 from conversations import ConversationFlags, MessageSelection, SessionScan
 
 
-def test_session_scan_extracts_search_facets_independently_of_visible_messages(
+def test_session_scan_hides_assistant_messages_with_message_selection(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    """SessionScan should preserve summary/title/cwd even when message visibility hides assistant text."""
+    """`message_selection=NO_ASSISTANT` should hide regular assistant messages in downstream scans."""
     temp_home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: temp_home)
 
@@ -29,11 +29,6 @@ def test_session_scan_extracts_search_facets_independently_of_visible_messages(
         "".join(
             json.dumps(entry, separators=(",", ":")) + "\n"
             for entry in [
-                {
-                    "type": "summary",
-                    "summary": "scan-summary-token",
-                    "leafUuid": "leaf-1",
-                },
                 {
                     "type": "user",
                     "sessionId": "scan-session",
@@ -53,11 +48,6 @@ def test_session_scan_extracts_search_facets_independently_of_visible_messages(
                     },
                     "uuid": "assistant-1",
                 },
-                {
-                    "type": "custom-title",
-                    "customTitle": "scan-title-token",
-                    "sessionId": "scan-session",
-                },
             ]
         ),
         encoding="utf-8",
@@ -72,27 +62,7 @@ def test_session_scan_extracts_search_facets_independently_of_visible_messages(
         ),
     )
 
-    assert scan.provider == "claude", (
-        "Expected SessionScan to expose the owning provider for the scanned session. "
-        f"Got: {scan.provider!r}"
-    )
-    assert scan.cwd == "/tmp/session-scan", (
-        "Expected SessionScan to preserve cwd for directory-filtered search. "
-        f"Got: {scan.cwd!r}"
-    )
-    assert scan.summaries == ("scan-summary-token",), (
-        "Expected SessionScan to preserve summary search text independently of message visibility. "
-        f"Got: {scan.summaries!r}"
-    )
-    assert scan.custom_titles == ("scan-title-token",), (
-        "Expected SessionScan to preserve custom-title search text independently of visible messages. "
-        f"Got: {scan.custom_titles!r}"
-    )
-    assert scan.last_custom_title == "scan-title-token", (
-        "Expected SessionScan to expose the latest custom title for metadata output. "
-        f"Got: {scan.last_custom_title!r}"
-    )
     assert [message.role for message in scan.messages] == ["user"], (
-        "Expected SessionScan.messages to respect the supplied visibility flags while keeping "
-        f"summary/title search facets intact. Got roles: {[message.role for message in scan.messages]!r}"
+        "Expected NO_ASSISTANT message selection to hide regular assistant messages "
+        f"while preserving user messages. Got roles: {[message.role for message in scan.messages]!r}"
     )

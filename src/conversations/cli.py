@@ -9,7 +9,12 @@ from pathlib import Path
 from . import commands as commands_module
 from .commands import cmd_catalog, cmd_parse, cmd_rename, cmd_rm, cmd_search
 from .console import init_module_console, print_warning
-from .model import ConversationFlags, ParseOutputMode
+from .model import (
+    ConversationFlags,
+    MessageSelection,
+    ParseOutputMode,
+    SearchOutputMode,
+)
 from .ordering import is_single_negative_index
 from .tool_filter import ToolFilter, parse_tool_spec
 
@@ -105,19 +110,38 @@ def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
         )
 
 
+def _resolve_message_selection(args: argparse.Namespace) -> MessageSelection:
+    """Resolve contradictory parse role-selection flags into one explicit mode."""
+    if args.only_user and args.only_assistant:
+        return MessageSelection.NONE
+    if args.only_user and args.no_user:
+        return MessageSelection.NONE
+    if args.only_assistant and args.no_assistant:
+        return MessageSelection.NONE
+    if args.no_user and args.no_assistant:
+        return MessageSelection.NONE
+    if args.only_user:
+        return MessageSelection.ONLY_USER
+    if args.only_assistant:
+        return MessageSelection.ONLY_ASSISTANT
+    if args.no_user:
+        return MessageSelection.NO_USER
+    if args.no_assistant:
+        return MessageSelection.NO_ASSISTANT
+    return MessageSelection.ALL
+
+
 def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
     """Convert normalized parse-mode args into ConversationFlags."""
     show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
+    message_selection = _resolve_message_selection(args)
     return ConversationFlags(
-        show_user_messages=not args.only_assistant and not args.no_user,
-        show_assistant_messages=not args.only_user and not args.no_assistant,
+        message_selection=message_selection,
         show_thinking=show_thinking,
         show_tools=_resolve_show_tools(args.tools, args.all),
         show_agents=args.agents or args.all,
         show_plans=not args.no_plans,
-        allow_empty_output=(
-            args.only_user or args.only_assistant or args.no_user or args.no_assistant
-        ),
+        allow_empty_output=message_selection != MessageSelection.ALL,
         shorten=args.short,
         shorten_thinking=shorten_thinking,
         color=args.color,
@@ -145,6 +169,15 @@ def _resolve_parse_output_mode(args: argparse.Namespace) -> ParseOutputMode:
     if args.only_metadata:
         return ParseOutputMode.ONLY_METADATA
     return ParseOutputMode.FULL
+
+
+def _resolve_search_output_mode(args: argparse.Namespace) -> SearchOutputMode:
+    """Resolve mutually-exclusive search output flags into one mode."""
+    if args.only_id:
+        return SearchOutputMode.ONLY_ID
+    if args.list:
+        return SearchOutputMode.LIST
+    return SearchOutputMode.FULL
 
 
 def _looks_like_slice(candidate: str) -> bool:
@@ -340,7 +373,8 @@ def main():
         )
 
         args = parser.parse_args(sys.argv[2:])
-        if args.only_id:
+        output_mode = _resolve_search_output_mode(args)
+        if output_mode == SearchOutputMode.ONLY_ID:
             args.paging = False
             args.color = "never"
 
@@ -361,11 +395,10 @@ def main():
         cmd_search(
             args.pattern,
             flags,
-            args.list,
-            args.only_id,
             args.dir,
             args.mafter,
             args.cafter,
+            output_mode=output_mode,
             emit_metadata=not args.no_metadata,
             provider_filter=args.provider,
         )

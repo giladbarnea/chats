@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from conversations import cli
+from conversations import SearchOutputMode, cli
 
 
 def test_search_only_id_forces_plain_output(monkeypatch) -> None:
@@ -13,19 +13,17 @@ def test_search_only_id_forces_plain_output(monkeypatch) -> None:
     def fake_cmd_search(
         pattern_arg: str,
         flags,
-        list_only: bool,
-        only_id: bool = False,
         dir_filter: str | None = None,
         mafter: str | None = None,
         cafter: str | None = None,
         *,
+        output_mode: SearchOutputMode = SearchOutputMode.FULL,
         emit_metadata: bool = True,
         provider_filter=None,
     ) -> None:
         captured["pattern"] = pattern_arg
         captured["flags"] = flags
-        captured["list_only"] = list_only
-        captured["only_id"] = only_id
+        captured["output_mode"] = output_mode
         captured["emit_metadata"] = emit_metadata
 
     monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
@@ -38,7 +36,7 @@ def test_search_only_id_forces_plain_output(monkeypatch) -> None:
     cli.main()
 
     assert captured["pattern"] == "needle"
-    assert captured["only_id"] is True
+    assert captured["output_mode"] == SearchOutputMode.ONLY_ID
     flags = captured["flags"]
     assert flags.color is False, (
         "Expected --only-id to force plain output even when --color always was passed."

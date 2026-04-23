@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, cmd_parse, cmd_search
+from conversations import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
 
 
 def _utc_to_local_display(utc_iso: str) -> str:
@@ -126,7 +126,7 @@ def test_cmd_search_metadata_prefers_jsonl_timestamps_over_file_stat(
         cmd_search(
             "search needle",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 

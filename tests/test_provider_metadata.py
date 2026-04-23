@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, cmd_parse, cmd_search
+from conversations import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
 from conversations.commands import _load_conversation_metadata
 from conversations.model import ConversationMetadata
 
@@ -234,7 +234,7 @@ def test_cmd_search_emits_provider_claude(temp_claude_home, capsys):
         cmd_search(
             "unique_search_needle_claude",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
     assert exc_info.value.code == 0, f"Expected search to find a match; exit code: {exc_info.value.code}"
@@ -261,7 +261,7 @@ def test_cmd_search_emits_provider_pi(tmp_path, capsys, monkeypatch):
         cmd_search(
             "unique_search_needle_pi",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
     assert exc_info.value.code == 0, f"Expected search to find a match; exit code: {exc_info.value.code}"
@@ -289,7 +289,7 @@ def test_cmd_search_emits_provider_codex(tmp_path, capsys, monkeypatch):
         cmd_search(
             "unique_search_needle_codex",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
     assert exc_info.value.code == 0, f"Expected search to find a match; exit code: {exc_info.value.code}"
@@ -330,7 +330,7 @@ def test_cmd_search_emits_codex_forked_from_when_present(tmp_path, capsys, monke
         cmd_search(
             "unique_search_forked_codex",
             ConversationFlags(color="never", paging=False),
-            list_only=True,
+            output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
