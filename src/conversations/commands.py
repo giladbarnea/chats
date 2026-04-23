@@ -22,7 +22,13 @@ from .formatting import (
     render_messages_with_rich,
 )
 from .utils import collapse_home
-from .model import ConversationFlags, ConversationMetadata, Message, Provider
+from .model import (
+    ConversationFlags,
+    ConversationMetadata,
+    Message,
+    ParseOutputMode,
+    Provider,
+)
 from .ordering import is_single_negative_index, resolve_negative_index, sort_by_modified
 from .parsing import (
     detect_format,
@@ -1114,8 +1120,7 @@ def cmd_parse(
     output_format: str = "xml",
     emit_metadata: bool = True,
     provider_filter: Provider | None = None,
-    only_metadata: bool = False,
-    only_id: bool = False,
+    output_mode: ParseOutputMode = ParseOutputMode.FULL,
 ) -> None:
     """Handle parse command (default behavior)."""
     try:
@@ -1131,12 +1136,12 @@ def cmd_parse(
         print_error("Input is empty.")
         sys.exit(1)
 
-    if only_id:
+    if output_mode == ParseOutputMode.ONLY_ID:
         resolved_path = _require_file_backed_input(input_file_path, "`--only-id`")
         _write_parse_output(get_display_session_id(resolved_path), output_file)
         return
 
-    if only_metadata and input_file_path is None:
+    if output_mode == ParseOutputMode.ONLY_METADATA and input_file_path is None:
         _require_file_backed_input(input_file_path, "`--only-metadata`")
 
     # Parse conversation
@@ -1174,7 +1179,7 @@ def cmd_parse(
     last_custom_title = custom_titles[-1] if custom_titles else None
     metadata = _load_conversation_metadata(input_file_path) if input_file_path else None
 
-    if only_metadata:
+    if output_mode == ParseOutputMode.ONLY_METADATA:
         resolved_path = _require_file_backed_input(input_file_path, "`--only-metadata`")
         metadata_text = build_metadata_text(
             resolved_path,

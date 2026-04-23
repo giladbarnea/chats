@@ -9,7 +9,7 @@ from pathlib import Path
 from . import commands as commands_module
 from .commands import cmd_catalog, cmd_parse, cmd_rename, cmd_rm, cmd_search
 from .console import init_module_console, print_warning
-from .model import ConversationFlags
+from .model import ConversationFlags, ParseOutputMode
 from .ordering import is_single_negative_index
 from .tool_filter import ToolFilter, parse_tool_spec
 
@@ -136,6 +136,15 @@ def _build_fork_flags(args: argparse.Namespace) -> ConversationFlags:
         color=False,
         paging=False,
     )
+
+
+def _resolve_parse_output_mode(args: argparse.Namespace) -> ParseOutputMode:
+    """Resolve mutually-exclusive parse output-only flags into one mode."""
+    if args.only_id:
+        return ParseOutputMode.ONLY_ID
+    if args.only_metadata:
+        return ParseOutputMode.ONLY_METADATA
+    return ParseOutputMode.FULL
 
 
 def _looks_like_slice(candidate: str) -> bool:
@@ -621,7 +630,8 @@ Commands:
             if _looks_like_slice(candidate):
                 slice_args.append(candidate)
 
-        if args.only_id:
+        output_mode = _resolve_parse_output_mode(args)
+        if output_mode == ParseOutputMode.ONLY_ID:
             args.paging = False
             args.color = "never"
 
@@ -652,6 +662,5 @@ Commands:
             output_format=output_format,
             emit_metadata=emit_metadata,
             provider_filter=provider_filter,
-            only_metadata=args.only_metadata,
-            only_id=args.only_id,
+            output_mode=output_mode,
         )

@@ -10,7 +10,7 @@ import pytest
 
 from conversations import cli
 from conversations.commands import cmd_parse
-from conversations.model import ConversationFlags
+from conversations.model import ConversationFlags, ParseOutputMode
 
 
 def _write_claude_session(path: Path) -> None:
@@ -69,13 +69,11 @@ def test_parse_cli_only_id_forces_plain_output(monkeypatch) -> None:
         output_format="xml",
         emit_metadata=True,
         provider_filter=None,
-        only_metadata=False,
-        only_id=False,
+        output_mode=ParseOutputMode.FULL,
     ) -> None:
         captured["flags"] = flags
         captured["input_arg"] = input_arg
-        captured["only_metadata"] = only_metadata
-        captured["only_id"] = only_id
+        captured["output_mode"] = output_mode
 
     session_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     monkeypatch.setattr(cli, "cmd_parse", fake_cmd_parse)
@@ -93,13 +91,9 @@ def test_parse_cli_only_id_forces_plain_output(monkeypatch) -> None:
         "Expected parse input to pass through unchanged. "
         f"Got: {captured.get('input_arg')!r}"
     )
-    assert captured.get("only_id") is True, (
-        "Expected `-ll` to reach parse as `only_id=True`. "
-        f"Got: {captured.get('only_id')!r}"
-    )
-    assert captured.get("only_metadata") is False, (
-        "Expected `-ll` not to also set metadata-only mode. "
-        f"Got: {captured.get('only_metadata')!r}"
+    assert captured.get("output_mode") == ParseOutputMode.ONLY_ID, (
+        "Expected `-ll` to reach parse as `ParseOutputMode.ONLY_ID`. "
+        f"Got: {captured.get('output_mode')!r}"
     )
     assert flags.color is False, (
         "Expected parse `-ll` to force plain output even when `--color always` was passed."
@@ -122,12 +116,10 @@ def test_parse_cli_only_metadata_reaches_cmd_parse(monkeypatch) -> None:
         output_format="xml",
         emit_metadata=True,
         provider_filter=None,
-        only_metadata=False,
-        only_id=False,
+        output_mode=ParseOutputMode.FULL,
     ) -> None:
         captured["input_arg"] = input_arg
-        captured["only_metadata"] = only_metadata
-        captured["only_id"] = only_id
+        captured["output_mode"] = output_mode
 
     session_id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
     monkeypatch.setattr(cli, "cmd_parse", fake_cmd_parse)
@@ -139,13 +131,9 @@ def test_parse_cli_only_metadata_reaches_cmd_parse(monkeypatch) -> None:
         "Expected parse input to pass through unchanged. "
         f"Got: {captured.get('input_arg')!r}"
     )
-    assert captured.get("only_metadata") is True, (
-        "Expected `-l` to reach parse as `only_metadata=True`. "
-        f"Got: {captured.get('only_metadata')!r}"
-    )
-    assert captured.get("only_id") is False, (
-        "Expected `-l` not to enable id-only mode. "
-        f"Got: {captured.get('only_id')!r}"
+    assert captured.get("output_mode") == ParseOutputMode.ONLY_METADATA, (
+        "Expected `-l` to reach parse as `ParseOutputMode.ONLY_METADATA`. "
+        f"Got: {captured.get('output_mode')!r}"
     )
 
 
@@ -169,7 +157,7 @@ def test_cmd_parse_only_id_prints_plain_session_id(tmp_path: Path, monkeypatch, 
         output_file=None,
         output_format="xml",
         emit_metadata=True,
-        only_id=True,
+        output_mode=ParseOutputMode.ONLY_ID,
     )
 
     captured = capsys.readouterr()
@@ -211,7 +199,7 @@ def test_cmd_parse_only_metadata_hides_messages_and_respects_slice(
         output_file=None,
         output_format="xml",
         emit_metadata=True,
-        only_metadata=True,
+        output_mode=ParseOutputMode.ONLY_METADATA,
     )
 
     captured = capsys.readouterr()
@@ -247,7 +235,7 @@ def test_cmd_parse_only_id_rejects_raw_content(capsys) -> None:
             output_file=None,
             output_format="xml",
             emit_metadata=True,
-            only_id=True,
+            output_mode=ParseOutputMode.ONLY_ID,
         )
 
     captured = capsys.readouterr()
@@ -275,7 +263,7 @@ def test_cmd_parse_only_metadata_rejects_raw_content(capsys) -> None:
             output_file=None,
             output_format="xml",
             emit_metadata=True,
-            only_metadata=True,
+            output_mode=ParseOutputMode.ONLY_METADATA,
         )
 
     captured = capsys.readouterr()

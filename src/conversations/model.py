@@ -4,6 +4,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from enum import StrEnum
 from typing import Literal
 
 from .parts import MessagePart, MessagePartKind, ToolParts
@@ -14,6 +15,14 @@ from .utils import shorten_data, truncate_middle
 
 
 Provider = Literal["claude", "pi", "codex"]
+
+
+class ParseOutputMode(StrEnum):
+    """Special parse output modes."""
+
+    FULL = "full"
+    ONLY_METADATA = "only-metadata"
+    ONLY_ID = "only-id"
 
 
 @dataclass
