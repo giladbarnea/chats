@@ -32,8 +32,8 @@ Again, *read files that have proven relevant in full.*
 
 <dev-cycle>
 
-1. Run `./tests/run_all.sh | cat`.
-2. Red/Green TDD.
+1. Run `./tests/run_all.sh | cat` for baseline.
+2. Red/Green TDD: load the `tdd` and `write-tests` skills.
 3. Upon completion, run the `post-implementation` Skill.
 
 </dev-cycle>
