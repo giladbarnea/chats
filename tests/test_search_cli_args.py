@@ -13,13 +13,10 @@ def test_search_only_id_forces_plain_output(monkeypatch) -> None:
     def fake_cmd_search(
         pattern_arg: str,
         flags,
-        dir_filter: str | None = None,
-        mafter: str | None = None,
-        cafter: str | None = None,
+        pool_filter=None,
         *,
         output_mode: SearchOutputMode = SearchOutputMode.FULL,
         emit_metadata: bool = True,
-        provider_filter=None,
     ) -> None:
         captured["pattern"] = pattern_arg
         captured["flags"] = flags

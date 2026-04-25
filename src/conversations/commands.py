@@ -10,7 +10,6 @@ from datetime import datetime
 from pathlib import Path
 
 from .console import get_console, print_error
-from .date_filters import parse_date_filter
 from .forking import fork_session
 from .formatting import (
     build_metadata_text,
@@ -31,6 +30,7 @@ from .model import (
     SearchOutputMode,
 )
 from .ordering import is_single_negative_index, resolve_negative_index, sort_by_modified
+from .pool_filter import PoolFilter
 from .parsing import (
     detect_format,
     extract_custom_titles_from_content,
@@ -150,19 +150,30 @@ def _build_conversation_metadata(
 def _resolve_recent_conversation_file(
     identifier: str,
     conversation_files: Sequence[Path],
+    pool_filter: PoolFilter | None = None,
 ) -> Path | None:
-    """Resolve a negative index like '-1' against globally recent supported sessions."""
+    """Resolve a negative index like '-1' against globally recent supported sessions.
+
+    When `pool_filter` is provided, dir/date filters narrow the candidate set
+    before applying the index.
+    """
     ordered_metadata = _build_conversation_metadata(conversation_files)
-    ordered_main_conversations = [
-        meta.path for meta in ordered_metadata if not is_sidechain_session_file(meta.path)
-    ]
-    return resolve_negative_index(identifier, ordered_main_conversations)
+    eligible: list[Path] = []
+    for meta in ordered_metadata:
+        if is_sidechain_session_file(meta.path):
+            continue
+        if pool_filter is not None and not pool_filter.passes_metadata(meta):
+            continue
+        eligible.append(meta.path)
+    if pool_filter is not None and pool_filter.needs_content_for_dir():
+        eligible = pool_filter.narrow_for_index(eligible)
+    return resolve_negative_index(identifier, eligible)
 
 
 def _try_resolve_conversation_file(
     identifier: str,
     conversation_files: Sequence[Path] | None = None,
-    provider_filter: Provider | None = None,
+    pool_filter: PoolFilter | None = None,
 ) -> tuple[Path | None, list[tuple[Path, str]]]:
     """
     Try to resolve a conversation/session identifier to a file path.
@@ -198,11 +209,13 @@ def _try_resolve_conversation_file(
 
     if is_single_negative_index(stripped):
         recent_files = (
-            pool.by_provider[provider_filter]
-            if provider_filter is not None
+            pool_filter.candidate_files(pool)
+            if pool_filter is not None
             else conversation_files
         )
-        if recent_path := _resolve_recent_conversation_file(stripped, recent_files):
+        if recent_path := _resolve_recent_conversation_file(
+            stripped, recent_files, pool_filter
+        ):
             return recent_path, []
 
     if exact_match := pool.resolve_exact_identifier(stripped):
@@ -232,7 +245,7 @@ def _try_resolve_conversation_file(
 def _resolve_input_content(
     input_arg: str | None,
     *,
-    provider_filter: Provider | None = None,
+    pool_filter: PoolFilter | None = None,
 ) -> tuple[str, Path | None]:
     """Resolve CLI input to raw content and its backing session path, if any."""
     if input_arg:
@@ -249,7 +262,7 @@ def _resolve_input_content(
     # Try to resolve as conversation file
     resolved_path, ambiguous_matches = _try_resolve_conversation_file(
         content_or_path.strip(),
-        provider_filter=provider_filter,
+        pool_filter=pool_filter,
     )
     if resolved_path:
         return resolved_path.read_text(encoding="utf-8"), resolved_path
@@ -394,17 +407,13 @@ def display_search_result(
 def cmd_search(
     pattern_arg: str,
     flags: ConversationFlags,
-    dir_filter: str | None = None,
-    mafter: str | None = None,
-    cafter: str | None = None,
+    pool_filter: PoolFilter | None = None,
     *,
     output_mode: SearchOutputMode = SearchOutputMode.FULL,
     emit_metadata: bool = True,
-    provider_filter: Provider | None = None,
 ) -> None:
     """Handle search subcommand."""
-    mafter_dt = parse_date_filter(mafter)
-    cafter_dt = parse_date_filter(cafter)
+    pool_filter = pool_filter or PoolFilter()
     literal_candidate = None
 
     # Compile regex (treat invalid regex as literal string like grep -F)
@@ -419,11 +428,7 @@ def cmd_search(
         literal_candidate = pattern_arg.casefold()
 
     pool = SessionPool.discover(include_sidechains=flags.show_agents)
-    search_files = (
-        pool.by_provider[provider_filter]
-        if provider_filter is not None
-        else pool.files
-    )
+    search_files = pool_filter.candidate_files(pool)
     if not search_files:
         sys.exit(1)
 
@@ -436,9 +441,7 @@ def cmd_search(
                 pattern_arg,
                 literal_candidate,
                 flags,
-                dir_filter,
-                mafter_dt,
-                cafter_dt,
+                pool_filter,
             )
         except Exception as e:
             print_error(f"Error processing conversation file {conv_file}: {e}")
@@ -491,16 +494,14 @@ def _search_hit_for_file(
     pattern_arg: str,
     literal_candidate: str | None,
     flags: ConversationFlags,
-    dir_filter: str | None,
-    mafter_dt: datetime | None,
-    cafter_dt: datetime | None,
+    pool_filter: PoolFilter,
 ) -> SearchHit | None:
     """Return one search hit with metadata, or None when the file should not be shown."""
     content = conv_file.read_text(encoding="utf-8")
     if not _search_candidate_matches(content, pattern_arg, literal_candidate, flags):
         return None
 
-    result = _search_conversation_content(conv_file, content, regex, flags, dir_filter)
+    result = _search_conversation_content(conv_file, content, regex, flags, pool_filter)
     if result is None:
         return None
 
@@ -516,7 +517,7 @@ def _search_hit_for_file(
         return None
 
     metadata = _load_conversation_metadata(conv_file)
-    if not _passes_date_filters(metadata, mafter_dt, cafter_dt):
+    if not pool_filter.passes_metadata(metadata):
         return None
 
     return SearchHit(
@@ -528,24 +529,6 @@ def _search_hit_for_file(
         matching_custom_titles=matching_custom_titles,
         last_custom_title=last_custom_title,
     )
-
-
-def _passes_date_filters(
-    meta: ConversationMetadata, mafter_dt: datetime | None, cafter_dt: datetime | None
-) -> bool:
-    """Check if conversation file passes date filters."""
-    if not mafter_dt and not cafter_dt:
-        return True
-
-    if mafter_dt:
-        if not meta.mtime or meta.mtime < mafter_dt:
-            return False
-            
-    if cafter_dt:
-        if not meta.ctime or meta.ctime < cafter_dt:
-            return False
-            
-    return True
 
 
 def _search_candidate_matches(
@@ -585,7 +568,7 @@ def _search_conversation(
     conv_file: Path,
     regex: re.Pattern,
     flags: ConversationFlags,
-    dir_filter: str | None,
+    pool_filter: PoolFilter,
 ) -> tuple[list[Message], list[Message], str | None, list[str], list[str], str | None] | None:
     """
     Search a single conversation file.
@@ -594,7 +577,7 @@ def _search_conversation(
     or None if the conversation should be skipped.
     """
     content = conv_file.read_text(encoding="utf-8")
-    return _search_conversation_content(conv_file, content, regex, flags, dir_filter)
+    return _search_conversation_content(conv_file, content, regex, flags, pool_filter)
 
 
 def _search_conversation_content(
@@ -602,21 +585,15 @@ def _search_conversation_content(
     content: str,
     regex: re.Pattern,
     flags: ConversationFlags,
-    dir_filter: str | None,
+    pool_filter: PoolFilter,
 ) -> tuple[list[Message], list[Message], str | None, list[str], list[str], str | None] | None:
     """Search already-read conversation content."""
     scan = SessionScan.from_content(content, flags, source_path=conv_file)
     messages = list(scan.messages)
     cwd = scan.cwd
 
-    # Apply directory filter
-    if dir_filter is not None:
-        if cwd is None:
-            return None
-        try:
-            Path(cwd).resolve().relative_to(Path(dir_filter).resolve())
-        except ValueError:
-            return None
+    if not pool_filter.passes_cwd(cwd):
+        return None
 
     matching_summaries = [summary for summary in scan.summaries if regex.search(summary)]
     matching_custom_titles = [
@@ -1117,14 +1094,14 @@ def cmd_parse(
     *,
     output_format: str = "xml",
     emit_metadata: bool = True,
-    provider_filter: Provider | None = None,
+    pool_filter: PoolFilter | None = None,
     output_mode: ParseOutputMode = ParseOutputMode.FULL,
 ) -> None:
     """Handle parse command (default behavior)."""
     try:
         content, input_file_path = _resolve_input_content(
             input_arg,
-            provider_filter=provider_filter,
+            pool_filter=pool_filter,
         )
     except Exception as e:
         print_error(f"Error reading input: {e}.")

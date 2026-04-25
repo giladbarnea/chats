@@ -16,6 +16,7 @@ from .model import (
     SearchOutputMode,
 )
 from .ordering import is_single_negative_index
+from .pool_filter import PoolFilter, add_pool_filter_args
 from .tool_filter import ToolFilter, parse_tool_spec
 
 
@@ -283,28 +284,12 @@ def main():
             action="store_true",
             help="Show only matching session IDs (implies --color never and --no-paging)",
         )
-        parser.add_argument(
-            "-d",
-            "--dir",
-            type=str,
-            default=None,
-            help="Restrict search to conversations in this directory",
-        )
-        parser.add_argument(
-            "-ma",
-            "--mafter",
-            type=str,
-            default=None,
-            metavar="DATE",
-            help="Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)",
-        )
-        parser.add_argument(
-            "-ca",
-            "--cafter",
-            type=str,
-            default=None,
-            metavar="DATE",
-            help="Only conversations created after DATE",
+        add_pool_filter_args(
+            parser,
+            dir_help="Restrict search to conversations in this directory",
+            mafter_help="Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)",
+            cafter_help="Only conversations created after DATE",
+            provider_help="Restrict search to sessions from a specific provider (claude, pi, codex)",
         )
         parser.add_argument(
             "-T",
@@ -364,13 +349,6 @@ def main():
             action="store_true",
             help="Disable outputting metadata frontmatter",
         )
-        parser.add_argument(
-            "-p",
-            "--provider",
-            choices=["claude", "pi", "codex"],
-            default=None,
-            help="Restrict search to sessions from a specific provider (claude, pi, codex)",
-        )
 
         args = parser.parse_args(sys.argv[2:])
         output_mode = _resolve_search_output_mode(args)
@@ -395,12 +373,9 @@ def main():
         cmd_search(
             args.pattern,
             flags,
-            args.dir,
-            args.mafter,
-            args.cafter,
+            PoolFilter.from_args(args),
             output_mode=output_mode,
             emit_metadata=not args.no_metadata,
-            provider_filter=args.provider,
         )
     elif len(sys.argv) > 1 and sys.argv[1] == "rename":
         # Parse rename arguments
@@ -573,12 +548,12 @@ Commands:
             default=None,
             help="Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
         )
-        parser.add_argument(
-            "-p",
-            "--provider",
-            choices=["claude", "pi", "codex"],
-            default=None,
-            help="Restrict recent-index resolution to a provider when input is -1, -2, ...",
+        add_pool_filter_args(
+            parser,
+            provider_help="Restrict recent-index resolution to a provider when input is -1, -2, ...",
+            dir_help="Restrict recent-index resolution to sessions whose cwd is under this directory",
+            mafter_help="Restrict recent-index resolution to sessions modified after DATE",
+            cafter_help="Restrict recent-index resolution to sessions created after DATE",
         )
         parser.add_argument(
             "-a", "--agents", action="store_true", help="Include agent messages"
@@ -668,15 +643,15 @@ Commands:
             args.paging = False
             args.color = "never"
 
-        provider_filter = args.provider
-        if provider_filter is not None and not (
+        pool_filter = PoolFilter.from_args(args)
+        if not pool_filter.is_empty() and not (
             args.input is not None and is_single_negative_index(args.input)
         ):
             print_warning(
-                "Warning: `--provider` only applies when parse input is a recent index "
-                "like `-1`; ignoring it."
+                "Warning: pool filters (`--provider`, `--dir`, `--mafter`, `--cafter`) "
+                "only apply when parse input is a recent index like `-1`; ignoring them."
             )
-            provider_filter = None
+            pool_filter = PoolFilter()
 
         _normalize_parse_visibility_args(args)
         try:
@@ -694,6 +669,6 @@ Commands:
             output_file=args.out,
             output_format=output_format,
             emit_metadata=emit_metadata,
-            provider_filter=provider_filter,
+            pool_filter=pool_filter,
             output_mode=output_mode,
         )

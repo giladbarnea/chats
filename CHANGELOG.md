@@ -3,6 +3,19 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-25] Share session-pool filters across parse and search
+
+### Added
+
+- Default parse mode now accepts `-d, --dir`, `-ma, --mafter`, and `-ca, --cafter` for recent negative selectors, mirroring `ccc search`. So `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd is under `~/dev/proj`.
+- New `PoolFilter` declarative bundle (provider/dir/mafter/cafter) shared by both subcommands; `add_pool_filter_args` installs the same flag group on either parser.
+
+### Changed
+
+- The pre-existing parse `--provider` ignore-with-warning behavior now generalizes to any pool filter — when parse input is not a recent index, the CLI warns and ignores all four flags together.
+- Search no longer defines its own `-d / -ma / -ca / -p` block; it composes the same `add_pool_filter_args` group, eliminating duplication.
+
+---
 ## [2026-04-23] Add parse-only metadata and id modes
 
 ### Added

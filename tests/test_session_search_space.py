@@ -12,6 +12,7 @@ import pytest
 from conversations import (
     ConversationFlags,
     MessageSelection,
+    PoolFilter,
     SearchOutputMode,
     SessionPool,
     cmd_parse,
@@ -313,12 +314,12 @@ def test_cmd_parse_provider_filter_limits_recent_negative_index_resolution(
         output_file=None,
         output_format="xml",
         emit_metadata=True,
-        provider_filter="claude",
+        pool_filter=PoolFilter(provider="claude"),
     )
 
     captured = capsys.readouterr()
     assert "history_path: ~/.claude/projects/demo-project/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jsonl" in captured.out, (
-        "Expected provider_filter='claude' to make parse resolve '-1' against "
+        "Expected provider='claude' filter to make parse resolve '-1' against "
         f"only Claude sessions. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "claude assistant response" in captured.out, (

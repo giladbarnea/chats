@@ -169,10 +169,8 @@ TIME   ACTOR                    ACTION                                         T
 │      argparse                 Parses: pattern, -l, -ll, -d, -ma,        ──► args namespace
 │                               -ca, -T, -t, -a, -A, -s, --color, etc.
 │
-├───►  main()                   Builds ConversationFlags                   ──► flags
-│      main()                   cmd_search(pattern, flags, list, ...)      ──► commands.py
-│
-├───►  cmd_search               parse_date_filter(mafter), (cafter)        ──► datetime | None
+├───►  main()                   Builds ConversationFlags + PoolFilter      ──► flags, pool_filter
+│      main()                   cmd_search(pattern, flags, pool_filter, ...) ──► commands.py
 │
 ├───►  cmd_search               re.compile(pattern, IGNORECASE|...)        ──► regex
 │                               Falls back to re.escape on invalid regex
@@ -180,25 +178,24 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_search               SessionPool.discover(include_sidechains=   ──► pool
 │                               flags.show_agents)
-│      cmd_search               Route search files through pool.by_provider
-│                               or pool.files
+│      cmd_search               pool_filter.candidate_files(pool)          ──► provider-narrowed files
 │
 ├───►  cmd_search               For each session file:
 │      │                        ├── content = path.read_text()
 │      │                        ├── _search_candidate_matches(content, ...)
 │      │                        │   └── Cheap skip for plain-literal misses
-│      │                        ├── _search_conversation_content(path, ...)
+│      │                        ├── _search_conversation_content(path, ..., pool_filter)
 │      │                        │   ├── SessionScan.from_content()
 │      │                        │   │   ├── detect_format()
 │      │                        │   │   ├── decode_jsonl_entries()
 │      │                        │   │   ├── extract_*_from_entries()
 │      │                        │   │   └── parse_jsonl_entries() or raw parse
-│      │                        │   ├── Apply dir_filter using scan.cwd
+│      │                        │   ├── pool_filter.passes_cwd(scan.cwd)
 │      │                        │   ├── regex.search() summaries/titles
 │      │                        │   ├── _build_tool_id_map(messages)
 │      │                        │   └── regex.search(render_message_inner_xml(msg))
 │      │                        ├── _load_conversation_metadata(path)
-│      │                        ├── _passes_date_filters(meta, mafter, cafter)
+│      │                        ├── pool_filter.passes_metadata(meta)
 │      │                        └── Build SearchHit
 │
 ├───►  cmd_search               sort_by_modified(hits)                     ──► ordered SearchHit list
@@ -620,15 +617,17 @@ cli.py:main()
 │
 cmd_parse(
   flags, input_arg, slice_str, output_file, output_format,
-  emit_metadata, provider_filter, only_metadata, only_id
+  emit_metadata, pool_filter, output_mode
 )
-├── _resolve_input_content(input_arg, provider_filter)
-│   ├── _try_resolve_conversation_file(identifier, provider_filter)
+├── _resolve_input_content(input_arg, pool_filter)
+│   ├── _try_resolve_conversation_file(identifier, pool_filter)
 │   │   ├── Path(identifier).exists()
 │   │   ├── SessionPool.discover() / SessionPool.from_files()
 │   │   ├── is_single_negative_index(identifier)
-│   │   │   └── _resolve_recent_conversation_file(identifier, provider-scoped files)
+│   │   │   └── _resolve_recent_conversation_file(identifier, pool_filter.candidate_files(pool), pool_filter)
 │   │   │       ├── _build_conversation_metadata(files)
+│   │   │       ├── pool_filter.passes_metadata(meta) — date filters
+│   │   │       ├── pool_filter.narrow_for_index(eligible) — dir filter via cwd extract
 │   │   │       └── resolve_negative_index(identifier, ordered)
 │   │   ├── pool.resolve_exact_identifier(identifier)
 │   │   ├── UUID-like miss short-circuit
@@ -648,15 +647,14 @@ cmd_parse(
 ├── _load_conversation_metadata(input_file_path) / print_metadata(...)
 └── format_to_xml/json/raw(...) or render_messages_with_rich(...)
 
-cmd_search(pattern, flags, list_only, only_id, dir_filter, mafter, cafter)
-├── parse_date_filter(mafter) / parse_date_filter(cafter)
+cmd_search(pattern, flags, pool_filter, *, output_mode, emit_metadata)
 ├── re.compile(pattern) + literal_candidate
 ├── SessionPool.discover(include_sidechains=flags.show_agents)
-├── choose search_files via pool.by_provider[provider] or pool.files
-├── for each file → _search_hit_for_file(...)
+├── choose search_files via pool_filter.candidate_files(pool)
+├── for each file → _search_hit_for_file(..., pool_filter)
 │   ├── conv_file.read_text()
 │   ├── _search_candidate_matches(content, pattern_arg, literal_candidate, flags)
-│   ├── _search_conversation_content(conv_file, content, regex, flags, dir_filter)
+│   ├── _search_conversation_content(conv_file, content, regex, flags, pool_filter)
 │   │   ├── SessionScan.from_content(content, flags, source_path=conv_file)
 │   │   │   ├── detect_format()
 │   │   │   ├── decode_jsonl_entries()
@@ -664,12 +662,12 @@ cmd_search(pattern, flags, list_only, only_id, dir_filter, mafter, cafter)
 │   │   │   ├── extract_summaries_from_entries()
 │   │   │   ├── extract_custom_titles_from_entries()
 │   │   │   └── parse_jsonl_entries() / parse_raw_cli_transcript()
-│   │   ├── dir filter against scan.cwd
+│   │   ├── pool_filter.passes_cwd(scan.cwd)
 │   │   ├── regex.search(summary/title)
 │   │   ├── _build_tool_id_map(messages)
 │   │   └── regex.search(render_message_inner_xml(msg, ...))
 │   ├── _load_conversation_metadata(conv_file)
-│   └── _passes_date_filters(meta, mafter_dt, cafter_dt)
+│   └── pool_filter.passes_metadata(meta)
 ├── sort_by_modified(hits, modified_at=lambda hit: hit.metadata.mtime)
 └── display_search_result(...)
 
@@ -777,5 +775,5 @@ cli.py
 11. **Tool ID Map Lifecycle**: `_build_tool_id_map()` is deliberately called before parse-mode slicing so that a surviving `tool_result` can still resolve the display name of a sliced-out `tool_use`.
 12. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based merge of Claude sidechains into the main timeline. It infers placement from `Task` dispatch timing rather than a strict relational join.
 13. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
-14. **Parse Provider Filter Scope**: parse-mode `-p/--provider` narrows only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay provider-neutral; the CLI warns when the flag would otherwise be ignored.
+14. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
 15. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.

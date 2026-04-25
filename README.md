@@ -47,7 +47,7 @@ Convert conversation files to XML-tagged markdown.
 5. Stdin: `cat file.jsonl | ccc`
 
 Negative recent indices use the same global modified-time ordering as `ccc search` across Claude, PI, and Codex sessions: oldest first, newest last, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
-Use `-p, --provider claude|pi|codex` with a negative recent index to restrict that recency lookup to one provider, for example `ccc -p codex -1`. Provider filtering applies only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores the flag.
+The same session-pool filters used by `ccc search` also narrow the recent-index lookup: `-p, --provider claude|pi|codex`, `-d, --dir DIR`, `-ma, --mafter DATE`, and `-ca, --cafter DATE`. For example, `ccc -p codex -1` resolves the newest Codex session, and `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd is under `~/dev/proj`. These filters apply only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores them.
 Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass.
 
 Conversations can have multiple summary entries (prepended as conversation evolves), each with a unique `leafUuid` tracking the conversation endpoint. Summary matching searches all summaries in all files.
@@ -97,6 +97,9 @@ Automatically detects input format by examining **first non-empty line only** (d
 -ll, --only-id       # Show only the resolved session ID (implies --color never and --no-paging)
 -p, --provider PROVIDER
                     # Restrict recent-index lookup to claude, pi, or codex
+-d, --dir DIR        # Restrict recent-index lookup to sessions whose cwd is under DIR
+-ma, --mafter DATE   # Restrict recent-index lookup to sessions modified after DATE
+-ca, --cafter DATE   # Restrict recent-index lookup to sessions created after DATE
 -T, --thinking       # Include thinking tokens
 --only-user          # Show only regular user messages
 --only-assistant     # Show only regular assistant messages

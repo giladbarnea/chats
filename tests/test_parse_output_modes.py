@@ -68,7 +68,7 @@ def test_parse_cli_only_id_forces_plain_output(monkeypatch) -> None:
         *,
         output_format="xml",
         emit_metadata=True,
-        provider_filter=None,
+        pool_filter=None,
         output_mode=ParseOutputMode.FULL,
     ) -> None:
         captured["flags"] = flags
@@ -115,7 +115,7 @@ def test_parse_cli_only_metadata_reaches_cmd_parse(monkeypatch) -> None:
         *,
         output_format="xml",
         emit_metadata=True,
-        provider_filter=None,
+        pool_filter=None,
         output_mode=ParseOutputMode.FULL,
     ) -> None:
         captured["input_arg"] = input_arg
