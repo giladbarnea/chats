@@ -496,7 +496,7 @@ def test_codex_exec_command_input_renders_through_tool_schema(
 
     captured = capsys.readouterr()
     assert (
-        '<tool-input name="Bash" id="call" '
+        '<tool-input name="Bash" id="exec" '
         'workdir="/tmp/codex-project" yield_time_ms="1000" max_output_tokens="12000">'
         in captured.out
     ), (
@@ -591,7 +591,7 @@ def test_codex_apply_patch_input_aliases_to_patch_and_renders_pretty(
     )
 
     captured = capsys.readouterr()
-    assert '<tool-input name="Patch" id="call">' in captured.out, (
+    assert '<tool-input name="Patch" id="patc">' in captured.out, (
         "Expected Codex apply_patch input to render as canonical Patch. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

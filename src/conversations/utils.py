@@ -74,4 +74,4 @@ def shorten_tool_use_id(tool_use_id: str | None) -> str | None:
     """Normalize tool use IDs to their short printable form."""
     if not tool_use_id:
         return None
-    return tool_use_id.removeprefix("toolu_")[:4]
+    return tool_use_id.removeprefix("toolu_").removeprefix("call_")[:4]
