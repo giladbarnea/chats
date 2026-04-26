@@ -167,7 +167,7 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  main()                   Detects sys.argv[1] == "search"            ──► argparse (search parser)
 │      argparse                 Parses: pattern, -l, -ll, -d, -ma,        ──► args namespace
-│                               -ca, -T, -t, -a, -A, -s, --color, etc.
+│                               -ca, -f, -T, -t, -a, -A, -s, --color, etc.
 │
 ├───►  main()                   Builds ConversationFlags + PoolFilter      ──► flags, pool_filter
 │      main()                   cmd_search(pattern, flags, pool_filter, ...) ──► commands.py
@@ -204,7 +204,8 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        ├── [--only-id]: print session ID only
 │      │                        ├── print_metadata() (YAML frontmatter)
 │      │                        ├── [--list]: stop after metadata
-│      │                        └── render_messages_with_rich() or format_to_xml()
+│      │                        ├── default: render matching messages
+│      │                        └── [--full]: render all visible messages
 │
 └───►  cmd_search               sys.exit(0 if found_any else 1)
 ```
@@ -670,6 +671,10 @@ cmd_search(pattern, flags, pool_filter, *, output_mode, emit_metadata)
 │   └── pool_filter.passes_metadata(meta)
 ├── sort_by_modified(hits, modified_at=lambda hit: hit.metadata.mtime)
 └── display_search_result(...)
+    ├── output_mode=ONLY_ID → print display session id only
+    ├── output_mode=LIST → print metadata only
+    ├── output_mode=MATCHES → render hit.matches
+    └── output_mode=FULL → render hit.messages
 
 cmd_fork(session_id, flags)
 ├── resolve_conversation_file(session_id)
@@ -770,10 +775,11 @@ cli.py
 6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled; it discovers more files by including Claude sidechain sessions in the `SessionPool`.
 7. **Candidate Pass Is an Optimization, Not New Semantics**: plain-literal queries first go through `_search_candidate_matches()`, but every surviving file still gets the normal rendered-content confirmation pass. Render-dependent patterns bypass the candidate shortcut entirely.
 8. **Search Metadata Is Lazy**: `_load_conversation_metadata()` is paid only after a file has a content hit. Date filters still apply, but only to candidate hits rather than the entire search universe up front.
-9. **Optional Metadata Stays Sparse**: provider-owned metadata extractors may populate optional fields like `forked_from`, but `print_metadata()` omits absent values instead of rendering null-like placeholders.
-10. **Metadata Message Counts After Slicing**: parse-mode metadata reports `len(messages)` after slice application, not the original conversation length.
-11. **Tool ID Map Lifecycle**: `_build_tool_id_map()` is deliberately called before parse-mode slicing so that a surviving `tool_result` can still resolve the display name of a sliced-out `tool_use`.
-12. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based merge of Claude sidechains into the main timeline. It infers placement from `Task` dispatch timing rather than a strict relational join.
-13. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
-14. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
-15. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.
+9. **Search Output Mode Separates Match Semantics From Display Breadth**: `SessionScan` and regex confirmation always determine the matching conversation first. `SearchOutputMode.MATCHES` renders only `hit.matches` (the default), while `SearchOutputMode.FULL` renders `hit.messages`, including summary/custom-title-only hits.
+10. **Optional Metadata Stays Sparse**: provider-owned metadata extractors may populate optional fields like `forked_from`, but `print_metadata()` omits absent values instead of rendering null-like placeholders.
+11. **Metadata Message Counts After Slicing**: parse-mode metadata reports `len(messages)` after slice application, not the original conversation length.
+12. **Tool ID Map Lifecycle**: `_build_tool_id_map()` is deliberately called before parse-mode slicing so that a surviving `tool_result` can still resolve the display name of a sliced-out `tool_use`.
+13. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based merge of Claude sidechains into the main timeline. It infers placement from `Task` dispatch timing rather than a strict relational join.
+14. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
+15. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
+16. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.

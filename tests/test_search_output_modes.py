@@ -60,3 +60,134 @@ def test_cmd_search_only_id_mode_prints_plain_session_id(
         "Expected ONLY_ID search mode to suppress metadata output. "
         f"Got stdout:\n{captured.out}"
     )
+
+
+def test_cmd_search_full_mode_prints_entire_matching_conversation(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Full search output should render every visible message from a matching session."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".claude" / "projects" / "proj" / "full-search.jsonl"
+    session_path.parent.mkdir(parents=True, exist_ok=True)
+    session_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "type": "user",
+                        "timestamp": "2025-01-01T00:00:00Z",
+                        "cwd": "/tmp/search-full-mode",
+                        "message": {
+                            "role": "user",
+                            "content": "context that did not match directly",
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "type": "assistant",
+                        "timestamp": "2025-01-01T00:00:01Z",
+                        "cwd": "/tmp/search-full-mode",
+                        "message": {
+                            "role": "assistant",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "answer with unique-full-mode-needle",
+                                }
+                            ],
+                        },
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "unique-full-mode-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.FULL,
+            emit_metadata=True,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected FULL search mode to exit successfully when a session matches. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "context that did not match directly" in captured.out, (
+        "Expected FULL search mode to render nonmatching messages from the same "
+        f"matching conversation. Got stdout:\n{captured.out}"
+    )
+    assert "answer with unique-full-mode-needle" in captured.out, (
+        "Expected FULL search mode to keep rendering the matched message. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+def test_cmd_search_full_mode_prints_conversation_for_summary_match(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A summary-only match is still a matching conversation, so full mode renders it."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".claude" / "projects" / "proj" / "summary-full.jsonl"
+    session_path.parent.mkdir(parents=True, exist_ok=True)
+    session_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "type": "summary",
+                        "summary": "summary-only-full-mode-needle",
+                        "leafUuid": "summary-full-leaf",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "type": "user",
+                        "timestamp": "2025-01-01T00:00:00Z",
+                        "cwd": "/tmp/search-full-mode",
+                        "message": {
+                            "role": "user",
+                            "content": "message body without the summary token",
+                        },
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "summary-only-full-mode-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.FULL,
+            emit_metadata=True,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected FULL search mode to succeed for a summary-only match. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "matched_summary" in captured.out, (
+        "Expected summary matches to remain visible in metadata. "
+        f"Got stdout:\n{captured.out}"
+    )
+    assert "message body without the summary token" in captured.out, (
+        "Expected FULL search mode to render the conversation body even when "
+        f"only the summary matched. Got stdout:\n{captured.out}"
+    )

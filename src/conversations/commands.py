@@ -392,15 +392,17 @@ def display_search_result(
     if output_mode == SearchOutputMode.LIST:
         return
 
-    if not matches:
+    display_messages = messages if output_mode == SearchOutputMode.FULL else matches
+
+    if not display_messages:
         return
 
     tool_id_map = _build_tool_id_map(messages)
 
     if flags.color:
-        render_messages_with_rich(matches, flags, tool_id_map)
+        render_messages_with_rich(display_messages, flags, tool_id_map)
     else:
-        print(format_to_xml(matches, flags, tool_id_map))
+        print(format_to_xml(display_messages, flags, tool_id_map))
         print()
 
 
@@ -409,7 +411,7 @@ def cmd_search(
     flags: ConversationFlags,
     pool_filter: PoolFilter | None = None,
     *,
-    output_mode: SearchOutputMode = SearchOutputMode.FULL,
+    output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
     emit_metadata: bool = True,
 ) -> None:
     """Handle search subcommand."""

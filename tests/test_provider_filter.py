@@ -188,7 +188,7 @@ def _make_fake_cmd_search(captured: dict):
         flags,
         pool_filter=None,
         *,
-        output_mode=SearchOutputMode.FULL,
+        output_mode=SearchOutputMode.MATCHES,
         emit_metadata=True,
     ):
         captured["pool_filter"] = pool_filter

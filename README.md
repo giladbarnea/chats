@@ -193,6 +193,7 @@ ccc search [OPTIONS] <pattern>
 **Options:**
 - `-l`: List mode - show only file paths and metadata
 - `-ll`, `--only-id`: Show only matching session IDs (implies `--color never` and `--no-paging`)
+- `-f`, `--full`: Show entire matching conversations instead of only matching messages
 - `-p, --provider claude|pi|codex`: Restrict search to sessions from a specific provider
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE
@@ -209,6 +210,7 @@ ccc search "error message"              # Case-insensitive search
 ccc search "implement.*feature"         # Regex pattern
 ccc search -l "bug fix"                 # List matching files only
 ccc search -ll "bug fix"                # Print only matching session IDs
+ccc search -f "bug fix"                 # Print full conversations that match
 ccc search -d ~/dev/project "feature"   # Filter by directory
 ccc search --mafter=1d "TODO"           # Modified in last day
 ccc search --mafter=2024-12-01 "deploy" # Modified since Dec 1
@@ -220,6 +222,7 @@ ccc search -p codex "TODO"              # Search only Codex sessions
 **Search Features:**
 - Case-insensitive regex (multiline, DOTALL)
 - Searches visible rendered message content, conversation summaries, and custom titles
+- By default renders only matching messages; `-f, --full` renders every visible message from each matching conversation
 - Visibility flags affect search semantics: hidden thinking/tools/agents/plans do not count as matches
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)

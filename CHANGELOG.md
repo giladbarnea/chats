@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-25] Add full-conversation search output
+
+### Added
+
+- `ccc search -f/--full` now renders every visible message from each matching conversation instead of only the messages that directly matched. Summary-only and custom-title-only hits also render the full visible conversation body in this mode.
+
+### Changed
+
+- Search output modes now distinguish the default matching-message display (`MATCHES`) from full-conversation display (`FULL`), keeping search confirmation separate from result rendering breadth.
+
+---
 ## [2026-04-25] Share session-pool filters across parse and search
 
 ### Added

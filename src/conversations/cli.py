@@ -178,7 +178,9 @@ def _resolve_search_output_mode(args: argparse.Namespace) -> SearchOutputMode:
         return SearchOutputMode.ONLY_ID
     if args.list:
         return SearchOutputMode.LIST
-    return SearchOutputMode.FULL
+    if args.full:
+        return SearchOutputMode.FULL
+    return SearchOutputMode.MATCHES
 
 
 def _looks_like_slice(candidate: str) -> bool:
@@ -283,6 +285,12 @@ def main():
             "--only-id",
             action="store_true",
             help="Show only matching session IDs (implies --color never and --no-paging)",
+        )
+        parser.add_argument(
+            "-f",
+            "--full",
+            action="store_true",
+            help="Show full matching conversations instead of only matching messages",
         )
         add_pool_filter_args(
             parser,

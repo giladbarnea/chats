@@ -28,6 +28,7 @@ class ParseOutputMode(StrEnum):
 class SearchOutputMode(StrEnum):
     """Search result output modes."""
 
+    MATCHES = "matches"
     FULL = "full"
     LIST = "list"
     ONLY_ID = "only-id"
