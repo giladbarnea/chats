@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-26] Pad inline code in Rich output
+
+### Changed
+
+- Inline code spans (`` `like this` ``) now render with 1 space of padding on each side when using `--color=always`. The padding is styled with the same `markdown.code` background, so it reads as a visual margin rather than extra text. Implemented via `PaddedInlineCodeMarkdown`, a minimal `Markdown` subclass that mutates `code_inline` token content after parsing — no Rich internals copied.
+
+---
 ## [2026-04-25] Add full-conversation search output
 
 ### Added

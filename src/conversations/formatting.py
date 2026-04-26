@@ -6,11 +6,25 @@ from datetime import datetime
 from pathlib import Path
 
 from rich.console import Group
-from rich.markdown import Markdown
+from rich.markdown import Markdown as _Markdown
 from rich.padding import Padding
 from rich.text import Text
 
 from .console import get_console
+
+
+class PaddedInlineCodeMarkdown(_Markdown):
+    """Markdown subclass that renders inline code with 1-space padding on each side."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        for token in self.parsed:
+            for child in token.children or []:
+                if child.type == "code_inline" and child.content:
+                    child.content = f" {child.content} "
+
+
+Markdown = PaddedInlineCodeMarkdown
 from .model import ConversationFlags, Message, Provider
 from .parsing import get_display_session_id
 from .parts import MessagePartKind
