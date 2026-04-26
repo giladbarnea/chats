@@ -585,3 +585,90 @@ def test_cmd_rename_makes_title_visible_in_pi_parse_output(
         "Expected the custom title to render through the standard session-rename XML tag. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
+
+
+def test_cmd_parse_treats_native_pi_session_name_as_custom_title(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Native PI session_info names should flow through the shared custom-title surface."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    native_title = "research session name aspect in conversations"
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-04-26T09-34-26-042Z_019dc923-e4f9-738a-af74-ed184e7a4adf.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "019dc923-e4f9-738a-af74-ed184e7a4adf",
+                "timestamp": "2026-04-26T09:34:26.042Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "019dc923-e4f9-738a-af74-ed184e7a4adf",
+                "timestamp": "2026-04-26T09:35:47.187Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "Show the native PI session name."}],
+                    "timestamp": 1775305547146,
+                },
+            },
+            {
+                "type": "session_info",
+                "id": "c7b92652",
+                "parentId": "51820569",
+                "timestamp": "2026-04-26T09:46:06.122Z",
+                "name": native_title,
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-04-26T09:46:08.467Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Native PI rename acknowledged."}],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                    "stopReason": "stop",
+                    "timestamp": 1775305547188,
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+    )
+
+    captured = capsys.readouterr()
+    assert f'custom_title: "{native_title}"' in captured.out, (
+        "Expected native PI session names to populate the shared metadata custom_title field. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert native_title in captured.out, (
+        "Expected native PI session names to remain visible in parse output. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<session-rename" in captured.out, (
+        "Expected native PI session names to render through the standard session-rename XML tag. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )

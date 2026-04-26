@@ -239,19 +239,98 @@ def extract_summaries_from_jsonl(file_path: Path) -> list[str]:
     return _extract_field_from_jsonl(file_path, "summary", "summary")
 
 
+def _extract_custom_title_from_entry(entry: dict) -> str | None:
+    """Return the shared custom-title abstraction from one provider-native entry."""
+    raw_title: object | None = None
+
+    if entry.get("type") == "custom-title":
+        raw_title = entry.get("customTitle")
+    elif entry.get("type") == "session_info":
+        raw_title = entry.get("name")
+    elif entry.get("type") == "event_msg":
+        payload = entry.get("payload", {})
+        if payload.get("type") == "thread_name_updated":
+            raw_title = payload.get("thread_name")
+
+    if not isinstance(raw_title, str):
+        return None
+
+    custom_title = raw_title.strip()
+    return custom_title or None
+
+
 def extract_custom_titles_from_content(content: str) -> list[str]:
-    """Extract all custom-title fields from JSONL content string."""
-    return _extract_field_from_content(content, "custom-title", "customTitle")
+    """Extract all shared custom-title values from JSONL content string."""
+    values: list[str] = []
+
+    for line in content.split("\n"):
+        line = line.strip()
+        if not line or not line.startswith("{"):
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        if custom_title := _extract_custom_title_from_entry(entry):
+            values.append(custom_title)
+
+    if values:
+        return values
+
+    buffer = ""
+    brace_count = 0
+    for line in content.split("\n"):
+        buffer += line
+        brace_count += line.count("{") - line.count("}")
+
+        if brace_count != 0 or not buffer.strip():
+            continue
+
+        try:
+            entry = json.loads(buffer)
+        except json.JSONDecodeError:
+            buffer = ""
+            continue
+
+        if isinstance(entry, dict) and (
+            custom_title := _extract_custom_title_from_entry(entry)
+        ):
+            values.append(custom_title)
+        buffer = ""
+
+    return values
 
 
 def extract_custom_titles_from_entries(entries: list[dict]) -> list[str]:
-    """Extract all custom-title fields from parsed JSONL entries."""
-    return _extract_field_from_entries(entries, "custom-title", "customTitle")
+    """Extract all shared custom-title values from parsed JSONL entries."""
+    values: list[str] = []
+    for entry in entries:
+        if custom_title := _extract_custom_title_from_entry(entry):
+            values.append(custom_title)
+    return values
 
 
 def extract_custom_titles_from_jsonl(file_path: Path) -> list[str]:
-    """Extract all custom-title fields from a jsonl conversation file."""
-    return _extract_field_from_jsonl(file_path, "custom-title", "customTitle")
+    """Extract all shared custom-title values from a jsonl conversation file."""
+    values: list[str] = []
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.startswith("{"):
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                if custom_title := _extract_custom_title_from_entry(entry):
+                    values.append(custom_title)
+        return values
+    except OSError:
+        return []
 
 
 def detect_format(content: str) -> str:
@@ -432,8 +511,8 @@ def _parse_default_jsonl_entries(
             msg = _parse_assistant_entry(entry, index, flags)
         elif entry_type == "system":
             msg = _parse_system_entry(entry, index, flags)
-        elif entry_type == "custom-title" and flags.show_assistant_messages:
-            msg = _parse_custom_title_entry(entry, index)
+        elif flags.show_assistant_messages and (msg := _parse_custom_title_entry(entry, index)):
+            pass
         else:
             msg = None
 
@@ -457,8 +536,8 @@ def _parse_pi_jsonl_entries(entries: list[dict], flags: ConversationFlags) -> li
     for entry in entries:
         entry_type = entry.get("type")
 
-        if entry_type == "custom-title" and flags.show_assistant_messages:
-            msg = _parse_custom_title_entry(entry, index)
+        if flags.show_assistant_messages and (msg := _parse_custom_title_entry(entry, index)):
+            pass
         elif entry_type == "message":
             msg = _parse_pi_message_entry(entry, index, flags)
         else:
@@ -503,12 +582,10 @@ def _parse_codex_jsonl_entries(
     for entry in entries:
         entry_type = entry.get("type")
 
-        if entry_type == "custom-title" and flags.show_assistant_messages:
+        if flags.show_assistant_messages and (msg := _parse_custom_title_entry(entry, index)):
             flush_assistant()
-            msg = _parse_custom_title_entry(entry, index)
-            if msg and msg.has_content():
-                messages.append(msg)
-                index += 1
+            messages.append(msg)
+            index += 1
             continue
 
         if entry_type != "response_item":
@@ -1234,8 +1311,8 @@ def _extract_cwd_from_codex_entry(entry: dict) -> str | None:
 
 
 def _parse_custom_title_entry(entry: dict, index: int) -> Message | None:
-    """Parse a custom-title JSONL entry."""
-    if custom_title := entry.get("customTitle", "").strip():
+    """Parse any provider-native session-rename entry into the shared message model."""
+    if custom_title := _extract_custom_title_from_entry(entry):
         return Message(role="session-rename", index=index, text=custom_title)
     return None
 

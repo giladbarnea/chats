@@ -924,3 +924,95 @@ def test_cmd_rename_makes_title_visible_in_codex_parse_output(
         "Expected the custom title to render through the standard session-rename XML tag. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
+
+
+def test_cmd_parse_treats_native_codex_thread_name_as_custom_title(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Native Codex thread_name_updated events should flow through the shared custom-title surface."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    native_title = (
+        "write thoughts/26-04-07-context-menu-research/plans/"
+        "5-add-real-layer-focus-stack-or-baseui-dialog-menu-primitive.plan.md"
+    )
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "04"
+        / "10"
+        / "rollout-2026-04-10T10-45-00-01961abc-def0-7123-89ab-codexrename003.jsonl"
+    )
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-04-10T07:45:00.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": "01961abc-def0-7123-89ab-codexrename003",
+                    "timestamp": "2026-04-10T07:45:00.000Z",
+                    "cwd": "/tmp/codex-project",
+                    "originator": "codex_cli_rs",
+                    "cli_version": "0.99.0",
+                    "source": "cli",
+                    "model_provider": "openai",
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:45:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "Show the native thread name."}],
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:45:02.000Z",
+                "type": "event_msg",
+                "payload": {
+                    "type": "thread_name_updated",
+                    "thread_id": "01961abc-def0-7123-89ab-codexrename003",
+                    "thread_name": native_title,
+                },
+            },
+            {
+                "timestamp": "2026-04-10T07:45:03.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "Native rename acknowledged."}],
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+    )
+
+    captured = capsys.readouterr()
+    assert f'custom_title: "{native_title}"' in captured.out, (
+        "Expected native Codex thread names to populate the shared metadata custom_title field. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert native_title in captured.out, (
+        "Expected native Codex thread names to remain visible in parse output. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<session-rename" in captured.out, (
+        "Expected native Codex thread names to render through the standard session-rename XML tag. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )

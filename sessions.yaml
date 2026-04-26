@@ -28,6 +28,17 @@
 # Example sessions.yaml file:
 sessions:
   # Apr 26 26
+  019dc927-2c08-73e1-8c68-88e7bc74a26e:
+    description:
+      - "Investigated why Codex and PI session names were not flowing through `ccc` like Claude custom titles, then aligned both providers with the shared session-title abstraction."
+      - "Confirmed the parity path with focused regression tests, then updated the project docs and catalog after the full suite stayed green."
+    directories: [~/dev/conversations]
+    keywords: [session-names, codex, pi]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 9
+    edited_files: [src/conversations/parsing.py, tests/test_codex_sessions.py, tests/test_pi_sessions.py, README.md, ARCHITECTURE.md, CHANGELOG.md, sessions.yaml]
+    branch: main
+
   640c8bfb-0ffb-4f37-ab33-442419f8b7c5:
     description: "Researched whether Rich's theme system supports inline code padding (confirmed: no — `Style` has no spacing concept), then implemented `PaddedInlineCodeMarkdown`, a minimal `Markdown` subclass that injects 1-space padding into `code_inline` token content post-parse. TDD with 4 behavioral tests; 293 tests passing."
     directories: [~/dev/conversations]

@@ -324,6 +324,11 @@ ccc rename <session> "New Title"
 
 This mutates the conversation file by appending `custom-title` and `agent-name` entries and updates the global `history.jsonl` file.
 
+Native provider session-name events also surface through this same abstraction:
+- Claude: `custom-title`
+- Codex: `event_msg.payload.type == "thread_name_updated"`
+- PI: `session_info.name`
+
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`
 - **Recent negative index**: `-1`, `-2`, ... across the unified supported-session space
@@ -399,10 +404,12 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - `leafUuid`: unique identifier for conversation endpoint (often doesn't match any message UUID)
    - Summary text used for conversation matching
 
-6. **Custom title entries** (`type: "custom-title"`)
+6. **Session title entries** (provider-normalized to the shared custom-title abstraction)
    - Rendered as `<session-rename>` with header `# Renamed Session`
-   - `customTitle`: The renamed session title text
-   - Searchable in search mode
+   - Claude uses `type: "custom-title"` with `customTitle`
+   - Codex uses `type: "event_msg"` with `payload.type: "thread_name_updated"` and `payload.thread_name`
+   - PI uses `type: "session_info"` with `name`
+   - Searchable in search mode and emitted as `custom_title:` in metadata frontmatter
 
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)

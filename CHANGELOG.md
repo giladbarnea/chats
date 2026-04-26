@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-26] Normalize native PI/Codex session names to custom titles
+
+### Changed
+
+- Codex `event_msg` rename events with `payload.type == "thread_name_updated"` now flow through the same custom-title/session-rename abstraction as Claude `custom-title` entries.
+- PI `session_info.name` now flows through that same abstraction too, so both providers emit `custom_title:` in metadata frontmatter, render `<session-rename>` blocks in parse output, and participate in search/catalog/session-scan title extraction without provider-specific downstream branching.
+
+---
 ## [2026-04-26] Pad inline code in Rich output
 
 ### Changed
