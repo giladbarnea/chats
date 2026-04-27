@@ -488,8 +488,8 @@ def test_cmd_parse_emits_metadata_for_pi_session_path(
     )
 
     captured = capsys.readouterr()
-    assert "session_id: 2026-04-04T12-24-33-963Z_session-metadata" in captured.out, (
-        "Expected PI session metadata to include the standard session_id field. "
+    assert "session_id: session-789" in captured.out, (
+        "Expected PI session metadata to include the native PI session id, not the timestamp-prefixed filename stem. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "directory: /tmp/project" in captured.out, (

@@ -805,9 +805,10 @@ def _extract_codex_forked_from_id(session_file: Path) -> str | None:
 # NOTE: Treat the current approach as a temporary smell marker, not as the desired long-term ownership boundary.
 def get_display_session_id(session_file: Path) -> str:
     """Return the user-facing session id for a session file."""
-    if _is_codex_jsonl_path(session_file):
-        return _extract_codex_session_id(session_file) or session_file.stem
-    return session_file.stem
+    adapter = _select_jsonl_session_adapter(session_file)
+    if adapter.name == "claude":
+        return session_file.stem
+    return adapter.extract_session_id(session_file) or session_file.stem
 
 
 def get_native_session_id(session_file: Path) -> str:
