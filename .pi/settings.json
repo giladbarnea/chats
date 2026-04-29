@@ -1,0 +1,7 @@
+{
+  "skills": [
+    "-../.agents/skills/macos-terminal-screenshots/SKILL.md",
+    "-../.agents/skills/run-interactive/SKILL.md",
+    "-../.agents/skills/supabase-postgres-best-practices/SKILL.md"
+  ]
+}
