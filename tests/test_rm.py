@@ -322,7 +322,10 @@ class TestRmMissingFiles:
 
     def test_nonexistent_session_exits(self, temp_claude_home):
         """rm exits with error for non-existent session."""
-        with pytest.raises(SystemExit) as exc_info, patch("builtins.input", return_value="y"):
+        with (
+            pytest.raises(SystemExit) as exc_info,
+            patch("builtins.input", return_value="y"),
+        ):
             cmd_rm("nonexistent-session-uuid-12345", dry_run=False)
         assert exc_info.value.code == 1
 
