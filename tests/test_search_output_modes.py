@@ -191,3 +191,76 @@ def test_cmd_search_full_mode_prints_conversation_for_summary_match(
         "Expected FULL search mode to render the conversation body even when "
         f"only the summary matched. Got stdout:\n{captured.out}"
     )
+
+
+def test_cmd_search_lists_newest_match_first(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """List search should display newer matching sessions before older ones."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    older_path = home / ".claude" / "projects" / "proj" / "older.jsonl"
+    newer_path = home / ".claude" / "projects" / "proj" / "newer.jsonl"
+    older_path.parent.mkdir(parents=True, exist_ok=True)
+
+    older_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "type": "user",
+                        "timestamp": "2025-01-01T00:00:00Z",
+                        "cwd": "/tmp/search-order",
+                        "message": {
+                            "role": "user",
+                            "content": "shared-ordering-needle older",
+                        },
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    newer_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "type": "user",
+                        "timestamp": "2025-01-02T00:00:00Z",
+                        "cwd": "/tmp/search-order",
+                        "message": {
+                            "role": "user",
+                            "content": "shared-ordering-needle newer",
+                        },
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "shared-ordering-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected list search to succeed when both sessions match. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    newer_index = captured.out.index("history_path: ~/.claude/projects/proj/newer.jsonl")
+    older_index = captured.out.index("history_path: ~/.claude/projects/proj/older.jsonl")
+    assert newer_index < older_index, (
+        "Expected search results to be displayed newest-first. "
+        f"Got stdout:\n{captured.out}"
+    )

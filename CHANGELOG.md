@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-29] Flip search to newest-first ordering
+
+### Changed
+
+- `ccc search` now scans candidate sessions newest first by filesystem mtime instead of walking the discovery pool in its implicit provider/lexical order.
+- Search results now display newest first by semantic conversation modified time, while recent negative selectors keep their existing `-1 == newest` behavior.
+- Added regression coverage for both result ordering and candidate scan ordering.
+
+---
 ## [2026-04-26] Normalize native PI/Codex session names to custom titles
 
 ### Changed

@@ -46,7 +46,7 @@ Convert conversation files to XML-tagged markdown.
 4. Summary text (case-insensitive prefix match): `"Extract PII"`
 5. Stdin: `cat file.jsonl | ccc`
 
-Negative recent indices use the same global modified-time ordering as `ccc search` across Claude, PI, and Codex sessions: oldest first, newest last, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
+Negative recent indices resolve across the unified Claude/PI/Codex session pool using oldest→newest modified-time ordering, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
 The same session-pool filters used by `ccc search` also narrow the recent-index lookup: `-p, --provider claude|pi|codex`, `-d, --dir DIR`, `-ma, --mafter DATE`, and `-ca, --cafter DATE`. For example, `ccc -p codex -1` resolves the newest Codex session, and `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd is under `~/dev/proj`. These filters apply only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores them.
 Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass.
 
@@ -227,7 +227,7 @@ ccc search -p codex "TODO"              # Search only Codex sessions
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)
 - Plain-literal queries get a cheap candidate prefilter before the normal rendered-content confirmation pass
-- Results sorted by modification time ascending across Claude, PI, and Codex sessions
+- Results displayed newest first across Claude, PI, and Codex sessions
 - Extracts working directory from conversation files
 - Full markdown rendering with syntax highlighting
 
@@ -441,7 +441,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 - `print_metadata()` - Unified metadata output to stderr
 - `parse_slice_notation()` - Convert slice strings to indices
 - `find_all_supported_session_files()` - Find all supported Claude, PI, and Codex session files
-- `sort_by_modified()` - Domainless oldest→newest ordering helper for recency-aware flows
+- `sort_by_modified()` / `sort_by_modified_descending()` - Shared modified-time ordering helpers for recency-aware flows
 - `extract_cwd_from_jsonl()` / `extract_cwd_from_entries()` - Extract working directory from JSONL
 - `cmd_search()` - Search with rich display
 - `cmd_rm()` - Remove session and all associated files

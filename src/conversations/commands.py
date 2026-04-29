@@ -29,7 +29,12 @@ from .model import (
     Provider,
     SearchOutputMode,
 )
-from .ordering import is_single_negative_index, resolve_negative_index, sort_by_modified
+from .ordering import (
+    is_single_negative_index,
+    resolve_negative_index,
+    sort_by_modified,
+    sort_by_modified_descending,
+)
 from .pool_filter import PoolFilter
 from .parsing import (
     detect_format,
@@ -430,9 +435,16 @@ def cmd_search(
         literal_candidate = pattern_arg.casefold()
 
     pool = SessionPool.discover(include_sidechains=flags.show_agents)
-    search_files = pool_filter.candidate_files(pool)
-    if not search_files:
+    candidate_files = pool_filter.candidate_files(pool)
+    if not candidate_files:
         sys.exit(1)
+
+    candidate_file_set = set(candidate_files)
+    search_files = [
+        session_file
+        for session_file in reversed(pool.stat_mtime_sorted)
+        if session_file in candidate_file_set
+    ]
 
     hits: list[SearchHit] = []
     for conv_file in search_files:
@@ -455,7 +467,10 @@ def cmd_search(
     if not hits:
         sys.exit(1)
 
-    ordered_hits = sort_by_modified(hits, modified_at=lambda hit: hit.metadata.mtime)
+    ordered_hits = sort_by_modified_descending(
+        hits,
+        modified_at=lambda hit: hit.metadata.mtime,
+    )
     pager_ctx = (
         nullcontext()
         if output_mode == SearchOutputMode.ONLY_ID or not flags.paging

@@ -198,7 +198,7 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        ├── pool_filter.passes_metadata(meta)
 │      │                        └── Build SearchHit
 │
-├───►  cmd_search               sort_by_modified(hits)                     ──► ordered SearchHit list
+├───►  cmd_search               sort_by_modified_descending(hits)          ──► ordered SearchHit list
 │
 ├───►  cmd_search               display_search_result() for each hit:
 │      │                        ├── [--only-id]: print session ID only
@@ -669,7 +669,7 @@ cmd_search(pattern, flags, pool_filter, *, output_mode, emit_metadata)
 │   │   └── regex.search(render_message_inner_xml(msg, ...))
 │   ├── _load_conversation_metadata(conv_file)
 │   └── pool_filter.passes_metadata(meta)
-├── sort_by_modified(hits, modified_at=lambda hit: hit.metadata.mtime)
+├── sort_by_modified_descending(hits, modified_at=lambda hit: hit.metadata.mtime)
 └── display_search_result(...)
     ├── output_mode=ONLY_ID → print display session id only
     ├── output_mode=LIST → print metadata only

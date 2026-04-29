@@ -140,3 +140,54 @@ def test_cmd_search_does_not_render_noncandidate_sessions(
         "Expected cmd_search not to XML-render messages from files whose raw "
         f"content cannot match the query. Got rendered texts: {rendered_texts!r}"
     )
+
+
+def test_cmd_search_scans_candidate_sessions_newest_first(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """Search should scan candidate sessions newest-first instead of discovery order."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    older_path = home / ".claude" / "projects" / "proj" / "a-older.jsonl"
+    newer_path = home / ".claude" / "projects" / "proj" / "z-newer.jsonl"
+    _write_session(older_path, "scan-order-shared-needle")
+    _write_session(newer_path, "scan-order-shared-needle")
+
+    import os
+
+    os.utime(older_path, (1_700_000_000, 1_700_000_000))
+    os.utime(newer_path, (1_700_001_000, 1_700_001_000))
+
+    scanned_paths: list[Path] = []
+
+    def search_hit_for_file(
+        conv_file: Path,
+        regex,
+        pattern_arg: str,
+        literal_candidate: str | None,
+        flags: ConversationFlags,
+        pool_filter,
+    ):
+        scanned_paths.append(conv_file)
+        return None
+
+    monkeypatch.setattr(commands, "_search_hit_for_file", search_hit_for_file)
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "scan-order-shared-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+        )
+
+    assert exc_info.value.code == 1, (
+        "Expected the patched search to exit with 1 because no fake hits were returned. "
+        f"Got exit code: {exc_info.value.code}"
+    )
+    assert scanned_paths == [newer_path, older_path], (
+        "Expected search to scan newer candidate sessions before older ones, even when "
+        f"the filenames would sort the other way. Got scan order: {scanned_paths!r}"
+    )
