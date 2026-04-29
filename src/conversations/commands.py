@@ -681,7 +681,10 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
 
     try:
         with open(conv_file, "a", encoding="utf-8") as handle:
-            handle.writelines(json.dumps(rename_entry, separators=(",", ":")) + "\n" for rename_entry in rename_entries)
+            handle.writelines(
+                json.dumps(rename_entry, separators=(",", ":")) + "\n"
+                for rename_entry in rename_entries
+            )
     except Exception as error:
         print_error(f"Error writing file: {error}")
         sys.exit(1)

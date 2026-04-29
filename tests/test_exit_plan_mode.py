@@ -9,6 +9,7 @@ Tests that:
 - Plans are hidden with --all --no-plans (--no-plans takes precedence)
 """
 
+import sys
 from pathlib import Path
 
 from conversations import (

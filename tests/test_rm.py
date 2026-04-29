@@ -17,6 +17,7 @@ The rm command removes a conversation session and all associated files:
 
 import json
 import shutil
+import sys
 from pathlib import Path
 from unittest.mock import patch
 

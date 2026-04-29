@@ -11,6 +11,9 @@ Each test verifies both the parse_slice_notation output AND the actual
 slicing behavior on a mock message list.
 """
 
+import sys
+from pathlib import Path
+
 from conversations import parse_slice_notation
 
 

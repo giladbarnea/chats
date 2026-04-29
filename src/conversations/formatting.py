@@ -11,6 +11,12 @@ from rich.padding import Padding
 from rich.text import Text
 
 from .console import get_console
+from .model import ConversationFlags, Message, Provider
+from .parsing import get_display_session_id
+from .parts import MessagePartKind
+from .registry import ContentBlockType
+from .tools import render_tool_rich, render_tool_xml
+from .utils import collapse_home
 
 
 class PaddedInlineCodeMarkdown(_Markdown):
@@ -25,12 +31,6 @@ class PaddedInlineCodeMarkdown(_Markdown):
 
 
 Markdown = PaddedInlineCodeMarkdown
-from .model import ConversationFlags, Message, Provider
-from .parsing import get_display_session_id
-from .parts import MessagePartKind
-from .registry import ContentBlockType
-from .tools import render_tool_rich, render_tool_xml
-from .utils import collapse_home
 
 _HEADER_BADGE_STYLE: dict[str, str] = {
     "user-message": "bold white on #3b82f6",

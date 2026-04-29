@@ -6,7 +6,9 @@ Tests date parsing for --mafter/--cafter search filters.
 Covers: ISO dates, ISO datetimes, relative formats, edge cases.
 """
 
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytest
 

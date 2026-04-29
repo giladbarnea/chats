@@ -13,6 +13,7 @@ import pytest
 from conversations import ConversationFlags, Message
 from conversations.parts import MessagePartKind
 from conversations.tool_filter import ToolFilter, parse_tool_spec
+from conversations.utils import truncate_middle
 
 # =============================================================================
 # Shared tool dicts
@@ -123,7 +124,11 @@ class TestParseToolSpec:
     def test_parse(self, spec, expected):
         tf = parse_tool_spec(spec)
         defaults = {
-            "name": None, "negate": False, "direction": None, "error_only": False, "short": False
+            "name": None,
+            "negate": False,
+            "direction": None,
+            "error_only": False,
+            "short": False,
         }
         for field, default in defaults.items():
             want = expected.get(field, default)
@@ -402,8 +407,6 @@ class TestPerToolShortening:
 # =============================================================================
 # truncate_middle: unit tests
 # =============================================================================
-
-from conversations.utils import truncate_middle
 
 
 class TestTruncateMiddle:

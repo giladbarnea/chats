@@ -904,12 +904,7 @@ def find_all_supported_session_files(*, include_sidechains: bool = True) -> list
 
 def _jsonl_timestamp_now() -> str:
     """Return a UTC timestamp string in the JSONL shape used by native sessions."""
-    return (
-        datetime
-        .now(UTC)
-        .isoformat(timespec="milliseconds")
-        .replace("+00:00", "Z")
-    )
+    return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def _require_last_entry_id(entries: list[dict], provider_name: str) -> str:
@@ -1240,7 +1235,14 @@ def _parse_pi_message_entry(
 
     content_items = message_data.get("content", [])
     text_blocks = _extract_text_blocks(content_items)
-    if role == "user" and text_blocks and flags.show_user_messages or role == "assistant" and text_blocks and flags.show_assistant_messages:
+    if (
+        role == "user"
+        and text_blocks
+        and flags.show_user_messages
+        or role == "assistant"
+        and text_blocks
+        and flags.show_assistant_messages
+    ):
         msg.text = "\n\n".join(text_blocks)
 
     if role == "assistant" and isinstance(content_items, list):
