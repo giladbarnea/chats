@@ -587,6 +587,86 @@ def test_cmd_rename_makes_title_visible_in_pi_parse_output(
     )
 
 
+def test_cmd_rename_appends_native_pi_session_info_entry(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """PI rename should append one native session_info entry chained to the previous entry."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-04-04T12-24-33-963Z_session-native-rename.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-native-rename",
+                "timestamp": "2026-04-04T12:24:33.963Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "session-native-rename",
+                "timestamp": "2026-04-04T12:25:48.467Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "pi assistant reply"}],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                    "stopReason": "stop",
+                    "timestamp": 1775305547188,
+                },
+            },
+        ],
+    )
+
+    cmd_rename(str(session_path), "Native PI Title")
+
+    entries = [
+        json.loads(line)
+        for line in session_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    rename_entry = entries[-1]
+    assert rename_entry.get("type") == "session_info", (
+        "Expected PI rename to append a native session_info entry. "
+        f"Got entry: {rename_entry}"
+    )
+    assert rename_entry.get("name") == "Native PI Title", (
+        "Expected PI rename to preserve the requested title in session_info.name. "
+        f"Got entry: {rename_entry}"
+    )
+    assert rename_entry.get("parentId") == "assistant-1", (
+        "Expected PI rename to chain off the previous entry id. "
+        f"Got entry: {rename_entry}"
+    )
+    assert isinstance(rename_entry.get("id"), str) and len(rename_entry["id"]) == 8, (
+        "Expected PI rename to synthesize an 8-character entry id. "
+        f"Got entry: {rename_entry}"
+    )
+    assert all(character in "0123456789abcdef" for character in rename_entry["id"]), (
+        "Expected PI rename ids to use lowercase hexadecimal characters. "
+        f"Got entry: {rename_entry}"
+    )
+    assert isinstance(rename_entry.get("timestamp"), str) and rename_entry["timestamp"].endswith("Z"), (
+        "Expected PI rename to stamp the native entry with a UTC JSONL timestamp. "
+        f"Got entry: {rename_entry}"
+    )
+    assert not (temp_home / ".claude" / "history.jsonl").exists(), (
+        "Expected PI rename not to create Claude's global history.jsonl side effect."
+    )
+
+
 def test_cmd_parse_treats_native_pi_session_name_as_custom_title(
     tmp_path: Path,
     monkeypatch,

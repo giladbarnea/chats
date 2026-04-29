@@ -225,15 +225,20 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        └── _try_resolve_conversation_file()
 │
 ├───►  cmd_rename               get_native_session_id(conv_file)           ──► session_id string
+│      cmd_rename               get_jsonl_session_adapter(conv_file)       ──► provider adapter
 │
 ├───►  cmd_rename               extract_cwd_from_jsonl(content)            ──► project path | None
+│      cmd_rename               decode_jsonl_entries(content)              ──► parsed entries
 │
-├───►  cmd_rename               Append to conv_file:                       ──► .jsonl file
-│      │                        ├── {"type":"custom-title","customTitle":name}
-│      │                        └── {"type":"agent-name","agentName":name}
+├───►  cmd_rename               adapter.build_rename_entries(...)          ──► provider-native rename records
+│      │                        ├── Claude: custom-title + agent-name
+│      │                        ├── Codex: event_msg(thread_name_updated)
+│      │                        └── PI: session_info(name)
 │
-├───►  cmd_rename               Append to ~/.claude/history.jsonl:         ──► history.jsonl
-│      │                        └── {"display":"/rename ...","sessionId":id}
+├───►  cmd_rename               Append provider-native entries to conv_file ─► .jsonl file
+│
+├───►  cmd_rename               [Claude only] append /rename ... to        ──► ~/.claude/history.jsonl
+│      │                        history.jsonl
 │
 └───►  cmd_rename               Print confirmation                         ──► console
 ```
@@ -389,7 +394,7 @@ Summary prefix ─────────────► │ extract_summaries_
                                          │             ├── lazy metadata load
                                          │             └── SearchHit display
                                          │
-                          rename path ───┼────► append custom-title / agent-name
+                          rename path ───┼────► append provider-native rename entry/entries
                                          │
                           rm path ───────┼────► collect artifacts + delete
                                          │
@@ -682,11 +687,13 @@ cmd_fork(session_id, flags)
 
 cmd_rename(conversation_id, new_name)
 ├── resolve_conversation_file(conversation_id)
+├── get_jsonl_session_adapter()
 ├── get_native_session_id()
 ├── extract_cwd_from_jsonl()
-├── json.dumps() → append `custom-title` to conv_file
-├── json.dumps() → append `agent-name` to conv_file
-└── json.dumps() → append `/rename ...` to history.jsonl
+├── decode_jsonl_entries()
+├── adapter.build_rename_entries()
+├── json.dumps() → append provider-native rename entry/entries to conv_file
+└── [Claude only] json.dumps() → append `/rename ...` to history.jsonl
 
 cmd_rm(session_id, dry_run)
 ├── _resolve_session_for_rm()

@@ -322,12 +322,12 @@ Rename a conversation by appending a custom title entry.
 ccc rename <session> "New Title"
 ```
 
-This mutates the conversation file by appending `custom-title` and `agent-name` entries and updates the global `history.jsonl` file.
-
-Native provider session-name events also surface through this same abstraction:
-- Claude: `custom-title`
+This mutates the conversation file by appending the provider-native session-title entry shape:
+- Claude: `custom-title` plus `agent-name`, and also appends `/rename ...` to `~/.claude/history.jsonl`
 - Codex: `event_msg.payload.type == "thread_name_updated"`
 - PI: `session_info.name`
+
+All three native shapes surface back through the same shared custom-title abstraction for parse/search/metadata.
 
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`

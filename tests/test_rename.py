@@ -4,11 +4,11 @@ Unit tests for the rename command.
 
 Tests behavior (what rename does), not implementation (how it does it).
 
-The rename command appends two entries to the end of the session file:
+For Claude sessions, the rename command appends two entries to the end of the session file:
 1. {"type":"custom-title","customTitle":"<name>","sessionId":"<session_id>"}
 2. {"type":"agent-name","agentName":"<name>","sessionId":"<session_id>"}
 
-It also appends a /rename entry to ~/.claude/history.jsonl:
+For Claude sessions, it also appends a /rename entry to ~/.claude/history.jsonl:
 {"display":"/rename <name>","pastedContents":{},"timestamp":<ms>,"project":"<cwd>","sessionId":"<session_id>"}
 
 Resolution tests:

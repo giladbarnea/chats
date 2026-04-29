@@ -690,11 +690,11 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
     )
 
 
-def test_cmd_rename_persists_canonical_codex_session_id_in_appended_entries(
+def test_cmd_rename_appends_native_codex_thread_name_updated_event(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    """Codex rename metadata should keep the canonical short session id, not the rollout-prefixed filename stem."""
+    """Codex rename should append one native thread_name_updated event."""
     temp_home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: temp_home)
 
@@ -738,15 +738,30 @@ def test_cmd_rename_persists_canonical_codex_session_id_in_appended_entries(
 
     cmd_rename(str(session_path), "Canonical Codex Title")
 
-    appended_entries = [
+    entries = [
         json.loads(line)
         for line in session_path.read_text(encoding="utf-8").splitlines()
         if line.strip()
-    ][-2:]
-    assert [entry["sessionId"] for entry in appended_entries] == [session_id, session_id], (
-        "Expected cmd_rename to append custom-title and agent-name entries that use the "
-        "canonical Codex session id rather than the rollout-prefixed filename stem. "
-        f"Got entries: {appended_entries}"
+    ]
+    rename_entry = entries[-1]
+    assert rename_entry.get("type") == "event_msg", (
+        "Expected Codex rename to append a native event_msg entry. "
+        f"Got entry: {rename_entry}"
+    )
+    assert rename_entry.get("payload") == {
+        "type": "thread_name_updated",
+        "thread_id": session_id,
+        "thread_name": "Canonical Codex Title",
+    }, (
+        "Expected Codex rename to use the canonical session id inside the native thread_name_updated payload. "
+        f"Got entry: {rename_entry}"
+    )
+    assert isinstance(rename_entry.get("timestamp"), str) and rename_entry["timestamp"].endswith("Z"), (
+        "Expected Codex rename to stamp the native event with a UTC JSONL timestamp. "
+        f"Got entry: {rename_entry}"
+    )
+    assert not (temp_home / ".claude" / "history.jsonl").exists(), (
+        "Expected Codex rename not to create Claude's global history.jsonl side effect."
     )
 
 

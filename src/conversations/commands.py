@@ -37,6 +37,7 @@ from .ordering import (
 )
 from .pool_filter import PoolFilter
 from .parsing import (
+    decode_jsonl_entries,
     detect_format,
     extract_custom_titles_from_content,
     extract_summaries_from_jsonl,
@@ -638,7 +639,7 @@ def _search_conversation_content(
 
 
 def cmd_rename(conversation_id: str, new_name: str) -> None:
-    """Rename a conversation by appending custom-title and agent-name entries."""
+    """Rename a conversation by appending the provider-native session-title entry."""
     import time
 
     new_name = new_name.strip()
@@ -647,48 +648,44 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
         sys.exit(1)
 
     conv_file = resolve_conversation_file(conversation_id)
+    adapter = get_jsonl_session_adapter(conv_file)
     session_id = get_native_session_id(conv_file)
 
-    # Read content to extract project path (cwd) before appending
     content = conv_file.read_text(encoding="utf-8")
     project = extract_cwd_from_jsonl(content) or ""
-
-    custom_title_entry = {
-        "type": "custom-title",
-        "customTitle": new_name,
-        "sessionId": session_id,
-    }
-    agent_name_entry = {
-        "type": "agent-name",
-        "agentName": new_name,
-        "sessionId": session_id,
-    }
+    entries = decode_jsonl_entries(content)
 
     try:
-        with open(conv_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(custom_title_entry, separators=(",", ":")) + "\n")
-            f.write(json.dumps(agent_name_entry, separators=(",", ":")) + "\n")
-    except Exception as e:
-        print_error(f"Error writing file: {e}")
+        rename_entries = adapter.build_rename_entries(entries, session_id, new_name)
+    except ValueError as error:
+        print_error(str(error))
         sys.exit(1)
 
-    # Append to global history.jsonl
-    history_entry = {
-        "display": f"/rename {new_name}",
-        "pastedContents": {},
-        "timestamp": int(time.time() * 1000),
-        "project": project,
-        "sessionId": session_id,
-    }
-    history_file = Path.home() / ".claude" / "history.jsonl"
     try:
-        with open(history_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(history_entry, separators=(",", ":")) + "\n")
-    except Exception as e:
-        print_error(f"Error writing history.jsonl: {e}")
+        with open(conv_file, "a", encoding="utf-8") as handle:
+            for rename_entry in rename_entries:
+                handle.write(json.dumps(rename_entry, separators=(",", ":")) + "\n")
+    except Exception as error:
+        print_error(f"Error writing file: {error}")
+        sys.exit(1)
+
+    if adapter.writes_claude_history:
+        history_entry = {
+            "display": f"/rename {new_name}",
+            "pastedContents": {},
+            "timestamp": int(time.time() * 1000),
+            "project": project,
+            "sessionId": session_id,
+        }
+        history_file = Path.home() / ".claude" / "history.jsonl"
+        try:
+            with open(history_file, "a", encoding="utf-8") as handle:
+                handle.write(json.dumps(history_entry, separators=(",", ":")) + "\n")
+        except Exception as error:
+            print_error(f"Error writing history.jsonl: {error}")
 
     console = get_console()
-    console.print(f"[green]v[/green] Added custom title to [cyan]{conv_file.name}[/cyan]")
+    console.print(f"[green]v[/green] Renamed [cyan]{conv_file.name}[/cyan]")
     console.print(f"  [dim]Title:[/dim] [bold]{new_name}[/bold]")
 
 

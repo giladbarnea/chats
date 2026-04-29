@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-04-29] Make `rename` write native PI/Codex session-title records
+
+### Changed
+
+- `ccc rename` is now provider-aware on the write path instead of always appending Claude-only `custom-title` / `agent-name` records.
+- Claude rename behavior stays the same, including the `~/.claude/history.jsonl` side effect.
+- PI renames now append one native `session_info` record with a fresh entry id, a parent chain to the previous entry id, and the requested `name`.
+- Codex renames now append one native `event_msg` with `payload.type == "thread_name_updated"` and the canonical thread id.
+- Added regression coverage proving PI and Codex renames write native records and do not create Claude history side effects.
+
+---
 ## [2026-04-29] Flip search to newest-first ordering
 
 ### Changed

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
-from collections.abc import Callable
 import re
 import textwrap
+import uuid
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 
 from .model import ConversationFlags, Message, Provider
 from .registry import (
@@ -18,6 +19,9 @@ from .registry import (
 from .utils import shorten_tool_use_id
 
 
+RenameEntryBuilder = Callable[[list[dict], str, str], list[dict]]
+
+
 @dataclass(frozen=True)
 class JsonlSessionAdapter:
     """A parser adapter for one JSONL session shape."""
@@ -25,6 +29,8 @@ class JsonlSessionAdapter:
     name: Provider
     matches: Callable[[Path | None], bool]
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
+    build_rename_entries: RenameEntryBuilder
+    writes_claude_history: bool = False
     find_session_files: Callable[[], list[Path]] | None = None
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
     is_sidechain_path: Callable[[Path], bool] = lambda _path: False
@@ -889,11 +895,89 @@ def find_all_supported_session_files(*, include_sidechains: bool = True) -> list
     return [path for path in session_files if not is_sidechain_session_file(path)]
 
 
+def _jsonl_timestamp_now() -> str:
+    """Return a UTC timestamp string in the JSONL shape used by native sessions."""
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
+        "+00:00", "Z"
+    )
+
+
+def _require_last_entry_id(entries: list[dict], provider_name: str) -> str:
+    """Return the last entry id for providers whose entries form an in-band parent chain."""
+    if not entries:
+        raise ValueError(f"Cannot rename an empty {provider_name} session.")
+
+    last_entry_id = entries[-1].get("id")
+    if isinstance(last_entry_id, str) and last_entry_id:
+        return last_entry_id
+
+    raise ValueError(
+        f"{provider_name.capitalize()} rename requires the last session entry to have an id."
+    )
+
+
+def _build_claude_rename_entries(
+    _entries: list[dict],
+    session_id: str,
+    new_name: str,
+) -> list[dict]:
+    """Build Claude-native rename entries."""
+    return [
+        {
+            "type": "custom-title",
+            "customTitle": new_name,
+            "sessionId": session_id,
+        },
+        {
+            "type": "agent-name",
+            "agentName": new_name,
+            "sessionId": session_id,
+        },
+    ]
+
+
+def _build_pi_rename_entries(
+    entries: list[dict],
+    _session_id: str,
+    new_name: str,
+) -> list[dict]:
+    """Build one PI-native session_info rename entry."""
+    return [
+        {
+            "type": "session_info",
+            "id": uuid.uuid4().hex[:8],
+            "parentId": _require_last_entry_id(entries, "pi"),
+            "timestamp": _jsonl_timestamp_now(),
+            "name": new_name,
+        }
+    ]
+
+
+def _build_codex_rename_entries(
+    _entries: list[dict],
+    session_id: str,
+    new_name: str,
+) -> list[dict]:
+    """Build one Codex-native thread-name update event."""
+    return [
+        {
+            "timestamp": _jsonl_timestamp_now(),
+            "type": "event_msg",
+            "payload": {
+                "type": "thread_name_updated",
+                "thread_id": session_id,
+                "thread_name": new_name,
+            },
+        }
+    ]
+
+
 JSONL_SESSION_ADAPTERS = [
     JsonlSessionAdapter(
         name="pi",
         matches=_is_pi_jsonl_path,
         parse_messages=_parse_pi_jsonl,
+        build_rename_entries=_build_pi_rename_entries,
         find_session_files=_find_pi_session_files,
         find_session_matches=_find_pi_session_matches,
         extract_session_id=_extract_pi_session_id,
@@ -902,6 +986,7 @@ JSONL_SESSION_ADAPTERS = [
         name="codex",
         matches=_is_codex_jsonl_path,
         parse_messages=_parse_codex_jsonl,
+        build_rename_entries=_build_codex_rename_entries,
         find_session_files=_find_codex_session_files,
         find_session_matches=_find_codex_session_matches,
         extract_session_id=_extract_codex_session_id,
@@ -911,6 +996,8 @@ JSONL_SESSION_ADAPTERS = [
         name="claude",
         matches=lambda _source_path: True,
         parse_messages=_parse_default_jsonl,
+        build_rename_entries=_build_claude_rename_entries,
+        writes_claude_history=True,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),
         extract_session_id=lambda path: path.stem,
     ),
