@@ -4,7 +4,7 @@
 import json
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -17,7 +17,7 @@ def _utc_to_local_display(utc_iso: str) -> str:
 
     E.g. "2025-02-03T04:05:06.000Z" in IST (UTC+2) → '"2025-02-03 06:05"'
     """
-    dt = datetime.fromisoformat(utc_iso.replace("Z", "+00:00"))
+    dt = datetime.fromisoformat(utc_iso)
     local = dt.astimezone().replace(tzinfo=None)
     return local.strftime("%Y-%m-%d %H:%M")
 
@@ -41,25 +41,19 @@ def test_cmd_parse_metadata_prefers_jsonl_timestamps_over_file_stat(tmp_path, ca
     """Parse metadata should show conversation timestamps, not stale file mtimes."""
     conversation_path = tmp_path / "timestamped.jsonl"
     conversation_path.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "type": "summary",
-                        "summary": "Timestamp test",
-                        "leafUuid": "leaf-1",
-                    }
-                ),
-                json.dumps(
-                    {
-                        "type": "user",
-                        "timestamp": "2025-02-03T04:05:06.000Z",
-                        "cwd": "/tmp/project",
-                        "message": {"role": "user", "content": "hello"},
-                    }
-                ),
-            ]
-        )
+        "\n".join([
+            json.dumps({
+                "type": "summary",
+                "summary": "Timestamp test",
+                "leafUuid": "leaf-1",
+            }),
+            json.dumps({
+                "type": "user",
+                "timestamp": "2025-02-03T04:05:06.000Z",
+                "cwd": "/tmp/project",
+                "message": {"role": "user", "content": "hello"},
+            }),
+        ])
         + "\n",
         encoding="utf-8",
     )
@@ -98,25 +92,19 @@ def test_cmd_search_metadata_prefers_jsonl_timestamps_over_file_stat(
         / "recent-by-content.jsonl"
     )
     conversation_path.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "type": "summary",
-                        "summary": "Timestamp search test",
-                        "leafUuid": "leaf-search",
-                    }
-                ),
-                json.dumps(
-                    {
-                        "type": "user",
-                        "timestamp": "2025-03-04T05:06:07.000Z",
-                        "cwd": "/tmp/project",
-                        "message": {"role": "user", "content": "search needle"},
-                    }
-                ),
-            ]
-        )
+        "\n".join([
+            json.dumps({
+                "type": "summary",
+                "summary": "Timestamp search test",
+                "leafUuid": "leaf-search",
+            }),
+            json.dumps({
+                "type": "user",
+                "timestamp": "2025-03-04T05:06:07.000Z",
+                "cwd": "/tmp/project",
+                "message": {"role": "user", "content": "search needle"},
+            }),
+        ])
         + "\n",
         encoding="utf-8",
     )

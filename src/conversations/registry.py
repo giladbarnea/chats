@@ -57,7 +57,9 @@ TOOL_SCHEMAS: dict[str, ToolSchema] = {
     "Glob": ToolSchema(["pattern", "path"], None, None),
     "Grep": ToolSchema(["pattern", "path", "glob", "type", "output_mode"], None, None),
     "Write": ToolSchema(["file_path"], "content", None),
-    "Edit": ToolSchema(["file_path"], None, None),  # old_string/new_string handled separately
+    "Edit": ToolSchema(
+        ["file_path"], None, None
+    ),  # old_string/new_string handled separately
     "Task": ToolSchema(["subagent_type", "model"], "prompt", None),
     "WebFetch": ToolSchema(["url"], "prompt", None),
     "WebSearch": ToolSchema(["query"], None, None),

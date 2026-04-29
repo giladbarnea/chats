@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from enum import StrEnum
+from pathlib import Path
 from typing import Literal
 
 from .parts import MessagePart, MessagePartKind, ToolParts
@@ -12,7 +12,6 @@ from .registry import ContentBlockType
 from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_to_parts
 from .utils import shorten_data, truncate_middle
-
 
 Provider = Literal["claude", "pi", "codex"]
 
@@ -149,7 +148,7 @@ class Message:
     wrapper_type: ContentBlockType | None = None
 
     def iter_visible_parts(
-        self, flags: "ConversationFlags", tool_id_map: dict[str, str] | None = None
+        self, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
     ) -> list[MessagePart]:
         """Yield all visible content parts based on flags.
 
@@ -171,7 +170,9 @@ class Message:
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking) if should_shorten_thinking else self.thinking
+                truncate_middle(self.thinking)
+                if should_shorten_thinking
+                else self.thinking
             )
             parts.append(MessagePart(MessagePartKind.THINKING, thinking))
 
@@ -195,7 +196,7 @@ class Message:
     def _append_tool_parts(
         self,
         parts: list[MessagePart],
-        flags: "ConversationFlags",
+        flags: ConversationFlags,
         tool_id_map: dict[str, str] | None,
     ) -> None:
         """Append visible tool parts based on filters."""
@@ -217,7 +218,9 @@ class Message:
             tool_parts = tool_to_parts(tool, id_map)
             should_shorten = flags.shorten or filter_short
             if should_shorten and tool_parts.content:
-                tool_parts = tool_parts._replace(content=truncate_middle(tool_parts.content))
+                tool_parts = tool_parts._replace(
+                    content=truncate_middle(tool_parts.content)
+                )
 
             parts.append(MessagePart(MessagePartKind.TOOL, tool_parts))
 

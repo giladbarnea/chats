@@ -57,4 +57,3 @@ def parse_date_filter(value: str | None) -> datetime | None:
             continue
 
     raise ValueError(f"Invalid date format: {value!r}")
-

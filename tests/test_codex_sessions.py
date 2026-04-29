@@ -144,7 +144,7 @@ def test_cmd_parse_supports_basic_text_from_codex_session_path(
     )
 
     captured = capsys.readouterr()
-    assert "<user-message i=\"1\">" in captured.out, (
+    assert '<user-message i="1">' in captured.out, (
         "Expected the first visible Codex turn to render as a standard user message. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -152,11 +152,14 @@ def test_cmd_parse_supports_basic_text_from_codex_session_path(
         "Expected the real Codex user prompt to be preserved in XML output. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<assistant-response i=\"2\"" in captured.out, (
+    assert '<assistant-response i="2"' in captured.out, (
         "Expected the Codex assistant reply to render as a standard assistant message. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "The last deployment failed because the database migration timed out." in captured.out, (
+    assert (
+        "The last deployment failed because the database migration timed out."
+        in captured.out
+    ), (
         "Expected the Codex assistant text to be preserved in XML output. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -215,7 +218,12 @@ def test_cmd_parse_supports_codex_session_id_after_claude_and_pi_lookup_fail(
                 "payload": {
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": "Explain the timeout regression."}],
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "Explain the timeout regression.",
+                        }
+                    ],
                 },
             },
             {
@@ -224,7 +232,12 @@ def test_cmd_parse_supports_codex_session_id_after_claude_and_pi_lookup_fail(
                 "payload": {
                     "type": "message",
                     "role": "assistant",
-                    "content": [{"type": "output_text", "text": "The regression came from a slower startup path in the migration worker."}],
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": "The regression came from a slower startup path in the migration worker.",
+                        }
+                    ],
                 },
             },
         ],
@@ -244,7 +257,10 @@ def test_cmd_parse_supports_codex_session_id_after_claude_and_pi_lookup_fail(
         "Expected the bare Codex session id to resolve through adapter fallback and "
         f"render the Codex user message. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "The regression came from a slower startup path in the migration worker." in captured.out, (
+    assert (
+        "The regression came from a slower startup path in the migration worker."
+        in captured.out
+    ), (
         "Expected the bare Codex session id to resolve through adapter fallback and "
         f"render the Codex assistant message. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -290,7 +306,12 @@ def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_pa
                 "payload": {
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": "Fix the deployment timeout issue."}],
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "Fix the deployment timeout issue.",
+                        }
+                    ],
                 },
             },
             {
@@ -323,7 +344,10 @@ def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_pa
                     "type": "function_call",
                     "name": "exec_command",
                     "call_id": "call_exec_1",
-                    "arguments": json.dumps({"cmd": "uv run pytest -q", "workdir": "/tmp/codex-project"}),
+                    "arguments": json.dumps({
+                        "cmd": "uv run pytest -q",
+                        "workdir": "/tmp/codex-project",
+                    }),
                 },
             },
             {
@@ -352,7 +376,7 @@ def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_pa
                 "payload": {
                     "type": "custom_tool_call_output",
                     "call_id": "call_patch_1",
-                    "output": "{\"output\":\"Success. Updated the following files:\\nM app.py\\n\"}",
+                    "output": '{"output":"Success. Updated the following files:\\nM app.py\\n"}',
                 },
             },
             {
@@ -387,11 +411,11 @@ def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_pa
     )
 
     captured = capsys.readouterr()
-    assert "<assistant-response i=\"2\"" in captured.out, (
+    assert '<assistant-response i="2"' in captured.out, (
         "Expected the Codex assistant turn to normalize into a single assistant response. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<assistant-response i=\"3\"" not in captured.out, (
+    assert '<assistant-response i="3"' not in captured.out, (
         "Expected contiguous Codex assistant-side events to stay grouped in one response. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -423,7 +447,10 @@ def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_pa
         "Expected a Codex custom_tool_call_output to normalize into a named tool-output block. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "I updated the timeout handling and the failing test should pass now." in captured.out, (
+    assert (
+        "I updated the timeout handling and the failing test should pass now."
+        in captured.out
+    ), (
         "Expected the final Codex assistant text to be preserved alongside reasoning and tools. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -653,7 +680,12 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
                 "payload": {
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": "Show me metadata for this session."}],
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "Show me metadata for this session.",
+                        }
+                    ],
                 },
             },
         ],
@@ -730,7 +762,9 @@ def test_cmd_rename_appends_native_codex_thread_name_updated_event(
                 "payload": {
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": "Rename this codex session."}],
+                    "content": [
+                        {"type": "input_text", "text": "Rename this codex session."}
+                    ],
                 },
             },
         ],
@@ -756,7 +790,9 @@ def test_cmd_rename_appends_native_codex_thread_name_updated_event(
         "Expected Codex rename to use the canonical session id inside the native thread_name_updated payload. "
         f"Got entry: {rename_entry}"
     )
-    assert isinstance(rename_entry.get("timestamp"), str) and rename_entry["timestamp"].endswith("Z"), (
+    assert isinstance(rename_entry.get("timestamp"), str) and rename_entry[
+        "timestamp"
+    ].endswith("Z"), (
         "Expected Codex rename to stamp the native event with a UTC JSONL timestamp. "
         f"Got entry: {rename_entry}"
     )
@@ -828,7 +864,9 @@ def test_codex_skill_payloads_hidden_by_default(
                 "payload": {
                     "type": "message",
                     "role": "assistant",
-                    "content": [{"type": "output_text", "text": "Real assistant reply."}],
+                    "content": [
+                        {"type": "output_text", "text": "Real assistant reply."}
+                    ],
                 },
             },
         ],
@@ -902,7 +940,9 @@ def test_cmd_rename_makes_title_visible_in_codex_parse_output(
                 "payload": {
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": "Hello from codex rename test."}],
+                    "content": [
+                        {"type": "input_text", "text": "Hello from codex rename test."}
+                    ],
                 },
             },
             {
@@ -911,7 +951,9 @@ def test_cmd_rename_makes_title_visible_in_codex_parse_output(
                 "payload": {
                     "type": "message",
                     "role": "assistant",
-                    "content": [{"type": "output_text", "text": "Codex assistant reply."}],
+                    "content": [
+                        {"type": "output_text", "text": "Codex assistant reply."}
+                    ],
                 },
             },
         ],
@@ -985,7 +1027,9 @@ def test_cmd_parse_treats_native_codex_thread_name_as_custom_title(
                 "payload": {
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": "Show the native thread name."}],
+                    "content": [
+                        {"type": "input_text", "text": "Show the native thread name."}
+                    ],
                 },
             },
             {
@@ -1003,7 +1047,9 @@ def test_cmd_parse_treats_native_codex_thread_name_as_custom_title(
                 "payload": {
                     "type": "message",
                     "role": "assistant",
-                    "content": [{"type": "output_text", "text": "Native rename acknowledged."}],
+                    "content": [
+                        {"type": "output_text", "text": "Native rename acknowledged."}
+                    ],
                 },
             },
         ],

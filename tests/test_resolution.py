@@ -10,7 +10,6 @@ Tests specific failure modes discovered in code review:
 Uses same fixture pattern as test_rename.py - reuses rename_fixtures.
 """
 
-import io
 import json
 import os
 import shutil
@@ -19,14 +18,12 @@ from unittest.mock import patch
 
 import pytest
 
-import conversations.commands as commands
 from conversations import (
     _try_resolve_conversation_file,
-    resolve_conversation_file,
+    commands,
     get_input_content,
-    find_all_conversations,
+    resolve_conversation_file,
 )
-
 
 # =============================================================================
 # Fixtures (reuse rename_fixtures structure)
@@ -59,14 +56,27 @@ def add_single_word_fixture(temp_claude_home):
     fixture_file = projects_dir / "eeee5555-unicorn.jsonl"
 
     lines = [
-        {"type": "summary", "summary": "Unicorn debugging session", "leafUuid": "leaf-5555"},
-        {"type": "user", "message": {"role": "user", "content": "Debug unicorn"}, "uuid": "msg-1"},
-        {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Found it!"}]}},
+        {
+            "type": "summary",
+            "summary": "Unicorn debugging session",
+            "leafUuid": "leaf-5555",
+        },
+        {
+            "type": "user",
+            "message": {"role": "user", "content": "Debug unicorn"},
+            "uuid": "msg-1",
+        },
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "Found it!"}],
+            },
+        },
     ]
 
     with open(fixture_file, "w") as f:
-        for line in lines:
-            f.write(json.dumps(line) + "\n")
+        f.writelines(json.dumps(line) + "\n" for line in lines)
 
     return fixture_file
 
@@ -133,13 +143,11 @@ def set_recent_order(temp_claude_home):
 
     agent_file = projects_dir / "agent-newest.jsonl"
     agent_file.write_text(
-        json.dumps(
-            {
-                "type": "user",
-                "sessionId": "dddd4444-ambiguous-beta",
-                "message": {"role": "user", "content": "agent noise"},
-            }
-        )
+        json.dumps({
+            "type": "user",
+            "sessionId": "dddd4444-ambiguous-beta",
+            "message": {"role": "user", "content": "agent noise"},
+        })
         + "\n"
     )
     os.utime(agent_file, (base_mtime + 99, base_mtime + 99))
@@ -156,6 +164,7 @@ def set_recent_order(temp_claude_home):
 # Bug #2: "not found" misreported as "ambiguous"
 # =============================================================================
 
+
 class TestNotFoundVsAmbiguous:
     """
     Bug #2: _try_resolve_conversation_file returns iter([]) for "not found",
@@ -171,10 +180,17 @@ class TestNotFoundVsAmbiguous:
 
         captured = capsys.readouterr()
         # Should say "not found", NOT "ambiguous"
-        assert "not found" in captured.out.lower() or "not found" in captured.err.lower(), \
+        assert (
+            "not found" in captured.out.lower() or "not found" in captured.err.lower()
+        ), (
             f"Expected 'not found' in output, got:\nstdout: {captured.out}\nstderr: {captured.err}"
-        assert "ambiguous" not in captured.out.lower() and "ambiguous" not in captured.err.lower(), \
+        )
+        assert (
+            "ambiguous" not in captured.out.lower()
+            and "ambiguous" not in captured.err.lower()
+        ), (
             f"Should NOT mention 'ambiguous' for non-existent conversation:\nstdout: {captured.out}\nstderr: {captured.err}"
+        )
 
     def test_ambiguous_shows_matches(self, temp_claude_home, capsys):
         """Ambiguous prefix should list the matching conversations."""
@@ -209,6 +225,7 @@ class TestNotFoundVsAmbiguous:
 # Bug #3: Single-word prefix match fails (generator exhaustion)
 # =============================================================================
 
+
 class TestSingleWordPrefixMatch:
     """
     Bug #3: For single-word queries, _try_resolve_conversation_file iterates
@@ -234,8 +251,9 @@ class TestSingleWordPrefixMatch:
         # "Unicorn" is 1 word, should still match "Unicorn debugging session"
         path, _ = _try_resolve_conversation_file("Unicorn")
 
-        assert path is not None, \
+        assert path is not None, (
             "Single-word prefix should resolve (bug #3: generator exhausted)"
+        )
         assert "eeee5555" in str(path)
 
     def test_single_word_exact_match_still_works(self, temp_claude_home):
@@ -285,7 +303,9 @@ class TestExactIdentifierResolution:
         session_id, session_path = add_pi_session
 
         with (
-            patch.object(commands, "_resolve_recent_conversation_file") as recent_lookup,
+            patch.object(
+                commands, "_resolve_recent_conversation_file"
+            ) as recent_lookup,
             patch.object(commands, "extract_summaries_from_jsonl") as summary_lookup,
         ):
             resolved_path, ambiguous = _try_resolve_conversation_file(session_id)
@@ -331,6 +351,7 @@ class TestExactIdentifierResolution:
 # Bug #4: Ambiguous input treated as raw content in parse mode
 # =============================================================================
 
+
 class TestAmbiguousInParseMode:
     """
     Bug #4: get_input_content() ignores ambiguous_matches return value and
@@ -355,12 +376,19 @@ class TestAmbiguousInParseMode:
         output = captured.out + captured.err
 
         # Should mention ambiguity, not silently fail
-        assert "ambiguous" in output.lower() or exc_info.value.code == 1, \
+        assert "ambiguous" in output.lower() or exc_info.value.code == 1, (
             f"Ambiguous input should error explicitly, got: {output}"
+        )
 
     def test_get_input_content_valid_path_works(self, temp_claude_home):
         """Valid file path should return content (baseline test)."""
-        file_path = temp_claude_home / ".claude" / "projects" / "test-project" / "aaaa1111-with-summary.jsonl"
+        file_path = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "aaaa1111-with-summary.jsonl"
+        )
 
         content = get_input_content(str(file_path))
 
@@ -377,8 +405,9 @@ class TestAmbiguousInParseMode:
 
 if __name__ == "__main__":
     import subprocess
+
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
-        cwd=Path(__file__).parent.parent
+        cwd=Path(__file__).parent.parent,
     )
     sys.exit(result.returncode)

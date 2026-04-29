@@ -50,9 +50,7 @@ def test_cmd_search_agent_only_content_is_hidden_by_default_and_found_with_agent
                 "cwd": "/tmp/search-visibility",
                 "message": {
                     "role": "assistant",
-                    "content": [
-                        {"type": "text", "text": "slice-4-agent-only-needle"}
-                    ],
+                    "content": [{"type": "text", "text": "slice-4-agent-only-needle"}],
                 },
             }
         ],

@@ -1,4 +1,5 @@
 """Tests for PaddedInlineCodeMarkdown — inline code rendered with 1-space padding."""
+
 from __future__ import annotations
 
 from io import StringIO

@@ -13,10 +13,10 @@ from conversations.commands import _try_resolve_conversation_file, cmd_search
 from conversations.model import ConversationFlags, SearchOutputMode
 from conversations.pool_filter import PoolFilter
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _write_claude_session(path: Path, needle: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -26,26 +26,30 @@ def _write_claude_session(path: Path, needle: str) -> None:
             "timestamp": "2025-01-01T00:00:00Z",
             "cwd": "/tmp/proj",
             "message": {"role": "user", "content": needle},
-        }) + "\n"
+        })
+        + "\n"
     )
 
 
 def _write_pi_session(path: Path, needle: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps({"type": "session", "id": "abc"}) + "\n"
+        json.dumps({"type": "session", "id": "abc"})
+        + "\n"
         + json.dumps({
             "type": "message",
             "timestamp": "2025-01-01T00:00:00Z",
             "message": {"role": "user", "content": [{"type": "text", "text": needle}]},
-        }) + "\n"
+        })
+        + "\n"
     )
 
 
 def _write_codex_session(path: Path, needle: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps({"type": "session_meta", "payload": {"id": "abc"}}) + "\n"
+        json.dumps({"type": "session_meta", "payload": {"id": "abc"}})
+        + "\n"
         + json.dumps({
             "type": "response_item",
             "timestamp": "2025-01-01T00:00:00Z",
@@ -54,7 +58,8 @@ def _write_codex_session(path: Path, needle: str) -> None:
                 "role": "user",
                 "content": [{"type": "input_text", "text": needle}],
             },
-        }) + "\n"
+        })
+        + "\n"
     )
 
 
@@ -65,6 +70,7 @@ NEEDLE = "provider_filter_test_needle_xyzzy"
 # ---------------------------------------------------------------------------
 # Integration: cmd_search with PoolFilter(provider=...)
 # ---------------------------------------------------------------------------
+
 
 def test_provider_filter_claude_includes_only_claude(tmp_path, monkeypatch, capsys):
     """With PoolFilter(provider='claude'), only Claude sessions are returned."""
@@ -83,11 +89,19 @@ def test_provider_filter_claude_includes_only_claude(tmp_path, monkeypatch, caps
             emit_metadata=True,
         )
 
-    assert exc_info.value.code == 0, f"Expected exit 0 (found match), got {exc_info.value.code}"
+    assert exc_info.value.code == 0, (
+        f"Expected exit 0 (found match), got {exc_info.value.code}"
+    )
     out = capsys.readouterr().out
-    assert "provider: claude" in out, f"Expected 'provider: claude' in output.\nstdout:\n{out}"
-    assert "provider: pi" not in out, f"Expected no 'provider: pi' when filtering for claude.\nstdout:\n{out}"
-    assert "provider: codex" not in out, f"Expected no 'provider: codex' when filtering for claude.\nstdout:\n{out}"
+    assert "provider: claude" in out, (
+        f"Expected 'provider: claude' in output.\nstdout:\n{out}"
+    )
+    assert "provider: pi" not in out, (
+        f"Expected no 'provider: pi' when filtering for claude.\nstdout:\n{out}"
+    )
+    assert "provider: codex" not in out, (
+        f"Expected no 'provider: codex' when filtering for claude.\nstdout:\n{out}"
+    )
 
 
 def test_provider_filter_pi_includes_only_pi(tmp_path, monkeypatch, capsys):
@@ -106,7 +120,9 @@ def test_provider_filter_pi_includes_only_pi(tmp_path, monkeypatch, capsys):
             emit_metadata=True,
         )
 
-    assert exc_info.value.code == 0, f"Expected exit 0 (found match), got {exc_info.value.code}"
+    assert exc_info.value.code == 0, (
+        f"Expected exit 0 (found match), got {exc_info.value.code}"
+    )
     out = capsys.readouterr().out
     assert "provider: pi" in out, f"Expected 'provider: pi' in output.\nstdout:\n{out}"
     assert "provider: claude" not in out, f"Got unexpected claude.\nstdout:\n{out}"
@@ -129,7 +145,9 @@ def test_provider_filter_codex_includes_only_codex(tmp_path, monkeypatch, capsys
             emit_metadata=True,
         )
 
-    assert exc_info.value.code == 0, f"Expected exit 0 (found match), got {exc_info.value.code}"
+    assert exc_info.value.code == 0, (
+        f"Expected exit 0 (found match), got {exc_info.value.code}"
+    )
     out = capsys.readouterr().out
     assert "provider: codex" in out, f"Expected codex in output.\nstdout:\n{out}"
     assert "provider: claude" not in out, f"Got unexpected claude.\nstdout:\n{out}"
@@ -173,14 +191,19 @@ def test_provider_filter_none_includes_all(tmp_path, monkeypatch, capsys):
 
     assert exc_info.value.code == 0, f"Expected exit 0, got {exc_info.value.code}"
     out = capsys.readouterr().out
-    assert "provider: claude" in out, f"Expected claude in unfiltered search.\nstdout:\n{out}"
+    assert "provider: claude" in out, (
+        f"Expected claude in unfiltered search.\nstdout:\n{out}"
+    )
     assert "provider: pi" in out, f"Expected pi in unfiltered search.\nstdout:\n{out}"
-    assert "provider: codex" in out, f"Expected codex in unfiltered search.\nstdout:\n{out}"
+    assert "provider: codex" in out, (
+        f"Expected codex in unfiltered search.\nstdout:\n{out}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # CLI seam: -p / --provider args reach cmd_search via PoolFilter
 # ---------------------------------------------------------------------------
+
 
 def _make_fake_cmd_search(captured: dict):
     def fake_cmd_search(
@@ -202,16 +225,22 @@ def test_cli_short_provider_flag(monkeypatch):
     monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "-p", "claude", "needle"])
     cli.main()
     pf = captured.get("pool_filter")
-    assert pf == PoolFilter(provider="claude"), f"Expected PoolFilter(provider='claude'), got {pf!r}"
+    assert pf == PoolFilter(provider="claude"), (
+        f"Expected PoolFilter(provider='claude'), got {pf!r}"
+    )
 
 
 def test_cli_long_provider_flag(monkeypatch):
     captured: dict = {}
     monkeypatch.setattr(cli, "cmd_search", _make_fake_cmd_search(captured))
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "--provider", "pi", "needle"])
+    monkeypatch.setattr(
+        cli.sys, "argv", ["ccc", "search", "--provider", "pi", "needle"]
+    )
     cli.main()
     pf = captured.get("pool_filter")
-    assert pf == PoolFilter(provider="pi"), f"Expected PoolFilter(provider='pi'), got {pf!r}"
+    assert pf == PoolFilter(provider="pi"), (
+        f"Expected PoolFilter(provider='pi'), got {pf!r}"
+    )
 
 
 def test_cli_provider_codex(monkeypatch):
@@ -220,7 +249,9 @@ def test_cli_provider_codex(monkeypatch):
     monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "-p", "codex", "needle"])
     cli.main()
     pf = captured.get("pool_filter")
-    assert pf == PoolFilter(provider="codex"), f"Expected PoolFilter(provider='codex'), got {pf!r}"
+    assert pf == PoolFilter(provider="codex"), (
+        f"Expected PoolFilter(provider='codex'), got {pf!r}"
+    )
 
 
 def test_cli_no_provider_flag_defaults_to_empty(monkeypatch):
@@ -230,12 +261,15 @@ def test_cli_no_provider_flag_defaults_to_empty(monkeypatch):
     cli.main()
     pf = captured.get("pool_filter")
     assert pf == PoolFilter(), f"Expected empty PoolFilter, got {pf!r}"
-    assert pf is not None and pf.is_empty(), f"Expected pool_filter to be empty, got {pf!r}"
+    assert pf is not None and pf.is_empty(), (
+        f"Expected pool_filter to be empty, got {pf!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # CLI seam: parse -p / --provider applies only to recent index inputs
 # ---------------------------------------------------------------------------
+
 
 def _make_fake_cmd_parse(captured: dict):
     def fake_cmd_parse(
@@ -290,7 +324,9 @@ def test_parse_cli_provider_filter_warns_and_ignores_session_id(monkeypatch, cap
     assert pf == PoolFilter(), (
         f"Expected pool filter to be ignored for session ids, got {pf!r}"
     )
-    assert "Warning:" in stderr and "--provider" in stderr and "recent index" in stderr, (
+    assert (
+        "Warning:" in stderr and "--provider" in stderr and "recent index" in stderr
+    ), (
         "Expected a warning explaining that pool filters only apply to recent index inputs. "
         f"Got stderr:\n{stderr}"
     )
@@ -299,6 +335,7 @@ def test_parse_cli_provider_filter_warns_and_ignores_session_id(monkeypatch, cap
 # ---------------------------------------------------------------------------
 # Parse-index resolution: pool filters narrow the candidate set for `-N`
 # ---------------------------------------------------------------------------
+
 
 def test_parse_index_provider_filter_narrows_candidate_pool(tmp_path, monkeypatch):
     """`-1` with provider=codex resolves to the most recent codex session, skipping newer claude/pi ones."""
@@ -311,22 +348,29 @@ def test_parse_index_provider_filter_narrows_candidate_pool(tmp_path, monkeypatc
     _write_codex_session(codex_path, NEEDLE)
     # Make claude newest, codex oldest — so `-1` without filter would pick claude.
     import os
+
     os.utime(codex_path, (1_700_000_000, 1_700_000_000))
     os.utime(pi_path, (1_700_000_500, 1_700_000_500))
     os.utime(claude_path, (1_700_001_000, 1_700_001_000))
     monkeypatch.setattr(Path, "home", lambda: home)
 
-    resolved_codex, _ = _try_resolve_conversation_file("-1", pool_filter=PoolFilter(provider="codex"))
+    resolved_codex, _ = _try_resolve_conversation_file(
+        "-1", pool_filter=PoolFilter(provider="codex")
+    )
     assert resolved_codex == codex_path, (
         f"Expected `-1` with provider=codex to resolve to the codex session. Got: {resolved_codex!r}"
     )
 
-    resolved_pi, _ = _try_resolve_conversation_file("-1", pool_filter=PoolFilter(provider="pi"))
+    resolved_pi, _ = _try_resolve_conversation_file(
+        "-1", pool_filter=PoolFilter(provider="pi")
+    )
     assert resolved_pi == pi_path, (
         f"Expected `-1` with provider=pi to resolve to the pi session. Got: {resolved_pi!r}"
     )
 
-    resolved_claude, _ = _try_resolve_conversation_file("-1", pool_filter=PoolFilter(provider="claude"))
+    resolved_claude, _ = _try_resolve_conversation_file(
+        "-1", pool_filter=PoolFilter(provider="claude")
+    )
     assert resolved_claude == claude_path, (
         f"Expected `-1` with provider=claude to resolve to the claude session. Got: {resolved_claude!r}"
     )
@@ -344,24 +388,33 @@ def test_parse_index_dir_filter_narrows_by_session_cwd(tmp_path, monkeypatch):
     newer_path = home / ".claude" / "projects" / "b" / "newer.jsonl"
     older_path.parent.mkdir(parents=True, exist_ok=True)
     newer_path.parent.mkdir(parents=True, exist_ok=True)
-    older_path.write_text(json.dumps({
-        "type": "user",
-        "timestamp": "2025-01-01T00:00:00Z",
-        "cwd": str(target_dir),
-        "message": {"role": "user", "content": "hello"},
-    }) + "\n")
-    newer_path.write_text(json.dumps({
-        "type": "user",
-        "timestamp": "2025-02-01T00:00:00Z",
-        "cwd": str(other_dir),
-        "message": {"role": "user", "content": "hello"},
-    }) + "\n")
+    older_path.write_text(
+        json.dumps({
+            "type": "user",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "cwd": str(target_dir),
+            "message": {"role": "user", "content": "hello"},
+        })
+        + "\n"
+    )
+    newer_path.write_text(
+        json.dumps({
+            "type": "user",
+            "timestamp": "2025-02-01T00:00:00Z",
+            "cwd": str(other_dir),
+            "message": {"role": "user", "content": "hello"},
+        })
+        + "\n"
+    )
     import os
+
     os.utime(older_path, (1_700_000_000, 1_700_000_000))
     os.utime(newer_path, (1_700_001_000, 1_700_001_000))
     monkeypatch.setattr(Path, "home", lambda: home)
 
-    resolved, _ = _try_resolve_conversation_file("-1", pool_filter=PoolFilter(dir=str(target_dir)))
+    resolved, _ = _try_resolve_conversation_file(
+        "-1", pool_filter=PoolFilter(dir=str(target_dir))
+    )
     assert resolved == older_path, (
         f"Expected `-1` with --dir={target_dir!s} to resolve to the older session whose cwd "
         f"matches. Got: {resolved!r}"

@@ -32,7 +32,9 @@ class TestParseSliceNotation:
     def test_single_negative_edge_last(self):
         """Case 3: '-1' -> last message only"""
         start, stop = parse_slice_notation("-1")
-        assert (start, stop) == (-1, None), f"Expected (-1, None), got ({start}, {stop})"
+        assert (start, stop) == (-1, None), (
+            f"Expected (-1, None), got ({start}, {stop})"
+        )
 
     def test_single_negative_interior(self):
         """Case 4: '-2' -> second-to-last message only (THE BUG TEST)"""
@@ -55,12 +57,16 @@ class TestParseSliceNotation:
     def test_range_open_stop_negative(self):
         """Case 12: '-1:' -> last message to end (degenerate)"""
         start, stop = parse_slice_notation("-1:")
-        assert (start, stop) == (-1, None), f"Expected (-1, None), got ({start}, {stop})"
+        assert (start, stop) == (-1, None), (
+            f"Expected (-1, None), got ({start}, {stop})"
+        )
 
     def test_range_open_stop_negative_interior(self):
         """'-2:' -> last 2 messages"""
         start, stop = parse_slice_notation("-2:")
-        assert (start, stop) == (-2, None), f"Expected (-2, None), got ({start}, {stop})"
+        assert (start, stop) == (-2, None), (
+            f"Expected (-2, None), got ({start}, {stop})"
+        )
 
     # --- Range with Open Start (:stop) ---
 
@@ -73,12 +79,16 @@ class TestParseSliceNotation:
     def test_range_open_start_negative_edge(self):
         """':-1' -> all except last message"""
         start, stop = parse_slice_notation(":-1")
-        assert (start, stop) == (None, -1), f"Expected (None, -1), got ({start}, {stop})"
+        assert (start, stop) == (None, -1), (
+            f"Expected (None, -1), got ({start}, {stop})"
+        )
 
     def test_range_open_start_negative_interior(self):
         """Case 7: ':-2' -> all except last 2 messages"""
         start, stop = parse_slice_notation(":-2")
-        assert (start, stop) == (None, -2), f"Expected (None, -2), got ({start}, {stop})"
+        assert (start, stop) == (None, -2), (
+            f"Expected (None, -2), got ({start}, {stop})"
+        )
 
     # --- Closed Ranges ---
 
@@ -108,12 +118,16 @@ class TestParseSliceNotation:
     def test_none_returns_full_range(self):
         """None input -> (None, None) for full range"""
         start, stop = parse_slice_notation(None)
-        assert (start, stop) == (None, None), f"Expected (None, None), got ({start}, {stop})"
+        assert (start, stop) == (None, None), (
+            f"Expected (None, None), got ({start}, {stop})"
+        )
 
     def test_empty_string_returns_full_range(self):
         """Empty string -> (None, None) for full range"""
         start, stop = parse_slice_notation("")
-        assert (start, stop) == (None, None), f"Expected (None, None), got ({start}, {stop})"
+        assert (start, stop) == (None, None), (
+            f"Expected (None, None), got ({start}, {stop})"
+        )
 
 
 class TestSliceBehavior:
@@ -148,13 +162,17 @@ class TestSliceBehavior:
         """'-2' selects second-to-last message only (THE BUG TEST)"""
         result = self.slice_messages("-2")
         assert result == ["msg5"], f"Expected ['msg5'], got {result}"
-        assert len(result) == 1, f"Single index must return exactly 1 message, got {len(result)}"
+        assert len(result) == 1, (
+            f"Single index must return exactly 1 message, got {len(result)}"
+        )
 
     def test_behavior_single_negative_minus3(self):
         """'-3' selects third-to-last message only"""
         result = self.slice_messages("-3")
         assert result == ["msg4"], f"Expected ['msg4'], got {result}"
-        assert len(result) == 1, f"Single index must return exactly 1 message, got {len(result)}"
+        assert len(result) == 1, (
+            f"Single index must return exactly 1 message, got {len(result)}"
+        )
 
     # --- Ranges ---
 
@@ -195,10 +213,15 @@ class TestSliceErrorCases:
     def test_zero_index_exits(self):
         """Case 5: '0' should exit with error"""
         import subprocess
+
         result = subprocess.run(
-            ["python3", "-c",
-             "from conversations import parse_slice_notation; parse_slice_notation('0')"],
-            capture_output=True, text=True
+            [
+                "python3",
+                "-c",
+                "from conversations import parse_slice_notation; parse_slice_notation('0')",
+            ],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode != 0, "Expected non-zero exit for index 0"
         assert "Index must be >= 1 or < 0" in result.stderr
@@ -206,10 +229,15 @@ class TestSliceErrorCases:
     def test_zero_start_exits(self):
         """Case 14: '0:' should exit with error"""
         import subprocess
+
         result = subprocess.run(
-            ["python3", "-c",
-             "from conversations import parse_slice_notation; parse_slice_notation('0:')"],
-            capture_output=True, text=True
+            [
+                "python3",
+                "-c",
+                "from conversations import parse_slice_notation; parse_slice_notation('0:')",
+            ],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode != 0, "Expected non-zero exit for start index 0"
         assert "Start index must be >= 1 or < 0" in result.stderr
@@ -217,10 +245,15 @@ class TestSliceErrorCases:
     def test_zero_stop_exits(self):
         """':0' should exit with error"""
         import subprocess
+
         result = subprocess.run(
-            ["python3", "-c",
-             "from conversations import parse_slice_notation; parse_slice_notation(':0')"],
-            capture_output=True, text=True
+            [
+                "python3",
+                "-c",
+                "from conversations import parse_slice_notation; parse_slice_notation(':0')",
+            ],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode != 0, "Expected non-zero exit for stop index 0"
         assert "Stop index must be >= 1 or < 0" in result.stderr
@@ -228,9 +261,10 @@ class TestSliceErrorCases:
 
 if __name__ == "__main__":
     import subprocess
+
     # Run with pytest if available, otherwise basic execution
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
-        cwd=Path(__file__).parent.parent
+        cwd=Path(__file__).parent.parent,
     )
     sys.exit(result.returncode)

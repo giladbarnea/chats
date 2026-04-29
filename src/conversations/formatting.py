@@ -203,14 +203,18 @@ def build_metadata_text(
             pass
 
     if resolved_created_at is not None:
-        yaml_lines.append(f'created: "{resolved_created_at.strftime("%Y-%m-%d %H:%M")}"')
+        yaml_lines.append(
+            f'created: "{resolved_created_at.strftime("%Y-%m-%d %H:%M")}"'
+        )
 
     resolved_modified_at = modified_at
     if resolved_modified_at is None and stat is not None:
         resolved_modified_at = datetime.fromtimestamp(stat.st_mtime)
 
     if resolved_modified_at is not None:
-        yaml_lines.append(f'modified: "{resolved_modified_at.strftime("%Y-%m-%d %H:%M")}"')
+        yaml_lines.append(
+            f'modified: "{resolved_modified_at.strftime("%Y-%m-%d %H:%M")}"'
+        )
     yaml_lines.append(f"messages: {total_messages}")
 
     if matched_messages is not None:
@@ -294,7 +298,6 @@ def render_messages_with_rich(
         wrapper_type = msg.get_wrapper_type()
         tag = wrapper_type.value.xml_tag
         header = wrapper_type.value.header
-        header_style = wrapper_type.value.rich_style
         attrs = msg.get_wrapper_attrs()
 
         print_targets.append(Text(f"<{tag} {attrs}>\n", style="dim"))
@@ -309,7 +312,11 @@ def render_messages_with_rich(
             if part.kind == MessagePartKind.TEXT:
                 # Use Text() for content with XML tags to avoid Markdown mangling
                 if xml_tag_pattern.search(part.data):
-                    escaped_data = re.sub(r"<(/?)([a-zA-Z][a-zA-Z0-9\\-]*)(\\s+[^>]*?)?>", r"\\<\1\2\3>", part.data)
+                    escaped_data = re.sub(
+                        r"<(/?)([a-zA-Z][a-zA-Z0-9\\-]*)(\\s+[^>]*?)?>",
+                        r"\\<\1\2\3>",
+                        part.data,
+                    )
                     print_targets.append(Markdown(escaped_data))
                 else:
                     print_targets.append(Markdown(part.data))

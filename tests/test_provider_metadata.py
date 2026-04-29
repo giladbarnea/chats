@@ -2,7 +2,6 @@
 """Tests for the `provider` metadata field across parse and search output."""
 
 import json
-import os
 import shutil
 from pathlib import Path
 
@@ -12,10 +11,10 @@ from conversations import ConversationFlags, SearchOutputMode, cmd_parse, cmd_se
 from conversations.commands import _load_conversation_metadata
 from conversations.model import ConversationMetadata
 
-
 # ---------------------------------------------------------------------------
 # Unit: ConversationMetadata carries provider
 # ---------------------------------------------------------------------------
+
 
 def test_conversation_metadata_has_provider_field():
     meta = ConversationMetadata(
@@ -24,12 +23,15 @@ def test_conversation_metadata_has_provider_field():
         mtime=None,
         provider="claude",
     )
-    assert meta.provider == "claude", f"Expected provider='claude', got {meta.provider!r}"
+    assert meta.provider == "claude", (
+        f"Expected provider='claude', got {meta.provider!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Unit: _load_conversation_metadata derives provider from adapter
 # ---------------------------------------------------------------------------
+
 
 def test_load_metadata_claude_provider(tmp_path, monkeypatch):
     """A file under ~/.claude/projects/ should have provider='claude'."""
@@ -38,12 +40,18 @@ def test_load_metadata_claude_provider(tmp_path, monkeypatch):
     projects.mkdir(parents=True)
     session = projects / "abc.jsonl"
     session.write_text(
-        json.dumps({"type": "user", "timestamp": "2025-01-01T00:00:00Z",
-                     "message": {"role": "user", "content": "hi"}}) + "\n"
+        json.dumps({
+            "type": "user",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "message": {"role": "user", "content": "hi"},
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
     meta = _load_conversation_metadata(session)
-    assert meta.provider == "claude", f"Expected provider='claude', got {meta.provider!r}"
+    assert meta.provider == "claude", (
+        f"Expected provider='claude', got {meta.provider!r}"
+    )
 
 
 def test_load_metadata_pi_provider(tmp_path, monkeypatch):
@@ -53,8 +61,13 @@ def test_load_metadata_pi_provider(tmp_path, monkeypatch):
     pi_dir.mkdir(parents=True)
     session = pi_dir / "sess.jsonl"
     session.write_text(
-        json.dumps({"type": "session", "id": "abc"}) + "\n"
-        + json.dumps({"type": "message", "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]}}) + "\n"
+        json.dumps({"type": "session", "id": "abc"})
+        + "\n"
+        + json.dumps({
+            "type": "message",
+            "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]},
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
     meta = _load_conversation_metadata(session)
@@ -68,9 +81,17 @@ def test_load_metadata_codex_provider(tmp_path, monkeypatch):
     codex_dir.mkdir(parents=True)
     session = codex_dir / "rollout-abc.jsonl"
     session.write_text(
-        json.dumps({"type": "session_meta", "payload": {"id": "abc"}}) + "\n"
-        + json.dumps({"type": "response_item", "payload": {"type": "message", "role": "user",
-                      "content": [{"type": "input_text", "text": "hi"}]}}) + "\n"
+        json.dumps({"type": "session_meta", "payload": {"id": "abc"}})
+        + "\n"
+        + json.dumps({
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "hi"}],
+            },
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
     meta = _load_conversation_metadata(session)
@@ -81,14 +102,19 @@ def test_load_metadata_codex_provider(tmp_path, monkeypatch):
 # Integration: cmd_parse emits provider in metadata frontmatter
 # ---------------------------------------------------------------------------
 
+
 def test_cmd_parse_emits_provider_claude(tmp_path, capsys, monkeypatch):
     home = tmp_path / "home"
     projects = home / ".claude" / "projects" / "proj"
     projects.mkdir(parents=True)
     session = projects / "session.jsonl"
     session.write_text(
-        json.dumps({"type": "user", "timestamp": "2025-01-01T00:00:00Z",
-                     "message": {"role": "user", "content": "hello"}}) + "\n"
+        json.dumps({
+            "type": "user",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "message": {"role": "user", "content": "hello"},
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
     cmd_parse(
@@ -111,9 +137,14 @@ def test_cmd_parse_emits_provider_pi(tmp_path, capsys, monkeypatch):
     pi_dir.mkdir(parents=True)
     session = pi_dir / "1234_abc.jsonl"
     session.write_text(
-        json.dumps({"type": "session", "id": "abc"}) + "\n"
-        + json.dumps({"type": "message", "timestamp": "2025-01-01T00:00:00Z",
-                       "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]}}) + "\n"
+        json.dumps({"type": "session", "id": "abc"})
+        + "\n"
+        + json.dumps({
+            "type": "message",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]},
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
     cmd_parse(
@@ -136,10 +167,18 @@ def test_cmd_parse_emits_provider_codex(tmp_path, capsys, monkeypatch):
     codex_dir.mkdir(parents=True)
     session = codex_dir / "rollout-abc.jsonl"
     session.write_text(
-        json.dumps({"type": "session_meta", "payload": {"id": "abc"}}) + "\n"
-        + json.dumps({"type": "response_item", "timestamp": "2025-01-01T00:00:00Z",
-                       "payload": {"type": "message", "role": "user",
-                                   "content": [{"type": "input_text", "text": "hi"}]}}) + "\n"
+        json.dumps({"type": "session_meta", "payload": {"id": "abc"}})
+        + "\n"
+        + json.dumps({
+            "type": "response_item",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "hi"}],
+            },
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
     cmd_parse(
@@ -174,7 +213,8 @@ def test_cmd_parse_emits_codex_forked_from_when_present(tmp_path, capsys, monkey
                 "id": "019db5f3-e555-7a70-afba-3e12469d3eb6",
                 "forked_from_id": forked_from_id,
             },
-        }) + "\n"
+        })
+        + "\n"
         + json.dumps({
             "type": "response_item",
             "timestamp": "2026-04-22T16:09:13.404Z",
@@ -183,7 +223,8 @@ def test_cmd_parse_emits_codex_forked_from_when_present(tmp_path, capsys, monkey
                 "role": "user",
                 "content": [{"type": "input_text", "text": "hi"}],
             },
-        }) + "\n"
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -225,9 +266,13 @@ def test_cmd_search_emits_provider_claude(temp_claude_home, capsys):
     project_dir = temp_claude_home / ".claude" / "projects" / "test-project"
     session = project_dir / "searchable.jsonl"
     session.write_text(
-        json.dumps({"type": "user", "timestamp": "2025-01-01T00:00:00Z",
-                     "cwd": "/tmp/proj",
-                     "message": {"role": "user", "content": "unique_search_needle_claude"}}) + "\n"
+        json.dumps({
+            "type": "user",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "cwd": "/tmp/proj",
+            "message": {"role": "user", "content": "unique_search_needle_claude"},
+        })
+        + "\n"
     )
 
     with pytest.raises(SystemExit) as exc_info:
@@ -237,7 +282,9 @@ def test_cmd_search_emits_provider_claude(temp_claude_home, capsys):
             output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
-    assert exc_info.value.code == 0, f"Expected search to find a match; exit code: {exc_info.value.code}"
+    assert exc_info.value.code == 0, (
+        f"Expected search to find a match; exit code: {exc_info.value.code}"
+    )
     captured = capsys.readouterr()
     assert "provider: claude" in captured.out, (
         f"Expected 'provider: claude' in search metadata.\nstdout:\n{captured.out}"
@@ -251,9 +298,17 @@ def test_cmd_search_emits_provider_pi(tmp_path, capsys, monkeypatch):
     pi_dir.mkdir(parents=True)
     session = pi_dir / "1234_abc.jsonl"
     session.write_text(
-        json.dumps({"type": "session", "id": "abc"}) + "\n"
-        + json.dumps({"type": "message", "timestamp": "2025-01-01T00:00:00Z",
-                       "message": {"role": "user", "content": [{"type": "text", "text": "unique_search_needle_pi"}]}}) + "\n"
+        json.dumps({"type": "session", "id": "abc"})
+        + "\n"
+        + json.dumps({
+            "type": "message",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "message": {
+                "role": "user",
+                "content": [{"type": "text", "text": "unique_search_needle_pi"}],
+            },
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -264,7 +319,9 @@ def test_cmd_search_emits_provider_pi(tmp_path, capsys, monkeypatch):
             output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
-    assert exc_info.value.code == 0, f"Expected search to find a match; exit code: {exc_info.value.code}"
+    assert exc_info.value.code == 0, (
+        f"Expected search to find a match; exit code: {exc_info.value.code}"
+    )
     captured = capsys.readouterr()
     assert "provider: pi" in captured.out, (
         f"Expected 'provider: pi' in search metadata.\nstdout:\n{captured.out}"
@@ -278,10 +335,20 @@ def test_cmd_search_emits_provider_codex(tmp_path, capsys, monkeypatch):
     codex_dir.mkdir(parents=True)
     session = codex_dir / "rollout-abc.jsonl"
     session.write_text(
-        json.dumps({"type": "session_meta", "payload": {"id": "abc"}}) + "\n"
-        + json.dumps({"type": "response_item", "timestamp": "2025-01-01T00:00:00Z",
-                       "payload": {"type": "message", "role": "user",
-                                   "content": [{"type": "input_text", "text": "unique_search_needle_codex"}]}}) + "\n"
+        json.dumps({"type": "session_meta", "payload": {"id": "abc"}})
+        + "\n"
+        + json.dumps({
+            "type": "response_item",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": "unique_search_needle_codex"}
+                ],
+            },
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -292,7 +359,9 @@ def test_cmd_search_emits_provider_codex(tmp_path, capsys, monkeypatch):
             output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
-    assert exc_info.value.code == 0, f"Expected search to find a match; exit code: {exc_info.value.code}"
+    assert exc_info.value.code == 0, (
+        f"Expected search to find a match; exit code: {exc_info.value.code}"
+    )
     captured = capsys.readouterr()
     assert "provider: codex" in captured.out, (
         f"Expected 'provider: codex' in search metadata.\nstdout:\n{captured.out}"
@@ -313,16 +382,20 @@ def test_cmd_search_emits_codex_forked_from_when_present(tmp_path, capsys, monke
                 "id": "019db5f3-e555-7a70-afba-3e12469d3eb6",
                 "forked_from_id": forked_from_id,
             },
-        }) + "\n"
+        })
+        + "\n"
         + json.dumps({
             "type": "response_item",
             "timestamp": "2026-04-22T16:09:13.404Z",
             "payload": {
                 "type": "message",
                 "role": "user",
-                "content": [{"type": "input_text", "text": "unique_search_forked_codex"}],
+                "content": [
+                    {"type": "input_text", "text": "unique_search_forked_codex"}
+                ],
             },
-        }) + "\n"
+        })
+        + "\n"
     )
     monkeypatch.setattr(Path, "home", lambda: home)
 

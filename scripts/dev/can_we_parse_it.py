@@ -7,8 +7,9 @@ for i in {0..$(jq length /path/to/messages.jsonl)}; do
   python3 scripts/dev/truncate_json_strings.py /path/to/messages.jsonl | jq -s ".[$i]" | python3.12 scripts/dev/can_we_parse_it.py || break
 done
 """
-import sys
+
 import json
+import sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -68,10 +69,10 @@ class ProgressMessage:
 
     def __post_init__(self):
         # Parse data based on its type field
-        data_type = self.data.get('type')
-        if data_type == 'hook_progress':
+        data_type = self.data.get("type")
+        if data_type == "hook_progress":
             self.data = HookProgressData(**self.data)
-        elif data_type == 'bash_progress':
+        elif data_type == "bash_progress":
             self.data = BashProgressData(**self.data)
         raise ValueError(f"Unknown progress type: {data_type}")
 
@@ -137,6 +138,7 @@ class FileToolUseResult:
 @dataclass
 class UserMessage:
     """Base user message - handles all fields without toolUseResult"""
+
     type: str  # "user"
     message: MessageContent
     parentUuid: str | None
@@ -165,6 +167,7 @@ class UserMessage:
 @dataclass
 class UserMessageWithBashResult(UserMessage):
     """User message with Bash tool result"""
+
     toolUseResult: BashToolUseResult | None = None
     sourceToolAssistantUUID: str | None = None
 
@@ -178,6 +181,7 @@ class UserMessageWithBashResult(UserMessage):
 @dataclass
 class UserMessageWithGrepResult(UserMessage):
     """User message with Grep tool result"""
+
     toolUseResult: GrepToolUseResult | None = None
     sourceToolAssistantUUID: str | None = None
 
@@ -190,6 +194,7 @@ class UserMessageWithGrepResult(UserMessage):
 @dataclass
 class UserMessageWithFileResult(UserMessage):
     """User message with File tool result"""
+
     toolUseResult: FileToolUseResult | None = None
     sourceToolAssistantUUID: str | None = None
 
@@ -264,12 +269,12 @@ def main(data: dict) -> None:
     success = False
     for model_cls in MODELS:
         try:
-            instance = model_cls(**data)
+            model_cls(**data)
             success = True
             break
         except Exception:
             pass  # Silent failure, keep trying
-    
+
     if not success:
         print(f"⚠️  NO MODEL MATCHED for data.type: {data.get('type', 'UNKNOWN')}")
         print(f"Keys: {list(data.keys())}")

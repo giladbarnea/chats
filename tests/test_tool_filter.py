@@ -14,18 +14,45 @@ from conversations import ConversationFlags, Message
 from conversations.parts import MessagePartKind
 from conversations.tool_filter import ToolFilter, parse_tool_spec
 
-
 # =============================================================================
 # Shared tool dicts
 # =============================================================================
 
-BASH_USE = {"type": "tool_use", "name": "Bash", "id": "toolu_01", "input": {"command": "ls"}}
+BASH_USE = {
+    "type": "tool_use",
+    "name": "Bash",
+    "id": "toolu_01",
+    "input": {"command": "ls"},
+}
 BASH_RESULT = {"type": "tool_result", "tool_use_id": "toolu_01", "content": "file1.txt"}
-BASH_ERROR = {"type": "tool_result", "tool_use_id": "toolu_01", "content": "cmd failed", "is_error": True}
-READ_USE = {"type": "tool_use", "name": "Read", "id": "toolu_02", "input": {"file_path": "f.txt"}}
-READ_RESULT = {"type": "tool_result", "tool_use_id": "toolu_02", "content": "content of f.txt"}
-SKILL_USE = {"type": "tool_use", "name": "Skill", "id": "toolu_03", "input": {"skill": "commit"}}
-SKILL_RESULT = {"type": "tool_result", "tool_use_id": "toolu_03", "content": "skill output"}
+BASH_ERROR = {
+    "type": "tool_result",
+    "tool_use_id": "toolu_01",
+    "content": "cmd failed",
+    "is_error": True,
+}
+READ_USE = {
+    "type": "tool_use",
+    "name": "Read",
+    "id": "toolu_02",
+    "input": {"file_path": "f.txt"},
+}
+READ_RESULT = {
+    "type": "tool_result",
+    "tool_use_id": "toolu_02",
+    "content": "content of f.txt",
+}
+SKILL_USE = {
+    "type": "tool_use",
+    "name": "Skill",
+    "id": "toolu_03",
+    "input": {"skill": "commit"},
+}
+SKILL_RESULT = {
+    "type": "tool_result",
+    "tool_use_id": "toolu_03",
+    "content": "skill output",
+}
 
 ID_MAP = {"toolu_01": "Bash", "toolu_02": "Read", "toolu_03": "Skill"}
 
@@ -37,65 +64,79 @@ def make_message(*tools):
 
 def tool_parts_from(msg, flags, tool_id_map=None):
     """Return only the TOOL MessageParts from iter_visible_parts."""
-    return [p for p in msg.iter_visible_parts(flags, tool_id_map) if p.kind == MessagePartKind.TOOL]
+    return [
+        p
+        for p in msg.iter_visible_parts(flags, tool_id_map)
+        if p.kind == MessagePartKind.TOOL
+    ]
 
 
 # =============================================================================
 # Parsing: spec string -> ToolFilter
 # =============================================================================
 
+
 class TestParseToolSpec:
     """Spec string is parsed into correct ToolFilter regardless of syntax form."""
 
-    @pytest.mark.parametrize("spec, expected", [
-        # --- Bare modifier, short form ---
-        ("o",       dict(direction="output")),
-        ("i",       dict(direction="input")),
-        ("s",       dict(short=True)),
-        ("e",       dict(error_only=True)),
-        # --- Bare modifier, long form ---
-        ("output",  dict(direction="output")),
-        ("input",   dict(direction="input")),
-        ("short",   dict(short=True)),
-        ("error",   dict(error_only=True)),
-        # --- Name + modifier ---
-        ("Bash:i",  dict(name="Bash", direction="input")),
-        ("Read:o",  dict(name="Read", direction="output")),
-        ("Read:o:s", dict(name="Read", direction="output", short=True)),
-        ("Bash:e",  dict(name="Bash", error_only=True)),
-        # --- Order independence ---
-        ("i:Bash",          dict(name="Bash", direction="input")),
-        ("short:Bash:i",    dict(name="Bash", direction="input", short=True)),
-        ("s:o:Read",        dict(name="Read", direction="output", short=True)),
-        # --- Optional leading colon ---
-        (":o",      dict(direction="output")),
-        (":o:s",    dict(direction="output", short=True)),
-        (":short",  dict(short=True)),
-        # --- Mixed short/long modifiers ---
-        ("Read:output:s",   dict(name="Read", direction="output", short=True)),
-        ("Bash:i:short",    dict(name="Bash", direction="input", short=True)),
-        # --- Negation ---
-        ("!Bash",   dict(name="Bash", negate=True)),
-        ("!Bash:o", dict(name="Bash", direction="output", negate=True)),
-        ("!o",      dict(direction="output", negate=True)),
-        # --- Name only ---
-        ("Bash",    dict(name="Bash")),
-        ("Read",    dict(name="Read")),
-        # --- Empty (bare --tools) ---
-        ("",        dict()),
-    ], ids=lambda x: repr(x) if isinstance(x, str) else None)
+    @pytest.mark.parametrize(
+        "spec, expected",
+        [
+            # --- Bare modifier, short form ---
+            ("o", {"direction": "output"}),
+            ("i", {"direction": "input"}),
+            ("s", {"short": True}),
+            ("e", {"error_only": True}),
+            # --- Bare modifier, long form ---
+            ("output", {"direction": "output"}),
+            ("input", {"direction": "input"}),
+            ("short", {"short": True}),
+            ("error", {"error_only": True}),
+            # --- Name + modifier ---
+            ("Bash:i", {"name": "Bash", "direction": "input"}),
+            ("Read:o", {"name": "Read", "direction": "output"}),
+            ("Read:o:s", {"name": "Read", "direction": "output", "short": True}),
+            ("Bash:e", {"name": "Bash", "error_only": True}),
+            # --- Order independence ---
+            ("i:Bash", {"name": "Bash", "direction": "input"}),
+            ("short:Bash:i", {"name": "Bash", "direction": "input", "short": True}),
+            ("s:o:Read", {"name": "Read", "direction": "output", "short": True}),
+            # --- Optional leading colon ---
+            (":o", {"direction": "output"}),
+            (":o:s", {"direction": "output", "short": True}),
+            (":short", {"short": True}),
+            # --- Mixed short/long modifiers ---
+            ("Read:output:s", {"name": "Read", "direction": "output", "short": True}),
+            ("Bash:i:short", {"name": "Bash", "direction": "input", "short": True}),
+            # --- Negation ---
+            ("!Bash", {"name": "Bash", "negate": True}),
+            ("!Bash:o", {"name": "Bash", "direction": "output", "negate": True}),
+            ("!o", {"direction": "output", "negate": True}),
+            # --- Name only ---
+            ("Bash", {"name": "Bash"}),
+            ("Read", {"name": "Read"}),
+            # --- Empty (bare --tools) ---
+            ("", {}),
+        ],
+        ids=lambda x: repr(x) if isinstance(x, str) else None,
+    )
     def test_parse(self, spec, expected):
         tf = parse_tool_spec(spec)
-        defaults = dict(name=None, negate=False, direction=None, error_only=False, short=False)
+        defaults = {
+            "name": None, "negate": False, "direction": None, "error_only": False, "short": False
+        }
         for field, default in defaults.items():
             want = expected.get(field, default)
             got = getattr(tf, field)
-            assert got == want, f"parse_tool_spec({spec!r}).{field}: expected {want!r}, got {got!r}"
+            assert got == want, (
+                f"parse_tool_spec({spec!r}).{field}: expected {want!r}, got {got!r}"
+            )
 
 
 # =============================================================================
 # Matching: ToolFilter.matches() against tool dicts
 # =============================================================================
+
 
 class TestToolFilterMatching:
     """ToolFilter.matches() selects tools based on criteria (AND'd), negation inverts."""
@@ -155,6 +196,7 @@ class TestToolFilterMatching:
 # Integration: filters in Message.iter_visible_parts
 # =============================================================================
 
+
 class TestFilterIntegration:
     """ToolFilter list controls what iter_visible_parts yields."""
 
@@ -184,7 +226,9 @@ class TestFilterIntegration:
 
     def test_name_and_direction(self):
         """Bash:i → only Bash tool-input."""
-        flags = ConversationFlags(show_tools=[ToolFilter(name="Bash", direction="input")])
+        flags = ConversationFlags(
+            show_tools=[ToolFilter(name="Bash", direction="input")]
+        )
         parts = tool_parts_from(self.msg, flags, self.id_map)
         assert len(parts) == 1
         assert parts[0].data.tag == "tool-input"
@@ -192,10 +236,12 @@ class TestFilterIntegration:
 
     def test_multiple_filters_ored(self):
         """Read:o + Bash:i → Read output and Bash input (2 parts, in message order)."""
-        flags = ConversationFlags(show_tools=[
-            ToolFilter(name="Read", direction="output"),
-            ToolFilter(name="Bash", direction="input"),
-        ])
+        flags = ConversationFlags(
+            show_tools=[
+                ToolFilter(name="Read", direction="output"),
+                ToolFilter(name="Bash", direction="input"),
+            ]
+        )
         parts = tool_parts_from(self.msg, flags, self.id_map)
         assert len(parts) == 2
         # Message order: Bash use comes before Read result
@@ -213,12 +259,16 @@ class TestFilterIntegration:
 
     def test_multiple_negated_filters(self):
         """!Skill + !Read:o → exclude Skill tools AND Read outputs, show rest."""
-        msg = make_message(BASH_USE, BASH_RESULT, READ_USE, READ_RESULT, SKILL_USE, SKILL_RESULT)
+        msg = make_message(
+            BASH_USE, BASH_RESULT, READ_USE, READ_RESULT, SKILL_USE, SKILL_RESULT
+        )
         id_map = {**ID_MAP}
-        flags = ConversationFlags(show_tools=[
-            ToolFilter(name="Skill", negate=True),
-            ToolFilter(name="Read", direction="output", negate=True),
-        ])
+        flags = ConversationFlags(
+            show_tools=[
+                ToolFilter(name="Skill", negate=True),
+                ToolFilter(name="Read", direction="output", negate=True),
+            ]
+        )
         parts = tool_parts_from(msg, flags, id_map)
         # Should show: Bash use, Bash result, Read use (input only)
         # Should NOT show: Skill use, Skill result, Read result
@@ -230,17 +280,23 @@ class TestFilterIntegration:
 
     def test_mixed_positive_and_negative(self):
         """Bash + !Read:o → only Bash (positive allowlist), minus Read outputs (irrelevant here)."""
-        msg = make_message(BASH_USE, BASH_RESULT, READ_USE, READ_RESULT, SKILL_USE, SKILL_RESULT)
+        msg = make_message(
+            BASH_USE, BASH_RESULT, READ_USE, READ_RESULT, SKILL_USE, SKILL_RESULT
+        )
         id_map = {**ID_MAP}
-        flags = ConversationFlags(show_tools=[
-            ToolFilter(name="Bash"),
-            ToolFilter(name="Read", direction="output", negate=True),
-        ])
+        flags = ConversationFlags(
+            show_tools=[
+                ToolFilter(name="Bash"),
+                ToolFilter(name="Read", direction="output", negate=True),
+            ]
+        )
         parts = tool_parts_from(msg, flags, id_map)
         # Positive allowlist: only Bash. Negative: also blocks Read output (but Bash already excludes it).
         names = [dict(p.data.attrs).get("name") for p in parts]
         assert len(parts) == 2, f"Expected 2 Bash parts, got {len(parts)}: {names}"
-        assert all(n in ("Bash", None) for n in names), f"Only Bash expected, got {names}"
+        assert all(n in ("Bash", None) for n in names), (
+            f"Only Bash expected, got {names}"
+        )
 
     def test_error_filter(self):
         """error_only → only tool_results with is_error=True."""
@@ -257,7 +313,12 @@ class TestPerToolShortening:
     def test_short_flag_truncates_rendered_tool_output_to_500_chars(self):
         long_content = "READ_START-" + ("A" * 1000) + "-READ_END"
         msg = make_message(
-            {"type": "tool_use", "name": "Read", "id": "toolu_02", "input": {"file_path": "f.txt"}},
+            {
+                "type": "tool_use",
+                "name": "Read",
+                "id": "toolu_02",
+                "input": {"file_path": "f.txt"},
+            },
             {"type": "tool_result", "tool_use_id": "toolu_02", "content": long_content},
         )
 
@@ -274,8 +335,12 @@ class TestPerToolShortening:
 
         short_result = parts_short[1].data.content
         full_result = parts_full[1].data.content
-        assert short_result is not None, "Expected shortened tool output content to be present."
-        assert full_result is not None, "Expected full tool output content to be present."
+        assert short_result is not None, (
+            "Expected shortened tool output content to be present."
+        )
+        assert full_result is not None, (
+            "Expected full tool output content to be present."
+        )
         assert len(short_result) == 500, (
             f"Expected :s to truncate the rendered tool body to 500 chars. Got {len(short_result)}."
         )
@@ -297,18 +362,29 @@ class TestPerToolShortening:
         """Global --short shortens everything; per-tool :s is redundant but harmless."""
         long_content = "BASH_START-" + ("B" * 1000) + "-BASH_END"
         msg = make_message(
-            {"type": "tool_use", "name": "Bash", "id": "toolu_01", "input": {"command": "echo " + long_content}},
+            {
+                "type": "tool_use",
+                "name": "Bash",
+                "id": "toolu_01",
+                "input": {"command": "echo " + long_content},
+            },
             {"type": "tool_result", "tool_use_id": "toolu_01", "content": long_content},
         )
 
         # Global short + per-tool short
-        flags = ConversationFlags(show_tools=[ToolFilter(name="Bash", short=True)], shorten=True)
+        flags = ConversationFlags(
+            show_tools=[ToolFilter(name="Bash", short=True)], shorten=True
+        )
         parts = tool_parts_from(msg, flags, ID_MAP)
 
         input_content = parts[0].data.content
         result_content = parts[1].data.content
-        assert input_content is not None, "Expected Bash tool-input content to be present."
-        assert result_content is not None, "Expected Bash tool-output content to be present."
+        assert input_content is not None, (
+            "Expected Bash tool-input content to be present."
+        )
+        assert result_content is not None, (
+            "Expected Bash tool-output content to be present."
+        )
         assert len(input_content) == 500, (
             f"Expected global --short to truncate tool-input content to 500 chars. Got {len(input_content)}."
         )
@@ -350,8 +426,12 @@ class TestTruncateMiddle:
     def test_long_string_keeps_start_and_end(self):
         s = "A" * 40 + "B" * 40 + "C" * 40 + "D" * 40  # 160 chars
         result = truncate_middle(s, max_len=100)
-        assert result.startswith("A" * 40), f"Should start with first quarter. Got: {result[:50]}"
-        assert result.endswith("D" * 40), f"Should end with last quarter. Got: {result[-50:]}"
+        assert result.startswith("A" * 40), (
+            f"Should start with first quarter. Got: {result[:50]}"
+        )
+        assert result.endswith("D" * 40), (
+            f"Should end with last quarter. Got: {result[-50:]}"
+        )
         assert "..." in result
         assert len(result) == 100, f"Expected 100 chars exactly, got {len(result)}"
 
@@ -373,6 +453,7 @@ class TestTruncateMiddle:
 # Message-level shortening: --short uses middle truncation
 # =============================================================================
 
+
 class TestMessageMiddleTruncation:
     """--short flag middle-truncates message text, preserving both start and end."""
 
@@ -390,9 +471,13 @@ class TestMessageMiddleTruncation:
         assert len(text_parts) == 1, f"Expected 1 text part, got {len(text_parts)}"
         shortened = text_parts[0].data
 
-        assert "START_MARKER" in shortened, f"Start should be preserved. Got: {shortened[:60]}"
-        assert "END_MARKER" in shortened, f"End should be preserved. Got: {shortened[-60:]}"
-        assert "..." in shortened, f"Should contain ellipsis placeholder"
+        assert "START_MARKER" in shortened, (
+            f"Start should be preserved. Got: {shortened[:60]}"
+        )
+        assert "END_MARKER" in shortened, (
+            f"End should be preserved. Got: {shortened[-60:]}"
+        )
+        assert "..." in shortened, "Should contain ellipsis placeholder"
 
     def test_thinking_preserves_start_and_end(self):
         start = "FIRST_THOUGHT "
@@ -408,5 +493,9 @@ class TestMessageMiddleTruncation:
         assert len(thinking_parts) == 1
         shortened = thinking_parts[0].data
 
-        assert "FIRST_THOUGHT" in shortened, f"Start should be preserved. Got: {shortened[:60]}"
-        assert "FINAL_THOUGHT" in shortened, f"End should be preserved. Got: {shortened[-60:]}"
+        assert "FIRST_THOUGHT" in shortened, (
+            f"Start should be preserved. Got: {shortened[:60]}"
+        )
+        assert "FINAL_THOUGHT" in shortened, (
+            f"End should be preserved. Got: {shortened[-60:]}"
+        )

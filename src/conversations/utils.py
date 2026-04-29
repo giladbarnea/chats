@@ -66,7 +66,7 @@ def collapse_home(path_str: str) -> str:
     """Replace home directory path with ~ for display."""
     home = str(Path.home())
     if path_str.startswith(home):
-        return "~" + path_str[len(home):]
+        return "~" + path_str[len(home) :]
     return path_str
 
 

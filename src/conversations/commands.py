@@ -20,7 +20,6 @@ from .formatting import (
     render_message_inner_xml,
     render_messages_with_rich,
 )
-from .utils import collapse_home
 from .model import (
     ConversationFlags,
     ConversationMetadata,
@@ -35,23 +34,24 @@ from .ordering import (
     sort_by_modified,
     sort_by_modified_descending,
 )
-from .pool_filter import PoolFilter
 from .parsing import (
     decode_jsonl_entries,
     detect_format,
     extract_custom_titles_from_content,
-    extract_summaries_from_jsonl,
     extract_cwd_from_jsonl,
+    extract_summaries_from_jsonl,
     get_display_session_id,
     get_jsonl_session_adapter,
-    get_native_session_id,
     get_jsonl_timestamps,
+    get_native_session_id,
     is_sidechain_session_file,
     parse_jsonl,
     parse_raw_cli_transcript,
 )
+from .pool_filter import PoolFilter
 from .session_pool import SessionPool
 from .session_scan import SessionScan
+from .utils import collapse_home
 
 
 def _build_tool_id_map(messages: list[Message]) -> dict[str, str]:
@@ -150,7 +150,9 @@ def _build_conversation_metadata(
     order: ConversationMetadataOrder = _order_metadata_by_modified_time,
 ) -> list[ConversationMetadata]:
     """Build ordered metadata for conversation files."""
-    return order(_load_conversation_metadata(conv_file) for conv_file in conversation_files)
+    return order(
+        _load_conversation_metadata(conv_file) for conv_file in conversation_files
+    )
 
 
 def _resolve_recent_conversation_file(
@@ -302,7 +304,9 @@ def _write_parse_output(output: str, output_file: Path | None) -> None:
     """Write parse output either to stdout or an explicit output file."""
     if output_file is not None:
         output_file.write_text(output + "\n", encoding="utf-8")
-        print(f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr)
+        print(
+            f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr
+        )
         return
 
     print(output)
@@ -315,7 +319,9 @@ def _print_ambiguous_error(identifier: str, matches: list[tuple[Path, str]]) -> 
     console.print(f"[yellow]'{identifier}'[/yellow] matches multiple sessions:")
     console.print()
     for conv_file, summary in matches:
-        console.print(f"  * [cyan]{get_display_session_id(conv_file)}[/cyan]: {summary}")
+        console.print(
+            f"  * [cyan]{get_display_session_id(conv_file)}[/cyan]: {summary}"
+        )
     console.print()
     console.print("[dim]Use a more specific prefix or the full UUID[/dim]")
 
@@ -379,7 +385,11 @@ def display_search_result(
         return
 
     if emit_metadata:
-        match_count = len(matches) + (len(matching_summaries) if matching_summaries else 0) + (len(matching_custom_titles) if matching_custom_titles else 0)
+        match_count = (
+            len(matches)
+            + (len(matching_summaries) if matching_summaries else 0)
+            + (len(matching_custom_titles) if matching_custom_titles else 0)
+        )
         print_metadata(
             conv_file,
             cwd,
@@ -587,7 +597,10 @@ def _search_conversation(
     regex: re.Pattern,
     flags: ConversationFlags,
     pool_filter: PoolFilter,
-) -> tuple[list[Message], list[Message], str | None, list[str], list[str], str | None] | None:
+) -> (
+    tuple[list[Message], list[Message], str | None, list[str], list[str], str | None]
+    | None
+):
     """
     Search a single conversation file.
 
@@ -604,7 +617,10 @@ def _search_conversation_content(
     regex: re.Pattern,
     flags: ConversationFlags,
     pool_filter: PoolFilter,
-) -> tuple[list[Message], list[Message], str | None, list[str], list[str], str | None] | None:
+) -> (
+    tuple[list[Message], list[Message], str | None, list[str], list[str], str | None]
+    | None
+):
     """Search already-read conversation content."""
     scan = SessionScan.from_content(content, flags, source_path=conv_file)
     messages = list(scan.messages)
@@ -613,7 +629,9 @@ def _search_conversation_content(
     if not pool_filter.passes_cwd(cwd):
         return None
 
-    matching_summaries = [summary for summary in scan.summaries if regex.search(summary)]
+    matching_summaries = [
+        summary for summary in scan.summaries if regex.search(summary)
+    ]
     matching_custom_titles = [
         custom_title
         for custom_title in scan.custom_titles
@@ -663,8 +681,7 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
 
     try:
         with open(conv_file, "a", encoding="utf-8") as handle:
-            for rename_entry in rename_entries:
-                handle.write(json.dumps(rename_entry, separators=(",", ":")) + "\n")
+            handle.writelines(json.dumps(rename_entry, separators=(",", ":")) + "\n" for rename_entry in rename_entries)
     except Exception as error:
         print_error(f"Error writing file: {error}")
         sys.exit(1)
@@ -723,7 +740,9 @@ def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
     # Collect paths to remove
     if is_claude:
         files_to_remove = _collect_session_files(conv_file, session_uuid, claude_dir)
-        dirs_to_remove = _collect_session_dirs(session_uuid, project_dir_name, claude_dir)
+        dirs_to_remove = _collect_session_dirs(
+            session_uuid, project_dir_name, claude_dir
+        )
         filtered_lines, history_lines_to_remove = _filter_history_lines(
             claude_dir / "history.jsonl", session_uuid
         )
@@ -792,7 +811,9 @@ def _resolve_session_for_rm(session_id: str) -> Path:
     console.print(f"[red]Error: Session not found: [yellow]{session_id}[/yellow][/red]")
     console.print()
     console.print("[dim]Provide:[/dim]")
-    console.print("  * A session UUID or identifier (e.g., 5078a7c7-0646-43cc-9412-7e1454a282b4)")
+    console.print(
+        "  * A session UUID or identifier (e.g., 5078a7c7-0646-43cc-9412-7e1454a282b4)"
+    )
     console.print("  * A file path to a .jsonl file")
     sys.exit(1)
 
@@ -1164,7 +1185,9 @@ def cmd_parse(
             print_error(f"Slice {joined_selectors} produced no messages.")
             sys.exit(0)
 
-    custom_titles = extract_custom_titles_from_content(content) if format_type == "jsonl" else []
+    custom_titles = (
+        extract_custom_titles_from_content(content) if format_type == "jsonl" else []
+    )
     last_custom_title = custom_titles[-1] if custom_titles else None
     metadata = _load_conversation_metadata(input_file_path) if input_file_path else None
 
@@ -1216,7 +1239,9 @@ def cmd_parse(
     # Emit output
     if output_file:
         output_file.write_text(formatted + "\n", encoding="utf-8")
-        print(f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr)
+        print(
+            f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr
+        )
     elif output_format in ("json", "raw"):
         print(formatted)
     elif flags.color:
@@ -1315,7 +1340,7 @@ def _extract_task_dispatches(content: str) -> list[tuple[str, str]]:
 def cmd_catalog(args: list[str]) -> None:
     """Catalog conversation sessions into sessions.yaml."""
     from .catalog import catalog_sessions
-    
+
     try:
         catalog_sessions(args)
     except Exception as e:

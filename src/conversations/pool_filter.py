@@ -38,7 +38,7 @@ class PoolFilter:
     cafter: str | None = None
 
     @classmethod
-    def from_args(cls, args: argparse.Namespace) -> "PoolFilter":
+    def from_args(cls, args: argparse.Namespace) -> PoolFilter:
         return cls(
             provider=getattr(args, "provider", None),
             dir=getattr(args, "dir", None),
@@ -67,9 +67,7 @@ class PoolFilter:
         """Check loaded metadata against date filters."""
         if self.mafter_dt and (not meta.mtime or meta.mtime < self.mafter_dt):
             return False
-        if self.cafter_dt and (not meta.ctime or meta.ctime < self.cafter_dt):
-            return False
-        return True
+        return not (self.cafter_dt and (not meta.ctime or meta.ctime < self.cafter_dt))
 
     def passes_cwd(self, cwd: str | None) -> bool:
         """Check a session's cwd against the dir filter."""

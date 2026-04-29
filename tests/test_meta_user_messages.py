@@ -53,11 +53,7 @@ def test_non_meta_user_message_has_no_meta_wrapper_attrs():
 
 def test_assistant_and_agent_messages_include_model_attribute():
     """Assistant messages (regular and agent) render model attr with claude- prefix stripped."""
-    content = "\n".join([
-        '{"type":"user","message":{"role":"user","content":"hello"}}',
-        '{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"hi"}]}}',
-        '{"type":"assistant","agentId":"agent-abc123","message":{"role":"assistant","model":"claude-sonnet-4-5-20250929","content":[{"type":"text","text":"agent reply"}]}}',
-    ])
+    content = '{"type":"user","message":{"role":"user","content":"hello"}}\n{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"hi"}]}}\n{"type":"assistant","agentId":"agent-abc123","message":{"role":"assistant","model":"claude-sonnet-4-5-20250929","content":[{"type":"text","text":"agent reply"}]}}'
     flags = ConversationFlags(show_agents=True, color="never")
     messages = parse_jsonl(content, flags)
     output = format_to_xml(messages, flags)
@@ -75,16 +71,15 @@ def test_assistant_and_agent_messages_include_model_attribute():
 
 def test_user_messages_have_no_model_attribute():
     """User messages never render a model attr, even when adjacent to assistant with model."""
-    content = "\n".join([
-        '{"type":"user","message":{"role":"user","content":"hello"}}',
-        '{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"reply"}]}}',
-    ])
+    content = '{"type":"user","message":{"role":"user","content":"hello"}}\n{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"reply"}]}}'
     flags = ConversationFlags(color="never")
     messages = parse_jsonl(content, flags)
     output = format_to_xml(messages, flags)
 
     user_tag_line = [line for line in output.splitlines() if "<user-message" in line]
-    assert len(user_tag_line) == 1, f"Expected exactly 1 user-message tag. Got:\n{output}"
+    assert len(user_tag_line) == 1, (
+        f"Expected exactly 1 user-message tag. Got:\n{output}"
+    )
     assert "model=" not in user_tag_line[0], (
         f"User message must not have a model attribute. Got tag: {user_tag_line[0]}"
     )
@@ -117,8 +112,8 @@ def test_string_command_input_user_message_renders_as_yaml_block():
     """Claude command input strings should render as indentation-driven pseudo-YAML."""
     content = (
         '{"type":"user","message":{"role":"user","content":"'
-        '<command-name>/model</command-name>\\n'
-        '            <command-message>model</command-message>\\n'
+        "<command-name>/model</command-name>\\n"
+        "            <command-message>model</command-message>\\n"
         '            <command-args>opus</command-args>"}}'
     )
     flags = ConversationFlags(color="never")
@@ -130,7 +125,9 @@ def test_string_command_input_user_message_renders_as_yaml_block():
         "Expected command-tag user string to switch from <user-message> to "
         f"<user-command-input>. Got:\n{output}"
     )
-    assert '```yaml\nname: "/model"\n  message: "model"\n  args: "opus"\n```' in output, (
+    assert (
+        '```yaml\nname: "/model"\n  message: "model"\n  args: "opus"\n```' in output
+    ), (
         "Expected command-tag user string to render as indentation-driven YAML-like "
         f"XML-like command tags. Got:\n{output}"
     )
@@ -165,7 +162,7 @@ def test_string_command_input_preserves_source_order_for_same_indent_level():
     """Command input output should preserve source order when lines share an indent level."""
     content = (
         '{"type":"user","message":{"role":"user","content":"'
-        '<command-message>export is running…</command-message>\\n'
+        "<command-message>export is running…</command-message>\\n"
         '<command-name>/export</command-name>"}}'
     )
     flags = ConversationFlags(color="never")
@@ -183,8 +180,8 @@ def test_string_command_input_supports_multiple_indentation_levels():
     """Deeper indentation should produce deeper rendered hierarchy levels."""
     content = (
         '{"type":"user","message":{"role":"user","content":"'
-        '<command-name>/agent</command-name>\\n'
-        '  <command-message>run</command-message>\\n'
+        "<command-name>/agent</command-name>\\n"
+        "  <command-message>run</command-message>\\n"
         '    <command-args>full</command-args>"}}'
     )
     flags = ConversationFlags(color="never")
@@ -192,7 +189,9 @@ def test_string_command_input_supports_multiple_indentation_levels():
     messages = parse_jsonl(content, flags)
     output = format_to_xml(messages, flags)
 
-    assert '```yaml\nname: "/agent"\n  message: "run"\n    args: "full"\n```' in output, (
+    assert (
+        '```yaml\nname: "/agent"\n  message: "run"\n    args: "full"\n```' in output
+    ), (
         "Expected indentation depth in command-tag input to carry through into the "
         f"rendered YAML-like hierarchy. Got:\n{output}"
     )
@@ -202,9 +201,9 @@ def test_string_command_input_leaves_numeric_and_boolean_scalars_unquoted():
     """Numeric and lowercase boolean command values should stay as bare YAML scalars."""
     content = (
         '{"type":"user","message":{"role":"user","content":"'
-        '<command-name>/config</command-name>\\n'
-        '<command-count>-42</command-count>\\n'
-        '<command-enabled>true</command-enabled>\\n'
+        "<command-name>/config</command-name>\\n"
+        "<command-count>-42</command-count>\\n"
+        "<command-enabled>true</command-enabled>\\n"
         '<command-note>alpha</command-note>"}}'
     )
     flags = ConversationFlags(color="never")
@@ -239,8 +238,7 @@ def test_away_summary_system_message_renders_as_recap_without_disable_suffix():
     )
     assert "## Recap" in output, f"Expected recap header in output. Got:\n{output}"
     assert "disable recaps in /config" not in output, (
-        "Expected recap suffix to be stripped from visible output. "
-        f"Got:\n{output}"
+        f"Expected recap suffix to be stripped from visible output. Got:\n{output}"
     )
     assert (
         "Fixing the Elaborate-on-selected-text feature in the mobile web client."

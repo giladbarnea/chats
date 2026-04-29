@@ -69,7 +69,11 @@ def _generate_unique_session_target(
     for _ in range(100):
         new_session_id = generate_session_id()
         target_path = build_target_path(source_path, source_session_id, new_session_id)
-        if new_session_id != source_session_id and target_path != source_path and not target_path.exists():
+        if (
+            new_session_id != source_session_id
+            and target_path != source_path
+            and not target_path.exists()
+        ):
             return new_session_id, target_path
     raise RuntimeError(f"Unable to generate a unique fork target for {source_path}")
 
@@ -80,7 +84,9 @@ def _generate_unique_agent_target(directory: Path) -> tuple[str, Path]:
         target_path = directory / f"agent-{new_agent_id}.jsonl"
         if not target_path.exists():
             return new_agent_id, target_path
-    raise RuntimeError(f"Unable to generate a unique Claude sidechain id in {directory}")
+    raise RuntimeError(
+        f"Unable to generate a unique Claude sidechain id in {directory}"
+    )
 
 
 def _replace_stem_suffix(
@@ -94,7 +100,9 @@ def _replace_stem_suffix(
         new_stem = stem[: -len(source_session_id)] + new_session_id
     else:
         prefix, sep, _suffix = stem.rpartition(separator)
-        new_stem = f"{prefix}{sep}{new_session_id}" if prefix and sep else new_session_id
+        new_stem = (
+            f"{prefix}{sep}{new_session_id}" if prefix and sep else new_session_id
+        )
     return source_path.with_name(f"{new_stem}{source_path.suffix}")
 
 
@@ -217,17 +225,17 @@ def _filter_claude_assistant_content(
             "name": item.get("name"),
             "input": item.get("input", {}),
         }
-        show_tool, should_shorten = resolve_tool_visibility(tool_payload, flags.show_tools, id_map)
+        show_tool, should_shorten = resolve_tool_visibility(
+            tool_payload, flags.show_tools, id_map
+        )
         if not show_tool:
             continue
 
         kept_tool = _shorten_tool_payload(tool_payload, should_shorten)
-        kept_items.append(
-            {
-                **copy.deepcopy(item),
-                "input": kept_tool.get("input", {}),
-            }
-        )
+        kept_items.append({
+            **copy.deepcopy(item),
+            "input": kept_tool.get("input", {}),
+        })
 
     return kept_items
 
@@ -269,7 +277,9 @@ def _filter_claude_user_content(
             kept_tool_results.append((kept_item, False))
             continue
 
-        show_tool, should_shorten = resolve_tool_visibility(tool_payload, flags.show_tools, id_map)
+        show_tool, should_shorten = resolve_tool_visibility(
+            tool_payload, flags.show_tools, id_map
+        )
         if not show_tool:
             continue
 
@@ -314,12 +324,16 @@ def _rewrite_claude_entries(
 
         elif entry_type == "user":
             content = entry.get("message", {}).get("content", [])
-            filtered_content, kept_tool_results = _filter_claude_user_content(content, flags, id_map)
+            filtered_content, kept_tool_results = _filter_claude_user_content(
+                content, flags, id_map
+            )
             if isinstance(content, str):
                 if flags.show_user_messages and content:
                     entry["message"]["content"] = content
                 elif kept_tool_results:
-                    entry["message"]["content"] = [tool_result for tool_result, _short in kept_tool_results]
+                    entry["message"]["content"] = [
+                        tool_result for tool_result, _short in kept_tool_results
+                    ]
                 else:
                     continue
             else:
@@ -333,7 +347,9 @@ def _rewrite_claude_entries(
                 if should_shorten:
                     entry["toolUseResult"] = shorten_data(tool_use_result)
                 if agent_id_map and tool_use_result.get("agentId") in agent_id_map:
-                    entry["toolUseResult"]["agentId"] = agent_id_map[tool_use_result["agentId"]]
+                    entry["toolUseResult"]["agentId"] = agent_id_map[
+                        tool_use_result["agentId"]
+                    ]
 
         if agent_id_map and entry.get("agentId") in agent_id_map:
             entry["agentId"] = agent_id_map[entry["agentId"]]
@@ -385,13 +401,19 @@ def _fork_claude_session(source_path: Path, flags: ConversationFlags) -> Path:
     )
 
     source_entries = _read_jsonl_entries(source_path)
-    sidechain_files = _find_claude_sidechain_files(source_path, source_session_id) if flags.show_agents else []
+    sidechain_files = (
+        _find_claude_sidechain_files(source_path, source_session_id)
+        if flags.show_agents
+        else []
+    )
     agent_id_map: dict[str, str] = {}
     sidechain_targets: list[tuple[Path, list[dict]]] = []
 
     for sidechain_file in sidechain_files:
         old_agent_id = _extract_claude_agent_id(sidechain_file)
-        new_agent_id, sidechain_target = _generate_unique_agent_target(source_path.parent)
+        new_agent_id, sidechain_target = _generate_unique_agent_target(
+            source_path.parent
+        )
         agent_id_map[old_agent_id] = new_agent_id
         sidechain_entries = _rewrite_claude_entries(
             _read_jsonl_entries(sidechain_file),
@@ -457,7 +479,9 @@ def _filter_pi_assistant_content(
             "name": _normalize_pi_tool_name(item.get("name")),
             "input": item.get("arguments", {}),
         }
-        show_tool, should_shorten = resolve_tool_visibility(tool_payload, flags.show_tools, id_map)
+        show_tool, should_shorten = resolve_tool_visibility(
+            tool_payload, flags.show_tools, id_map
+        )
         if not show_tool:
             continue
 
@@ -514,7 +538,9 @@ def _rewrite_pi_entries(
             continue
 
         if role == "assistant":
-            filtered_content = _filter_pi_assistant_content(message.get("content", []), flags, id_map)
+            filtered_content = _filter_pi_assistant_content(
+                message.get("content", []), flags, id_map
+            )
             if not filtered_content:
                 continue
             entry["message"]["content"] = filtered_content
@@ -530,7 +556,9 @@ def _rewrite_pi_entries(
             "content": message.get("content", []),
             "is_error": message.get("isError", False),
         }
-        show_tool, should_shorten = resolve_tool_visibility(tool_payload, flags.show_tools, id_map)
+        show_tool, should_shorten = resolve_tool_visibility(
+            tool_payload, flags.show_tools, id_map
+        )
         if not show_tool:
             continue
         if should_shorten:
@@ -644,7 +672,9 @@ def _rewrite_codex_entries(
             if role == "user":
                 if not flags.show_user_messages:
                     continue
-                filtered_content = _filter_codex_user_content(payload.get("content", []))
+                filtered_content = _filter_codex_user_content(
+                    payload.get("content", [])
+                )
                 if not filtered_content:
                     continue
                 payload["content"] = filtered_content
@@ -654,7 +684,9 @@ def _rewrite_codex_entries(
             if role == "assistant":
                 if not flags.show_assistant_messages:
                     continue
-                filtered_content = _filter_codex_assistant_content(payload.get("content", []))
+                filtered_content = _filter_codex_assistant_content(
+                    payload.get("content", [])
+                )
                 if not filtered_content:
                     continue
                 payload["content"] = filtered_content
@@ -695,14 +727,20 @@ def _rewrite_codex_entries(
                 "type": "tool_use",
                 "id": payload.get("call_id"),
                 "name": _normalize_codex_tool_name(payload.get("name")),
-                "input": payload.get("arguments") if payload_type == "function_call" else payload.get("input"),
+                "input": payload.get("arguments")
+                if payload_type == "function_call"
+                else payload.get("input"),
             }
-            show_tool, should_shorten = resolve_tool_visibility(tool_payload, flags.show_tools, id_map)
+            show_tool, should_shorten = resolve_tool_visibility(
+                tool_payload, flags.show_tools, id_map
+            )
             if not show_tool:
                 continue
             if should_shorten:
                 field_name = "arguments" if payload_type == "function_call" else "input"
-                payload[field_name] = _shorten_codex_serialized_value(payload.get(field_name))
+                payload[field_name] = _shorten_codex_serialized_value(
+                    payload.get(field_name)
+                )
             rewritten_entries.append(entry)
             continue
 
@@ -713,11 +751,15 @@ def _rewrite_codex_entries(
                 "content": payload.get("output", ""),
                 "is_error": False,
             }
-            show_tool, should_shorten = resolve_tool_visibility(tool_payload, flags.show_tools, id_map)
+            show_tool, should_shorten = resolve_tool_visibility(
+                tool_payload, flags.show_tools, id_map
+            )
             if not show_tool:
                 continue
             if should_shorten:
-                payload["output"] = _shorten_codex_serialized_value(payload.get("output"))
+                payload["output"] = _shorten_codex_serialized_value(
+                    payload.get("output")
+                )
             rewritten_entries.append(entry)
 
     return rewritten_entries

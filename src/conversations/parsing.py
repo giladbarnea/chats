@@ -7,7 +7,7 @@ import textwrap
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .model import ConversationFlags, Message, Provider
@@ -17,7 +17,6 @@ from .registry import (
     normalize_tool_name,
 )
 from .utils import shorten_tool_use_id
-
 
 RenameEntryBuilder = Callable[[list[dict], str, str], list[dict]]
 
@@ -50,22 +49,22 @@ def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | N
 
     return (
         _parse_iso_timestamp(first_ts) if first_ts else None,
-        _parse_iso_timestamp(last_ts) if last_ts else None
+        _parse_iso_timestamp(last_ts) if last_ts else None,
     )
 
 
 def _find_first_timestamp(file_path: Path) -> str | None:
     """Finds the first timestamp by reading from the beginning."""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
                 try:
                     entry = json.loads(line)
-                    if 'timestamp' in entry:
-                        return entry['timestamp']
+                    if "timestamp" in entry:
+                        return entry["timestamp"]
                 except json.JSONDecodeError:
                     continue
     except Exception:
@@ -76,7 +75,7 @@ def _find_first_timestamp(file_path: Path) -> str | None:
 def _find_last_timestamp(file_path: Path, chunk_size: int = 4096) -> str | None:
     """Finds the last timestamp by reading from the end (backwards)."""
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             f.seek(0, os.SEEK_END)
             file_size = f.tell()
             remaining_bytes = file_size
@@ -93,14 +92,14 @@ def _find_last_timestamp(file_path: Path, chunk_size: int = 4096) -> str | None:
 
                 # Prepend whatever was left from the previous (later) chunk
                 chunk += buffer
-                lines = chunk.split(b'\n')
+                lines = chunk.split(b"\n")
 
                 # The first element is likely a partial line from the *previous* (earlier) chunk
                 # so we keep it in the buffer for the next iteration, unless we are at the start of the file.
                 if remaining_bytes > 0:
                     buffer = lines.pop(0)
                 else:
-                    buffer = b"" # We are at start, process everything
+                    buffer = b""  # We are at start, process everything
 
                 # Iterate lines in reverse
                 for line in reversed(lines):
@@ -109,9 +108,9 @@ def _find_last_timestamp(file_path: Path, chunk_size: int = 4096) -> str | None:
                         continue
                     try:
                         # Decode utf-8 safely
-                        entry = json.loads(line.decode('utf-8'))
-                        if 'timestamp' in entry:
-                            return entry['timestamp']
+                        entry = json.loads(line.decode("utf-8"))
+                        if "timestamp" in entry:
+                            return entry["timestamp"]
                     except (json.JSONDecodeError, UnicodeDecodeError):
                         continue
 
@@ -458,7 +457,11 @@ def _render_command_yaml_line_with_indent(key: str, value: str, level: int) -> s
 
 def _render_command_yaml_scalar(value: str) -> str:
     """Quote scalar command values unless they already look like YAML primitives."""
-    if value.isnumeric() or value.removeprefix("-").isnumeric() or value in ("true", "false"):
+    if (
+        value.isnumeric()
+        or value.removeprefix("-").isnumeric()
+        or value in ("true", "false")
+    ):
         return value
 
     escaped_value = value.replace("\\", "\\\\").replace('"', '\\"')
@@ -517,7 +520,9 @@ def _parse_default_jsonl_entries(
             msg = _parse_assistant_entry(entry, index, flags)
         elif entry_type == "system":
             msg = _parse_system_entry(entry, index, flags)
-        elif flags.show_assistant_messages and (msg := _parse_custom_title_entry(entry, index)):
+        elif flags.show_assistant_messages and (
+            msg := _parse_custom_title_entry(entry, index)
+        ):
             pass
         else:
             msg = None
@@ -534,7 +539,9 @@ def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message
     return _parse_default_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
-def _parse_pi_jsonl_entries(entries: list[dict], flags: ConversationFlags) -> list[Message]:
+def _parse_pi_jsonl_entries(
+    entries: list[dict], flags: ConversationFlags
+) -> list[Message]:
     """Parse PI JSONL entries into the shared Message model."""
     messages = []
     index = 1
@@ -542,7 +549,9 @@ def _parse_pi_jsonl_entries(entries: list[dict], flags: ConversationFlags) -> li
     for entry in entries:
         entry_type = entry.get("type")
 
-        if flags.show_assistant_messages and (msg := _parse_custom_title_entry(entry, index)):
+        if flags.show_assistant_messages and (
+            msg := _parse_custom_title_entry(entry, index)
+        ):
             pass
         elif entry_type == "message":
             msg = _parse_pi_message_entry(entry, index, flags)
@@ -588,7 +597,9 @@ def _parse_codex_jsonl_entries(
     for entry in entries:
         entry_type = entry.get("type")
 
-        if flags.show_assistant_messages and (msg := _parse_custom_title_entry(entry, index)):
+        if flags.show_assistant_messages and (
+            msg := _parse_custom_title_entry(entry, index)
+        ):
             flush_assistant()
             messages.append(msg)
             index += 1
@@ -653,53 +664,45 @@ def _parse_codex_jsonl_entries(
         if payload_type == "function_call" and flags.show_tools:
             assistant = ensure_assistant(timestamp)
             tool_name = _normalize_codex_tool_name(payload.get("name"))
-            assistant.tools.append(
-                {
-                    "type": "tool_use",
-                    "id": payload.get("call_id"),
-                    "name": tool_name,
-                    "input": _normalize_codex_tool_input(
-                        tool_name, payload.get("arguments")
-                    ),
-                }
-            )
+            assistant.tools.append({
+                "type": "tool_use",
+                "id": payload.get("call_id"),
+                "name": tool_name,
+                "input": _normalize_codex_tool_input(
+                    tool_name, payload.get("arguments")
+                ),
+            })
             continue
 
         if payload_type == "function_call_output" and flags.show_tools:
             assistant = ensure_assistant(timestamp)
-            assistant.tools.append(
-                {
-                    "type": "tool_result",
-                    "tool_use_id": payload.get("call_id"),
-                    "content": _parse_codex_tool_output(payload.get("output", "")),
-                    "is_error": False,
-                }
-            )
+            assistant.tools.append({
+                "type": "tool_result",
+                "tool_use_id": payload.get("call_id"),
+                "content": _parse_codex_tool_output(payload.get("output", "")),
+                "is_error": False,
+            })
             continue
 
         if payload_type == "custom_tool_call" and flags.show_tools:
             assistant = ensure_assistant(timestamp)
             tool_name = _normalize_codex_tool_name(payload.get("name"))
-            assistant.tools.append(
-                {
-                    "type": "tool_use",
-                    "id": payload.get("call_id"),
-                    "name": tool_name,
-                    "input": _normalize_codex_tool_input(tool_name, payload.get("input")),
-                }
-            )
+            assistant.tools.append({
+                "type": "tool_use",
+                "id": payload.get("call_id"),
+                "name": tool_name,
+                "input": _normalize_codex_tool_input(tool_name, payload.get("input")),
+            })
             continue
 
         if payload_type == "custom_tool_call_output" and flags.show_tools:
             assistant = ensure_assistant(timestamp)
-            assistant.tools.append(
-                {
-                    "type": "tool_result",
-                    "tool_use_id": payload.get("call_id"),
-                    "content": _parse_codex_tool_output(payload.get("output", "")),
-                    "is_error": False,
-                }
-            )
+            assistant.tools.append({
+                "type": "tool_result",
+                "tool_use_id": payload.get("call_id"),
+                "content": _parse_codex_tool_output(payload.get("output", "")),
+                "is_error": False,
+            })
             continue
 
     flush_assistant()
@@ -732,7 +735,9 @@ def _is_codex_jsonl_path(source_path: Path | None) -> bool:
         return False
 
     try:
-        source_path.resolve().relative_to((Path.home() / ".codex" / "sessions").resolve())
+        source_path.resolve().relative_to(
+            (Path.home() / ".codex" / "sessions").resolve()
+        )
     except ValueError:
         return False
     except OSError:
@@ -770,7 +775,9 @@ def _extract_pi_session_id(session_file: Path) -> str | None:
     return None
 
 
-def _extract_codex_session_meta_field(session_file: Path, field_name: str) -> str | None:
+def _extract_codex_session_meta_field(
+    session_file: Path, field_name: str
+) -> str | None:
     """Extract a string field from the Codex session_meta payload."""
     try:
         with open(session_file, "r", encoding="utf-8") as handle:
@@ -897,8 +904,11 @@ def find_all_supported_session_files(*, include_sidechains: bool = True) -> list
 
 def _jsonl_timestamp_now() -> str:
     """Return a UTC timestamp string in the JSONL shape used by native sessions."""
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
-        "+00:00", "Z"
+    return (
+        datetime
+        .now(UTC)
+        .isoformat(timespec="milliseconds")
+        .replace("+00:00", "Z")
     )
 
 
@@ -1028,7 +1038,9 @@ def parse_jsonl(
     source_path: Path | None = None,
 ) -> list[Message]:
     """Parse a JSONL conversation via the matching session adapter."""
-    return parse_jsonl_entries(_iter_jsonl_entries(content), flags, source_path=source_path)
+    return parse_jsonl_entries(
+        _iter_jsonl_entries(content), flags, source_path=source_path
+    )
 
 
 def parse_jsonl_entries(
@@ -1062,7 +1074,9 @@ def resolve_session_identifier_via_adapters(
     return None, []
 
 
-def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Message | None:
+def _parse_user_entry(
+    entry: dict, index: int, flags: ConversationFlags
+) -> Message | None:
     """Parse a user-type JSONL entry."""
     message_data = entry.get("message", {})
     if message_data.get("role") != "user":
@@ -1087,7 +1101,11 @@ def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Mess
     elif isinstance(content_data, list):
         text_blocks = _extract_text_blocks(content_data)
         for item in content_data:
-            if isinstance(item, dict) and flags.show_tools and item.get("type") == "tool_result":
+            if (
+                isinstance(item, dict)
+                and flags.show_tools
+                and item.get("type") == "tool_result"
+            ):
                 msg.tools.append(item)
 
         if text_blocks and flags.show_user_messages:
@@ -1096,7 +1114,9 @@ def _parse_user_entry(entry: dict, index: int, flags: ConversationFlags) -> Mess
     return msg
 
 
-def _parse_assistant_entry(entry: dict, index: int, flags: ConversationFlags) -> Message | None:
+def _parse_assistant_entry(
+    entry: dict, index: int, flags: ConversationFlags
+) -> Message | None:
     """Parse an assistant-type JSONL entry."""
     message_data = entry.get("message", {})
     if message_data.get("role") != "assistant":
@@ -1148,7 +1168,9 @@ def _parse_assistant_entry(entry: dict, index: int, flags: ConversationFlags) ->
     return msg
 
 
-def _parse_system_entry(entry: dict, index: int, flags: ConversationFlags) -> Message | None:
+def _parse_system_entry(
+    entry: dict, index: int, flags: ConversationFlags
+) -> Message | None:
     """Parse Claude system entries that should be surfaced as visible messages."""
     if not flags.show_assistant_messages:
         return None
@@ -1206,23 +1228,19 @@ def _parse_pi_message_entry(
             return None
 
         msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
-        msg.tools.append(
-            {
-                "type": "tool_result",
-                "tool_use_id": message_data.get("toolCallId"),
-                "content": message_data.get("content", []),
-                "is_error": message_data.get("isError", False),
-            }
-        )
+        msg.tools.append({
+            "type": "tool_result",
+            "tool_use_id": message_data.get("toolCallId"),
+            "content": message_data.get("content", []),
+            "is_error": message_data.get("isError", False),
+        })
         return msg
     else:
         return None
 
     content_items = message_data.get("content", [])
     text_blocks = _extract_text_blocks(content_items)
-    if role == "user" and text_blocks and flags.show_user_messages:
-        msg.text = "\n\n".join(text_blocks)
-    elif role == "assistant" and text_blocks and flags.show_assistant_messages:
+    if role == "user" and text_blocks and flags.show_user_messages or role == "assistant" and text_blocks and flags.show_assistant_messages:
         msg.text = "\n\n".join(text_blocks)
 
     if role == "assistant" and isinstance(content_items, list):
@@ -1237,14 +1255,12 @@ def _parse_pi_message_entry(
                 if thinking := item.get("thinking", "").strip():
                     thinking_blocks.append(thinking)
             elif item_type == "toolCall" and flags.show_tools:
-                msg.tools.append(
-                    {
-                        "type": "tool_use",
-                        "id": item.get("id"),
-                        "name": _normalize_pi_tool_name(item.get("name")),
-                        "input": item.get("arguments", {}),
-                    }
-                )
+                msg.tools.append({
+                    "type": "tool_use",
+                    "id": item.get("id"),
+                    "name": _normalize_pi_tool_name(item.get("name")),
+                    "input": item.get("arguments", {}),
+                })
 
         if thinking_blocks:
             msg.thinking = "\n\n".join(thinking_blocks)
@@ -1361,9 +1377,7 @@ def _is_codex_preamble_text(text: str) -> bool:
         return True
     if stripped.startswith("<environment_context>"):
         return True
-    if stripped.startswith("<skill>"):
-        return True
-    return False
+    return bool(stripped.startswith("<skill>"))
 
 
 def _extract_cwd_from_codex_entry(entry: dict) -> str | None:

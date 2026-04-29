@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 # Maps short/long modifier keywords to (field_name, value) pairs.
 # Adding a new modifier = adding entries here.
 MODIFIERS: dict[str, tuple[str, str | bool]] = {
@@ -103,7 +102,9 @@ def resolve_tool_visibility(
         if tool_filter.negate and tool_filter._matches_criteria(tool, id_map):
             return False, False
 
-    positive_filters = [tool_filter for tool_filter in filter_value if not tool_filter.negate]
+    positive_filters = [
+        tool_filter for tool_filter in filter_value if not tool_filter.negate
+    ]
     if not positive_filters:
         return True, False
 

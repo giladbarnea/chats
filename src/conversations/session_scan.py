@@ -7,8 +7,8 @@ from .model import ConversationFlags, Message, Provider
 from .parsing import (
     decode_jsonl_entries,
     detect_format,
-    extract_cwd_from_entries,
     extract_custom_titles_from_entries,
+    extract_cwd_from_entries,
     extract_summaries_from_entries,
     get_jsonl_session_adapter,
     parse_jsonl_entries,
@@ -66,5 +66,7 @@ class SessionScan:
             cwd=extract_cwd_from_entries(entries),
             summaries=tuple(extract_summaries_from_entries(entries)),
             custom_titles=tuple(extract_custom_titles_from_entries(entries)),
-            messages=tuple(parse_jsonl_entries(entries, flags, source_path=source_path)),
+            messages=tuple(
+                parse_jsonl_entries(entries, flags, source_path=source_path)
+            ),
         )

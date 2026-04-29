@@ -25,8 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import resolve_conversation_file, cmd_rename
-
+from conversations import cmd_rename, resolve_conversation_file
 
 # =============================================================================
 # Fixtures
@@ -48,10 +47,7 @@ def temp_claude_home(tmp_path, monkeypatch):
     temp_projects = temp_claude / "projects"
 
     # Copy the fixture project directory
-    shutil.copytree(
-        FIXTURES_DIR / "projects",
-        temp_projects
-    )
+    shutil.copytree(FIXTURES_DIR / "projects", temp_projects)
 
     # Patch Path.home() to return our temp directory
     monkeypatch.setattr(Path, "home", lambda: temp_home)
@@ -62,13 +58,25 @@ def temp_claude_home(tmp_path, monkeypatch):
 @pytest.fixture
 def session_with_summary(temp_claude_home):
     """Return path to session file that has existing summary."""
-    return temp_claude_home / ".claude" / "projects" / "test-project" / "aaaa1111-with-summary.jsonl"
+    return (
+        temp_claude_home
+        / ".claude"
+        / "projects"
+        / "test-project"
+        / "aaaa1111-with-summary.jsonl"
+    )
 
 
 @pytest.fixture
 def session_without_summary(temp_claude_home):
     """Return path to session file that has no summary."""
-    return temp_claude_home / ".claude" / "projects" / "test-project" / "bbbb2222-without-summary.jsonl"
+    return (
+        temp_claude_home
+        / ".claude"
+        / "projects"
+        / "test-project"
+        / "bbbb2222-without-summary.jsonl"
+    )
 
 
 def get_last_line_json(path: Path, offset: int = -1) -> dict:
@@ -76,20 +84,21 @@ def get_last_line_json(path: Path, offset: int = -1) -> dict:
 
     offset=-1 is last line, -2 is second-to-last, etc.
     """
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         lines = f.readlines()
         return json.loads(lines[offset])
 
 
 def count_lines(path: Path) -> int:
     """Count lines in a file."""
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         return sum(1 for _ in f)
 
 
 # =============================================================================
 # resolve_conversation_file() tests
 # =============================================================================
+
 
 class TestResolveConversationFile:
     """Test the resolve_conversation_file function."""
@@ -102,25 +111,49 @@ class TestResolveConversationFile:
     def test_resolve_by_uuid_stem(self, temp_claude_home):
         """UUID (filename stem) resolves to matching file."""
         result = resolve_conversation_file("aaaa1111-with-summary")
-        expected = temp_claude_home / ".claude" / "projects" / "test-project" / "aaaa1111-with-summary.jsonl"
+        expected = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "aaaa1111-with-summary.jsonl"
+        )
         assert result == expected
 
     def test_resolve_by_uuid_with_extension(self, temp_claude_home):
         """UUID with .jsonl extension resolves to matching file."""
         result = resolve_conversation_file("aaaa1111-with-summary.jsonl")
-        expected = temp_claude_home / ".claude" / "projects" / "test-project" / "aaaa1111-with-summary.jsonl"
+        expected = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "aaaa1111-with-summary.jsonl"
+        )
         assert result == expected
 
     def test_resolve_by_summary_prefix(self, temp_claude_home):
         """Summary prefix (case-insensitive) resolves to matching file."""
         result = resolve_conversation_file("Existing summary")
-        expected = temp_claude_home / ".claude" / "projects" / "test-project" / "aaaa1111-with-summary.jsonl"
+        expected = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "aaaa1111-with-summary.jsonl"
+        )
         assert result == expected
 
     def test_resolve_by_summary_prefix_case_insensitive(self, temp_claude_home):
         """Summary prefix match is case-insensitive."""
         result = resolve_conversation_file("EXISTING SUMMARY")
-        expected = temp_claude_home / ".claude" / "projects" / "test-project" / "aaaa1111-with-summary.jsonl"
+        expected = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "aaaa1111-with-summary.jsonl"
+        )
         assert result == expected
 
     def test_resolve_ambiguous_exits(self, temp_claude_home):
@@ -146,6 +179,7 @@ class TestResolveConversationFile:
 # =============================================================================
 # cmd_rename() tests - Custom title entry
 # =============================================================================
+
 
 class TestRenameAppendsCustomTitle:
     """Test that rename appends a custom-title entry to the file."""
@@ -178,12 +212,12 @@ class TestRenameAppendsCustomTitle:
 
     def test_preserves_existing_content(self, session_with_summary):
         """Rename preserves all existing lines in the file."""
-        with open(session_with_summary, 'r') as f:
+        with open(session_with_summary, "r") as f:
             original_lines = f.readlines()
 
         cmd_rename(str(session_with_summary), "Changed Name")
 
-        with open(session_with_summary, 'r') as f:
+        with open(session_with_summary, "r") as f:
             new_lines = f.readlines()
 
         # All original lines should still be there
@@ -205,6 +239,7 @@ class TestRenameAppendsCustomTitle:
 # =============================================================================
 # cmd_rename() tests - Agent name entry
 # =============================================================================
+
 
 class TestRenameAppendsAgentName:
     """Test that rename appends an agent-name entry after custom-title."""
@@ -240,10 +275,13 @@ class TestRenameAppendsAgentName:
 # cmd_rename() tests - History entry
 # =============================================================================
 
+
 class TestRenameUpdatesHistory:
     """Test that rename appends a /rename entry to ~/.claude/history.jsonl."""
 
-    def test_creates_history_file_if_absent(self, temp_claude_home, session_with_summary):
+    def test_creates_history_file_if_absent(
+        self, temp_claude_home, session_with_summary
+    ):
         """History file is created if it doesn't exist."""
         history_file = temp_claude_home / ".claude" / "history.jsonl"
         assert not history_file.exists()
@@ -280,7 +318,9 @@ class TestRenameUpdatesHistory:
         last_line = get_last_line_json(history_file)
         assert last_line["project"] == "/test/project"
 
-    def test_history_entry_has_pasted_contents(self, temp_claude_home, session_with_summary):
+    def test_history_entry_has_pasted_contents(
+        self, temp_claude_home, session_with_summary
+    ):
         """History entry has an empty pastedContents dict."""
         cmd_rename(str(session_with_summary), "Pasted Test")
 
@@ -291,14 +331,18 @@ class TestRenameUpdatesHistory:
     def test_preserves_existing_history(self, temp_claude_home, session_with_summary):
         """Rename preserves existing entries in history.jsonl."""
         history_file = temp_claude_home / ".claude" / "history.jsonl"
-        existing_entry = json.dumps({"display": "existing", "sessionId": "other"}) + "\n"
+        existing_entry = (
+            json.dumps({"display": "existing", "sessionId": "other"}) + "\n"
+        )
         history_file.write_text(existing_entry)
 
         cmd_rename(str(session_with_summary), "Append Test")
 
-        with open(history_file, 'r') as f:
+        with open(history_file, "r") as f:
             lines = f.readlines()
-        assert len(lines) == 2, f"Expected 2 history lines (original + new), got {len(lines)}"
+        assert len(lines) == 2, (
+            f"Expected 2 history lines (original + new), got {len(lines)}"
+        )
         assert json.loads(lines[0]).get("display") == "existing"
         assert json.loads(lines[1]).get("display") == "/rename Append Test"
 
@@ -306,6 +350,7 @@ class TestRenameUpdatesHistory:
 # =============================================================================
 # cmd_rename() error cases
 # =============================================================================
+
 
 class TestRenameErrors:
     """Test error handling in rename command."""
@@ -331,13 +376,13 @@ class TestRenameErrors:
 
     def test_empty_name_does_not_modify_file(self, session_with_summary):
         """Failed rename due to empty name leaves file unchanged."""
-        with open(session_with_summary, 'r') as f:
+        with open(session_with_summary, "r") as f:
             original_content = f.read()
 
         with pytest.raises(SystemExit):
             cmd_rename(str(session_with_summary), "")
 
-        with open(session_with_summary, 'r') as f:
+        with open(session_with_summary, "r") as f:
             new_content = f.read()
 
         assert new_content == original_content
@@ -346,6 +391,7 @@ class TestRenameErrors:
 # =============================================================================
 # Edge cases
 # =============================================================================
+
 
 class TestRenameEdgeCases:
     """Test edge cases and special inputs."""
@@ -408,8 +454,9 @@ class TestRenameEdgeCases:
 
 if __name__ == "__main__":
     import subprocess
+
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
-        cwd=Path(__file__).parent.parent
+        cwd=Path(__file__).parent.parent,
     )
     sys.exit(result.returncode)

@@ -1,8 +1,7 @@
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from conversations.catalog import _extract_metadata, _is_session_id, catalog_sessions
+
 
 def test_extract_metadata():
     content = """---
@@ -16,6 +15,7 @@ messages: 17
     assert meta.get("session_id") == 1234
     assert meta.get("directory") == "~/my_dir"
     assert meta.get("messages") == 17
+
 
 def test_extract_metadata_no_frontmatter():
     content = """<some_xml>
@@ -62,17 +62,22 @@ class TestCatalogSessionsGreppable:
                 "<content1/>"
             )
 
-        with patch.object(conversations.catalog, "_get_session_content", side_effect=fake_get_session_content), \
-             patch("conversations.catalog.subprocess.run") as mock_run, \
-             patch("sys.stdin") as mock_stdin, \
-             patch("sys.exit"):
+        with (
+            patch.object(
+                conversations.catalog,
+                "_get_session_content",
+                side_effect=fake_get_session_content,
+            ),
+            patch("conversations.catalog.subprocess.run"),
+            patch("sys.stdin") as mock_stdin,
+            patch("sys.exit"),
+        ):
             mock_stdin.isatty.return_value = False
             mock_stdin.read.return_value = piped
             catalog_sessions([])
 
         # Only the first session_id should have been processed
         assert collected_ids == ["11111111-1111-1111-1111-111111111111"]
-
 
     def test_finds_only_first_session_id_in_args(self, tmp_path):
         """When multiple session IDs are provided as arguments, only the first is cataloged."""
@@ -85,10 +90,16 @@ class TestCatalogSessionsGreppable:
             collected_ids.append(sid)
             return "---\nsession_id: " + sid + "\n---\n<content/>"
 
-        with patch.object(conversations.catalog, "_get_session_content", side_effect=fake_get_session_content), \
-             patch("conversations.catalog.subprocess.run"), \
-             patch("sys.stdin") as mock_stdin, \
-             patch("sys.exit"):
+        with (
+            patch.object(
+                conversations.catalog,
+                "_get_session_content",
+                side_effect=fake_get_session_content,
+            ),
+            patch("conversations.catalog.subprocess.run"),
+            patch("sys.stdin") as mock_stdin,
+            patch("sys.exit"),
+        ):
             mock_stdin.isatty.return_value = True
             catalog_sessions(["id1", "id2"])
 

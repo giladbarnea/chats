@@ -86,7 +86,9 @@ def test_parse_cli_only_id_forces_plain_output(monkeypatch) -> None:
     cli.main()
 
     flags = captured.get("flags")
-    assert flags is not None, "Expected parse CLI seam to reach cmd_parse with built flags."
+    assert flags is not None, (
+        "Expected parse CLI seam to reach cmd_parse with built flags."
+    )
     assert captured.get("input_arg") == session_id, (
         "Expected parse input to pass through unchanged. "
         f"Got: {captured.get('input_arg')!r}"
@@ -137,7 +139,9 @@ def test_parse_cli_only_metadata_reaches_cmd_parse(monkeypatch) -> None:
     )
 
 
-def test_cmd_parse_only_id_prints_plain_session_id(tmp_path: Path, monkeypatch, capsys) -> None:
+def test_cmd_parse_only_id_prints_plain_session_id(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
     """`cmd_parse(..., only_id=True)` should emit only the resolved session id."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
@@ -166,10 +170,11 @@ def test_cmd_parse_only_id_prints_plain_session_id(tmp_path: Path, monkeypatch, 
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "history_path:" not in captured.out, (
-        "Expected parse id-only mode to suppress metadata. "
-        f"Got stdout:\n{captured.out}"
+        f"Expected parse id-only mode to suppress metadata. Got stdout:\n{captured.out}"
     )
-    assert "first prompt" not in captured.out and "first response" not in captured.out, (
+    assert (
+        "first prompt" not in captured.out and "first response" not in captured.out
+    ), (
         "Expected parse id-only mode to suppress rendered conversation content. "
         f"Got stdout:\n{captured.out}"
     )
@@ -207,7 +212,10 @@ def test_cmd_parse_only_metadata_hides_messages_and_respects_slice(
         "Expected metadata-only mode to include the resolved session id. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "history_path: ~/.claude/projects/demo-project/cccccccc-cccc-cccc-cccc-cccccccccccc.jsonl" in captured.out, (
+    assert (
+        "history_path: ~/.claude/projects/demo-project/cccccccc-cccc-cccc-cccc-cccccccccccc.jsonl"
+        in captured.out
+    ), (
         "Expected metadata-only mode to include the session history path. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -215,11 +223,18 @@ def test_cmd_parse_only_metadata_hides_messages_and_respects_slice(
         "Expected metadata-only mode to preserve parse's post-slice message count semantics. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<user-message" not in captured.out and "<assistant-response" not in captured.out, (
+    assert (
+        "<user-message" not in captured.out
+        and "<assistant-response" not in captured.out
+    ), (
         "Expected metadata-only mode to suppress XML message wrappers. "
         f"Got stdout:\n{captured.out}"
     )
-    assert "first prompt" not in captured.out and "first response" not in captured.out and "last prompt" not in captured.out, (
+    assert (
+        "first prompt" not in captured.out
+        and "first response" not in captured.out
+        and "last prompt" not in captured.out
+    ), (
         "Expected metadata-only mode to suppress rendered message content. "
         f"Got stdout:\n{captured.out}"
     )
@@ -243,7 +258,9 @@ def test_cmd_parse_only_id_rejects_raw_content(capsys) -> None:
         "Expected id-only mode to exit 1 for raw non-file-backed input. "
         f"Got exit code: {exc_info.value.code!r}"
     )
-    assert "`--only-id` requires a resolved session or file-backed input" in captured.err, (
+    assert (
+        "`--only-id` requires a resolved session or file-backed input" in captured.err
+    ), (
         "Expected id-only mode to explain why raw input is unsupported. "
         f"Got stderr:\n{captured.err}"
     )
@@ -271,7 +288,10 @@ def test_cmd_parse_only_metadata_rejects_raw_content(capsys) -> None:
         "Expected metadata-only mode to exit 1 for raw non-file-backed input. "
         f"Got exit code: {exc_info.value.code!r}"
     )
-    assert "`--only-metadata` requires a resolved session or file-backed input" in captured.err, (
+    assert (
+        "`--only-metadata` requires a resolved session or file-backed input"
+        in captured.err
+    ), (
         "Expected metadata-only mode to explain why raw input is unsupported. "
         f"Got stderr:\n{captured.err}"
     )

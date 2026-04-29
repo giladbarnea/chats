@@ -20,7 +20,9 @@ from .pool_filter import PoolFilter, add_pool_filter_args
 from .tool_filter import ToolFilter, parse_tool_spec
 
 
-def _resolve_thinking_mode(raw_thinking: str | None, show_all: bool) -> tuple[bool, bool]:
+def _resolve_thinking_mode(
+    raw_thinking: str | None, show_all: bool
+) -> tuple[bool, bool]:
     """Return (show_thinking, shorten_thinking) from raw CLI args."""
     if show_all:
         return True, False
@@ -365,7 +367,9 @@ def main():
             args.color = "never"
 
         try:
-            show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
+            show_thinking, shorten_thinking = _resolve_thinking_mode(
+                args.thinking, args.all
+            )
         except ValueError as exc:
             parser.error(str(exc))
         flags = ConversationFlags(
@@ -428,7 +432,10 @@ def main():
             help="Include tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
         )
         parser.add_argument(
-            "-a", "--agents", action="store_true", help="Include agent sidechain messages"
+            "-a",
+            "--agents",
+            action="store_true",
+            help="Include agent sidechain messages",
         )
         parser.add_argument(
             "-A",
@@ -438,7 +445,9 @@ def main():
         )
 
         args, _unknown = parser.parse_known_args(sys.argv[2:])
-        _repair_visibility_option_positionals(args, input_attr="session", allow_slice=False)
+        _repair_visibility_option_positionals(
+            args, input_attr="session", allow_slice=False
+        )
 
         if args.session is None:
             parser.error("the following arguments are required: session")
@@ -454,11 +463,9 @@ def main():
         parser = argparse.ArgumentParser(
             prog="ccc rm",
             description="Remove a conversation session and all associated files. "
-                        "Shows a preview, then prompts for confirmation before removal.",
+            "Shows a preview, then prompts for confirmation before removal.",
         )
-        parser.add_argument(
-            "session", help="Session UUID or file path"
-        )
+        parser.add_argument("session", help="Session UUID or file path")
         parser.add_argument(
             "-n",
             "--dry-run",
@@ -498,7 +505,7 @@ Commands:
             "slice",
             nargs="?",
             help='Message selector (1-indexed): "1", "-1", "2:", ":-2", "3:5". '
-            'Pass more positional selectors to OR them together. '
+            "Pass more positional selectors to OR them together. "
             'For negative slices starting with -, use: -- -5: or quote: "-5:"',
         )
         parser.add_argument(
@@ -623,7 +630,9 @@ Commands:
         # 2. Positional args after --flag=value end up in unknown with nargs='?'
         args, unknown = parser.parse_known_args()
 
-        _repair_visibility_option_positionals(args, input_attr="input", allow_slice=True)
+        _repair_visibility_option_positionals(
+            args, input_attr="input", allow_slice=True
+        )
 
         slice_args = list(getattr(args, "_repaired_slices", []))
         if args.slice is not None:

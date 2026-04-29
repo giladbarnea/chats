@@ -146,8 +146,9 @@ class TestEdgeCases:
 
 if __name__ == "__main__":
     import subprocess
+
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
-        cwd=Path(__file__).parent.parent
+        cwd=Path(__file__).parent.parent,
     )
     sys.exit(result.returncode)

@@ -22,8 +22,7 @@ from unittest.mock import patch
 
 import pytest
 
-from conversations import resolve_conversation_file, cmd_rm
-
+from conversations import cmd_rm
 
 # =============================================================================
 # Fixtures
@@ -66,24 +65,32 @@ def full_session_setup(temp_claude_home):
     # Create the main conversation file
     projects_dir = claude_dir / "projects" / project_dir
     conv_file = projects_dir / f"{session_id}.jsonl"
-    conv_file.write_text(json.dumps({
-        "type": "summary",
-        "summary": "Test session for rm command",
-        "leafUuid": "leaf-test"
-    }) + "\n" + json.dumps({
-        "type": "user",
-        "message": {"role": "user", "content": "Hello"},
-        "sessionId": session_id,
-        "uuid": "msg-1"
-    }) + "\n")
+    conv_file.write_text(
+        json.dumps({
+            "type": "summary",
+            "summary": "Test session for rm command",
+            "leafUuid": "leaf-test",
+        })
+        + "\n"
+        + json.dumps({
+            "type": "user",
+            "message": {"role": "user", "content": "Hello"},
+            "sessionId": session_id,
+            "uuid": "msg-1",
+        })
+        + "\n"
+    )
 
     # Create an agent file
     agent_file = projects_dir / "agent-abc12345.jsonl"
-    agent_file.write_text(json.dumps({
-        "type": "user",
-        "sessionId": session_id,
-        "message": {"role": "user", "content": "Agent hello"}
-    }) + "\n")
+    agent_file.write_text(
+        json.dumps({
+            "type": "user",
+            "sessionId": session_id,
+            "message": {"role": "user", "content": "Agent hello"},
+        })
+        + "\n"
+    )
 
     # Create debug file
     debug_dir = claude_dir / "debug"
@@ -115,10 +122,14 @@ def full_session_setup(temp_claude_home):
     # Create history.jsonl with entries for this session and others
     history_file = claude_dir / "history.jsonl"
     history_file.write_text(
-        json.dumps({"sessionId": session_id, "event": "start"}) + "\n" +
-        json.dumps({"sessionId": "other-session", "event": "start"}) + "\n" +
-        json.dumps({"sessionId": session_id, "event": "end"}) + "\n" +
-        json.dumps({"sessionId": "another-session", "event": "something"}) + "\n"
+        json.dumps({"sessionId": session_id, "event": "start"})
+        + "\n"
+        + json.dumps({"sessionId": "other-session", "event": "start"})
+        + "\n"
+        + json.dumps({"sessionId": session_id, "event": "end"})
+        + "\n"
+        + json.dumps({"sessionId": "another-session", "event": "something"})
+        + "\n"
     )
 
     return {
@@ -139,6 +150,7 @@ def full_session_setup(temp_claude_home):
 # =============================================================================
 # cmd_rm() tests - Core behavior
 # =============================================================================
+
 
 class TestRmRemovesFiles:
     """Test that rm removes all associated files."""
@@ -292,11 +304,14 @@ class TestRmMissingFiles:
 
         # Only create the main conversation file
         conv_file = projects_dir / f"{session_id}.jsonl"
-        conv_file.write_text(json.dumps({
-            "type": "summary",
-            "summary": "Minimal test session",
-            "leafUuid": "leaf-minimal"
-        }) + "\n")
+        conv_file.write_text(
+            json.dumps({
+                "type": "summary",
+                "summary": "Minimal test session",
+                "leafUuid": "leaf-minimal",
+            })
+            + "\n"
+        )
 
         # Should not raise
         with patch("builtins.input", return_value="y"):
@@ -408,7 +423,8 @@ class TestRmNonClaude:
                 "timestamp": "2026-04-10T07:00:00.000Z",
                 "type": "session_meta",
                 "payload": {"id": "01961abc-rm-codex", "cwd": "/tmp/codex"},
-            }) + "\n"
+            })
+            + "\n"
             + json.dumps({
                 "timestamp": "2026-04-10T07:00:01.000Z",
                 "type": "response_item",
@@ -417,7 +433,8 @@ class TestRmNonClaude:
                     "role": "user",
                     "content": [{"type": "input_text", "text": "hello"}],
                 },
-            }) + "\n",
+            })
+            + "\n",
             encoding="utf-8",
         )
 
@@ -432,7 +449,9 @@ class TestRmNonClaude:
             "Expected Codex rm preview to display the canonical short session id. "
             f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
         )
-        assert "Session: rollout-2026-04-10T10-00-00-01961abc-rm-codex" not in captured.out, (
+        assert (
+            "Session: rollout-2026-04-10T10-00-00-01961abc-rm-codex" not in captured.out
+        ), (
             "Expected Codex rm preview not to present the rollout-prefixed filename stem in the session label. "
             f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
         )
@@ -458,14 +477,19 @@ class TestRmNonClaude:
                 "id": "rm-pi-test",
                 "timestamp": "2026-04-04T12:00:00.000Z",
                 "cwd": "/tmp/pi",
-            }) + "\n"
+            })
+            + "\n"
             + json.dumps({
                 "type": "message",
                 "id": "user-1",
                 "parentId": "rm-pi-test",
                 "timestamp": "2026-04-04T12:00:01.000Z",
-                "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]},
-            }) + "\n",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "hi"}],
+                },
+            })
+            + "\n",
             encoding="utf-8",
         )
 
@@ -498,7 +522,8 @@ class TestRmNonClaude:
                 "timestamp": "2026-04-10T07:00:00.000Z",
                 "type": "session_meta",
                 "payload": {"id": session_id, "cwd": "/tmp/codex"},
-            }) + "\n"
+            })
+            + "\n"
             + json.dumps({
                 "timestamp": "2026-04-10T07:00:01.000Z",
                 "type": "response_item",
@@ -507,7 +532,8 @@ class TestRmNonClaude:
                     "role": "user",
                     "content": [{"type": "input_text", "text": "hello"}],
                 },
-            }) + "\n",
+            })
+            + "\n",
             encoding="utf-8",
         )
 
@@ -539,7 +565,8 @@ class TestRmNonClaude:
                 "timestamp": "2026-04-10T07:00:00.000Z",
                 "type": "session_meta",
                 "payload": {"id": "01961abc-rm-codex2", "cwd": "/tmp/codex"},
-            }) + "\n",
+            })
+            + "\n",
             encoding="utf-8",
         )
 
@@ -554,8 +581,9 @@ class TestRmNonClaude:
 
 if __name__ == "__main__":
     import subprocess
+
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
-        cwd=Path(__file__).parent.parent
+        cwd=Path(__file__).parent.parent,
     )
     sys.exit(result.returncode)

@@ -33,4 +33,3 @@ class MessagePart(NamedTuple):
 
     kind: MessagePartKind
     data: str | ToolParts  # str for TEXT/THINKING, ToolParts for TOOL
-

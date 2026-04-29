@@ -249,7 +249,10 @@ def test_session_pool_discovers_one_unified_inventory_and_resolves_exact_ids(
         "Expected SessionPool to group Codex sessions under the 'codex' provider. "
         f"Got: {pool.by_provider['codex']!r}"
     )
-    assert pool.resolve_exact_identifier("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") == paths["claude"], (
+    assert (
+        pool.resolve_exact_identifier("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        == paths["claude"]
+    ), (
         "Expected exact Claude ids to resolve from the unified pool. "
         f"Got: {pool.resolve_exact_identifier('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')!r}"
     )
@@ -257,7 +260,10 @@ def test_session_pool_discovers_one_unified_inventory_and_resolves_exact_ids(
         "Expected exact PI native ids to resolve from the unified pool. "
         f"Got: {pool.resolve_exact_identifier('pi-session-id')!r}"
     )
-    assert pool.resolve_exact_identifier("019d7b61-53d7-7891-9033-ad646f9d2ce7") == paths["codex"], (
+    assert (
+        pool.resolve_exact_identifier("019d7b61-53d7-7891-9033-ad646f9d2ce7")
+        == paths["codex"]
+    ), (
         "Expected exact Codex native ids to resolve from the unified pool. "
         f"Got: {pool.resolve_exact_identifier('019d7b61-53d7-7891-9033-ad646f9d2ce7')!r}"
     )
@@ -318,7 +324,10 @@ def test_cmd_parse_provider_filter_limits_recent_negative_index_resolution(
     )
 
     captured = capsys.readouterr()
-    assert "history_path: ~/.claude/projects/demo-project/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jsonl" in captured.out, (
+    assert (
+        "history_path: ~/.claude/projects/demo-project/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jsonl"
+        in captured.out
+    ), (
         "Expected provider='claude' filter to make parse resolve '-1' against "
         f"only Claude sessions. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -397,8 +406,7 @@ def test_cmd_search_matches_custom_title_across_ecosystems(
         f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "pi" in captured.out.lower(), (
-        "Expected PI session path in output. "
-        f"Got stdout:\n{captured.out}"
+        f"Expected PI session path in output. Got stdout:\n{captured.out}"
     )
 
 
@@ -430,6 +438,5 @@ def test_cmd_search_only_id_prints_plain_session_id(
         f"metadata or content. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "history_path:" not in captured.out, (
-        "Expected `--only-id` to suppress search metadata. "
-        f"Got stdout:\n{captured.out}"
+        f"Expected `--only-id` to suppress search metadata. Got stdout:\n{captured.out}"
     )

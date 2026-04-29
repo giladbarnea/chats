@@ -68,13 +68,19 @@ def main():
                 print(f"Error: File not found: {file_path}", file=sys.stderr)
                 sys.exit(1)
 
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
         else:
             # Read from stdin
             if sys.stdin.isatty():
-                print("Usage: truncate_json_strings.py [<json-file-path>]", file=sys.stderr)
-                print("  Reads from file if provided, or from stdin if not", file=sys.stderr)
+                print(
+                    "Usage: truncate_json_strings.py [<json-file-path>]",
+                    file=sys.stderr,
+                )
+                print(
+                    "  Reads from file if provided, or from stdin if not",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
 
             data = json.load(sys.stdin)

@@ -15,7 +15,7 @@ def is_single_negative_index(value: str) -> bool:
     return bool(_SINGLE_NEGATIVE_INDEX.fullmatch(value.strip()))
 
 
-def sort_by_modified(
+def sort_by_modified[T](
     items: Iterable[T],
     *,
     modified_at: Callable[[T], datetime | None],
@@ -24,7 +24,7 @@ def sort_by_modified(
     return sorted(items, key=lambda item: modified_at(item) or datetime.min)
 
 
-def sort_by_modified_descending(
+def sort_by_modified_descending[T](
     items: Iterable[T],
     *,
     modified_at: Callable[[T], datetime | None],
@@ -37,7 +37,7 @@ def sort_by_modified_descending(
     )
 
 
-def resolve_negative_index(selector: str, ordered_items: Sequence[T]) -> T | None:
+def resolve_negative_index[T](selector: str, ordered_items: Sequence[T]) -> T | None:
     """Resolve a negative index like '-1' against an already ordered sequence."""
     if not is_single_negative_index(selector):
         return None

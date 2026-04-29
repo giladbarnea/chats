@@ -52,7 +52,10 @@ def test_cmd_fork_claude_default_creates_thin_main_session_and_updates_history(
                 "message": {
                     "role": "assistant",
                     "content": [
-                        {"type": "thinking", "thinking": "claude thinking should disappear"},
+                        {
+                            "type": "thinking",
+                            "thinking": "claude thinking should disappear",
+                        },
                         {
                             "type": "tool_use",
                             "id": "toolu_task",
@@ -141,7 +144,9 @@ def test_cmd_fork_claude_default_creates_thin_main_session_and_updates_history(
         "Expected default fork to remove Claude toolUseResult payloads when tools are hidden."
     )
     history_entries = _read_jsonl(history_file)
-    assert history_entries[-1].get("sessionId") == "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", (
+    assert (
+        history_entries[-1].get("sessionId") == "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    ), (
         "Expected Claude forks to append the new session id to ~/.claude/history.jsonl. "
         f"Got: {history_entries!r}"
     )
@@ -348,7 +353,10 @@ def test_cmd_fork_codex_rewrites_native_session_id_filename_and_default_visibili
                 "payload": {
                     "type": "reasoning",
                     "summary": [
-                        {"type": "summary_text", "text": "codex reasoning should disappear"}
+                        {
+                            "type": "summary_text",
+                            "text": "codex reasoning should disappear",
+                        }
                     ],
                 },
             },
@@ -377,7 +385,9 @@ def test_cmd_fork_codex_rewrites_native_session_id_filename_and_default_visibili
                 "payload": {
                     "type": "message",
                     "role": "assistant",
-                    "content": [{"type": "output_text", "text": "assistant text stays"}],
+                    "content": [
+                        {"type": "output_text", "text": "assistant text stays"}
+                    ],
                 },
             },
         ],
@@ -394,7 +404,9 @@ def test_cmd_fork_codex_rewrites_native_session_id_filename_and_default_visibili
         ConversationFlags(color=False, paging=False),
     )
 
-    forked_path = session_path.with_name("rollout-2026-04-14T12-00-00-codex-new-id.jsonl")
+    forked_path = session_path.with_name(
+        "rollout-2026-04-14T12-00-00-codex-new-id.jsonl"
+    )
     assert forked_path.exists(), (
         "Expected Codex forks to preserve the native rollout filename prefix and replace the canonical session id."
     )
@@ -404,7 +416,9 @@ def test_cmd_fork_codex_rewrites_native_session_id_filename_and_default_visibili
         "Expected Codex fork to rewrite session_meta.payload.id. "
         f"Got: {forked_entries[0]!r}"
     )
-    payload_types = [entry.get("payload", {}).get("type") for entry in forked_entries[1:]]
+    payload_types = [
+        entry.get("payload", {}).get("type") for entry in forked_entries[1:]
+    ]
     assert payload_types == ["message"], (
         "Expected default Codex fork to strip reasoning and tool response items, leaving only visible text payloads. "
         f"Got payload types: {payload_types!r}"
@@ -422,7 +436,13 @@ def test_cmd_fork_claude_can_keep_shortened_thinking_and_tool_payloads(
     long_command = "CLAUDE_TOOL_START-" + ("B" * 1000) + "-CLAUDE_TOOL_END"
     long_output = "CLAUDE_OUTPUT_START-" + ("C" * 1000) + "-CLAUDE_OUTPUT_END"
 
-    session_path = temp_home / ".claude" / "projects" / "demo-project" / "short-claude-session.jsonl"
+    session_path = (
+        temp_home
+        / ".claude"
+        / "projects"
+        / "demo-project"
+        / "short-claude-session.jsonl"
+    )
     _write_jsonl(
         session_path,
         [
@@ -708,7 +728,9 @@ def test_fork_cli_treats_bare_tools_flag_like_parse_for_following_session_argume
         f"matching parse-mode argument handling. Got: {captured!r}"
     )
     flags = captured.get("flags")
-    assert isinstance(flags, ConversationFlags), f"Expected CLI to pass ConversationFlags. Got: {flags!r}"
+    assert isinstance(flags, ConversationFlags), (
+        f"Expected CLI to pass ConversationFlags. Got: {flags!r}"
+    )
     assert flags.show_tools is True, (
         "Expected bare `-t` in fork mode to preserve parse-mode behavior and enable all tools. "
         f"Got: {flags!r}"

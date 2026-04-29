@@ -92,7 +92,7 @@ def test_cmd_parse_supports_basic_text_from_pi_session_path(
     )
 
     captured = capsys.readouterr()
-    assert "<user-message i=\"1\">" in captured.out, (
+    assert '<user-message i="1">' in captured.out, (
         "Expected a PI user message to render through the standard XML wrapper. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -100,7 +100,7 @@ def test_cmd_parse_supports_basic_text_from_pi_session_path(
         "Expected PI user text content to be preserved in XML output. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<assistant-response i=\"2\"" in captured.out, (
+    assert '<assistant-response i="2"' in captured.out, (
         "Expected a PI assistant message to render through the standard XML wrapper. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -364,7 +364,10 @@ def test_cmd_parse_supports_thinking_and_tools_from_pi_session_path(
                 "message": {
                     "role": "assistant",
                     "content": [
-                        {"type": "thinking", "thinking": "I should inspect the shell output."},
+                        {
+                            "type": "thinking",
+                            "thinking": "I should inspect the shell output.",
+                        },
                         {"type": "text", "text": "Running the command now."},
                         {
                             "type": "toolCall",
@@ -658,7 +661,9 @@ def test_cmd_rename_appends_native_pi_session_info_entry(
         "Expected PI rename ids to use lowercase hexadecimal characters. "
         f"Got entry: {rename_entry}"
     )
-    assert isinstance(rename_entry.get("timestamp"), str) and rename_entry["timestamp"].endswith("Z"), (
+    assert isinstance(rename_entry.get("timestamp"), str) and rename_entry[
+        "timestamp"
+    ].endswith("Z"), (
         "Expected PI rename to stamp the native entry with a UTC JSONL timestamp. "
         f"Got entry: {rename_entry}"
     )
@@ -702,7 +707,9 @@ def test_cmd_parse_treats_native_pi_session_name_as_custom_title(
                 "timestamp": "2026-04-26T09:35:47.187Z",
                 "message": {
                     "role": "user",
-                    "content": [{"type": "text", "text": "Show the native PI session name."}],
+                    "content": [
+                        {"type": "text", "text": "Show the native PI session name."}
+                    ],
                     "timestamp": 1775305547146,
                 },
             },
@@ -720,7 +727,9 @@ def test_cmd_parse_treats_native_pi_session_name_as_custom_title(
                 "timestamp": "2026-04-26T09:46:08.467Z",
                 "message": {
                     "role": "assistant",
-                    "content": [{"type": "text", "text": "Native PI rename acknowledged."}],
+                    "content": [
+                        {"type": "text", "text": "Native PI rename acknowledged."}
+                    ],
                     "provider": "openrouter",
                     "model": "z-ai/glm-5",
                     "stopReason": "stop",

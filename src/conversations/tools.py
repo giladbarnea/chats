@@ -6,7 +6,7 @@ from rich.markdown import Markdown
 from rich.text import Text
 
 from .parts import ToolParts
-from .registry import ContentBlockType, TOOL_SCHEMAS
+from .registry import TOOL_SCHEMAS, ContentBlockType
 from .utils import extract_text_from_content, shorten_tool_use_id
 
 
@@ -76,7 +76,9 @@ def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
     return ToolParts(tag=tag, attrs=attrs, content=content, is_empty=not content)
 
 
-def _tool_result_to_parts(tool: dict, tag: str, id_map: dict[str, str] | None = None) -> ToolParts:
+def _tool_result_to_parts(
+    tool: dict, tag: str, id_map: dict[str, str] | None = None
+) -> ToolParts:
     """Convert tool_result to ToolParts."""
     content_text = "\n".join(extract_text_from_content(tool.get("content", "")))
     is_error = tool.get("is_error", False)

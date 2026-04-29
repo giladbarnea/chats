@@ -18,11 +18,7 @@ def test_session_scan_extracts_search_facets_independently_of_visible_messages(
     monkeypatch.setattr(Path, "home", lambda: temp_home)
 
     session_path = (
-        temp_home
-        / ".claude"
-        / "projects"
-        / "demo-project"
-        / "scan-session.jsonl"
+        temp_home / ".claude" / "projects" / "demo-project" / "scan-session.jsonl"
     )
     session_path.parent.mkdir(parents=True, exist_ok=True)
     session_path.write_text(

@@ -124,7 +124,9 @@ def test_only_assistant_overrides_thinking_with_warning(
         str(session_path),
     )
 
-    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
     assert "warning" in stderr.lower(), (
         "Expected a warning when `--only-assistant` overrides `--thinking`. "
         f"Got stderr:\n{stderr}"
@@ -208,7 +210,9 @@ def test_only_user_overrides_tools_and_agents_with_warning(
         str(session_path),
     )
 
-    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
     assert "warning" in stderr.lower(), (
         "Expected a warning when `--only-user` overrides extra visibility options. "
         f"Got stderr:\n{stderr}"
@@ -249,7 +253,9 @@ def test_only_user_hides_session_rename_blocks(
         str(session_path),
     )
 
-    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
     assert "plain user" in stdout, (
         "Expected regular user text to remain visible. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
@@ -279,7 +285,9 @@ def test_no_assistant_still_shows_agents_when_requested(
         str(session_path),
     )
 
-    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
     assert "plain assistant" not in stdout, (
         "Expected regular assistant text to be hidden by `--no-assistant`. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
@@ -309,7 +317,9 @@ def test_no_user_hides_regular_user_text_but_keeps_tool_output(
         str(session_path),
     )
 
-    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
     assert "plain user" not in stdout, (
         "Expected regular user text to be hidden by `--no-user`. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
@@ -349,8 +359,12 @@ def test_no_assistant_can_show_thinking_tools_and_agents_together(
         str(session_path),
     )
 
-    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
-    assert stderr == "", f"Expected no warning for a valid combination. Got stderr:\n{stderr}"
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert stderr == "", (
+        f"Expected no warning for a valid combination. Got stderr:\n{stderr}"
+    )
     assert "plain assistant" not in stdout, (
         "Expected regular assistant text to be hidden by `--no-assistant`. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
@@ -404,8 +418,12 @@ def test_thinking_short_modifier_truncates_only_thinking_blocks(
         str(session_path),
     )
 
-    assert exit_code == 0, f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
-    assert stderr == "", f"Expected no warning for valid --thinking=short usage. Got stderr:\n{stderr}"
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert stderr == "", (
+        f"Expected no warning for valid --thinking=short usage. Got stderr:\n{stderr}"
+    )
     assert "<thinking>" in stdout, (
         "Expected thinking blocks to be shown when `--thinking=short` is enabled. "
         f"Got stdout:\n{stdout}"
@@ -448,14 +466,12 @@ def test_bare_thinking_flag_keeps_following_slice_positional(
         f"Got stderr:\n{stderr}"
     )
     assert "plain assistant" in stdout, (
-        "Expected slice `2` to select the assistant turn. "
-        f"Got stdout:\n{stdout}"
+        f"Expected slice `2` to select the assistant turn. Got stdout:\n{stdout}"
     )
     assert "<thinking>" in stdout, (
         "Expected the selected assistant turn to keep its thinking block visible. "
         f"Got stdout:\n{stdout}"
     )
     assert "plain user" not in stdout, (
-        "Expected slice `2` to exclude the first user turn. "
-        f"Got stdout:\n{stdout}"
+        f"Expected slice `2` to exclude the first user turn. Got stdout:\n{stdout}"
     )

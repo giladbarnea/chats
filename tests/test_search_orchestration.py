@@ -8,32 +8,25 @@ from pathlib import Path
 
 import pytest
 
-import conversations.commands as commands
-from conversations import ConversationFlags, SearchOutputMode
+from conversations import ConversationFlags, SearchOutputMode, commands
 
 
 def _write_session(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "type": "summary",
-                        "summary": text,
-                        "leafUuid": f"{path.stem}-leaf",
-                    }
-                ),
-                json.dumps(
-                    {
-                        "type": "user",
-                        "timestamp": "2025-01-01T00:00:00Z",
-                        "cwd": "/tmp/search-orchestration",
-                        "message": {"role": "user", "content": text},
-                    }
-                ),
-            ]
-        )
+        "\n".join([
+            json.dumps({
+                "type": "summary",
+                "summary": text,
+                "leafUuid": f"{path.stem}-leaf",
+            }),
+            json.dumps({
+                "type": "user",
+                "timestamp": "2025-01-01T00:00:00Z",
+                "cwd": "/tmp/search-orchestration",
+                "message": {"role": "user", "content": text},
+            }),
+        ])
         + "\n",
         encoding="utf-8",
     )
@@ -171,7 +164,6 @@ def test_cmd_search_scans_candidate_sessions_newest_first(
         pool_filter,
     ):
         scanned_paths.append(conv_file)
-        return None
 
     monkeypatch.setattr(commands, "_search_hit_for_file", search_hit_for_file)
 

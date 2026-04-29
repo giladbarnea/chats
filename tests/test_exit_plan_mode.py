@@ -11,7 +11,12 @@ Tests that:
 
 from pathlib import Path
 
-from conversations import parse_jsonl, ConversationFlags, Message, render_message_inner_xml
+from conversations import (
+    ConversationFlags,
+    Message,
+    parse_jsonl,
+    render_message_inner_xml,
+)
 
 # Path to test fixture
 FIXTURE_PATH = Path(__file__).parent / "data" / "exit-plan-mode-full-message.jsonl"
@@ -114,7 +119,9 @@ class TestExitPlanModeExtraction:
 
         # Not in tools list
         for tool in msg.tools:
-            assert tool.get("name") != "ExitPlanMode", "ExitPlanMode should not be in tools list"
+            assert tool.get("name") != "ExitPlanMode", (
+                "ExitPlanMode should not be in tools list"
+            )
 
     def test_plan_content_extracted_correctly(self):
         """Plan content should be the full markdown plan text."""
@@ -148,9 +155,10 @@ class TestMessageHasContent:
 
 if __name__ == "__main__":
     import subprocess
+
     # Run with pytest if available
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
-        cwd=Path(__file__).parent.parent
+        cwd=Path(__file__).parent.parent,
     )
     sys.exit(result.returncode)

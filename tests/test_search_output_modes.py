@@ -23,18 +23,19 @@ def test_cmd_search_only_id_mode_prints_plain_session_id(
     session_path = home / ".codex" / "sessions" / "rollout-abc.jsonl"
     session_path.parent.mkdir(parents=True, exist_ok=True)
     session_path.write_text(
-        json.dumps({"type": "session_meta", "payload": {"id": "abc"}}) + "\n"
-        + json.dumps(
-            {
-                "type": "response_item",
-                "timestamp": "2025-01-01T00:00:00Z",
-                "payload": {
-                    "type": "message",
-                    "role": "user",
-                    "content": [{"type": "input_text", "text": "unique-search-output-mode"}],
-                },
-            }
-        )
+        json.dumps({"type": "session_meta", "payload": {"id": "abc"}})
+        + "\n"
+        + json.dumps({
+            "type": "response_item",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": "unique-search-output-mode"}
+                ],
+            },
+        })
         + "\n",
         encoding="utf-8",
     )
@@ -74,37 +75,31 @@ def test_cmd_search_full_mode_prints_entire_matching_conversation(
     session_path = home / ".claude" / "projects" / "proj" / "full-search.jsonl"
     session_path.parent.mkdir(parents=True, exist_ok=True)
     session_path.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "type": "user",
-                        "timestamp": "2025-01-01T00:00:00Z",
-                        "cwd": "/tmp/search-full-mode",
-                        "message": {
-                            "role": "user",
-                            "content": "context that did not match directly",
-                        },
-                    }
-                ),
-                json.dumps(
-                    {
-                        "type": "assistant",
-                        "timestamp": "2025-01-01T00:00:01Z",
-                        "cwd": "/tmp/search-full-mode",
-                        "message": {
-                            "role": "assistant",
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": "answer with unique-full-mode-needle",
-                                }
-                            ],
-                        },
-                    }
-                ),
-            ]
-        )
+        "\n".join([
+            json.dumps({
+                "type": "user",
+                "timestamp": "2025-01-01T00:00:00Z",
+                "cwd": "/tmp/search-full-mode",
+                "message": {
+                    "role": "user",
+                    "content": "context that did not match directly",
+                },
+            }),
+            json.dumps({
+                "type": "assistant",
+                "timestamp": "2025-01-01T00:00:01Z",
+                "cwd": "/tmp/search-full-mode",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "answer with unique-full-mode-needle",
+                        }
+                    ],
+                },
+            }),
+        ])
         + "\n",
         encoding="utf-8",
     )
@@ -144,28 +139,22 @@ def test_cmd_search_full_mode_prints_conversation_for_summary_match(
     session_path = home / ".claude" / "projects" / "proj" / "summary-full.jsonl"
     session_path.parent.mkdir(parents=True, exist_ok=True)
     session_path.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "type": "summary",
-                        "summary": "summary-only-full-mode-needle",
-                        "leafUuid": "summary-full-leaf",
-                    }
-                ),
-                json.dumps(
-                    {
-                        "type": "user",
-                        "timestamp": "2025-01-01T00:00:00Z",
-                        "cwd": "/tmp/search-full-mode",
-                        "message": {
-                            "role": "user",
-                            "content": "message body without the summary token",
-                        },
-                    }
-                ),
-            ]
-        )
+        "\n".join([
+            json.dumps({
+                "type": "summary",
+                "summary": "summary-only-full-mode-needle",
+                "leafUuid": "summary-full-leaf",
+            }),
+            json.dumps({
+                "type": "user",
+                "timestamp": "2025-01-01T00:00:00Z",
+                "cwd": "/tmp/search-full-mode",
+                "message": {
+                    "role": "user",
+                    "content": "message body without the summary token",
+                },
+            }),
+        ])
         + "\n",
         encoding="utf-8",
     )
@@ -207,40 +196,32 @@ def test_cmd_search_lists_newest_match_first(
     older_path.parent.mkdir(parents=True, exist_ok=True)
 
     older_path.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "type": "user",
-                        "timestamp": "2025-01-01T00:00:00Z",
-                        "cwd": "/tmp/search-order",
-                        "message": {
-                            "role": "user",
-                            "content": "shared-ordering-needle older",
-                        },
-                    }
-                ),
-            ]
-        )
+        "\n".join([
+            json.dumps({
+                "type": "user",
+                "timestamp": "2025-01-01T00:00:00Z",
+                "cwd": "/tmp/search-order",
+                "message": {
+                    "role": "user",
+                    "content": "shared-ordering-needle older",
+                },
+            }),
+        ])
         + "\n",
         encoding="utf-8",
     )
     newer_path.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "type": "user",
-                        "timestamp": "2025-01-02T00:00:00Z",
-                        "cwd": "/tmp/search-order",
-                        "message": {
-                            "role": "user",
-                            "content": "shared-ordering-needle newer",
-                        },
-                    }
-                ),
-            ]
-        )
+        "\n".join([
+            json.dumps({
+                "type": "user",
+                "timestamp": "2025-01-02T00:00:00Z",
+                "cwd": "/tmp/search-order",
+                "message": {
+                    "role": "user",
+                    "content": "shared-ordering-needle newer",
+                },
+            }),
+        ])
         + "\n",
         encoding="utf-8",
     )
@@ -258,8 +239,12 @@ def test_cmd_search_lists_newest_match_first(
         "Expected list search to succeed when both sessions match. "
         f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    newer_index = captured.out.index("history_path: ~/.claude/projects/proj/newer.jsonl")
-    older_index = captured.out.index("history_path: ~/.claude/projects/proj/older.jsonl")
+    newer_index = captured.out.index(
+        "history_path: ~/.claude/projects/proj/newer.jsonl"
+    )
+    older_index = captured.out.index(
+        "history_path: ~/.claude/projects/proj/older.jsonl"
+    )
     assert newer_index < older_index, (
         "Expected search results to be displayed newest-first. "
         f"Got stdout:\n{captured.out}"
