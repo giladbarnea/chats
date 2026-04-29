@@ -163,8 +163,7 @@ def _extract_field_from_content(
             continue
         try:
             entry = json.loads(line)
-            if isinstance(entry, dict) and entry.get("type") == entry_type:
-                if value := entry.get(field_name):
+            if isinstance(entry, dict) and entry.get("type") == entry_type and (value := entry.get(field_name)):
                     values.append(value)
         except json.JSONDecodeError:
             pass
@@ -180,8 +179,7 @@ def _extract_field_from_content(
             if brace_count == 0 and buffer.strip():
                 try:
                     entry = json.loads(buffer)
-                    if isinstance(entry, dict) and entry.get("type") == entry_type:
-                        if value := entry.get(field_name):
+                    if isinstance(entry, dict) and entry.get("type") == entry_type and (value := entry.get(field_name)):
                             values.append(value)
                 except json.JSONDecodeError:
                     pass
@@ -219,8 +217,7 @@ def _extract_field_from_jsonl(
                     continue
                 try:
                     entry = json.loads(line)
-                    if isinstance(entry, dict) and entry.get("type") == entry_type:
-                        if value := entry.get(field_name):
+                    if isinstance(entry, dict) and entry.get("type") == entry_type and (value := entry.get(field_name)):
                             values.append(value)
                 except json.JSONDecodeError:
                     pass

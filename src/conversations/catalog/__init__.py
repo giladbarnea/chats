@@ -231,6 +231,7 @@ def catalog_sessions(args: list[str]) -> None:
                 ],
                 cwd=session_directory,
                 env=env,
+                check=False,
             )
         except subprocess.CalledProcessError as e:
             console.print(f"[red]└── Error running claude: {e}[/red]")

@@ -13,6 +13,7 @@ slicing behavior on a mock message list.
 
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 from conversations import parse_slice_notation
 
@@ -137,7 +138,7 @@ class TestSliceBehavior:
     """Test that slice bounds produce correct message selection."""
 
     # Simulate a message list with indices 1-6 (6 messages)
-    MESSAGES = ["msg1", "msg2", "msg3", "msg4", "msg5", "msg6"]
+    MESSAGES: ClassVar[list[str]] = ["msg1", "msg2", "msg3", "msg4", "msg5", "msg6"]
 
     def slice_messages(self, slice_str):
         """Helper: parse slice and apply to test messages."""
@@ -225,6 +226,7 @@ class TestSliceErrorCases:
             ],
             capture_output=True,
             text=True,
+            check=False,
         )
         assert result.returncode != 0, "Expected non-zero exit for index 0"
         assert "Index must be >= 1 or < 0" in result.stderr
@@ -241,6 +243,7 @@ class TestSliceErrorCases:
             ],
             capture_output=True,
             text=True,
+            check=False,
         )
         assert result.returncode != 0, "Expected non-zero exit for start index 0"
         assert "Start index must be >= 1 or < 0" in result.stderr
@@ -257,6 +260,7 @@ class TestSliceErrorCases:
             ],
             capture_output=True,
             text=True,
+            check=False,
         )
         assert result.returncode != 0, "Expected non-zero exit for stop index 0"
         assert "Stop index must be >= 1 or < 0" in result.stderr
@@ -269,5 +273,6 @@ if __name__ == "__main__":
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
         cwd=Path(__file__).parent.parent,
+        check=False,
     )
     sys.exit(result.returncode)

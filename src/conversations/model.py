@@ -204,8 +204,7 @@ class Message:
         filters = flags.show_tools
 
         # Build local id_map when filters need name resolution and no global map provided
-        if isinstance(filters, list) and not tool_id_map:
-            if any(f.name is not None for f in filters):
+        if isinstance(filters, list) and not tool_id_map and any(f.name is not None for f in filters):
                 for tool in self.tools:
                     if tool.get("type") == "tool_use" and "id" in tool:
                         id_map[tool["id"]] = tool.get("name", "Unknown")

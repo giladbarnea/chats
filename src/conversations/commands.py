@@ -828,8 +828,7 @@ def _collect_session_files(
     files = [conv_file]
 
     # Agent files
-    for agent_file in find_agent_files_for_session(conv_file, session_uuid):
-        files.append(agent_file)
+    files.extend(find_agent_files_for_session(conv_file, session_uuid))
 
     # Debug and todos
     files.append(claude_dir / "debug" / f"{session_uuid}.txt")

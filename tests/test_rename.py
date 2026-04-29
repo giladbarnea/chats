@@ -459,5 +459,6 @@ if __name__ == "__main__":
     result = subprocess.run(
         ["python3", "-m", "pytest", __file__, "-v", "--tb=short"],
         cwd=Path(__file__).parent.parent,
+        check=False,
     )
     sys.exit(result.returncode)
