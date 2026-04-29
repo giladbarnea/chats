@@ -1,3 +1,6 @@
+---
+updated: 2026-04-27
+---
 # Global Instructions
 
 ## Ecosystem
@@ -95,6 +98,8 @@ Then run the script with `uv run script.py`. No need to specify the Python versi
 
 ## Development Rules
 
+<tenets>
+
 ### Be Bold, Precise and Minimalistic
 
 1. Fail loud and early.
@@ -102,8 +107,22 @@ Then run the script with `uv run script.py`. No need to specify the Python versi
 3. Simplicity is the way to go.
 4. Adding a logical branch is unjustified unless proven otherwise.
 5. No nested `if` statements.
-6. Write declarative, upfront code. The more the source code feels like a high-level configuration rather than an implementation, the better. Thought experiement: what’s more easy to understand: a Pydantic BaseModel definition, or a manually-written class with an `__init__`, value and type validation, manual state setting, etc.?
+6. Write declarative, upfront code. The more the source code feels like a high-level configuration rather than an implementation, the better. Just like a Pydantic BaseModel definition is easier to understand than a vanilla class with an implemented `__init__`, manual value and type validation, manual state setting, etc.
 7. No squirmy code. Don’t carry over cascading uncertainty via defensive programming. Be straightforward and explicit.
+
+</tenets>
+
+<principles>
+
+1. Do not abbreviate variable, function or class names. Use complete words. Write clean code.
+2. Write code that fails early and clearly rather than writing fallbacks to “maybe broken” inputs. Zero “Just in case my inputs are corrupted” code. Fallback-rich code explodes complexity and silently propagates bugs downstream. Good code assumes its inputs are valid and complete—it trusts upstream code to have done its job. This ties closely to separation of concerns. And if something important fails, or an assumption is broken, fail early and clearly. Broken code should be discovered early and loudly and fixed quickly; It should not be tolerated nor worked around.
+3. Write highly cohesive, decoupled logic.
+4. Utilize existing logic when possible. Do not re-implement anything.
+5. Write flat, optimized logical branches. Avoid nested, duplicate-y code. Write DRY and elegant logic.
+6. Prefer `import modulename` and call `modulename.function()` rather than `from modulename import function`.
+7. Add a doctest example to pure-ish functions (data in, data out).
+
+</principles>
 
 ### A Cautious Note About Refactoring
 
@@ -127,3 +146,43 @@ If throughout the development cycle you encounter some aspect of the software de
 8. `StrEnum: SAME = "SAME"` can also be helpful.
 
 </python-type-annotations>
+
+---
+
+<core-engineering-philosophy>
+
+## Core Engineering Philosophy
+
+1. Avoid increasing complexity without a truly justified reason. Each new line of code or logical branch increases complexity. Complexity is the enemy. In your decision-making, ask yourself how you might **REDUCE complexity**, rather than just solve the immediate problem ad-hoc. Oftentimes, reducing complexity means **REMOVING code**. If done right, removing code is better than writing a solution because it removes the circumstances that give rise to the problem in the first place. It’s like clearing Tetris blocks — it simplifies and creates more space.
+2. Prefer declarative code design over imperative approaches. From a variable to an entire system, if it can be declaratively expressed upfront, do so. Make the full picture visible straight up and avoid requiring readers to dive in. Embedding flow and logic in sprawling implementations creates difficulty.
+3. Avoid overengineering and excessive abstraction. Abstractions have to be clearly justified. Simplicity and clarity are key.
+4. Do not write comments in code unless they are critical for understanding the “why”. Especially, do not write “journaling” comments saying “modified: foo”, “added: bar” or “new implementation”, as if to leave a modification trail.
+5. Do NOT fix linter errors unless instructed to do so.
+6. Docstrings should be succinct and direct. 1–2 sentences max of what the function does and its role in its larger calling scope. No need to document arguments and return type: use type annotations for that. Do document if it intentionally raises exceptions.
+
+</core-engineering-philosophy>
+
+---
+
+## How To Approach a Task
+
+<how-to-approach-a-task>
+
+The following points are close to my heart:
+1. Before starting your task, you must understand all the affected code downstream and all the affecting code upstream. Not only the blast radius, but also whether we’re going to transfer a power plant that a town nearby relies on. Are we going to redirect a water pipe that an adjacent city consumes? How far along the stack does this go? Map out the moving parts and coupling instances before thinking and planning. Use the appropriate agents for that.
+2. If you are fixing a bug, nail down the root cause before thinking of a solution.
+3. When making changes, be absolutely SURGICAL. Every line of code you add incurs a small debt; this debt compounds over time through increased complexity, maintenance, bugs, and cognitive load. Therefore, make only laser-focused changes.
+4. No band-aid fixes. When encountering a problem, first brainstorm what possible root causes may explain it. Band-aid fixes are bad because they increase complexity significantly. Root-cause solutions are good because they reduce complexity.
+
+</how-to-approach-a-task>
+
+---
+
+## Being an Effective AI Agent
+
+<being-an-effective-ai-agent>
+
+1. Know your weaknesses: your eagerness to solve a problem can cause tunnel vision. Avoid tunnel-vision-stemming patterns: Don't fix a problem at the cost of unintentionally breaking something else that was out of your field of view; Don’t deviate from the existing design or from established patterns. The solution is to look around beyond the immediate fix, be aware of (and account for) coupling around the codebase, integrate with the existing design, and periodically refactor.
+2. You do your best work when you can verify yourself. With self-verification, you can and should practice continuous trial and error instead of a single shot in the dark.
+
+</being-an-effective-ai-agent>
