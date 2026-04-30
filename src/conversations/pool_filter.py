@@ -4,7 +4,7 @@ A `PoolFilter` is a declarative bundle of options that narrow the supported-
 session universe before resolution or search:
 
   - `provider`  — restrict to one of: claude, pi, codex
-  - `dir`       — restrict to sessions whose cwd is under this directory
+  - `dir`       — restrict to sessions whose cwd exactly matches this directory
   - `mafter`    — only sessions modified after DATE
   - `cafter`    — only sessions created after DATE
 
@@ -30,7 +30,7 @@ from .session_pool import SessionPool
 
 @dataclass(frozen=True)
 class PoolFilter:
-    """Narrows the supported-session universe by provider, dir, and date."""
+    """Narrows the supported-session universe by provider, exact cwd, and date."""
 
     provider: Provider | None = None
     dir: str | None = None
@@ -75,11 +75,7 @@ class PoolFilter:
             return True
         if cwd is None:
             return False
-        try:
-            Path(cwd).resolve().relative_to(Path(self.dir).resolve())
-            return True
-        except ValueError:
-            return False
+        return Path(cwd).resolve() == Path(self.dir).resolve()
 
     def needs_content_for_dir(self) -> bool:
         return self.dir is not None
@@ -107,7 +103,7 @@ def add_pool_filter_args(
     parser: argparse.ArgumentParser,
     *,
     provider_help: str = "Restrict to sessions from a specific provider (claude, pi, codex)",
-    dir_help: str = "Restrict to sessions whose cwd is under this directory",
+    dir_help: str = "Restrict to sessions whose cwd exactly matches this directory",
     mafter_help: str = "Only sessions modified after DATE (e.g., 2024-12-15, 1d, 2w)",
     cafter_help: str = "Only sessions created after DATE",
 ) -> None:

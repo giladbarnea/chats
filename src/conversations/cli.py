@@ -566,7 +566,7 @@ Commands:
         add_pool_filter_args(
             parser,
             provider_help="Restrict recent-index resolution to a provider when input is -1, -2, ...",
-            dir_help="Restrict recent-index resolution to sessions whose cwd is under this directory",
+            dir_help="Restrict recent-index resolution to sessions whose cwd exactly matches this directory",
             mafter_help="Restrict recent-index resolution to sessions modified after DATE",
             cafter_help="Restrict recent-index resolution to sessions created after DATE",
         )

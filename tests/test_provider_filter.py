@@ -376,13 +376,13 @@ def test_parse_index_provider_filter_narrows_candidate_pool(tmp_path, monkeypatc
     )
 
 
-def test_parse_index_dir_filter_narrows_by_session_cwd(tmp_path, monkeypatch):
-    """`-1` with --dir matching only the older session resolves to that session, not the newer one."""
+def test_parse_index_dir_filter_requires_exact_cwd_match(tmp_path, monkeypatch):
+    """`-1` with --dir should exclude newer child directories and match only the exact cwd."""
     home = tmp_path / "home"
     target_dir = tmp_path / "target_proj"
-    other_dir = tmp_path / "other_proj"
-    target_dir.mkdir()
-    other_dir.mkdir()
+    child_dir = target_dir / "nested" / "child"
+    target_dir.mkdir(parents=True)
+    child_dir.mkdir(parents=True)
 
     older_path = home / ".claude" / "projects" / "a" / "older.jsonl"
     newer_path = home / ".claude" / "projects" / "b" / "newer.jsonl"
@@ -393,7 +393,7 @@ def test_parse_index_dir_filter_narrows_by_session_cwd(tmp_path, monkeypatch):
             "type": "user",
             "timestamp": "2025-01-01T00:00:00Z",
             "cwd": str(target_dir),
-            "message": {"role": "user", "content": "hello"},
+            "message": {"role": "user", "content": "hello from exact dir"},
         })
         + "\n"
     )
@@ -401,8 +401,8 @@ def test_parse_index_dir_filter_narrows_by_session_cwd(tmp_path, monkeypatch):
         json.dumps({
             "type": "user",
             "timestamp": "2025-02-01T00:00:00Z",
-            "cwd": str(other_dir),
-            "message": {"role": "user", "content": "hello"},
+            "cwd": str(child_dir),
+            "message": {"role": "user", "content": "hello from child dir"},
         })
         + "\n"
     )
@@ -416,6 +416,54 @@ def test_parse_index_dir_filter_narrows_by_session_cwd(tmp_path, monkeypatch):
         "-1", pool_filter=PoolFilter(dir=str(target_dir))
     )
     assert resolved == older_path, (
-        f"Expected `-1` with --dir={target_dir!s} to resolve to the older session whose cwd "
-        f"matches. Got: {resolved!r}"
+        f"Expected `-1` with --dir={target_dir!s} to ignore newer sessions from child directories "
+        f"and resolve to the exact-cwd match. Got: {resolved!r}"
+    )
+
+
+def test_search_dir_filter_requires_exact_cwd_match(tmp_path, monkeypatch, capsys):
+    """Search `--dir` should exclude child-directory sessions that only share a parent."""
+    home = tmp_path / "home"
+    target_dir = tmp_path / "target_proj"
+    child_dir = target_dir / "nested" / "child"
+    target_dir.mkdir(parents=True)
+    child_dir.mkdir(parents=True)
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    exact_path = home / ".claude" / "projects" / "proj" / "exact.jsonl"
+    child_path = home / ".claude" / "projects" / "proj" / "child.jsonl"
+    _write_claude_session(exact_path, "exact-dir-needle")
+    _write_claude_session(child_path, "child-dir-needle")
+
+    exact_payload = json.loads(exact_path.read_text().strip())
+    exact_payload["cwd"] = str(target_dir)
+    exact_payload["message"]["content"] = "shared-dir-search-needle exact"
+    exact_path.write_text(json.dumps(exact_payload) + "\n")
+
+    child_payload = json.loads(child_path.read_text().strip())
+    child_payload["cwd"] = str(child_dir)
+    child_payload["message"]["content"] = "shared-dir-search-needle child"
+    child_path.write_text(json.dumps(child_payload) + "\n")
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "shared-dir-search-needle",
+            FLAGS,
+            PoolFilter(dir=str(target_dir)),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+        )
+
+    assert exc_info.value.code == 0, (
+        f"Expected exit 0 when the exact cwd matches. Got {exc_info.value.code}"
+    )
+    out = capsys.readouterr().out
+    assert "shared-dir-search-needle exact" not in out, (
+        "List mode should not print message bodies; this assert guards the test shape."
+    )
+    assert "exact.jsonl" in out, (
+        f"Expected the exact-cwd session to match --dir={target_dir!s}.\nstdout:\n{out}"
+    )
+    assert "child.jsonl" not in out, (
+        f"Expected child-directory sessions to be excluded by exact-dir matching.\nstdout:\n{out}"
     )

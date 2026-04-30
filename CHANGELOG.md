@@ -53,7 +53,7 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- Default parse mode now accepts `-d, --dir`, `-ma, --mafter`, and `-ca, --cafter` for recent negative selectors, mirroring `ccc search`. So `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd is under `~/dev/proj`.
+- Default parse mode now accepts `-d, --dir`, `-ma, --mafter`, and `-ca, --cafter` for recent negative selectors, mirroring `ccc search`. So `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`.
 - New `PoolFilter` declarative bundle (provider/dir/mafter/cafter) shared by both subcommands; `add_pool_filter_args` installs the same flag group on either parser.
 
 ### Changed
