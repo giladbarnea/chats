@@ -72,7 +72,7 @@ def _write_session(path: Path) -> None:
 
 
 def _write_session_with_custom_title(path: Path) -> None:
-    """Write a fixture that includes a default-visible rename block."""
+    """Write a fixture that includes a hidden-by-default rename record."""
     entries = [
         {
             "type": "user",
@@ -149,6 +149,42 @@ def test_only_assistant_overrides_thinking_with_warning(
     )
     assert "agent assistant" not in stdout, (
         "Expected agent messages to remain hidden unless `--agents` survives normalization. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_only_assistant_overrides_plans_with_warning(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--only-assistant` should disable contradictory plan visibility upstream."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--only-assistant",
+        "--plans",
+        str(session_path),
+    )
+
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "warning" in stderr.lower(), (
+        "Expected a warning when `--only-assistant` overrides `--plans`. "
+        f"Got stderr:\n{stderr}"
+    )
+    assert "plain assistant" in stdout, (
+        "Expected regular assistant text to remain visible. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert 'name="ExitPlanMode"' not in stdout, (
+        "Expected contradictory plan output to be disabled upstream. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
     )
 
@@ -235,12 +271,12 @@ def test_only_user_overrides_tools_and_agents_with_warning(
     )
 
 
-def test_only_user_hides_session_rename_blocks(
+def test_default_parse_hides_session_rename_blocks(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:
-    """`--only-user` should not leak default-visible rename blocks."""
+    """Default parse output should ignore session-rename records."""
     session_path = tmp_path / "rename-fixture.jsonl"
     _write_session_with_custom_title(session_path)
 
@@ -249,7 +285,6 @@ def test_only_user_hides_session_rename_blocks(
         capsys,
         "--color=never",
         "--no-metadata",
-        "--only-user",
         str(session_path),
     )
 
@@ -261,7 +296,81 @@ def test_only_user_hides_session_rename_blocks(
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
     )
     assert "renamed session" not in stdout, (
-        "Expected session-rename blocks to hide alongside other default assistant-side output. "
+        "Expected session-rename records to stay out of default parse output. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert "<session-rename" not in stdout, (
+        "Expected default parse output not to render the session-rename wrapper. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_plans_hidden_by_default_and_shown_with_explicit_flag(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Plans should require `--plans` in parse mode."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        str(session_path),
+    )
+
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert 'name="ExitPlanMode"' not in stdout, (
+        "Expected plans to stay hidden by default. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--plans",
+        str(session_path),
+    )
+
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert 'name="ExitPlanMode"' in stdout, (
+        "Expected `--plans` to make plan content visible. "
+        f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+
+
+def test_all_now_includes_plans(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """`--all` should include plans now that they are otherwise hidden by default."""
+    session_path = tmp_path / "visibility-fixture.jsonl"
+    _write_session(session_path)
+
+    exit_code, stdout, stderr = _run_cli(
+        monkeypatch,
+        capsys,
+        "--color=never",
+        "--no-metadata",
+        "--all",
+        str(session_path),
+    )
+
+    assert exit_code == 0, (
+        f"Expected success exit code. Got: {exit_code}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )
+    assert 'name="ExitPlanMode"' in stdout, (
+        "Expected `--all` to include plan content. "
         f"Got stdout:\n{stdout}\nstderr:\n{stderr}"
     )
 

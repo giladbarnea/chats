@@ -238,15 +238,15 @@ if [[ $? -ne 0 ]]; then
 fi
 validate_json "$OUTPUT_JSON_PIPED"
 
-# 11. Test custom-title renders as session-rename
-echo "Testing custom-title parsing..."
-OUTPUT_CUSTOM=$(cc_cmd "tests/data/custom_title.jsonl" --color never 2>/dev/null)
-if ! echo "$OUTPUT_CUSTOM" | grep -q "<${SESSION_RENAME_TAG}"; then
-  echo "❌ custom-title not rendered as session-rename"
+# 11. Test custom-title stays hidden by default
+echo "Testing custom-title default visibility..."
+OUTPUT_CUSTOM=$(cc_cmd "tests/data/custom_title.jsonl" --color never --no-metadata 2>/dev/null)
+if echo "$OUTPUT_CUSTOM" | grep -q "<${SESSION_RENAME_TAG}"; then
+  echo "❌ custom-title should stay hidden by default"
   exit 1
 fi
-if ! echo "$OUTPUT_CUSTOM" | grep -q '# Renamed Session'; then
-  echo "❌ session-rename missing header"
+if echo "$OUTPUT_CUSTOM" | grep -q 'Test session rename'; then
+  echo "❌ custom-title text leaked into default output"
   exit 1
 fi
 

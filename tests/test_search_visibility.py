@@ -88,12 +88,12 @@ def test_cmd_search_agent_only_content_is_hidden_by_default_and_found_with_agent
     )
 
 
-def test_cmd_search_plan_text_is_visible_by_default_and_hidden_with_no_plans(
+def test_cmd_search_plan_text_is_hidden_by_default_and_found_with_plans(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:
-    """Plan text should participate in search by default but disappear with --no-plans."""
+    """Plan text should stay out of search unless plans are explicitly enabled."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -127,27 +127,27 @@ def test_cmd_search_plan_text_is_visible_by_default_and_hidden_with_no_plans(
             emit_metadata=True,
         )
 
-    assert exc_info.value.code == 0, (
-        "Expected plan text to be searchable by default. "
+    assert exc_info.value.code == 1, (
+        "Expected plan text to stay out of default search results. "
         f"Got exit code: {exc_info.value.code}"
-    )
-    stdout = capsys.readouterr().out
-    assert "plan" in stdout, (
-        "Expected the plan-bearing session to appear in default search output. "
-        f"Got stdout:\n{stdout}"
     )
 
     with pytest.raises(SystemExit) as exc_info:
         cmd_search(
             "slice-4-plan-needle",
-            ConversationFlags(color="never", paging=False, show_plans=False),
+            ConversationFlags(color="never", paging=False, show_plans=True),
             output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )
 
-    assert exc_info.value.code == 1, (
-        "Expected --no-plans search to hide plan-only content. "
+    assert exc_info.value.code == 0, (
+        "Expected plan text to become searchable when plans are enabled. "
         f"Got exit code: {exc_info.value.code}"
+    )
+    stdout = capsys.readouterr().out
+    assert "plan" in stdout, (
+        "Expected the plan-bearing session to appear once plans are enabled. "
+        f"Got stdout:\n{stdout}"
     )
 
 
@@ -185,7 +185,7 @@ def test_cmd_search_render_dependent_plan_tag_query_still_works(
     with pytest.raises(SystemExit) as exc_info:
         cmd_search(
             "<tool-input",
-            ConversationFlags(color="never", paging=False),
+            ConversationFlags(color="never", paging=False, show_plans=True),
             output_mode=SearchOutputMode.LIST,
             emit_metadata=True,
         )

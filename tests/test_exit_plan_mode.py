@@ -3,10 +3,10 @@
 Unit tests for ExitPlanMode handling.
 
 Tests that:
-- Plans are shown by default
-- Plans are hidden with --no-plans
+- Plans are hidden by default
+- Plans are shown when explicitly enabled
 - Plans are shown with --all
-- Plans are hidden with --all --no-plans (--no-plans takes precedence)
+- Plans stay hidden unless show_plans is enabled
 """
 
 import sys
@@ -31,8 +31,8 @@ def load_fixture() -> str:
 class TestExitPlanModeVisibility:
     """Test plan visibility based on flags."""
 
-    def test_plan_shown_by_default(self):
-        """Plans are shown by default (no flags)."""
+    def test_plan_hidden_by_default(self):
+        """Plans are hidden by default."""
         content = load_fixture()
         flags = ConversationFlags()
 
@@ -40,30 +40,27 @@ class TestExitPlanModeVisibility:
 
         assert len(messages) == 1, f"Expected 1 message, got {len(messages)}"
         msg = messages[0]
-        assert msg.plan is not None, "Plan should be extracted"
+        assert msg.plan is not None, "Plan should still be extracted"
         assert "# Plan: Fix SonarCloud Issues" in msg.plan
 
-        # Verify it appears in visible content
         visible = render_message_inner_xml(msg, flags)
-        assert '<tool-input name="ExitPlanMode">' in visible
-        assert "# Plan: Fix SonarCloud Issues" in visible
+        assert '<tool-input name="ExitPlanMode">' not in visible
+        assert "# Plan: Fix SonarCloud Issues" not in visible
 
-    def test_plan_hidden_with_no_plans(self):
-        """Plans are hidden when show_plans=False."""
+    def test_plan_shown_when_explicitly_enabled(self):
+        """Plans are shown when show_plans=True."""
         content = load_fixture()
-        flags = ConversationFlags(show_plans=False)
+        flags = ConversationFlags(show_plans=True)
 
         messages = parse_jsonl(content, flags)
 
         assert len(messages) == 1
         msg = messages[0]
-        # Plan is still extracted (for potential later use)
         assert msg.plan is not None
 
-        # But NOT in visible content
         visible = render_message_inner_xml(msg, flags)
-        assert '<tool-input name="ExitPlanMode">' not in visible
-        assert "# Plan: Fix SonarCloud Issues" not in visible
+        assert '<tool-input name="ExitPlanMode">' in visible
+        assert "# Plan: Fix SonarCloud Issues" in visible
 
     def test_plan_shown_with_all(self):
         """Plans are shown with --all flag."""
@@ -72,7 +69,7 @@ class TestExitPlanModeVisibility:
             show_thinking=True,
             show_tools=True,
             show_agents=True,
-            show_plans=True,  # Explicit, but default anyway
+            show_plans=True,
         )
 
         messages = parse_jsonl(content, flags)
@@ -83,14 +80,14 @@ class TestExitPlanModeVisibility:
         visible = render_message_inner_xml(msg, flags)
         assert '<tool-input name="ExitPlanMode">' in visible
 
-    def test_plan_hidden_with_all_and_no_plans(self):
-        """--no-plans takes precedence over --all."""
+    def test_plan_hidden_without_plans_even_when_other_extras_are_enabled(self):
+        """Plans stay hidden unless show_plans is explicitly enabled."""
         content = load_fixture()
         flags = ConversationFlags(
             show_thinking=True,
             show_tools=True,
             show_agents=True,
-            show_plans=False,  # --no-plans takes precedence
+            show_plans=False,
         )
 
         messages = parse_jsonl(content, flags)

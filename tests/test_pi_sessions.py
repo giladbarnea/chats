@@ -512,12 +512,12 @@ def test_cmd_parse_emits_metadata_for_pi_session_path(
     )
 
 
-def test_cmd_rename_makes_title_visible_in_pi_parse_output(
+def test_cmd_rename_keeps_title_out_of_default_pi_parse_output(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:
-    """After renaming a PI session, the custom title should render as a session-rename block."""
+    """After renaming a PI session, the title should stay out of default parse output."""
     temp_home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: temp_home)
 
@@ -568,6 +568,7 @@ def test_cmd_rename_makes_title_visible_in_pi_parse_output(
     )
 
     cmd_rename(str(session_path), "My PI Title")
+    capsys.readouterr()
 
     cmd_parse(
         ConversationFlags(color="never", paging=False),
@@ -579,13 +580,12 @@ def test_cmd_rename_makes_title_visible_in_pi_parse_output(
     )
 
     captured = capsys.readouterr()
-    assert "My PI Title" in captured.out, (
-        "Expected the custom title written by cmd_rename to render as visible content "
-        "when parsing a PI session. "
+    assert "My PI Title" not in captured.out, (
+        "Expected the custom title written by cmd_rename to stay out of default PI parse output. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<session-rename" in captured.out, (
-        "Expected the custom title to render through the standard session-rename XML tag. "
+    assert "<session-rename" not in captured.out, (
+        "Expected default PI parse output not to render the session-rename wrapper. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 
@@ -753,11 +753,11 @@ def test_cmd_parse_treats_native_pi_session_name_as_custom_title(
         "Expected native PI session names to populate the shared metadata custom_title field. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert native_title in captured.out, (
-        "Expected native PI session names to remain visible in parse output. "
+    assert captured.out.count(native_title) == 1, (
+        "Expected the native PI session name to appear only in metadata, not as rendered message content. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<session-rename" in captured.out, (
-        "Expected native PI session names to render through the standard session-rename XML tag. "
+    assert "<session-rename" not in captured.out, (
+        "Expected native PI session names not to render through the session-rename XML tag anymore. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

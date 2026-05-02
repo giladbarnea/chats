@@ -114,8 +114,8 @@ Automatically detects input format by examining **first non-empty line only** (d
                      #   Order-free: -t i:Bash == -t Bash:i
                      #   Long form: -t input, -t output, -t short, -t error
 -a, --agents         # Include subagent messages
--A, --all            # Show everything (thinking, tools, agents)
---no-plans           # Hide plan content (ExitPlanMode) - shown by default
+-A, --all            # Show everything (thinking, tools, agents, plans)
+--plans              # Show plan content (ExitPlanMode)
 -s, --short          # Shorten string values in output (width=40)
 
 -o FILE          # Save output to file
@@ -125,7 +125,7 @@ Automatically detects input format by examining **first non-empty line only** (d
 
 `--only-metadata` and `--only-id` require a resolved session/file-backed input. Raw stdin/content has no stable session identity to report.
 
-`--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
+`--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, `--plans`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
 
 `--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ccc --no-user --tools ...` still shows tool outputs from user turns, and `ccc --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages.
 
@@ -199,7 +199,7 @@ ccc search [OPTIONS] <pattern>
 - `-ma, --mafter DATE`: Only conversations modified after DATE
 - `-ca, --cafter DATE`: Only conversations created after DATE
 - `--no-metadata`: Disable outputting metadata frontmatter
-- Reuses standard display flags (`-T`, `-t`, `-a`, `-A`, `--no-plans`) to control both what counts as a match and what gets rendered
+- Reuses standard display flags (`-T`, `-t`, `-a`, `-A`, `--plans`) to control both what counts as a match and what gets rendered
 
 **Date formats:** ISO dates (`2024-12-15`, `24-12-15`), with time (`2024-12-15T14:30`, `2024-12-15 14:30:45`), or relative (`1h`, `2d`, `3w`, `4m`, `5y`).
 
@@ -245,10 +245,11 @@ ccc fork [OPTIONS] <session>
 - Codex forks keep their `rollout-...-<session-id>.jsonl` filename shape
 - PI forks keep their timestamp-prefixed `<timestamp>_<session-id>.jsonl` filename shape
 
-By default, `fork` strips thinking, tool payloads, and Claude sidechains, which makes the new session much smaller than the original transcript. You can opt content back in with the same visibility knobs as parse:
+By default, `fork` strips thinking, tool payloads, plan content, and Claude sidechains, which makes the new session much smaller than the original transcript. You can opt content back in with the same visibility knobs as parse:
 
 ```bash
 ccc fork -1
+ccc fork --plans session-id
 ccc fork -t session-id
 ccc fork -T short -t Read:o:s -t Bash:i session-id
 ccc fork -A session-id
@@ -258,7 +259,8 @@ ccc fork -A session-id
 - `-T, --thinking [full|short]`: Include thinking content, optionally shortened
 - `-t, --tools [SPEC]`: Include tool use/result content, with the same filter syntax as parse
 - `-a, --agents`: Include Claude sidechain agent sessions and keep Task linkage intact
-- `-A, --all`: Include thinking, tools, and agents
+- `--plans`: Include plan content (`ExitPlanMode`)
+- `-A, --all`: Include thinking, tools, agents, and plans
 
 **Display:**
 - File paths: cyan bold
@@ -327,7 +329,7 @@ This mutates the conversation file by appending the provider-native session-titl
 - Codex: `event_msg.payload.type == "thread_name_updated"`
 - PI: `session_info.name`
 
-All three native shapes surface back through the same shared custom-title abstraction for parse/search/metadata.
+All three native shapes surface back through the same shared custom-title abstraction for search/metadata.
 
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`
@@ -381,7 +383,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
      - `{type: "text", text: "..."}` - shown by default
      - `{type: "thinking", thinking: "..."}` - hidden by default (use `-T`), renders as `<thinking>`
      - `{type: "tool_use", ...}` - hidden by default (use `-t`), renders as `<tool-input name="...">`
-     - `{type: "tool_use", name: "ExitPlanMode", input: {plan: "..."}}` - shown by default (use `--no-plans` to hide)
+     - `{type: "tool_use", name: "ExitPlanMode", input: {plan: "..."}}` - hidden by default (use `--plans` to show)
      - `{type: "tool_result", ...}` - hidden by default (use `-t`), renders as `<tool-output>`
      - `{type: "image", ...}` - skipped (not rendered)
 
@@ -405,7 +407,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Summary text used for conversation matching
 
 6. **Session title entries** (provider-normalized to the shared custom-title abstraction)
-   - Rendered as `<session-rename>` with header `# Renamed Session`
+   - Not rendered in the conversation body
    - Claude uses `type: "custom-title"` with `customTitle`
    - Codex uses `type: "event_msg"` with `payload.type: "thread_name_updated"` and `payload.thread_name`
    - PI uses `type: "session_info"` with `name`

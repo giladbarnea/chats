@@ -3,6 +3,16 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-01] Hide plans and session-rename messages by default
+
+### Changed
+
+- Parse/search/fork now treat plan content as opt-in: `--plans` shows `ExitPlanMode` content, and `--all` now includes plans too.
+- Default parse output no longer renders provider-native session-title records as `<session-rename>` blocks.
+- Search still indexes custom titles as a metadata/search facet, but no longer renders rename records as visible message content.
+- Catalog capture now mirrors the new default by omitting plan content unless explicitly opted in upstream.
+
+---
 ## [2026-04-29] Make `rename` write native PI/Codex session-title records
 
 ### Changed

@@ -900,12 +900,12 @@ def test_codex_skill_payloads_hidden_by_default(
     )
 
 
-def test_cmd_rename_makes_title_visible_in_codex_parse_output(
+def test_cmd_rename_keeps_title_out_of_default_codex_parse_output(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:
-    """After renaming a Codex session, the custom title should render as a session-rename block."""
+    """After renaming a Codex session, the title should stay out of default parse output."""
     temp_home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: temp_home)
 
@@ -960,8 +960,8 @@ def test_cmd_rename_makes_title_visible_in_codex_parse_output(
     )
 
     cmd_rename(str(session_path), "My Codex Title")
+    capsys.readouterr()
 
-    # Now parse — the title should be visible
     cmd_parse(
         ConversationFlags(color="never", paging=False),
         str(session_path),
@@ -972,13 +972,12 @@ def test_cmd_rename_makes_title_visible_in_codex_parse_output(
     )
 
     captured = capsys.readouterr()
-    assert "My Codex Title" in captured.out, (
-        "Expected the custom title written by cmd_rename to render as visible content "
-        "when parsing a Codex session. "
+    assert "My Codex Title" not in captured.out, (
+        "Expected the custom title written by cmd_rename to stay out of default Codex parse output. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<session-rename" in captured.out, (
-        "Expected the custom title to render through the standard session-rename XML tag. "
+    assert "<session-rename" not in captured.out, (
+        "Expected default Codex parse output not to render the session-rename wrapper. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 
@@ -1069,11 +1068,11 @@ def test_cmd_parse_treats_native_codex_thread_name_as_custom_title(
         "Expected native Codex thread names to populate the shared metadata custom_title field. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert native_title in captured.out, (
-        "Expected native Codex thread names to remain visible in parse output. "
+    assert captured.out.count(native_title) == 1, (
+        "Expected the native Codex thread name to appear only in metadata, not as rendered message content. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert "<session-rename" in captured.out, (
-        "Expected native Codex thread names to render through the standard session-rename XML tag. "
+    assert "<session-rename" not in captured.out, (
+        "Expected native Codex thread names not to render through the session-rename XML tag anymore. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

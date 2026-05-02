@@ -73,12 +73,15 @@ def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
         only_assistant_disabled.append("`--tools`")
     if args.agents:
         only_assistant_disabled.append("`--agents`")
+    if args.plans:
+        only_assistant_disabled.append("`--plans`")
     if args.only_assistant and only_assistant_disabled:
         _warn_only_override("`--only-assistant`", only_assistant_disabled)
         args.all = False
         args.thinking = None
         args.tools = None
         args.agents = False
+        args.plans = False
 
     only_user_disabled = []
     if args.all:
@@ -89,12 +92,15 @@ def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
         only_user_disabled.append("`--tools`")
     if args.agents:
         only_user_disabled.append("`--agents`")
+    if args.plans:
+        only_user_disabled.append("`--plans`")
     if args.only_user and only_user_disabled:
         _warn_only_override("`--only-user`", only_user_disabled)
         args.all = False
         args.thinking = None
         args.tools = None
         args.agents = False
+        args.plans = False
 
     if args.only_user and args.only_assistant:
         print_warning(
@@ -143,7 +149,7 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         show_thinking=show_thinking,
         show_tools=_resolve_show_tools(args.tools, args.all),
         show_agents=args.agents or args.all,
-        show_plans=not args.no_plans,
+        show_plans=args.plans or args.all,
         allow_empty_output=message_selection != MessageSelection.ALL,
         shorten=args.short,
         shorten_thinking=shorten_thinking,
@@ -159,6 +165,7 @@ def _build_fork_flags(args: argparse.Namespace) -> ConversationFlags:
         show_thinking=show_thinking,
         show_tools=_resolve_show_tools(args.tools, args.all),
         show_agents=args.agents or args.all,
+        show_plans=args.plans or args.all,
         shorten_thinking=shorten_thinking,
         color=False,
         paging=False,
@@ -325,7 +332,12 @@ def main():
             "-A",
             "--all",
             action="store_true",
-            help="Show everything (thinking, tools, agents)",
+            help="Show everything (thinking, tools, agents, plans)",
+        )
+        parser.add_argument(
+            "--plans",
+            action="store_true",
+            help="Show plan content (ExitPlanMode)",
         )
         parser.add_argument(
             "-s", "--short", action="store_true", help="Shorten strings in output"
@@ -350,11 +362,6 @@ def main():
             help="Disable paging",
         )
         parser.add_argument(
-            "--no-plans",
-            action="store_true",
-            help="Hide plan content (ExitPlanMode)",
-        )
-        parser.add_argument(
             "--no-metadata",
             action="store_true",
             help="Disable outputting metadata frontmatter",
@@ -376,7 +383,7 @@ def main():
             show_thinking=show_thinking,
             show_tools=_resolve_show_tools(args.tools, args.all),
             show_agents=args.agents or args.all,
-            show_plans=not args.no_plans,
+            show_plans=args.plans or args.all,
             shorten=args.short,
             shorten_thinking=shorten_thinking,
             color=args.color,
@@ -441,7 +448,12 @@ def main():
             "-A",
             "--all",
             action="store_true",
-            help="Show everything (thinking, tools, agents)",
+            help="Show everything (thinking, tools, agents, plans)",
+        )
+        parser.add_argument(
+            "--plans",
+            action="store_true",
+            help="Include plan content (ExitPlanMode)",
         )
 
         args, _unknown = parser.parse_known_args(sys.argv[2:])
@@ -577,7 +589,12 @@ Commands:
             "-A",
             "--all",
             action="store_true",
-            help="Show everything (thinking, tools, agents)",
+            help="Show everything (thinking, tools, agents, plans)",
+        )
+        parser.add_argument(
+            "--plans",
+            action="store_true",
+            help="Show plan content (ExitPlanMode)",
         )
         parser.add_argument(
             "-s", "--short", action="store_true", help="Shorten strings in output"
@@ -613,11 +630,6 @@ Commands:
             dest="paging",
             action="store_false",
             help="Disable paging",
-        )
-        parser.add_argument(
-            "--no-plans",
-            action="store_true",
-            help="Hide plan content (ExitPlanMode)",
         )
         parser.add_argument(
             "--no-metadata",

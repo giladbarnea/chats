@@ -50,7 +50,7 @@ def _get_session_content(session_id: str) -> str | None:
         show_thinking=False,
         show_tools=False,
         show_agents=False,
-        show_plans=True,
+        show_plans=False,
         shorten=False,
         color=False,
         paging=False,

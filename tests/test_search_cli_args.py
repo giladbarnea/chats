@@ -95,3 +95,52 @@ def test_search_default_output_mode_is_matching_messages(monkeypatch) -> None:
         "Expected bare search to keep rendering only matching messages. "
         f"Got: {captured.get('output_mode')!r}"
     )
+
+
+def test_search_plans_flag_reaches_cmd_search(monkeypatch) -> None:
+    """`search --plans` should opt plan visibility back in."""
+    captured: dict[str, object] = {}
+
+    def fake_cmd_search(
+        pattern_arg: str,
+        flags,
+        pool_filter=None,
+        *,
+        output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        emit_metadata: bool = True,
+    ) -> None:
+        captured["flags"] = flags
+
+    monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
+    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "--plans", "needle"])
+
+    cli.main()
+
+    assert captured["flags"].show_plans is True, (
+        "Expected `search --plans` to enable plan visibility in ConversationFlags."
+    )
+
+
+
+def test_search_all_includes_plans(monkeypatch) -> None:
+    """`search --all` should include plans along with the other extras."""
+    captured: dict[str, object] = {}
+
+    def fake_cmd_search(
+        pattern_arg: str,
+        flags,
+        pool_filter=None,
+        *,
+        output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        emit_metadata: bool = True,
+    ) -> None:
+        captured["flags"] = flags
+
+    monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
+    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "--all", "needle"])
+
+    cli.main()
+
+    assert captured["flags"].show_plans is True, (
+        "Expected `search --all` to include plans now that they are hidden by default."
+    )

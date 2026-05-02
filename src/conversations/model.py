@@ -76,7 +76,7 @@ class ConversationFlags:
         show_thinking: bool = False,
         show_tools: bool | list[ToolFilter] = False,
         show_agents: bool = False,
-        show_plans: bool = True,
+        show_plans: bool = False,
         allow_empty_output: bool = False,
         shorten: bool = False,
         shorten_thinking: bool = False,
@@ -113,7 +113,12 @@ class ConversationFlags:
 
     @property
     def show_all(self) -> bool:
-        return self.show_thinking and self.show_tools and self.show_agents
+        return (
+            self.show_thinking
+            and self.show_tools
+            and self.show_agents
+            and self.show_plans
+        )
 
     def __repr__(self) -> str:
         return (

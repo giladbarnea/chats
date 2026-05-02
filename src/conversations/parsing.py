@@ -529,10 +529,6 @@ def _parse_default_jsonl_entries(
             msg = _parse_assistant_entry(entry, index, flags)
         elif entry_type == "system":
             msg = _parse_system_entry(entry, index, flags)
-        elif flags.show_assistant_messages and (
-            msg := _parse_custom_title_entry(entry, index)
-        ):
-            pass
         else:
             msg = None
 
@@ -558,11 +554,7 @@ def _parse_pi_jsonl_entries(
     for entry in entries:
         entry_type = entry.get("type")
 
-        if flags.show_assistant_messages and (
-            msg := _parse_custom_title_entry(entry, index)
-        ):
-            pass
-        elif entry_type == "message":
+        if entry_type == "message":
             msg = _parse_pi_message_entry(entry, index, flags)
         else:
             msg = None
@@ -605,14 +597,6 @@ def _parse_codex_jsonl_entries(
 
     for entry in entries:
         entry_type = entry.get("type")
-
-        if flags.show_assistant_messages and (
-            msg := _parse_custom_title_entry(entry, index)
-        ):
-            flush_assistant()
-            messages.append(msg)
-            index += 1
-            continue
 
         if entry_type != "response_item":
             continue
@@ -1420,13 +1404,6 @@ def _extract_cwd_from_codex_entry(entry: dict) -> str | None:
         if cwd:
             return cwd
 
-    return None
-
-
-def _parse_custom_title_entry(entry: dict, index: int) -> Message | None:
-    """Parse any provider-native session-rename entry into the shared message model."""
-    if custom_title := _extract_custom_title_from_entry(entry):
-        return Message(role="session-rename", index=index, text=custom_title)
     return None
 
 
