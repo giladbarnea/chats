@@ -231,9 +231,10 @@ def catalog_sessions(args: list[str]) -> None:
                     "--print",
                     "--system-prompt",
                     full_prompt,
+                    "Follow your system prompt instructions."
                 ],
                 cwd=session_directory,
-                check=False,
+                check=True,
             )
         except subprocess.CalledProcessError as e:
             console.print(f"[red]└── Error running pi: {e}[/red]")
