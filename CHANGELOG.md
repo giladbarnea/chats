@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-03] Fix Claude agent detection for new subagents/ layout
+
+### Fixed
+
+- `find_agent_files_for_session()`, `_find_claude_sidechain_files()`, and `find_all_supported_session_files()` now discover agent files in Claude's new `<session_id>/subagents/` directory layout, while maintaining backward compatibility with the old flat layout.
+
+---
 ## [2026-05-01] Hide plans and session-rename messages by default
 
 ### Changed
