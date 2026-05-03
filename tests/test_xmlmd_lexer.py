@@ -90,6 +90,19 @@ Not logged in
 </assistant-response>
 """
 
+LITERAL_LESS_THAN_TEXT = """\
+---
+session_id: abc
+---
+<user-message i="4">
+## User
+
+a<b
+git add <file>...
+1 <= 2
+</user-message>
+"""
+
 # ── tracer bullet: completeness ───────────────────────────────────────────────
 
 
@@ -123,6 +136,11 @@ def test_no_error_tokens_internal_xml() -> None:
 
 def test_no_error_tokens_attr_angle_brackets() -> None:
     errors = [(t, v) for t, v in get_tokens(ATTR_WITH_ANGLE_BRACKETS) if t is Token.Error]
+    assert not errors, f"Unexpected error tokens: {errors}"
+
+
+def test_no_error_tokens_literal_less_than_text() -> None:
+    errors = [(t, v) for t, v in get_tokens(LITERAL_LESS_THAN_TEXT) if t is Token.Error]
     assert not errors, f"Unexpected error tokens: {errors}"
 
 
@@ -261,6 +279,25 @@ def test_attr_with_angle_brackets_tokenizes_completely() -> None:
         f"Expected: {ATTR_WITH_ANGLE_BRACKETS!r}\n"
         f"Got:      {result!r}"
     )
+
+
+def test_literal_less_than_text_tokenizes_completely() -> None:
+    result = joined(LITERAL_LESS_THAN_TEXT)
+    assert result == LITERAL_LESS_THAN_TEXT, (
+        f"Token values do not reproduce literal-less-than input.\n"
+        f"Expected: {LITERAL_LESS_THAN_TEXT!r}\n"
+        f"Got:      {result!r}"
+    )
+
+
+def test_literal_less_than_text_stays_text() -> None:
+    text_values = values_for_type(LITERAL_LESS_THAN_TEXT, Text)
+    all_text = "".join(text_values)
+    assert "a<b" in all_text, f"Expected 'a<b' to remain Text. Got: {all_text!r}"
+    assert "git add <file>..." in all_text, (
+        f"Expected 'git add <file>...' to remain Text. Got: {all_text!r}"
+    )
+    assert "1 <= 2" in all_text, f"Expected '1 <= 2' to remain Text. Got: {all_text!r}"
 
 
 # ── baseline file parity ──────────────────────────────────────────────────────

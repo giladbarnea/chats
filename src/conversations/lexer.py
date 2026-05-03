@@ -27,10 +27,14 @@ class XmlmdLexer(RegexLexer):
             (r"^---\n", Punctuation),
             # Closing tag: </tagname>
             (r"(</)([\w][\w-]*)(>)", bygroups(Punctuation, Name.Tag, Punctuation)),
-            # Opening tag: <tagname — push into tag_attrs to parse attributes
-            (r"(<)([\w][\w-]*)", bygroups(Punctuation, Name.Tag), "tag_attrs"),
-            # Literal < not starting a tag (e.g. comparison operators, loose markup)
-            (r"<(?![\w/])", Text),
+            # Opening tag: require a complete tag and either a matching close later or self-close.
+            (
+                r"(<)([\w][\w-]*)(?=[^>\n]*(?:/?>))(?=(?:[\s\S]*?</\2>)|[^>\n]*/>)",
+                bygroups(Punctuation, Name.Tag),
+                "tag_attrs",
+            ),
+            # Any remaining < is literal text.
+            (r"<", Text),
             # Markdown heading line (role headers like ## User and content headings)
             (r"^#{1,6} [^\n]+\n", Generic.Heading),
             # Newlines
