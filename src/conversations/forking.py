@@ -370,10 +370,15 @@ def _extract_claude_agent_id(agent_file: Path) -> str:
 
 def _find_claude_sidechain_files(source_path: Path, session_id: str) -> list[Path]:
     sidechain_files: list[Path] = []
-    for agent_file in source_path.parent.glob("agent-*.jsonl"):
-        entries = _read_jsonl_entries(agent_file)
-        if entries and entries[0].get("sessionId") == session_id:
-            sidechain_files.append(agent_file)
+    search_locations: list[Path] = [
+        source_path.parent,
+        source_path.parent / session_id / "subagents",
+    ]
+    for search_dir in search_locations:
+        for agent_file in search_dir.glob("agent-*.jsonl"):
+            entries = _read_jsonl_entries(agent_file)
+            if entries and entries[0].get("sessionId") == session_id:
+                sidechain_files.append(agent_file)
     return sorted(sidechain_files)
 
 
