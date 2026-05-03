@@ -279,7 +279,7 @@ ccc rm [OPTIONS] <session>
 
 **What Gets Removed:**
 1. Main conversation file: `projects/{project}/{session_id}.jsonl`
-2. Agent files: `projects/{project}/agent-*.jsonl` (matching sessionId)
+2. Agent files: `projects/{project}/{session_id}/subagents/agent-*.jsonl` (new layout) or `projects/{project}/agent-*.jsonl` (legacy flat layout), matching sessionId
 3. Directories:
    - `file-history/{session_id}/`
    - `projects/{project}/{session_id}/`
@@ -416,7 +416,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)
 - Dispatched via `Task` tool with `subagent_type` (e.g., "Explore", "codebase-analyzer:single-subsystem")
-- Stored separately as `agent-{shortId}.jsonl` (e.g., `agent-51c28bca.jsonl`)
+- Stored separately as `agent-{shortId}.jsonl` under `{session_id}/subagents/` (e.g., `{session_id}/subagents/agent-51c28bca.jsonl`)
 - Same structure as main conversations
 - Include `agentId` field and `isSidechain: true` at entry level
 - Agent messages render as `<agent agent_id="..." subagent_type="...">`
