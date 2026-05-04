@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import nullcontext
@@ -657,14 +658,123 @@ def _search_conversation_content(
     )
 
 
-def cmd_rename(conversation_id: str, new_name: str) -> None:
+_AUTO_NAME_MAX_LENGTH = 150
+_AUTO_NAME_PROMPT = (
+    "name this session. the format is [session's working directory's name] "
+    "[verb] [one lowercase phrase expressing the purpose of the session — "
+    "the end state the user wants to achieve]."
+)
+
+
+def _clean_line(line: str) -> str:
+    """Strip surrounding quotes/backticks, trim whitespace, and truncate to max length.
+
+    >>> _clean_line('  "hello"  ')
+    'hello'
+    """
+    line = line.strip()
+    line = re.sub(r'^["\`\']+|["\`\']+$', "", line)
+    return line[:_AUTO_NAME_MAX_LENGTH].strip()
+
+
+def _parse_auto_session_name(output_text: str, cwd_name: str) -> str:
+    """Parse LLM output into a session name. Mirrors auto-session-name.ts parseSessionNameOutput.
+
+    Raises ValueError when output cannot be reduced to a single usable name.
+    """
+    output_lines = [
+        cleaned
+        for raw in _clean_line(output_text).split("\n")
+        if (cleaned := _clean_line(raw))
+    ]
+
+    if not output_lines:
+        raise ValueError("model returned empty output")
+
+    if len(output_lines) == 1:
+        picked = output_lines[0]
+    elif len(output_lines) == 2 and output_lines[0].endswith(":"):
+        picked = output_lines[1]
+    else:
+        raise ValueError(
+            f"could not pick a session name from model output:\n{output_text}"
+        )
+
+    if picked.lower() == cwd_name.lower():
+        raise ValueError(
+            f"refusing useless session name (same as cwd):\n{output_text}"
+        )
+
+    return picked
+
+
+def _generate_auto_name(conv_file: Path, content: str) -> str:
+    """Call pi to generate a session name from the conversation transcript."""
+    flags = ConversationFlags(
+        show_thinking=False,
+        show_tools=False,
+        show_agents=False,
+        show_plans=False,
+        shorten=False,
+        color=False,
+        paging=False,
+    )
+
+    format_type = detect_format(content)
+    if format_type == "jsonl":
+        messages = parse_jsonl(content, flags, source_path=conv_file)
+        cwd = extract_cwd_from_jsonl(content)
+    else:
+        messages = parse_raw_cli_transcript(content, flags)
+        cwd = None
+
+    transcript = format_to_xml(messages, flags, _build_tool_id_map(messages))
+    cwd_name = Path(cwd).name if cwd else conv_file.parent.parent.name
+
+    prompt = (
+        f"<transcript-of-session-to-name>\n{transcript}\n</transcript-of-session-to-name>"
+        f"\n\n===\n\n"
+        f"<task>\n{_AUTO_NAME_PROMPT}\n\nThe session working directory name is: {cwd_name}\n</task>"
+    )
+
+    try:
+        result = subprocess.run(
+            [
+                "pi",
+                "--model", "google/gemini-3-flash-preview",
+                "--no-skills", "--no-session", "--offline", "--no-themes",
+                "--no-prompt-templates", "--no-extensions",
+                "--print",
+                "--system-prompt", prompt,
+                "Follow the task instructions.",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"pi process failed: {e}") from e
+    except FileNotFoundError:
+        raise RuntimeError("'pi' command not found. Ensure it is installed and in PATH.")
+
+    return _parse_auto_session_name(result.stdout, cwd_name)
+
+
+def cmd_rename(conversation_id: str, new_name: str | None, *, auto: bool = False) -> None:
     """Rename a conversation by appending the provider-native session-title entry."""
     import time
 
-    new_name = new_name.strip()
-    if not new_name:
-        print_error("New name cannot be empty.")
+    if new_name is not None and auto:
+        print_error("Cannot specify both a new name and --auto.")
         sys.exit(1)
+    if new_name is None and not auto:
+        print_error("Either provide a new name or use --auto to generate one.")
+        sys.exit(1)
+    if not auto:
+        new_name = (new_name or "").strip()
+        if not new_name:
+            print_error("New name cannot be empty.")
+            sys.exit(1)
 
     conv_file = resolve_conversation_file(conversation_id)
     adapter = get_jsonl_session_adapter(conv_file)
@@ -673,6 +783,15 @@ def cmd_rename(conversation_id: str, new_name: str) -> None:
     content = conv_file.read_text(encoding="utf-8")
     project = extract_cwd_from_jsonl(content) or ""
     entries = decode_jsonl_entries(content)
+
+    if auto:
+        try:
+            new_name = _generate_auto_name(conv_file, content)
+        except (RuntimeError, ValueError) as e:
+            print_error(f"Auto-naming failed: {e}")
+            sys.exit(1)
+
+    assert new_name is not None
 
     try:
         rename_entries = adapter.build_rename_entries(entries, session_id, new_name)

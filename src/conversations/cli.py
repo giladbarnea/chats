@@ -406,11 +406,26 @@ def main():
             "conversation_id",
             help="Conversation/session ID, summary prefix, recent negative index, or file path",
         )
-        parser.add_argument("new_name", help="New display name for the conversation")
+        parser.add_argument(
+            "new_name",
+            nargs="?",
+            default=None,
+            help="New display name for the conversation (omit when using --auto)",
+        )
+        parser.add_argument(
+            "--auto",
+            action="store_true",
+            help="Auto-generate a name using AI via pi (mutually exclusive with new_name)",
+        )
 
         args = parser.parse_args(sys.argv[2:])
 
-        cmd_rename(args.conversation_id, args.new_name)
+        if not args.new_name and not args.auto:
+            parser.error("Either provide a new name or use --auto to generate one.")
+        if args.new_name and args.auto:
+            parser.error("Cannot specify both a new name and --auto.")
+
+        cmd_rename(args.conversation_id, args.new_name, auto=args.auto)
     elif len(sys.argv) > 1 and sys.argv[1] == "fork":
         parser = argparse.ArgumentParser(
             prog="ccc fork",
