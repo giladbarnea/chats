@@ -42,7 +42,12 @@ def test_cmd_fork_claude_default_creates_thin_main_session_and_updates_history(
     history_file.write_text("", encoding="utf-8")
 
     session_path = project_dir / "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.jsonl"
-    sidechain_path = project_dir / "agent-deadbeef.jsonl"
+    sidechain_path = (
+        project_dir
+        / "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        / "subagents"
+        / "agent-deadbeef.jsonl"
+    )
     _write_jsonl(
         session_path,
         [
@@ -127,7 +132,9 @@ def test_cmd_fork_claude_default_creates_thin_main_session_and_updates_history(
 
     forked_path = project_dir / "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.jsonl"
     assert forked_path.exists(), "Expected fork to create a new Claude session file."
-    assert not (project_dir / "agent-bbbbbbbb.jsonl").exists(), (
+    assert not (
+        project_dir / "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" / "subagents"
+    ).exists(), (
         "Expected default fork to omit sidechain files unless --agents is requested."
     )
 
@@ -165,7 +172,7 @@ def test_cmd_fork_claude_agents_rewrites_sidechain_linkage(
     history_file.write_text("", encoding="utf-8")
 
     session_path = project_dir / "claude-session-id.jsonl"
-    sidechain_path = project_dir / "agent-deadbeef.jsonl"
+    sidechain_path = project_dir / "claude-session-id" / "subagents" / "agent-deadbeef.jsonl"
     _write_jsonl(
         session_path,
         [
@@ -242,7 +249,9 @@ def test_cmd_fork_claude_agents_rewrites_sidechain_linkage(
     )
 
     forked_main = _read_jsonl(project_dir / "forked-claude-session-id.jsonl")
-    forked_sidechain_path = project_dir / "agent-cafebabe.jsonl"
+    forked_sidechain_path = (
+        project_dir / "forked-claude-session-id" / "subagents" / "agent-cafebabe.jsonl"
+    )
     assert forked_sidechain_path.exists(), (
         "Expected --agents fork to duplicate Claude sidechains with a renamed agent file."
     )

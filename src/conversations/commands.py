@@ -73,10 +73,11 @@ def find_all_conversations(projects_dir: Path) -> Iterable[Path]:
 
 
 def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]:
-    """Find all agent files in the same directory that belong to a session."""
-    agent_files = []
+    """Find all Claude agent files belonging to a session."""
+    agent_files: list[Path] = []
+    search_dir = conv_file.parent / session_id / "subagents"
 
-    for agent_file in conv_file.parent.glob("agent-*.jsonl"):
+    for agent_file in search_dir.glob("agent-*.jsonl"):
         try:
             with open(agent_file, "r", encoding="utf-8") as f:
                 first_line = f.readline().strip()
@@ -87,7 +88,7 @@ def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]
         except (json.JSONDecodeError, OSError):
             continue
 
-    return agent_files
+    return sorted(agent_files)
 
 
 ConversationMetadataOrder = Callable[

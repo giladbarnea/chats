@@ -876,11 +876,11 @@ def _find_codex_session_files() -> list[Path]:
 def find_all_supported_session_files(*, include_sidechains: bool = True) -> list[Path]:
     """List all known session files across Claude, PI, and Codex."""
     claude_projects_dir = Path.home() / ".claude" / "projects"
-    claude_files = (
-        sorted(claude_projects_dir.glob("*/*.jsonl"))
-        if claude_projects_dir.exists()
-        else []
-    )
+    claude_files: list[Path] = []
+    if claude_projects_dir.exists():
+        claude_files.extend(claude_projects_dir.glob("*/*.jsonl"))
+        claude_files.extend(claude_projects_dir.glob("*/*/subagents/agent-*.jsonl"))
+        claude_files = sorted(claude_files)
 
     adapter_files: list[Path] = []
     for adapter in JSONL_SESSION_ADAPTERS:

@@ -83,7 +83,8 @@ def full_session_setup(temp_claude_home):
     )
 
     # Create an agent file
-    agent_file = projects_dir / "agent-abc12345.jsonl"
+    agent_file = projects_dir / session_id / "subagents" / "agent-abc12345.jsonl"
+    agent_file.parent.mkdir(parents=True, exist_ok=True)
     agent_file.write_text(
         json.dumps({
             "type": "user",
