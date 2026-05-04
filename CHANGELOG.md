@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-04] Tighten Claude subagent layout handling
+
+### Fixed
+
+- Claude sidechain discovery now assumes only the `<session_id>/subagents/agent-*.jsonl` layout exists.
+- `find_all_supported_session_files()` now only discovers `agent-*.jsonl` inside Claude `subagents/`, so unrelated JSONL files in that directory no longer leak into parse/search/recent-index flows.
+- `ccc fork --agents` now always writes Claude sidechains back into `<new_session_id>/subagents/`.
+
+---
 ## [2026-05-03] Fix Claude agent detection for new subagents/ layout
 
 ### Fixed

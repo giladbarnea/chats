@@ -370,15 +370,11 @@ def _extract_claude_agent_id(agent_file: Path) -> str:
 
 def _find_claude_sidechain_files(source_path: Path, session_id: str) -> list[Path]:
     sidechain_files: list[Path] = []
-    search_locations: list[Path] = [
-        source_path.parent,
-        source_path.parent / session_id / "subagents",
-    ]
-    for search_dir in search_locations:
-        for agent_file in search_dir.glob("agent-*.jsonl"):
-            entries = _read_jsonl_entries(agent_file)
-            if entries and entries[0].get("sessionId") == session_id:
-                sidechain_files.append(agent_file)
+    search_dir = source_path.parent / session_id / "subagents"
+    for agent_file in search_dir.glob("agent-*.jsonl"):
+        entries = _read_jsonl_entries(agent_file)
+        if entries and entries[0].get("sessionId") == session_id:
+            sidechain_files.append(agent_file)
     return sorted(sidechain_files)
 
 
@@ -416,9 +412,8 @@ def _fork_claude_session(source_path: Path, flags: ConversationFlags) -> Path:
 
     for sidechain_file in sidechain_files:
         old_agent_id = _extract_claude_agent_id(sidechain_file)
-        new_agent_id, sidechain_target = _generate_unique_agent_target(
-            source_path.parent
-        )
+        target_directory = source_path.parent / new_session_id / "subagents"
+        new_agent_id, sidechain_target = _generate_unique_agent_target(target_directory)
         agent_id_map[old_agent_id] = new_agent_id
         sidechain_entries = _rewrite_claude_entries(
             _read_jsonl_entries(sidechain_file),

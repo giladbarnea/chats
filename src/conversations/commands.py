@@ -73,28 +73,20 @@ def find_all_conversations(projects_dir: Path) -> Iterable[Path]:
 
 
 def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]:
-    """Find all agent files belonging to a session.
-
-    Searches both the old flat layout (agent-*.jsonl alongside the session file)
-    and the new subagents/ layout (<session_id>/subagents/agent-*.jsonl).
-    """
+    """Find all Claude agent files belonging to a session."""
     agent_files: list[Path] = []
-    search_locations: list[Path] = [
-        conv_file.parent,
-        conv_file.parent / session_id / "subagents",
-    ]
+    search_dir = conv_file.parent / session_id / "subagents"
 
-    for search_dir in search_locations:
-        for agent_file in search_dir.glob("agent-*.jsonl"):
-            try:
-                with open(agent_file, "r", encoding="utf-8") as f:
-                    first_line = f.readline().strip()
-                    if first_line:
-                        entry = json.loads(first_line)
-                        if entry.get("sessionId") == session_id:
-                            agent_files.append(agent_file)
-            except (json.JSONDecodeError, OSError):
-                continue
+    for agent_file in search_dir.glob("agent-*.jsonl"):
+        try:
+            with open(agent_file, "r", encoding="utf-8") as f:
+                first_line = f.readline().strip()
+                if first_line:
+                    entry = json.loads(first_line)
+                    if entry.get("sessionId") == session_id:
+                        agent_files.append(agent_file)
+        except (json.JSONDecodeError, OSError):
+            continue
 
     return sorted(agent_files)
 

@@ -879,7 +879,7 @@ def find_all_supported_session_files(*, include_sidechains: bool = True) -> list
     claude_files: list[Path] = []
     if claude_projects_dir.exists():
         claude_files.extend(claude_projects_dir.glob("*/*.jsonl"))
-        claude_files.extend(claude_projects_dir.glob("*/*/subagents/*.jsonl"))
+        claude_files.extend(claude_projects_dir.glob("*/*/subagents/agent-*.jsonl"))
         claude_files = sorted(claude_files)
 
     adapter_files: list[Path] = []

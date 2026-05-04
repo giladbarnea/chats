@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""
-Tests for Claude agent file discovery with the new subagents/ directory layout.
-
-Claude moved agent files from:
-  ~/.claude/projects/<project>/agent-*.jsonl        (old, flat)
-to:
-  ~/.claude/projects/<project>/<session_id>/subagents/agent-*.jsonl  (new)
-
-These tests verify that ccc discovers agents in both layouts.
-"""
+"""Tests for Claude agent file discovery in the subagents/ directory layout."""
 
 import json
 from pathlib import Path
@@ -154,6 +145,28 @@ class TestFindAllSupportedSessionFilesNewLayout:
         assert agent_files == [], (
             f"Expected no agent files when sidechains disabled. Got: {agent_files}"
         )
+
+    def test_ignores_non_agent_jsonl_files_in_subagents_dir(
+        self,
+        tmp_path: Path,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        project_dir = tmp_path / ".claude" / "projects" / "proj"
+
+        _write_jsonl(project_dir / "main.jsonl", [
+            {"type": "summary", "summary": "main"}
+        ])
+        _write_jsonl(project_dir / "main" / "subagents" / "agent-beef.jsonl", [
+            {"type": "assistant", "sessionId": "main", "agentId": "beef"}
+        ])
+        _write_jsonl(project_dir / "main" / "subagents" / "not-an-agent.jsonl", [
+            {"type": "summary", "summary": "should stay hidden"}
+        ])
+
+        all_files = find_all_supported_session_files(include_sidechains=True)
+        assert project_dir / "main" / "subagents" / "agent-beef.jsonl" in all_files
+        assert project_dir / "main" / "subagents" / "not-an-agent.jsonl" not in all_files
 
 
 # =============================================================================
