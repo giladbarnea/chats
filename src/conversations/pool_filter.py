@@ -24,7 +24,7 @@ from pathlib import Path
 
 from .date_filters import parse_date_filter
 from .model import ConversationMetadata, Provider
-from .parsing import extract_cwd_from_jsonl
+from .parsing import extract_cwd_from_jsonl_file
 from .session_pool import SessionPool
 
 
@@ -81,18 +81,10 @@ class PoolFilter:
         return self.dir is not None
 
     def passes_path_for_index(self, path: Path) -> bool:
-        """Apply dir filter to a candidate path for index resolution.
-
-        Reads the file content only when a dir filter is present.
-        Date filters are applied separately via `passes_metadata`.
-        """
+        """Apply dir filter to a candidate path for index resolution."""
         if not self.needs_content_for_dir():
             return True
-        try:
-            cwd = extract_cwd_from_jsonl(path.read_text(encoding="utf-8"))
-        except OSError:
-            return False
-        return self.passes_cwd(cwd)
+        return self.passes_cwd(extract_cwd_from_jsonl_file(path))
 
     def narrow_for_index(self, paths: Iterable[Path]) -> list[Path]:
         """Apply dir filter to an already metadata-filtered candidate list."""

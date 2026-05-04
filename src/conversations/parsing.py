@@ -1472,6 +1472,36 @@ def parse_raw_cli_transcript(
     return messages
 
 
+def _extract_cwd_from_entry(entry: dict) -> str | None:
+    """Extract cwd from one decoded JSONL entry."""
+    cwd = entry.get("cwd")
+    if isinstance(cwd, str) and cwd:
+        return cwd
+    return _extract_cwd_from_codex_entry(entry)
+
+
+def extract_cwd_from_jsonl_file(file_path: Path) -> str | None:
+    """Stream a JSONL file until the first cwd-bearing entry is found."""
+    try:
+        with open(file_path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                if cwd := _extract_cwd_from_entry(entry):
+                    return cwd
+    except OSError:
+        return None
+
+    return None
+
+
 def extract_cwd_from_jsonl(content: str) -> str | None:
     """Extract the working directory (cwd) from JSONL conversation."""
     return extract_cwd_from_entries(_iter_jsonl_entries(content))
@@ -1480,9 +1510,6 @@ def extract_cwd_from_jsonl(content: str) -> str | None:
 def extract_cwd_from_entries(entries: list[dict]) -> str | None:
     """Extract cwd from already-decoded JSONL entries."""
     for entry in entries:
-        cwd = entry.get("cwd")
-        if isinstance(cwd, str) and cwd:
-            return cwd
-        if cwd := _extract_cwd_from_codex_entry(entry):
+        if cwd := _extract_cwd_from_entry(entry):
             return cwd
     return None

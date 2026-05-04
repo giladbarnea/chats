@@ -27,6 +27,17 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # May 04 26
+  019df319-3dfa-70a8-8882-bac91f55ca4f:
+    description: "Optimized performance for finding index-based sessions with directory filters (e.g., `ccc -1 -d ...`). Identified a bottleneck where the app eagerly loaded metadata and read full JSONL files for all candidates; implemented a targeted fast path that sorts files by filesystem modification time and streams JSONL content line-by-line to extract the `cwd`, short-circuiting as soon as the requested index is reached."
+    directories: [~/dev/conversations]
+    keywords: [performance-optimization, session-retrieval, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 12
+    new_files: [tests/test_recent_index_orchestration.py]
+    edited_files: [src/conversations/commands.py, src/conversations/parsing.py, src/conversations/pool_filter.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    branch: main
+
   # Apr 26 26
   019dc927-2c08-73e1-8c68-88e7bc74a26e:
     description:

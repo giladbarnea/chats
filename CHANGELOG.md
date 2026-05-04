@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-04] Speed up dir-filtered recent index resolution
+
+### Changed
+
+- `ccc -d DIR -1` no longer eagerly loads timestamp metadata for every candidate session when no date filters are present.
+- Dir-only recent-index resolution now walks candidates newest-first by filesystem mtime, streams each file only until it can extract `cwd`, and stops as soon as the requested negative index is satisfied.
+- Added regression coverage proving the dir-only fast path avoids eager metadata loading and short-circuits after the newest matching session.
+
+---
 ## [2026-05-04] Tighten Claude subagent layout handling
 
 ### Fixed

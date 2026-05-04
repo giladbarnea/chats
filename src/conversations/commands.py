@@ -167,6 +167,24 @@ def _resolve_recent_conversation_file(
     When `pool_filter` is provided, dir/date filters narrow the candidate set
     before applying the index.
     """
+    if pool_filter is not None and pool_filter.needs_content_for_dir():
+        if pool_filter.mafter_dt is None and pool_filter.cafter_dt is None:
+            remaining_matches = abs(int(identifier))
+            newest_first_paths = sorted(
+                conversation_files,
+                key=lambda candidate: candidate.stat().st_mtime,
+                reverse=True,
+            )
+            for path in newest_first_paths:
+                if is_sidechain_session_file(path):
+                    continue
+                if not pool_filter.passes_path_for_index(path):
+                    continue
+                remaining_matches -= 1
+                if remaining_matches == 0:
+                    return path
+            return None
+
     ordered_metadata = _build_conversation_metadata(conversation_files)
     eligible: list[Path] = []
     for meta in ordered_metadata:
