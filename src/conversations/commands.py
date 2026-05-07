@@ -678,9 +678,14 @@ def _search_conversation_content(
 
 _AUTO_NAME_MAX_LENGTH = 150
 _AUTO_NAME_PROMPT = (
-    "Name this session. The format is [session's working directory's name] "
-    "[verb] [one lowercase phrase expressing the purpose of the session in its entirety — "
-    "the end state the user wants to achieve]."
+    "Name this session. The format is <session's working directory's name> "
+    "[verb] <One phrase expressing the purpose of the session in its entirety — "
+    "the end state the user wants to achieve>.\n"
+        "Clarification about `[verb]`: a single lowercase word pinning down the type of the session’s task. A few examples for typical task types: `[plan]`, `[impl]`, `[bookkeeping]`, `[brainstorm]`, `[misc]`, `[design]`, `[refactor]`, `[review]`, `[test]`, `[experiment]`, etc. If the session doesn’t quite fit any of these examples, your are not limited only to them. Use the best category as you see fit.\n"
+        "Examples:\n"
+        "[plan] Unify the client feed read model\n"
+        "[review] Scraping system\n"
+        "[implement] React audit review fixes and sync documentation"
 )
 
 
