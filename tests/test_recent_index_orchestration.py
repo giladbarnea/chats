@@ -8,7 +8,8 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from conversations import PoolFilter, SessionPool, _try_resolve_conversation_file, commands
+from conversations import PoolFilter, SessionPool, _try_resolve_conversation_file
+import conversations.commands.resolve as resolve_commands
 
 
 
@@ -58,7 +59,7 @@ def test_recent_index_dir_filter_skips_eager_metadata_loading(
             "avoid eager _load_conversation_metadata() calls."
         )
 
-    monkeypatch.setattr(commands, "_load_conversation_metadata", fail_on_metadata_load)
+    monkeypatch.setattr(resolve_commands, "_load_conversation_metadata", fail_on_metadata_load)
 
     resolved_path, ambiguous = _try_resolve_conversation_file(
         "-1",

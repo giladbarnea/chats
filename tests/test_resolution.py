@@ -25,6 +25,7 @@ from conversations import (
     get_input_content,
     resolve_conversation_file,
 )
+import conversations.commands.resolve as resolve_commands
 
 # =============================================================================
 # Fixtures (reuse rename_fixtures structure)
@@ -305,9 +306,9 @@ class TestExactIdentifierResolution:
 
         with (
             patch.object(
-                commands, "_resolve_recent_conversation_file"
+                resolve_commands, "_resolve_recent_conversation_file"
             ) as recent_lookup,
-            patch.object(commands, "extract_summaries_from_jsonl") as summary_lookup,
+            patch("conversations.commands.resolve.extract_summaries_from_jsonl") as summary_lookup,
         ):
             resolved_path, ambiguous = _try_resolve_conversation_file(session_id)
 
@@ -324,10 +325,10 @@ class TestExactIdentifierResolution:
     ):
         """Parse mode should reuse the first resolution result for content and metadata."""
         session_id, _ = add_pi_session
-        original_try_resolve = commands._try_resolve_conversation_file
+        original_try_resolve = resolve_commands._try_resolve_conversation_file
 
         with patch.object(
-            commands,
+            resolve_commands,
             "_try_resolve_conversation_file",
             wraps=original_try_resolve,
         ) as resolver:

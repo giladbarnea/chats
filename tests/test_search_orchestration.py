@@ -9,6 +9,8 @@ from pathlib import Path
 import pytest
 
 from conversations import ConversationFlags, SearchOutputMode, commands
+import conversations.commands.resolve as resolve_commands
+import conversations.commands.search as search_commands
 
 
 def _write_session(path: Path, text: str) -> None:
@@ -46,7 +48,7 @@ def test_cmd_search_succeeds_when_unrelated_nonmatch_metadata_would_fail(
     _write_session(matching_path, "slice-3-lazy-metadata-needle")
     _write_session(nonmatching_path, "totally different content")
 
-    real_load_conversation_metadata = commands._load_conversation_metadata
+    real_load_conversation_metadata = resolve_commands._load_conversation_metadata
 
     def load_conversation_metadata(session_file: Path):
         if session_file == nonmatching_path:
@@ -57,7 +59,7 @@ def test_cmd_search_succeeds_when_unrelated_nonmatch_metadata_would_fail(
         return real_load_conversation_metadata(session_file)
 
     monkeypatch.setattr(
-        commands,
+        resolve_commands,
         "_load_conversation_metadata",
         load_conversation_metadata,
     )
@@ -99,7 +101,7 @@ def test_cmd_search_does_not_render_noncandidate_sessions(
     _write_session(matching_path, "slice-4-render-skip-needle")
     _write_session(noncandidate_path, "slice-4-render-skip-noncandidate")
 
-    real_render_message_inner_xml = commands.render_message_inner_xml
+    real_render_message_inner_xml = search_commands.render_message_inner_xml
     rendered_texts: list[str] = []
 
     def render_message_inner_xml(message, flags, tool_id_map=None):
@@ -107,7 +109,7 @@ def test_cmd_search_does_not_render_noncandidate_sessions(
         return real_render_message_inner_xml(message, flags, tool_id_map)
 
     monkeypatch.setattr(
-        commands,
+        search_commands,
         "render_message_inner_xml",
         render_message_inner_xml,
     )
@@ -165,7 +167,7 @@ def test_cmd_search_scans_candidate_sessions_newest_first(
     ):
         scanned_paths.append(conv_file)
 
-    monkeypatch.setattr(commands, "_search_hit_for_file", search_hit_for_file)
+    monkeypatch.setattr(search_commands, "_search_hit_for_file", search_hit_for_file)
 
     with pytest.raises(SystemExit) as exc_info:
         commands.cmd_search(
