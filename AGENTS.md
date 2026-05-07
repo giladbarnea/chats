@@ -1,11 +1,11 @@
 ---
-updated: 2026-04-27
+updated: 2026-05-07
 ---
 # Global Instructions
 
 ## Ecosystem
 
-You're on a Mac M4 Pro running Tahoe 26.0. In addition to base Unix coreutils and Python 3, you can also leverage the following tools: `rg`, `fd`, `jq`, `yq`, `http`, `uv`, `npx`, `ruff`, and more.
+You're on a Mac M2 Pro running Tahoe 26.0. In addition to base Unix coreutils and Python 3, you can also leverage the following tools: `rg`, `fd`, `jq`, `yq`, `http`, `uv`, `npx`, `ruff`, and more.
 
 <core-tools>
 
@@ -59,15 +59,6 @@ You're on a Mac M4 Pro running Tahoe 26.0. In addition to base Unix coreutils an
 - For some cleanliness static analysis, you can run `FORCE_OMZ=1 /usr/bin/env zsh -ic 'ruffc dir/or/filepath'`. Take the diagnostics with a big grain of salt, only fix what hints at real problems.
 
 </python>
-
-<web-fetching>
-
-### Fetching Web Pages & Files
-
-Use the `rf` tool (stands for robust fetch) to fetch and convert web content or documents to Markdown.
-Usage: `rf [-h] [--cache] [--timeout N_SEC (default 30)] [-s,--scraper {playwright,firecrawl,markitdown}] URL`
-
-</web-fetching>
 
 </core-tools>
 
