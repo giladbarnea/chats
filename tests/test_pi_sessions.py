@@ -318,6 +318,90 @@ def test_cmd_parse_prefers_claude_session_before_pi_fallback_for_same_identifier
     )
 
 
+def test_cmd_parse_hides_command_like_pi_user_messages_by_default(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """PI user messages carrying Claude-style command protocol text should stay hidden by default."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-04-04T12-24-33-963Z_session-command-hidden.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-command-hidden",
+                "timestamp": "2026-04-04T12:24:33.963Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "session-command-hidden",
+                "timestamp": "2026-04-04T12:25:47.187Z",
+                "message": {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "<command-name>/model</command-name>\n<command-args>opus</command-args>",
+                        }
+                    ],
+                    "timestamp": 1775305547146,
+                },
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-04-04T12:25:48.467Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "real pi reply"}],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                    "stopReason": "stop",
+                    "timestamp": 1775305547188,
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "real pi reply" in captured.out, (
+        "Expected the real PI assistant reply to remain visible. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<command-name>" not in captured.out, (
+        "Expected command-like PI user messages to stay hidden by default. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "user-command-input" not in captured.out, (
+        "Expected command-like PI user messages not to render through user-command wrappers by default. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
 def test_cmd_parse_supports_thinking_and_tools_from_pi_session_path(
     tmp_path: Path,
     monkeypatch,

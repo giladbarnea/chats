@@ -127,7 +127,7 @@ Automatically detects input format by examining **first non-empty line only** (d
 
 `--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, `--plans`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
 
-`--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ccc --no-user --tools ...` still shows tool outputs from user turns, and `ccc --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages.
+`--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ccc --no-user --tools ...` still shows tool outputs from user turns, and `ccc --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
 
 Metadata frontmatter emits `forked_from:` only when the raw session exposes a fork parent id. Sessions without that data omit the field entirely.
 
@@ -138,7 +138,7 @@ Metadata frontmatter emits `forked_from:` only when the raw session exposes a fo
 Metadata frontmatter (optional), XML to stdout, separated by `---`:
 
 ```xml
-<user-message i="1" isMeta="true" sourceToolUserId="a1b2">
+<user-message i="1">
 {user message text}
 </user-message>
 
@@ -374,8 +374,8 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 
 1. **User messages** (`type: "user"`)
    - `message.content`: string or array (can include tool results)
-   - Claude string content made only of `<command-*>...</command-*>` tags renders as `<user-command-input>` with a YAML-like code block body derived dynamically from those tags, preserving source line order and relative indentation
-   - Claude string content wrapped in `<local-command-stdout>...</local-command-stdout>` renders as `<user-command-output>` with the wrapper tags stripped
+   - User-side local command protocol payloads stay hidden by default across adapters, including Claude `<command-*>...</command-*>` inputs and `<local-command-stdout>...</local-command-stdout>` outputs
+   - Claude `isMeta=true` user messages also stay hidden by default and become visible only with `-t, --tools`
    - Common fields: `cwd`, `sessionId`, `version`, `gitBranch`, `uuid`, `parentUuid`, `timestamp`
 
 2. **Assistant messages** (`type: "assistant"`)

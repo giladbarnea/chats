@@ -266,6 +266,92 @@ def test_cmd_parse_supports_codex_session_id_after_claude_and_pi_lookup_fail(
     )
 
 
+def test_cmd_parse_hides_command_like_codex_user_messages_by_default(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Codex user messages carrying Claude-style command protocol text should stay hidden by default."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "04"
+        / "10"
+        / "rollout-2026-04-10T09-20-00-01961abc-def0-7123-89ab-codexcommand0001.jsonl"
+    )
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-04-10T06:20:00.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": "01961abc-def0-7123-89ab-codexcommand0001",
+                    "timestamp": "2026-04-10T06:20:00.000Z",
+                    "cwd": "/tmp/codex-project",
+                    "originator": "codex_cli_rs",
+                    "cli_version": "0.99.0",
+                    "source": "cli",
+                    "model_provider": "openai",
+                },
+            },
+            {
+                "timestamp": "2026-04-10T06:20:01.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "<command-name>/model</command-name>\n<command-args>opus</command-args>",
+                        }
+                    ],
+                },
+            },
+            {
+                "timestamp": "2026-04-10T06:20:02.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {"type": "output_text", "text": "real codex reply"}
+                    ],
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "real codex reply" in captured.out, (
+        "Expected the real Codex assistant reply to remain visible. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<command-name>" not in captured.out, (
+        "Expected command-like Codex user messages to stay hidden by default. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "user-command-input" not in captured.out, (
+        "Expected command-like Codex user messages not to render through user-command wrappers by default. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
 def test_cmd_parse_supports_reasoning_and_both_tool_shapes_from_codex_session_path(
     tmp_path: Path,
     monkeypatch,

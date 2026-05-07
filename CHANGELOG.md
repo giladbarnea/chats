@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-07] Hide user command protocol messages by default
+
+### Changed
+
+- Default parse/search output no longer renders user-side local command protocol payloads.
+- Claude `<command-*>...</command-*>` inputs and `<local-command-stdout>...</local-command-stdout>` outputs now stay hidden, and the same hiding rule applies to equivalent PI and Codex user text blocks.
+- Claude `isMeta=true` user messages now stay hidden unless `-t, --tools` is enabled.
+
+---
 ## [2026-05-04] Speed up dir-filtered recent index resolution
 
 ### Changed

@@ -136,10 +136,10 @@ fi
 validate_json "$OUTPUT_JSON_SLICE"
 assert_json_array "$OUTPUT_JSON_SLICE"
 
-# Should have exactly 2 messages (i="1" and i="2")
+# Should have exactly 1 visible message (i="1")
 SLICE_LENGTH=$(json_array_length "$OUTPUT_JSON_SLICE")
-if [[ $SLICE_LENGTH -ne 2 ]]; then
-  echo "❌ Expected 2 messages with slice :3, got $SLICE_LENGTH"
+if [[ $SLICE_LENGTH -ne 1 ]]; then
+  echo "❌ Expected 1 visible message with slice :3, got $SLICE_LENGTH"
   exit 1
 fi
 

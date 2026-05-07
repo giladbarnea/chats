@@ -13,9 +13,11 @@ assert_success
 # Positive shape check
 # Count user messages in input using streaming jq with explicit if/else
 # Use .message? to avoid errors on objects without message field
-EXPECTED_USER_MSGS=$(jq 'select(.type=="user" and .message?.role=="user") | select(
+EXPECTED_USER_MSGS=$(jq 'select(.type=="user" and .message?.role=="user" and (.isMeta != true)) | select(
   if (.message.content | type) == "string" then
     (.message.content | length > 0)
+    and (.message.content | test("^\\s*<local-command-stdout>.*</local-command-stdout>\\s*$"; "s") | not)
+    and (.message.content | split("\n") | all(test("^[ \t]*<command-[a-z0-9-]+>.*</command-[a-z0-9-]+>[ \t]*$"; "s"))) | not
   else
     (.message.content | map(select(.type=="text" and (.text | length > 0))) | length > 0)
   end

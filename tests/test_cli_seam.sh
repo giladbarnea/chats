@@ -14,19 +14,13 @@ echo "Running CLI seam tests..."
 echo "Test 1: Basic invocation (file + slice)..."
 OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" "1" --color=never 2>/dev/null)
 assert_success
-if ! printf '%s\n' "$OUTPUT" | grep -Eq "^<(${PIPE_JOINED_USER_ORIGIN_MESSAGE_TAGS})"; then
-  echo "❌ Expected first sliced message to render as a user-origin wrapper"
-  exit 1
-fi
+assert_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"1\""
 
 # Test 2: Slice argument ordering - slice after flags
 echo "Test 2: Slice after flags..."
 OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" --color=never "1" 2>/dev/null)
 assert_success
-if ! printf '%s\n' "$OUTPUT" | grep -Eq "^<(${PIPE_JOINED_USER_ORIGIN_MESSAGE_TAGS})"; then
-  echo "❌ Expected first sliced message to render as a user-origin wrapper"
-  exit 1
-fi
+assert_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"1\""
 
 # Test 3: Negative slice with -- separator
 echo "Test 3: Negative slice with -- separator..."
@@ -83,21 +77,22 @@ rm -rf "$TEMP_HOME"
 echo "Test 8: Multiple message selectors..."
 OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" "1" "2" --color=never --no-metadata 2>/dev/null)
 assert_success
-if [[ "$(count_user_origin_tags "$OUTPUT")" != "2" ]]; then
-  echo "❌ Expected two user-origin messages from selectors 1 and 2"
+MATCHED_TAG_COUNT=$(printf '%s\n' "$OUTPUT" | grep -E "^<(${PIPE_JOINED_MESSAGE_TAGS})" -c || true)
+if [[ "$MATCHED_TAG_COUNT" != "1" ]]; then
+  echo "❌ Expected one visible message from selectors 1 and 2"
   exit 1
 fi
-assert_not_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"3\""
+assert_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"1\""
 
 # Test 9: Range and negative selectors are ORed
 echo "Test 9: Range and negative message selectors..."
 OUTPUT=$($CC_CMD "$DATA_FILE_SIMPLE" "1:3" "-1" --color=never --no-metadata 2>/dev/null)
 assert_success
 MATCHED_TAG_COUNT=$(printf '%s\n' "$OUTPUT" | grep -E "^<(${PIPE_JOINED_MESSAGE_TAGS})" -c || true)
-if [[ "$MATCHED_TAG_COUNT" != "3" ]]; then
-  echo "❌ Expected three messages from selectors 1:3 and -1"
+if [[ "$MATCHED_TAG_COUNT" != "1" ]]; then
+  echo "❌ Expected one visible message from selectors 1:3 and -1"
   exit 1
 fi
-assert_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"3\""
+assert_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"1\""
 
 echo "✅ CLI seam tests passed"

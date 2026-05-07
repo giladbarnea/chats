@@ -498,17 +498,24 @@ def _render_user_command_input(content: str) -> str | None:
     return "```yaml\n" + "\n".join(yaml_lines) + "\n```"
 
 
+def _is_hidden_user_command_text(content: str) -> bool:
+    """Return True when a user text block is protocol command I/O that stays hidden."""
+    if _LOCAL_COMMAND_STDOUT_PATTERN.fullmatch(content):
+        return True
+    return _parse_command_tag_lines(content) is not None
+
+
+def _filter_hidden_user_text_blocks(text_blocks: list[str]) -> list[str]:
+    """Drop user text blocks that represent hidden command protocol content."""
+    return [text for text in text_blocks if not _is_hidden_user_command_text(text)]
+
+
 def _parse_user_string_content(
     content: str,
 ) -> tuple[str, ContentBlockType | None]:
     """Detect special Claude user string content that needs wrapper/content overrides."""
-    stdout_match = _LOCAL_COMMAND_STDOUT_PATTERN.fullmatch(content)
-    if stdout_match:
-        return stdout_match.group("value"), ContentBlockType.USER_COMMAND_OUTPUT
-
-    command_yaml = _render_user_command_input(content)
-    if command_yaml is not None:
-        return command_yaml, ContentBlockType.USER_COMMAND_INPUT
+    if _is_hidden_user_command_text(content):
+        return "", None
 
     return content, None
 
@@ -609,9 +616,9 @@ def _parse_codex_jsonl_entries(
             role = payload.get("role")
             if role == "user":
                 text_blocks = _extract_codex_text_blocks(payload.get("content"))
-                visible_blocks = [
-                    text for text in text_blocks if not _is_codex_preamble_text(text)
-                ]
+                visible_blocks = _filter_hidden_user_text_blocks(
+                    [text for text in text_blocks if not _is_codex_preamble_text(text)]
+                )
                 if not flags.show_user_messages or not visible_blocks:
                     continue
 
@@ -1084,10 +1091,12 @@ def _parse_user_entry(
         source_tool_user_id=shorten_tool_use_id(source_tool_use_id),
     )
 
-    if isinstance(content_data, str) and flags.show_user_messages:
+    show_user_text = flags.show_user_messages and (not msg.is_meta or flags.show_tools)
+
+    if isinstance(content_data, str) and show_user_text:
         msg.text, msg.wrapper_type = _parse_user_string_content(content_data)
     elif isinstance(content_data, list):
-        text_blocks = _extract_text_blocks(content_data)
+        text_blocks = _filter_hidden_user_text_blocks(_extract_text_blocks(content_data))
         for item in content_data:
             if (
                 isinstance(item, dict)
@@ -1096,7 +1105,7 @@ def _parse_user_entry(
             ):
                 msg.tools.append(item)
 
-        if text_blocks and flags.show_user_messages:
+        if text_blocks and show_user_text:
             msg.text = "\n\n".join(text_blocks)
 
     return msg
@@ -1228,6 +1237,9 @@ def _parse_pi_message_entry(
 
     content_items = message_data.get("content", [])
     text_blocks = _extract_text_blocks(content_items)
+    if role == "user":
+        text_blocks = _filter_hidden_user_text_blocks(text_blocks)
+
     if (
         role == "user"
         and text_blocks
