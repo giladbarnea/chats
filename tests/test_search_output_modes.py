@@ -249,3 +249,7 @@ def test_cmd_search_lists_newest_match_first(
         "Expected search results to be displayed newest-first. "
         f"Got stdout:\n{captured.out}"
     )
+    assert "---" not in captured.out, (
+        "Expected search list mode to omit metadata separators. "
+        f"Got stdout:\n{captured.out}"
+    )

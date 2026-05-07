@@ -410,6 +410,7 @@ def display_search_result(
             + (len(matching_summaries) if matching_summaries else 0)
             + (len(matching_custom_titles) if matching_custom_titles else 0)
         )
+        is_list_output = output_mode == SearchOutputMode.LIST
         print_metadata(
             conv_file,
             cwd,
@@ -422,7 +423,8 @@ def display_search_result(
             created_at=created_at,
             modified_at=modified_at,
             color=flags.color,
-            dedupe_frontmatter_separators=False,
+            dedupe_frontmatter_separators=is_list_output,
+            include_frontmatter_separator=not is_list_output,
         )
 
     if output_mode == SearchOutputMode.LIST:
@@ -681,12 +683,7 @@ _AUTO_NAME_PROMPT = (
     "Name this session. The format is <session's working directory's name> "
     "[verb] <One phrase expressing the purpose of the session in its entirety — "
     "the end state the user wants to achieve>.\n"
-        "Clarification about `[verb]`: a single lowercase word pinning down the type of the session’s task. A few examples for typical task types: `[plan]`, `[impl]`, `[bookkeeping]`, `[brainstorm]`, `[misc]`, `[design]`, `[refactor]`, `[review]`, `[test]`, `[experiment]`, etc. If the session doesn’t quite fit any of these examples, your are not limited only to them. Use the best category as you see fit.\n"
-        "Examples:\n"
-        "[plan] Unify the client feed read model\n"
-        "[review] Scraping system\n"
-        "[implement] React audit review fixes and sync documentation"
-)
+        "Clarification about `[verb]`: a single lowercase word pinning down the type of the session’s task.")
 
 
 def _clean_line(line: str) -> str:
@@ -1347,6 +1344,7 @@ def cmd_parse(
             last_custom_title=last_custom_title,
             created_at=metadata.ctime if metadata else None,
             modified_at=metadata.mtime if metadata else None,
+            include_frontmatter_separator=False,
         )
         _write_parse_output(metadata_text, output_file)
         return

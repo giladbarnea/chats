@@ -173,6 +173,7 @@ def build_metadata_text(
     last_custom_title: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
+    include_frontmatter_separator: bool = True,
 ) -> str:
     """Build conversation metadata as YAML frontmatter text."""
     yaml_lines = [f"session_id: {get_display_session_id(file_path)}"]
@@ -227,7 +228,9 @@ def build_metadata_text(
     if last_custom_title:
         yaml_lines.append(f'custom_title: "{last_custom_title}"')
 
-    return "\n".join(["---", *yaml_lines])
+    if include_frontmatter_separator:
+        return "\n".join(["---", *yaml_lines])
+    return "\n".join(yaml_lines)
 
 
 def print_metadata(
@@ -244,6 +247,7 @@ def print_metadata(
     modified_at: datetime | None = None,
     color: bool = False,
     dedupe_frontmatter_separators: bool = False,
+    include_frontmatter_separator: bool = True,
 ) -> None:
     """Print conversation metadata to stdout in YAML format."""
     content = build_metadata_text(
@@ -257,15 +261,16 @@ def print_metadata(
         last_custom_title=last_custom_title,
         created_at=created_at,
         modified_at=modified_at,
+        include_frontmatter_separator=include_frontmatter_separator,
     )
 
     if color:
         get_console().print(Text(content, style="dim"))
-        if not dedupe_frontmatter_separators:
+        if include_frontmatter_separator and not dedupe_frontmatter_separators:
             get_console().print(Text("---", style="dim"))
     else:
         print(content)
-        if not dedupe_frontmatter_separators:
+        if include_frontmatter_separator and not dedupe_frontmatter_separators:
             print("---")
 
 

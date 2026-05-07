@@ -223,6 +223,10 @@ def test_cmd_parse_only_metadata_hides_messages_and_respects_slice(
         "Expected metadata-only mode to preserve parse's post-slice message count semantics. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
+    assert "---" not in captured.out, (
+        "Expected metadata-only mode to omit YAML frontmatter separators in list output. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
     assert (
         "<user-message" not in captured.out
         and "<assistant-response" not in captured.out
