@@ -678,8 +678,8 @@ def _search_conversation_content(
 
 _AUTO_NAME_MAX_LENGTH = 150
 _AUTO_NAME_PROMPT = (
-    "name this session. the format is [session's working directory's name] "
-    "[verb] [one lowercase phrase expressing the purpose of the session — "
+    "Name this session. The format is [session's working directory's name] "
+    "[verb] [one lowercase phrase expressing the purpose of the session in its entirety — "
     "the end state the user wants to achieve]."
 )
 
