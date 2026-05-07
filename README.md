@@ -429,6 +429,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 **Dependencies:**
 - Python 3.13+
 - Rich library (for formatting)
+- PyYAML (for catalog/sessions.yaml handling)
 
 **Key Functions:**
 - `extract_summaries_from_jsonl()` - Extract all summary fields from file

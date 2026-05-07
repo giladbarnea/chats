@@ -8,9 +8,9 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 
 ## Core Runtime Concepts
 
-- `SessionPool` (`session_pool.py`): the per-invocation inventory of all supported session files. It owns the “one big pool” mental model for exact-id resolution and provider-aware search routing.
+- `SessionPool` (`session_pool.py`): the per-invocation inventory of all supported session files. It owns the "one big pool" mental model for exact-id resolution and provider-aware search routing.
 - `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, custom titles, and already-visible messages.
-- `SearchHit` (`commands.py`): the unit of successful search work. It carries the matched conversation’s lazily loaded metadata plus the already-scanned messages and match facets needed for display.
+- `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
 
 ## Architecture Diagram (Space)
@@ -35,13 +35,13 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 │  └──────────────────────────────────────┬───────────────────────────────┘   │
 │                                         │                                   │
 │  ┌──────────────────────────────────────▼────────────────────────────────┐  │
-│  │                  COMMAND ORCHESTRATION (commands.py)                  │  │
+│  │                  COMMAND ORCHESTRATION (commands/)                    │  │
 │  │   cmd_parse  cmd_search  cmd_fork  cmd_rename  cmd_rm  cmd_catalog   │  │
 │  └──────────────┬───────────────────────────────┬────────────────────────┘  │
 │                 │                               │                           │
 │  ┌──────────────▼─────────────┐   ┌─────────────▼────────────────────────┐  │
 │  │ INVENTORY / ROUTING        │   │ CONTENT SCAN / SEARCH CONFIRMATION   │  │
-│  │ session_pool.py            │   │ session_scan.py + commands.py        │  │
+│  │ session_pool.py            │   │ session_scan.py + commands/search.py │  │
 │  │  • SessionPool.discover()  │   │  • SessionScan.from_content()        │  │
 │  │  • by_provider             │   │  • literal candidate pass            │  │
 │  │  • by_stem / by_filename   │   │  • rendered-content confirmation     │  │
@@ -69,7 +69,7 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 │  EXTERNAL STORES                                                            │
 │  ┌──────────────────────┐  ┌──────────────────┐  ┌───────────────────────┐  │
 │  │ ~/.claude/projects/  │  │ ~/.pi/agent/     │  │ ~/.codex/sessions/    │  │
-│  │   */*.jsonl          │  │   sessions/*.jsonl│ │   *.jsonl             │  │
+│  │   */*.jsonl          │  │   sessions/*.jsonl│ │   **/*.jsonl          │  │
 │  └──────────────────────┘  └──────────────────┘  └───────────────────────┘  │
 │  ┌──────────────────────┐  ┌──────────────────┐                             │
 │  │ ~/.claude/history.   │  │ sessions.yaml    │                             │
@@ -100,10 +100,10 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  main()                   _build_parse_flags(args)                   ──► ConversationFlags
 │
-├───►  main()                   cmd_parse(flags, input, slice, out, fmt,   ──► commands.py
+├───►  main()                   cmd_parse(flags, input, slice, out, fmt,   ──► commands/
 │                               only_metadata, only_id)
 │
-├───►  cmd_parse                _resolve_input_content(input_arg)          ──► commands.py
+├───►  cmd_parse                _resolve_input_content(input_arg)          ──► commands/resolve.py
 │      │                        ├── _try_resolve_conversation_file()
 │      │                        │   ├── Try Path(input).exists()
 │      │                        │   ├── SessionPool.discover()/from_files()
@@ -170,7 +170,7 @@ TIME   ACTOR                    ACTION                                         T
 │                               -ca, -f, -T, -t, -a, -A, -s, --color, etc.
 │
 ├───►  main()                   Builds ConversationFlags + PoolFilter      ──► flags, pool_filter
-│      main()                   cmd_search(pattern, flags, pool_filter, ...) ──► commands.py
+│      main()                   cmd_search(pattern, flags, pool_filter, ...) ──► commands/
 │
 ├───►  cmd_search               re.compile(pattern, IGNORECASE|...)        ──► regex
 │                               Falls back to re.escape on invalid regex
@@ -219,7 +219,7 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  main()                   Detects sys.argv[1] == "rename"            ──► argparse (rename parser)
 │
-├───►  main()                   cmd_rename(conversation_id, new_name)      ──► commands.py
+├───►  main()                   cmd_rename(conversation_id, new_name)      ──► commands/
 │
 ├───►  cmd_rename               resolve_conversation_file(conv_id)         ──► Path (or exit)
 │      │                        └── _try_resolve_conversation_file()
@@ -252,7 +252,7 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  main()                   Detects sys.argv[1] == "rm"                ──► argparse (rm parser)
 │
-├───►  main()                   cmd_rm(session, dry_run=...)               ──► commands.py
+├───►  main()                   cmd_rm(session, dry_run=...)               ──► commands/
 │
 ├───►  cmd_rm                   _resolve_session_for_rm(session_id)        ──► Path (or exit)
 │      │                        └── _try_resolve_conversation_file()
@@ -599,130 +599,54 @@ Summary prefix ─────────────► │ extract_summaries_
 
 ```
 cli.py:main()
-├── init_module_console_from_color_arg()
-│   └── console.init_module_console()
 │
 ├── [subcommand dispatch]
-│   ├── sys.argv[1] == "search" → argparse → cmd_search()
-│   ├── sys.argv[1] == "fork"   → argparse → cmd_fork()
-│   ├── sys.argv[1] == "rename" → argparse → cmd_rename()
-│   ├── sys.argv[1] == "rm"     → argparse → cmd_rm()
-│   ├── sys.argv[1] == "catalog"→ cmd_catalog(sys.argv[2:])
-│   └── default                 → argparse → cmd_parse()
+│   ├── "search" → argparse → cmd_search()
+│   ├── "fork"   → argparse → cmd_fork()
+│   ├── "rename" → argparse → cmd_rename()
+│   ├── "rm"     → argparse → cmd_rm()
+│   ├── "catalog"→ cmd_catalog(argv[2:])
+│   └── default  → argparse → cmd_parse()
 │
-├── [parse mode only]
-│   ├── _resolve_thinking_mode(raw_thinking, show_all)
-│   ├── _resolve_show_tools(raw_tools, show_all)
-│   │   └── parse_tool_spec(spec) → ToolFilter
-│   ├── Normalize parse provider filter
-│   │   └── Warn + ignore unless input is a recent negative index
-│   ├── _normalize_parse_visibility_args(args)
-│   │   └── _warn_only_override()
-│   ├── _build_parse_flags(args) → ConversationFlags
-│   └── is_single_negative_index(candidate)
+├── [parse mode]
+│   ├── Build ConversationFlags (visibility, thinking, tools, agents, plans)
+│   ├── Build PoolFilter (provider, dir, date filters)
+│   └── cmd_parse(flags, input, slices, output, pool_filter, output_mode)
 │
-cmd_parse(
-  flags, input_arg, slice_str, output_file, output_format,
-  emit_metadata, pool_filter, output_mode
-)
-├── _resolve_input_content(input_arg, pool_filter)
-│   ├── _try_resolve_conversation_file(identifier, pool_filter)
-│   │   ├── Path(identifier).exists()
-│   │   ├── SessionPool.discover() / SessionPool.from_files()
-│   │   ├── is_single_negative_index(identifier)
-│   │   │   └── _resolve_recent_conversation_file(identifier, pool_filter.candidate_files(pool), pool_filter)
-│   │   │       ├── _build_conversation_metadata(files)
-│   │   │       ├── pool_filter.passes_metadata(meta) — date filters
-│   │   │       ├── pool_filter.narrow_for_index(eligible) — dir filter via cwd extract
-│   │   │       └── resolve_negative_index(identifier, ordered)
-│   │   ├── pool.resolve_exact_identifier(identifier)
-│   │   ├── UUID-like miss short-circuit
-│   │   └── extract_summaries_from_jsonl(conv_file)
-│   ├── resolved_path.read_text()
-│   └── stdin.read() / raw input passthrough
-├── [only_id] → get_display_session_id() → stdout/file → return
-├── detect_format(content) → "jsonl" | "raw"
-├── parse_jsonl(content, flags, source_path) / parse_raw_cli_transcript(content, flags)
-│   └── parse_jsonl_entries(entries, flags, source_path)
-│       └── adapter-owned entry parser
-├── [only_metadata] → build_metadata_text() / print_metadata() → stdout/file → return
-├── _merge_agent_messages(messages, content, input_file_path, flags) [if --agents]
-├── _build_tool_id_map(messages)
-├── normalize one-or-more slice selectors
-├── parse_slice_notation(selector) for each selector
-├── _load_conversation_metadata(input_file_path) / print_metadata(...)
-└── format_to_xml/json/raw(...) or render_messages_with_rich(...)
-
-cmd_search(pattern, flags, pool_filter, *, output_mode, emit_metadata)
-├── re.compile(pattern) + literal_candidate
-├── SessionPool.discover(include_sidechains=flags.show_agents)
-├── choose search_files via pool_filter.candidate_files(pool)
-├── for each file → _search_hit_for_file(..., pool_filter)
-│   ├── conv_file.read_text()
-│   ├── _search_candidate_matches(content, pattern_arg, literal_candidate, flags)
-│   ├── _search_conversation_content(conv_file, content, regex, flags, pool_filter)
-│   │   ├── SessionScan.from_content(content, flags, source_path=conv_file)
-│   │   │   ├── detect_format()
-│   │   │   ├── decode_jsonl_entries()
-│   │   │   ├── extract_cwd_from_entries()
-│   │   │   ├── extract_summaries_from_entries()
-│   │   │   ├── extract_custom_titles_from_entries()
-│   │   │   └── parse_jsonl_entries() / parse_raw_cli_transcript()
-│   │   ├── pool_filter.passes_cwd(scan.cwd)
-│   │   ├── regex.search(summary/title)
-│   │   ├── _build_tool_id_map(messages)
-│   │   └── regex.search(render_message_inner_xml(msg, ...))
-│   ├── _load_conversation_metadata(conv_file)
-│   └── pool_filter.passes_metadata(meta)
-├── sort_by_modified_descending(hits, modified_at=lambda hit: hit.metadata.mtime)
-└── display_search_result(...)
-    ├── output_mode=ONLY_ID → print display session id only
-    ├── output_mode=LIST → print metadata only
-    ├── output_mode=MATCHES → render hit.matches
-    └── output_mode=FULL → render hit.messages
-
-cmd_fork(session_id, flags)
-├── resolve_conversation_file(session_id)
-└── fork_session(conv_file, flags)
-
-cmd_rename(conversation_id, new_name)
-├── resolve_conversation_file(conversation_id)
-├── get_jsonl_session_adapter()
-├── get_native_session_id()
-├── extract_cwd_from_jsonl()
-├── decode_jsonl_entries()
-├── adapter.build_rename_entries()
-├── json.dumps() → append provider-native rename entry/entries to conv_file
-└── [Claude only] json.dumps() → append `/rename ...` to history.jsonl
-
-cmd_rm(session_id, dry_run)
-├── _resolve_session_for_rm()
-│   └── _try_resolve_conversation_file()
-├── _is_claude_session_path()
-├── _collect_session_files()
-│   └── find_agent_files_for_session()
-├── _collect_session_dirs()
-├── _filter_history_lines()
-├── _display_rm_preview()
-│   ├── _file_meta()
-│   │   ├── _human_size()
-│   │   └── _line_count()
-│   ├── _render_dir_tree()
-│   └── collapse_home()
-└── _execute_removal()
-    └── shutil.rmtree()
-
-cmd_catalog(args)
-└── catalog_sessions(args)
-    ├── _is_session_id() / _is_file_path()
-    ├── re.findall(session_id pattern)
-    ├── _extract_metadata() [YAML frontmatter]
-    ├── _get_session_content(session_id)
-    │   └── cmd_parse(flags, session_id, format="xml")
-    │       [via redirect_stdout → StringIO]
-    ├── yaml.safe_load(sessions.yaml)
-    ├── TEMPLATE_PATH.read_text() [if creating new]
-    └── subprocess.run(["claude", "--model=sonnet", "-p", prompt])
+│       1. Resolve input → (content, source_path)
+│          Session pool, negative indices, exact IDs, summary prefixes
+│       2. Detect format (jsonl vs raw transcript)
+│       3. Parse → list[Message] via provider adapter
+│       4. Merge agents, build tool-id map, apply slices
+│       5. Format & emit (xml/json/raw, stdout/file, Rich/plain)
+│
+├── [search mode]
+│   ├── Build ConversationFlags + PoolFilter
+│   └── cmd_search(pattern, flags, pool_filter, output_mode)
+│
+│       1. Compile regex, derive literal candidate
+│       2. SessionPool.discover() → candidate files
+│       3. Per-file: candidate prefilter → SessionScan → regex confirm
+│       4. Collect SearchHit objects, sort by modified time
+│       5. Display (matches-only / full, metadata, id-only)
+│
+├── [fork mode]
+│   └── cmd_fork(session_id, flags)
+│       resolve → fork_session() → write provider-native fork
+│
+├── [rename mode]
+│   └── cmd_rename(session_id, name)
+│       resolve → adapter.build_rename_entries() → append to file
+│
+├── [rm mode]
+│   └── cmd_rm(session_id, dry_run)
+│       resolve → collect artifacts (files, dirs, history)
+│       → preview → confirm → execute removal
+│
+└── [catalog mode]
+    └── cmd_catalog(args)
+        catalog_sessions(): classify args → get content via cmd_parse
+        → build prompt → shell out to claude CLI → update sessions.yaml
 ```
 
 ---
@@ -731,43 +655,28 @@ cmd_catalog(args)
 
 ```
 cli.py
-├── commands.py
-│   ├── console.py
-│   ├── date_filters.py
-│   ├── forking.py
-│   ├── formatting.py
-│   ├── model.py
-│   ├── ordering.py
-│   ├── parsing.py
-│   ├── session_pool.py
-│   ├── session_scan.py
-│   └── utils.py
-├── formatting.py
-│   ├── console.py
-│   ├── model.py
-│   ├── parsing.py
-│   ├── tools.py
-│   └── utils.py
-├── parsing.py
-│   ├── model.py
-│   └── utils.py
-├── session_pool.py
-│   ├── model.py
-│   └── parsing.py
-├── session_scan.py
-│   ├── model.py
-│   └── parsing.py
-├── console.py
-├── model.py
-├── ordering.py
+├── commands/
+│   ├── parse.py      → model, parsing, formatting, console, ordering, utils
+│   ├── search.py     → model, parsing, formatting, session_scan, console, ordering
+│   ├── rename.py     → model, parsing, formatting, console
+│   ├── resolve.py    → model, parsing, session_pool, ordering, utils
+│   ├── rm.py         → model, parsing, console, utils
+│   └── common.py     → model
+├── catalog/          → commands, console, model
+├── formatting.py     → model, parsing, console, tools, utils
+├── parsing.py        → model, utils
+├── session_pool.py   → model, parsing
+├── session_scan.py   → model, parsing, ordering, pool_filter
+├── forking.py        → model, parsing, utils
 ├── tool_filter.py
-└── catalog/
-    ├── __init__.py
-    │   ├── commands.py
-    │   ├── console.py
-    │   └── model.py
-    └── assets/
-        └── sessions.template.yaml
+├── pool_filter.py    → model, parsing
+├── console.py
+├── model.py          → utils
+├── ordering.py
+├── lexer.py          (XmlmdLexer — rendering grammar)
+├── parts.py          (MessagePart, ContentBlockType — structured message model)
+├── registry.py       (ToolSchema, normalize_tool_name — tool normalization)
+└── theme.py          (Rich theme definitions)
 ```
 
 ---
@@ -776,7 +685,7 @@ cli.py
 
 1. **Adapter Selection Is Path-Based**: `parse_jsonl_entries()` chooses the provider adapter from `source_path`, not by probing payload shape. Raw stdin JSONL with no source path falls through to the default adapter.
 2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
-3. **Recent Negative Indices Mostly Use Metadata Timestamps**: `_resolve_recent_conversation_file()` still usually goes through `_build_conversation_metadata()` and in-band timestamps rather than `SessionPool.stat_mtime_sorted`. The current exception is the dir-only parse fast path (`-d ... -1` with no date filters), which now walks `SessionPool.stat_mtime_sorted` newest-first and streams each file only until `cwd` is found.
+3. **Recent Negative Indices Mostly Use Metadata Timestamps**: `_resolve_recent_conversation_file()` still usually goes through metadata building and in-band timestamps rather than `SessionPool.stat_mtime_sorted`. The current exception is the dir-only parse fast path (`-d ... -1` with no date filters), which probes newest-first and stops at the first matching session.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.
 5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, custom titles, and the rendered XML of visible message content. If tools, thinking, agents, or plans are hidden by flags, they do not count as matches.
 6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled; it discovers more files by including Claude sidechain sessions in the `SessionPool`.
