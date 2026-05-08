@@ -5,7 +5,7 @@ directory: ~/dev/conversations
 history_path: ~/.pi/agent/sessions/--Users-giladbarnea-dev-conversations--/2026-05-04T14-09-56-217Z_019df352-fff8-7646-9df3-35fe83a842e4.jsonl
 created: "2026-05-04 17:09"
 modified: "2026-05-05 09:06"
-messages: 6
+messages: 14
 custom_title: "conversations optimize index-based session retrieval"
 ---
 <user-message i="1">
@@ -265,4 +265,156 @@ If you want, next I can turn this into a concrete implementation plan for:
 1. the `--dir`-only fast path, and
 2. the staged `mafter/cafter` probe path,
 before touching code.
+</assistant-response>
+
+---
+
+<user-message i="7">
+## User
+
+ok. if i understand correctly, even though (2) and (3) both handle time, (2) is more complex - more acrobatics than (2). right? /skill:terse-output
+</user-message>
+
+---
+
+<assistant-response i="8" model="openai/gpt-5.4">
+## Assistant
+
+Yes.
+
+1. `--dir` fast path is simpler.
+   1.1. Need one fact: `cwd`.
+   1.2. Can stream from top, stop early.
+   1.3. Can short-circuit on first/newest match for `-1`.
+
+2. Time-filter path is more acrobatic.
+   2.1. Need semantic ordering, not just cheap stat ordering, if preserving current behavior.
+   2.2. Need first timestamp for `cafter`, last timestamp for `mafter`, sometimes both.
+   2.3. Often cannot stop as early, because a later-scanned file may still win semantically.
+
+3. So:
+   3.1. `--dir` optimization = straightforward.
+   3.2. `--mafter/--cafter` optimization = still worth doing, but more design-sensitive.
+
+4. Best sequence:
+   4.1. fix `--dir` case first,
+   4.2. then refactor metadata probing into minimal facets for time filters,
+   4.3. only then consider deeper ordering changes.
+</assistant-response>
+
+---
+
+<user-message i="9">
+## User
+
+dial down numbered lists in your responses. lean on rich markdown reading experience. think how to fix " 1. Dir-only case" then do it; later we will tackle the (what i see as a) more general and frankly interesting problem of Cultivating strategies to probe different fields of the metadata, over multiple providers, and also being able to query a few metadata fields from the same request. This feels a bit like projection.
+</user-message>
+
+---
+
+<assistant-response i="10" model="openai/gpt-5.4">
+## Assistant
+
+Implemented the dir-only fast path.
+
+The fix is narrow:
+
+- `src/conversations/commands.py`
+  - `-d ... -N` with no date filters now walks candidates newest-first and returns as soon as the requested match is found.
+  - It skips the eager `_build_conversation_metadata(...)` pass entirely in that case.
+
+- `src/conversations/parsing.py`
+  - added `extract_cwd_from_jsonl_file(path)`
+  - streams line-by-line until it finds `cwd`, then stops
+
+- `src/conversations/pool_filter.py`
+  - `passes_path_for_index()` now uses the streaming cwd probe instead of `path.read_text(...)`
+
+Tests:
+
+- new file: `tests/test_recent_index_orchestration.py`
+  - proves no eager metadata loading for dir-only recent index lookup
+  - proves short-circuit after newest matching session
+
+Validation:
+
+- targeted:
+  - `uv run pytest tests/test_recent_index_orchestration.py tests/test_provider_filter.py tests/test_session_search_space.py tests/test_resolution.py -q`
+  - passed
+
+- full:
+  - `./tests/run_all.sh | cat`
+  - passed
+
+Docs updated:
+
+- `README.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+
+Holistic take: this is clean enough for now. It does introduce a special-case fast path in `commands.py`, but it is justified and surgical. The more general abstraction you pointed at — projection-like metadata probing across providers/fields — should come later, not be smuggled into this fix.
+</assistant-response>
+
+---
+
+<user-message i="11">
+## User
+
+-d ... -N without date filters is indeed fast as expected, but it matches the wrong session. for example, the same command as before now matches a session from 3 days ago: ❯ ccc -1 -d dev/TLDRScraper/ | head
+---
+session_id: 019de265-a5c5-7912-a293-5a8e7365fb46
+provider: codex
+directory: ~/dev/TLDRScraper
+history_path: ~/.codex/sessions/2026/05/01/rollout-2026-05-01T10-16-45-019de265-a5c5-7912-a293-5a8e7365fb46.jsonl
+created: "2026-05-01 10:17"
+modified: "2026-05-01 22:08"
+messages: 14
+custom_title: "Add article patch endpoint"
+</user-message>
+
+---
+
+<assistant-response i="12" model="openai/gpt-5.4">
+## Assistant
+
+Found it. The fast path was iterating `reversed(conversation_files)`, which only works if `conversation_files` is already stat-mtime sorted. In real usage it is discovery-ordered, so it could pick an older match.
+
+Fixed in `src/conversations/commands.py`:
+
+- dir-only fast path now explicitly sorts candidates by `candidate.stat().st_mtime`, descending
+- then probes cwd and short-circuits on first match
+
+Red-green test added and now passing in `tests/test_recent_index_orchestration.py`:
+
+- proves dir-only `-1` uses newest-first stat order, not discovery order
+
+Validation:
+
+- `uv run pytest tests/test_recent_index_orchestration.py -q`
+- `uv run pytest tests/test_provider_filter.py tests/test_session_search_space.py tests/test_resolution.py tests/test_recent_index_orchestration.py -q`
+
+Both passed.
+
+I have not rerun the full suite again after this tiny ordering fix, only focused regressions. If you want, next step is a full `./tests/run_all.sh | cat`.
+</assistant-response>
+
+---
+
+<user-message i="13">
+## User
+
+i want a new entry in GOTCHAS.md for this - the wrong assumption that was made that created the situation with the bad performance, for which you have found the root cause. short. Starts with "Assumed [assumption that proved to be false]. In our case, [what concretely we dealt with as an example]"
+</user-message>
+
+---
+
+<assistant-response i="14" model="openai/gpt-5.4">
+## Assistant
+
+Added to `GOTCHAS.md`:
+
+1. `GOTCHAS.md`
+
+New entry:
+> Assumed recent-index filtering had to build full metadata for the whole candidate pool before applying the index. In our case, `ccc -1 -d ...` loaded timestamps for every candidate session and then reread files for `cwd`, instead of probing incrementally and stopping at the newest matching session.
 </assistant-response>
