@@ -62,7 +62,7 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
 │  │                         CATALOG MODULE (catalog/)                     │  │
-│  │  catalog_sessions() -> cmd_parse() capture -> external claude CLI     │  │
+│  │  catalog_sessions() -> cmd_parse() capture -> external pi CLI        │  │
 │  └────────────────────────────────────────────────────────────────────────┘  │
 │                                                                             │
 ╞═════════════════════════════════════════════════════════════════════════════╡
@@ -300,15 +300,17 @@ TIME   ACTOR                    ACTION                                         T
 ├───►  main()                   Detects sys.argv[1] == "catalog"           ──► cmd_catalog(argv[2:])
 │      cmd_catalog              catalog_sessions(args)                     ──► catalog/__init__.py
 │
-├───►  catalog_sessions         Classify args:                             ──► session_ids, greppable
+├───►  catalog_sessions         Classify args:                             ──► session_id, greppable
 │      │                        ├── _is_session_id(arg) / _is_file_path()
-│      │                        └── Read piped stdin if not tty
+│      │                        ├── Read piped stdin if not tty
+│      │                        └── Extract session ID from greppable
+│      │                            (regex on session_id: <UUID>,
+│      │                             or _extract_metadata fallback)
 │
-├───►  catalog_sessions         Extract session IDs from greppable text    ──► regex: session_id: <UUID>
-│      │                        └── Fallback: _extract_metadata(piped)
-│      │                            to get session_id from YAML frontmatter
+├───►  catalog_sessions         Resolve single session ID:                ──► session_id | exit(1)
+│      │                        _resolve_session_id(args, piped_content)
 │
-├───►  catalog_sessions         For each session_id:
+├───►  catalog_sessions         Catalog that session:
 │      │
 │      ├── _get_session_content(session_id)                                ──► str | None
 │      │   └── cmd_parse(flags, session_id, format="xml",                  ──► captured stdout
@@ -333,9 +335,10 @@ TIME   ACTOR                    ACTION                                         T
 │      │   └── Fill PROMPT_TEMPLATE with sessions_path
 │      │
 │      └── subprocess.run(                                                 ──► External Process
-│          ["claude", "--model=sonnet",
-│           "--dangerously-skip-permissions", "-p", full_prompt],
-│          cwd=session_directory, env={OAUTH/API_KEY})
+│          ["pi", "--model=google/gemini-3-flash-preview",
+│           "--thinking=high", "--print",
+│           "--system-prompt", full_prompt],
+│          cwd=session_directory)
 │
 └───►  catalog_sessions         Print "Done."                              ──► console
 ```
@@ -398,7 +401,7 @@ Summary prefix ─────────────► │ extract_summaries_
                                          │
                           rm path ───────┼────► collect artifacts + delete
                                          │
-                          catalog path ──┴────► cmd_parse capture -> claude CLI
+                          catalog path ──┴────► cmd_parse capture -> pi CLI
 ```
 
 ---
@@ -555,19 +558,14 @@ Summary prefix ─────────────► │ extract_summaries_
 
 ```
                  ┌───────────────┐       ┌──────────────────┐
-  args/stdin ───►│ CLASSIFY      │──────►│ EXTRACT IDs      │
-                 │ • session IDs │       │ • from greppable │
-                 │ • greppable   │       │   text (regex)   │
-                 │ • piped stdin │       │ • from YAML      │
-                 └───────────────┘       │   frontmatter    │
+  args/stdin ───►│ RESOLVE       │──────►│ _resolve_session_│
+                 │ single        │       │ id():            │
+                 │ session ID    │       │ • arg or file    │
+                 │               │       │ • greppable UUID │
+                 └───────────────┘       │ • piped stdin    │
                                          └────────┬─────────┘
                                                   │
-                                  no IDs ──► exit(1)
-                                                  │
-                                         ┌────────▼─────────┐
-                                         │ First session_id │
-                                         │ only:            │
-                                         └────────┬─────────┘
+                                  no ID ──► exit(1)
                                                   │
                                          ┌────────▼─────────┐
                                      no  │ Get content?     │──► exit
@@ -593,9 +591,9 @@ Summary prefix ─────────────► │ extract_summaries_
                                                   │ no / new
                                          ┌────────▼─────────┐
                                          │ Build prompt +   │
-                                         │ subprocess.run   │──► claude CLI
-                                         │ (claude --model  │    modifies sessions.yaml
-                                         │  sonnet -p ...)  │
+                                         │ subprocess.run   │──► pi CLI
+                                         │ (pi --model=...  │    modifies sessions.yaml
+                                         │  --print ...)    │
                                          └─────────────────┘
 ```
 
@@ -652,7 +650,7 @@ cli.py:main()
 └── [catalog mode]
     └── cmd_catalog(args)
         catalog_sessions(): classify args → get content via cmd_parse
-        → build prompt → shell out to claude CLI → update sessions.yaml
+        → build prompt → shell out to pi CLI → update sessions.yaml
 ```
 
 ---
