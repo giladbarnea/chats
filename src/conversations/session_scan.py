@@ -7,8 +7,8 @@ from .model import ConversationFlags, Message, Provider
 from .parsing import (
     decode_jsonl_entries,
     detect_format,
-    extract_custom_titles_from_entries,
     extract_cwd_from_entries,
+    extract_latest_custom_title_from_entries,
     extract_summaries_from_entries,
     get_jsonl_session_adapter,
     parse_jsonl_entries,
@@ -23,13 +23,8 @@ class SessionScan:
     provider: Provider | None
     cwd: str | None
     summaries: tuple[str, ...]
-    custom_titles: tuple[str, ...]
+    custom_title: str | None
     messages: tuple[Message, ...]
-
-    @property
-    def last_custom_title(self) -> str | None:
-        """Return the most recent custom title, if any."""
-        return self.custom_titles[-1] if self.custom_titles else None
 
     @classmethod
     def from_file(cls, session_file: Path, flags: ConversationFlags) -> SessionScan:
@@ -51,7 +46,7 @@ class SessionScan:
                 provider=None,
                 cwd=None,
                 summaries=(),
-                custom_titles=(),
+                custom_title=None,
                 messages=tuple(parse_raw_cli_transcript(content, flags)),
             )
 
@@ -65,7 +60,7 @@ class SessionScan:
             provider=provider,
             cwd=extract_cwd_from_entries(entries),
             summaries=tuple(extract_summaries_from_entries(entries)),
-            custom_titles=tuple(extract_custom_titles_from_entries(entries)),
+            custom_title=extract_latest_custom_title_from_entries(entries),
             messages=tuple(
                 parse_jsonl_entries(entries, flags, source_path=source_path)
             ),

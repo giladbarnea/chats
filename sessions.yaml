@@ -27,6 +27,16 @@
 # -------
 # Example sessions.yaml file:
 sessions:
+  # May 08 26
+  019e0731-d3da-73bb-bee7-2e97762c199b:
+    description: "Supported session names (latest title only) as first-class lookup identifiers, with case-insensitive substring matching that prioritizes titles over summary-prefix hits. Unified title extraction across Claude, PI, and Codex adapters into a single current-facet model and implemented a targeted streaming resolution pass to avoid eager metadata indexing in `SessionPool`."
+    directories: [~/dev/conversations]
+    keywords: [session-resolution, custom-titles, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 6
+    edited_files: [src/conversations/commands/resolve.py, src/conversations/parsing.py, src/conversations/session_scan.py, src/conversations/commands/search.py, src/conversations/commands/parse.py, tests/test_resolution.py, tests/test_session_scan.py, tests/test_session_search_space.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    branch: main
+
   # May 04 26
   019df319-3dfa-70a8-8882-bac91f55ca4f:
     description: "Optimized performance for finding index-based sessions with directory filters (e.g., `ccc -1 -d ...`). Identified a bottleneck where the app eagerly loaded metadata and read full JSONL files for all candidates; implemented a targeted fast path that sorts files by filesystem modification time and streams JSONL content line-by-line to extract the `cwd`, short-circuiting as soon as the requested index is reached."

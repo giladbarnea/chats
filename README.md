@@ -43,12 +43,13 @@ Convert conversation files to XML-tagged markdown.
 1. Full file path: `/path/to/conversation.jsonl`
 2. Recent negative index: `-1` (most recently modified supported session), `-2`, ...
 3. Conversation/session ID or filename: `b177e4f8-bb24-43e9-8a53-4e064be4457d`
-4. Summary text (case-insensitive prefix match): `"Extract PII"`
-5. Stdin: `cat file.jsonl | ccc`
+4. Current session name/title (case-insensitive substring match, latest title only): `"patch endpoint"`
+5. Summary text (case-insensitive prefix match): `"Extract PII"`
+6. Stdin: `cat file.jsonl | ccc`
 
 Negative recent indices resolve across the unified Claude/PI/Codex session pool using oldest→newest modified-time ordering, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
 The same session-pool filters used by `ccc search` also narrow the recent-index lookup: `-p, --provider claude|pi|codex`, `-d, --dir DIR`, `-ma, --mafter DATE`, and `-ca, --cafter DATE`. For example, `ccc -p codex -1` resolves the newest Codex session, and `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`. When only `--dir` is present, recent-index resolution now uses a cheap newest-first cwd probe instead of eagerly loading full metadata for the whole pool. These filters apply only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores them.
-Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass.
+Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any title/summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass. If exact-id resolution misses, `ccc` scans each session's latest title for a case-insensitive substring match before falling back to summary-prefix matching.
 
 Conversations can have multiple summary entries (prepended as conversation evolves), each with a unique `leafUuid` tracking the conversation endpoint. Summary matching searches all summaries in all files.
 
@@ -184,7 +185,7 @@ Markdown-only output intended for piping into files or other tools.
 
 ### Search Mode
 
-Search all supported sessions using regex patterns against visible rendered message content, summaries, and custom titles.
+Search all supported sessions using regex patterns against visible rendered message content, summaries, and the latest current custom title.
 
 ```bash
 ccc search [OPTIONS] <pattern>
@@ -221,7 +222,7 @@ ccc search -p codex "TODO"              # Search only Codex sessions
 
 **Search Features:**
 - Case-insensitive regex (multiline, DOTALL)
-- Searches visible rendered message content, conversation summaries, and custom titles
+- Searches visible rendered message content, conversation summaries, and the latest current custom title
 - By default renders only matching messages; `-f, --full` renders every visible message from each matching conversation
 - Visibility flags affect search semantics: hidden thinking/tools/agents/plans do not count as matches
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
@@ -329,7 +330,7 @@ This mutates the conversation file by appending the provider-native session-titl
 - Codex: `event_msg.payload.type == "thread_name_updated"`
 - PI: `session_info.name`
 
-All three native shapes surface back through the same shared custom-title abstraction for search/metadata.
+All three native shapes surface back through the same shared current-title abstraction for resolution, search, and metadata. Only the latest title is acknowledged; older historical titles are ignored.
 
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`
@@ -404,13 +405,14 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Skipped by parse mode (not rendered)
    - Multiple summaries per file (prepended as conversation evolves)
    - `leafUuid`: unique identifier for conversation endpoint (often doesn't match any message UUID)
-   - Summary text used for conversation matching
+   - Summary text used for summary-prefix conversation matching
 
-6. **Session title entries** (provider-normalized to the shared custom-title abstraction)
+6. **Session title entries** (provider-normalized to the shared current-title abstraction)
    - Not rendered in the conversation body
    - Claude uses `type: "custom-title"` with `customTitle`
    - Codex uses `type: "event_msg"` with `payload.type: "thread_name_updated"` and `payload.thread_name`
    - PI uses `type: "session_info"` with `name`
+   - Only the latest such entry is acknowledged for resolution, search, and metadata
    - Searchable in search mode and emitted as `custom_title:` in metadata frontmatter
 
 **Agent/Subagent Conversations:**

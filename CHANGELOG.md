@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-08] Resolve sessions by current name and ignore historical titles
+
+### Changed
+
+- Parse/rename-style session resolution now accepts the session's current latest title as an identifier, using case-insensitive substring matching after exact-id lookup and before summary-prefix fallback.
+- Historical renamed-away titles are no longer acknowledged by resolution or search; only the latest provider-native title entry counts.
+- Search/session-scan title semantics now treat Claude `custom-title`, PI `session_info.name`, and Codex `thread_name_updated` as one current-title facet instead of a historical title list.
+
+---
 ## [2026-05-07] Hide user command protocol messages by default
 
 ### Changed

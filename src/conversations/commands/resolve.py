@@ -10,7 +10,7 @@ from ..console import get_console, print_error
 from ..model import ConversationMetadata
 from ..ordering import is_single_negative_index, resolve_negative_index, sort_by_modified
 from ..parsing import (
-    extract_summaries_from_jsonl,
+    extract_resolution_facets_from_jsonl,
     get_display_session_id,
     get_jsonl_session_adapter,
     get_jsonl_timestamps,
@@ -172,21 +172,33 @@ def _try_resolve_conversation_file(
     if exact_match is not None:
         return exact_match, []
 
+    query_lower = stripped.lower()
+    title_matches: list[tuple[Path, str]] = []
+    summary_matches: list[tuple[Path, str]] = []
+    for conversation_file in conversation_files:
+        current_title, summaries = extract_resolution_facets_from_jsonl(
+            conversation_file
+        )
+        if current_title is not None and query_lower in current_title.lower():
+            title_matches.append((conversation_file, current_title))
+            continue
+        for summary in summaries:
+            if summary.lower().startswith(query_lower):
+                summary_matches.append((conversation_file, summary))
+                break
+
+    if len(title_matches) == 1:
+        return title_matches[0][0], []
+    if len(title_matches) > 1:
+        return None, title_matches
+
     if len(stripped) >= 32 and "-" in stripped:
         return None, []
 
-    query_lower = stripped.lower()
-    matches: list[tuple[Path, str]] = []
-    for conversation_file in conversation_files:
-        for summary in extract_summaries_from_jsonl(conversation_file):
-            if summary.lower().startswith(query_lower):
-                matches.append((conversation_file, summary))
-                break
-
-    if len(matches) == 1:
-        return matches[0][0], []
-    if len(matches) > 1:
-        return None, matches
+    if len(summary_matches) == 1:
+        return summary_matches[0][0], []
+    if len(summary_matches) > 1:
+        return None, summary_matches
     return None, []
 
 

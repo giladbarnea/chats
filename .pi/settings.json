@@ -3,11 +3,11 @@
     "-../.agents/skills/macos-terminal-screenshots/SKILL.md",
     "-../.agents/skills/run-interactive/SKILL.md",
     "-../.agents/skills/supabase-postgres-best-practices/SKILL.md",
-    "-../.agents/skills/post-implementation/SKILL.md",
     "-../.agents/skills/prompt-subagent/SKILL.md",
     "+../.agents/skills/tdd/SKILL.md",
     "+../.agents/skills/write-tests/SKILL.md",
-    "+../.agents/skills/peer-review/SKILL.md"
+    "-../.agents/skills/peer-review/SKILL.md",
+    "+../.agents/skills/post-implementation/SKILL.md"
   ],
   "packages": []
 }

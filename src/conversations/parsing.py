@@ -326,6 +326,15 @@ def extract_custom_titles_from_entries(entries: list[dict]) -> list[str]:
     return values
 
 
+def extract_latest_custom_title_from_entries(entries: list[dict]) -> str | None:
+    """Extract only the latest shared custom-title value from parsed JSONL entries."""
+    latest_custom_title: str | None = None
+    for entry in entries:
+        if custom_title := _extract_custom_title_from_entry(entry):
+            latest_custom_title = custom_title
+    return latest_custom_title
+
+
 def extract_custom_titles_from_jsonl(file_path: Path) -> list[str]:
     """Extract all shared custom-title values from a jsonl conversation file."""
     values: list[str] = []
@@ -345,6 +354,103 @@ def extract_custom_titles_from_jsonl(file_path: Path) -> list[str]:
         return values
     except OSError:
         return []
+
+
+def extract_latest_custom_title_from_content(content: str) -> str | None:
+    """Extract only the latest shared custom-title value from JSONL content."""
+    latest_custom_title: str | None = None
+
+    for line in content.split("\n"):
+        line = line.strip()
+        if not line or not line.startswith("{"):
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        if custom_title := _extract_custom_title_from_entry(entry):
+            latest_custom_title = custom_title
+
+    if latest_custom_title is not None:
+        return latest_custom_title
+
+    buffer = ""
+    brace_count = 0
+    for line in content.split("\n"):
+        buffer += line
+        brace_count += line.count("{") - line.count("}")
+
+        if brace_count != 0 or not buffer.strip():
+            continue
+
+        try:
+            entry = json.loads(buffer)
+        except json.JSONDecodeError:
+            buffer = ""
+            continue
+
+        if isinstance(entry, dict) and (
+            custom_title := _extract_custom_title_from_entry(entry)
+        ):
+            latest_custom_title = custom_title
+        buffer = ""
+
+    return latest_custom_title
+
+
+def extract_latest_custom_title_from_jsonl(file_path: Path) -> str | None:
+    """Extract only the latest shared custom-title value from a jsonl conversation file."""
+    latest_custom_title: str | None = None
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.startswith("{"):
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                if custom_title := _extract_custom_title_from_entry(entry):
+                    latest_custom_title = custom_title
+    except OSError:
+        return None
+
+    return latest_custom_title
+
+
+def extract_resolution_facets_from_jsonl(file_path: Path) -> tuple[str | None, list[str]]:
+    """Extract the current title and summaries needed for identifier fallback resolution."""
+    latest_custom_title: str | None = None
+    summaries: list[str] = []
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped or not stripped.startswith("{"):
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+
+                if entry.get("type") == "summary":
+                    summary = entry.get("summary")
+                    if isinstance(summary, str) and summary:
+                        summaries.append(summary)
+
+                if custom_title := _extract_custom_title_from_entry(entry):
+                    latest_custom_title = custom_title
+    except OSError:
+        return None, []
+
+    return latest_custom_title, summaries
 
 
 def detect_format(content: str) -> str:

@@ -18,8 +18,8 @@ from ..formatting import (
 from ..model import ConversationFlags, Message, ParseOutputMode
 from ..parsing import (
     detect_format,
-    extract_custom_titles_from_content,
     extract_cwd_from_jsonl,
+    extract_latest_custom_title_from_content,
     get_display_session_id,
     parse_jsonl,
     parse_raw_cli_transcript,
@@ -169,10 +169,11 @@ def cmd_parse(
             print_error(f"Slice {joined_selectors} produced no messages.")
             sys.exit(0)
 
-    custom_titles = (
-        extract_custom_titles_from_content(content) if format_type == "jsonl" else []
+    current_custom_title = (
+        extract_latest_custom_title_from_content(content)
+        if format_type == "jsonl"
+        else None
     )
-    last_custom_title = custom_titles[-1] if custom_titles else None
     metadata = (
         resolve._load_conversation_metadata(input_file_path)
         if input_file_path is not None
@@ -190,7 +191,7 @@ def cmd_parse(
             len(messages),
             provider=metadata.provider if metadata else None,
             forked_from=metadata.forked_from if metadata else None,
-            last_custom_title=last_custom_title,
+            last_custom_title=current_custom_title,
             created_at=metadata.ctime if metadata else None,
             modified_at=metadata.mtime if metadata else None,
             include_frontmatter_separator=False,
@@ -210,7 +211,7 @@ def cmd_parse(
             len(messages),
             provider=metadata.provider,
             forked_from=metadata.forked_from,
-            last_custom_title=last_custom_title,
+            last_custom_title=current_custom_title,
             created_at=metadata.ctime,
             modified_at=metadata.mtime,
             color=flags.color,

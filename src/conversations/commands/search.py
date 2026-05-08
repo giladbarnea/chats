@@ -294,11 +294,11 @@ def _search_conversation_content(
         return None
 
     matching_summaries = [summary for summary in scan.summaries if regex.search(summary)]
-    matching_custom_titles = [
-        custom_title
-        for custom_title in scan.custom_titles
-        if regex.search(custom_title)
-    ]
+    matching_custom_titles = (
+        [scan.custom_title]
+        if scan.custom_title is not None and regex.search(scan.custom_title)
+        else []
+    )
     tool_id_map = _build_tool_id_map(messages)
     matches = [
         message
@@ -312,5 +312,5 @@ def _search_conversation_content(
         cwd,
         matching_summaries,
         matching_custom_titles,
-        scan.last_custom_title,
+        scan.custom_title,
     )

@@ -308,7 +308,9 @@ class TestExactIdentifierResolution:
             patch.object(
                 resolve_commands, "_resolve_recent_conversation_file"
             ) as recent_lookup,
-            patch("conversations.commands.resolve.extract_summaries_from_jsonl") as summary_lookup,
+            patch(
+                "conversations.commands.resolve.extract_resolution_facets_from_jsonl"
+            ) as summary_lookup,
         ):
             resolved_path, ambiguous = _try_resolve_conversation_file(session_id)
 
@@ -403,6 +405,211 @@ class TestAmbiguousInParseMode:
 
         assert content is not None
         assert len(content) > 0
+
+
+class TestCurrentTitleResolution:
+    """Session resolution should acknowledge only the latest title, by substring."""
+
+    def test_latest_custom_title_substring_resolves(self, temp_claude_home):
+        """A latest title substring should resolve the session."""
+        session_path = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "ffff6666-current-title.jsonl"
+        )
+        session_path.write_text(
+            "".join(
+                json.dumps(entry) + "\n"
+                for entry in [
+                    {
+                        "type": "summary",
+                        "summary": "Unrelated summary token",
+                        "leafUuid": "leaf-6666",
+                    },
+                    {
+                        "type": "user",
+                        "sessionId": "ffff6666-current-title",
+                        "cwd": "/tmp/project",
+                        "timestamp": "2026-05-08T10:00:00.000Z",
+                        "message": {"role": "user", "content": "hello"},
+                        "uuid": "msg-1",
+                    },
+                    {
+                        "type": "custom-title",
+                        "customTitle": "historic-title-token",
+                        "sessionId": "ffff6666-current-title",
+                    },
+                    {
+                        "type": "custom-title",
+                        "customTitle": "Current patch title token",
+                        "sessionId": "ffff6666-current-title",
+                    },
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        path, ambiguous = _try_resolve_conversation_file("patch title")
+
+        assert ambiguous == [], f"Expected unique title resolution. Got: {ambiguous!r}"
+        assert path == session_path, (
+            "Expected resolution by latest title substring. "
+            f"Got: {path!r}"
+        )
+
+    def test_old_custom_title_no_longer_matches(self, temp_claude_home):
+        """Historical renamed-away titles should not remain resolvable."""
+        session_path = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "gggg7777-historical-title.jsonl"
+        )
+        session_path.write_text(
+            "".join(
+                json.dumps(entry) + "\n"
+                for entry in [
+                    {
+                        "type": "user",
+                        "sessionId": "gggg7777-historical-title",
+                        "cwd": "/tmp/project",
+                        "timestamp": "2026-05-08T10:00:00.000Z",
+                        "message": {"role": "user", "content": "hello"},
+                        "uuid": "msg-1",
+                    },
+                    {
+                        "type": "custom-title",
+                        "customTitle": "historic-title-token",
+                        "sessionId": "gggg7777-historical-title",
+                    },
+                    {
+                        "type": "custom-title",
+                        "customTitle": "current-title-token",
+                        "sessionId": "gggg7777-historical-title",
+                    },
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        path, ambiguous = _try_resolve_conversation_file("historic-title-token")
+
+        assert path is None, (
+            "Expected historical titles to stop resolving once a newer title exists. "
+            f"Got: {path!r}"
+        )
+        assert ambiguous == [], (
+            "Expected no ambiguous title matches for an old renamed-away title. "
+            f"Got: {ambiguous!r}"
+        )
+
+    def test_current_title_wins_before_summary_match(self, temp_claude_home):
+        """Title lookup should win before summary-prefix fallback."""
+        projects_dir = temp_claude_home / ".claude" / "projects" / "test-project"
+        summary_path = projects_dir / "hhhh8888-summary-match.jsonl"
+        title_path = projects_dir / "iiii9999-title-win.jsonl"
+
+        summary_path.write_text(
+            "".join(
+                json.dumps(entry) + "\n"
+                for entry in [
+                    {
+                        "type": "summary",
+                        "summary": "winning-token summary match",
+                        "leafUuid": "leaf-8888",
+                    },
+                    {
+                        "type": "user",
+                        "sessionId": "hhhh8888-summary-match",
+                        "cwd": "/tmp/project",
+                        "timestamp": "2026-05-08T10:00:00.000Z",
+                        "message": {"role": "user", "content": "summary session"},
+                        "uuid": "msg-1",
+                    },
+                ]
+            ),
+            encoding="utf-8",
+        )
+        title_path.write_text(
+            "".join(
+                json.dumps(entry) + "\n"
+                for entry in [
+                    {
+                        "type": "summary",
+                        "summary": "Unrelated summary token",
+                        "leafUuid": "leaf-9999",
+                    },
+                    {
+                        "type": "user",
+                        "sessionId": "iiii9999-title-win",
+                        "cwd": "/tmp/project",
+                        "timestamp": "2026-05-08T10:00:00.000Z",
+                        "message": {"role": "user", "content": "title session"},
+                        "uuid": "msg-1",
+                    },
+                    {
+                        "type": "custom-title",
+                        "customTitle": "Current winning-token title",
+                        "sessionId": "iiii9999-title-win",
+                    },
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        path, ambiguous = _try_resolve_conversation_file("winning-token")
+
+        assert ambiguous == [], f"Expected a unique title win. Got: {ambiguous!r}"
+        assert path == title_path, (
+            "Expected current-title substring matching to win before summary-prefix matching. "
+            f"Got: {path!r}"
+        )
+
+    def test_hyphenated_uuid_like_title_still_resolves(self, temp_claude_home):
+        """A long hyphenated title should not be blocked by the UUID-like miss short-circuit."""
+        title = "12345678-1234-1234-1234-123456789012-extra-title-token"
+        session_path = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "jjjj0000-hyphenated-title.jsonl"
+        )
+        session_path.write_text(
+            "".join(
+                json.dumps(entry) + "\n"
+                for entry in [
+                    {
+                        "type": "user",
+                        "sessionId": "jjjj0000-hyphenated-title",
+                        "cwd": "/tmp/project",
+                        "timestamp": "2026-05-08T10:00:00.000Z",
+                        "message": {"role": "user", "content": "hello"},
+                        "uuid": "msg-1",
+                    },
+                    {
+                        "type": "custom-title",
+                        "customTitle": title,
+                        "sessionId": "jjjj0000-hyphenated-title",
+                    },
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        path, ambiguous = _try_resolve_conversation_file(title)
+
+        assert ambiguous == [], (
+            "Expected a UUID-like title to resolve uniquely via title matching. "
+            f"Got: {ambiguous!r}"
+        )
+        assert path == session_path, (
+            "Expected title lookup to happen before the UUID-like not-found short-circuit. "
+            f"Got: {path!r}"
+        )
 
 
 if __name__ == "__main__":

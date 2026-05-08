@@ -9,7 +9,7 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 ## Core Runtime Concepts
 
 - `SessionPool` (`session_pool.py`): the per-invocation inventory of all supported session files. It owns the "one big pool" mental model for exact-id resolution and provider-aware search routing.
-- `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, custom titles, and already-visible messages.
+- `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, the current latest custom title, and already-visible messages.
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
 
@@ -375,7 +375,7 @@ Summary prefix ─────────────► │ extract_summaries_
                            │  │   ├─ decode entries    │
                            │  │   ├─ extract cwd /     │
                            │  │   │   summaries /      │
-                           │  │   │   custom titles    │
+                           │  │   │   current title    │
                            │  │   └─ parse_jsonl_      │
                            │  │       entries()        │
                            │  └─ raw transcript        │
@@ -433,6 +433,12 @@ Summary prefix ─────────────► │ extract_summaries_
                         │ Exact ID/name?  │        → RESOLVED (Path)
                         └──────┬──────────┘          or fall through
                                │ no match
+                        ┌──────▼──────────┐  1 match
+                        │ Current title   │──────────► RESOLVED (Path)
+                        │ substring scan  │  >1 match
+                        │ (latest only)   │──────────► AMBIGUOUS (error)
+                        └──────┬──────────┘
+                               │ 0 matches
                         ┌──────▼──────────┐  yes
                         │ UUID-like miss? │──────► NOT_FOUND (fast fail)
                         └──────┬──────────┘
@@ -687,16 +693,16 @@ cli.py
 2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
 3. **Recent Negative Indices Mostly Use Metadata Timestamps**: `_resolve_recent_conversation_file()` still usually goes through metadata building and in-band timestamps rather than `SessionPool.stat_mtime_sorted`. The current exception is the dir-only parse fast path (`-d ... -1` with no date filters), which probes newest-first and stops at the first matching session.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.
-5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, custom titles, and the rendered XML of visible message content. If tools, thinking, agents, or plans are hidden by flags, they do not count as matches.
+5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the rendered XML of visible message content. If tools, thinking, agents, or plans are hidden by flags, they do not count as matches.
 6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled; it discovers more files by including Claude sidechain sessions in the `SessionPool`.
 7. **Candidate Pass Is an Optimization, Not New Semantics**: plain-literal queries first go through `_search_candidate_matches()`, but every surviving file still gets the normal rendered-content confirmation pass. Render-dependent patterns bypass the candidate shortcut entirely.
 8. **Search Metadata Is Lazy**: `_load_conversation_metadata()` is paid only after a file has a content hit. Date filters still apply, but only to candidate hits rather than the entire search universe up front.
-9. **Search Output Mode Separates Match Semantics From Display Breadth**: `SessionScan` and regex confirmation always determine the matching conversation first. `SearchOutputMode.MATCHES` renders only `hit.matches` (the default), while `SearchOutputMode.FULL` renders `hit.messages`, including summary/custom-title-only hits.
+9. **Search Output Mode Separates Match Semantics From Display Breadth**: `SessionScan` and regex confirmation always determine the matching conversation first. `SearchOutputMode.MATCHES` renders only `hit.matches` (the default), while `SearchOutputMode.FULL` renders `hit.messages`, including summary/current-title-only hits.
 10. **Optional Metadata Stays Sparse**: provider-owned metadata extractors may populate optional fields like `forked_from`, but `print_metadata()` omits absent values instead of rendering null-like placeholders.
 11. **Metadata Message Counts After Slicing**: parse-mode metadata reports `len(messages)` after slice application, not the original conversation length.
 12. **Tool ID Map Lifecycle**: `_build_tool_id_map()` is deliberately called before parse-mode slicing so that a surviving `tool_result` can still resolve the display name of a sliced-out `tool_use`.
 13. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based merge of Claude sidechains into the main timeline. It infers placement from `Task` dispatch timing rather than a strict relational join.
 14. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
-15. **Shared Session-Title Semantics**: metadata/search treat provider-native session-name records as one custom-title abstraction: Claude `custom-title`, Codex `event_msg.payload.thread_name` when `payload.type == "thread_name_updated"`, and PI `session_info.name`.
+15. **Shared Session-Title Semantics**: metadata/resolution/search treat provider-native session-name records as one current-title abstraction: Claude `custom-title`, Codex `event_msg.payload.thread_name` when `payload.type == "thread_name_updated"`, and PI `session_info.name`. Only the latest title is acknowledged; historical titles are ignored.
 16. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
 17. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.

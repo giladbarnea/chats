@@ -369,28 +369,58 @@ def test_cmd_search_uses_all_supported_sessions(
     )
 
 
-def test_cmd_search_matches_custom_title_across_ecosystems(
+def test_cmd_parse_resolves_latest_title_substring_across_ecosystems(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:
-    """Search should find a session whose custom title matches the query, even
-    when assistant messages are hidden (so custom-title entries aren't parsed
-    as messages).  Custom titles should be a first-class search dimension like
-    summaries, not matched incidentally through message content."""
+    """Parse-mode resolution by latest title substring should work for non-Claude native title shapes too."""
     temp_home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: temp_home)
     paths = _build_supported_session_space(temp_home)
 
-    # Rename the PI session with a unique custom title
-    cmd_rename(str(paths["pi"]), "xyzzy-unique-title-token")
+    cmd_rename(str(paths["codex"]), "cross-ecosystem-current-title-token")
+    capsys.readouterr()
 
-    # Search with show_assistant_messages=False — custom-title entries won't
-    # be parsed as messages, so matching must happen via the dedicated
-    # custom-title extraction path.
-    with pytest.raises(SystemExit) as exc_info:
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        "current-title-token",
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+    )
+
+    captured = capsys.readouterr()
+    assert (
+        "history_path: ~/.codex/sessions/2026/04/11/"
+        "rollout-2026-04-11T10-11-09-019d7b61-53d7-7891-9033-ad646f9d2ce7.jsonl"
+    ) in captured.out, (
+        "Expected latest-title substring resolution to work for Codex native thread names too. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "cross-ecosystem-current-title-token" in captured.out, (
+        "Expected metadata to surface the current resolved title after name-based resolution. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_search_matches_only_latest_custom_title_across_ecosystems(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Search should acknowledge only the latest title, even across native provider title shapes."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+    paths = _build_supported_session_space(temp_home)
+
+    cmd_rename(str(paths["pi"]), "historic-title-token")
+    cmd_rename(str(paths["pi"]), "xyzzy-current-title-token")
+
+    with pytest.raises(SystemExit) as old_exc_info:
         cmd_search(
-            "xyzzy-unique-title-token",
+            "historic-title-token",
             ConversationFlags(
                 color="never",
                 paging=False,
@@ -400,13 +430,35 @@ def test_cmd_search_matches_custom_title_across_ecosystems(
             emit_metadata=True,
         )
 
-    captured = capsys.readouterr()
-    assert exc_info.value.code == 0, (
-        "Expected search to find the PI session via its custom title. "
-        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    old_captured = capsys.readouterr()
+    assert old_exc_info.value.code == 1, (
+        "Expected search not to acknowledge renamed-away historical titles. "
+        f"Got exit code: {old_exc_info.value.code}\nstdout:\n{old_captured.out}\nstderr:\n{old_captured.err}"
     )
-    assert "pi" in captured.out.lower(), (
-        f"Expected PI session path in output. Got stdout:\n{captured.out}"
+
+    with pytest.raises(SystemExit) as current_exc_info:
+        cmd_search(
+            "current-title-token",
+            ConversationFlags(
+                color="never",
+                paging=False,
+                message_selection=MessageSelection.NO_ASSISTANT,
+            ),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+        )
+
+    current_captured = capsys.readouterr()
+    assert current_exc_info.value.code == 0, (
+        "Expected search to find the session via its latest title substring. "
+        f"Got exit code: {current_exc_info.value.code}\nstdout:\n{current_captured.out}\nstderr:\n{current_captured.err}"
+    )
+    assert "pi" in current_captured.out.lower(), (
+        f"Expected PI session path in output. Got stdout:\n{current_captured.out}"
+    )
+    assert "historic-title-token" not in current_captured.out, (
+        "Expected search output not to acknowledge the historical title once a newer title exists. "
+        f"Got stdout:\n{current_captured.out}"
     )
 
 
