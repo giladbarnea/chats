@@ -103,11 +103,12 @@ def _resolve_session_id(
     when the session ID was extracted from YAML frontmatter in piped input.
     Returns (None, None) if nothing could be resolved.
     """
+    greppable: list[str] = []
     for arg in args:
         if _is_session_id(arg) or _is_file_path(arg):
             return arg, None
+        greppable.append(arg)
 
-    greppable = [a for a in args if not _is_session_id(a) and not _is_file_path(a)]
     if greppable:
         combined = "\n".join(greppable)
         match = re.search(
