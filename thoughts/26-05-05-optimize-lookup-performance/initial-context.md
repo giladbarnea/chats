@@ -418,3 +418,13 @@ Added to `GOTCHAS.md`:
 New entry:
 > Assumed recent-index filtering had to build full metadata for the whole candidate pool before applying the index. In our case, `ccc -1 -d ...` loaded timestamps for every candidate session and then reread files for `cwd`, instead of probing incrementally and stopping at the newest matching session.
 </assistant-response>
+
+## FYI (May 8th update):
+
+A new semantic dimension was added after this note: sessions can now resolve by their **current title** too, and only the **latest** title is acknowledged anywhere meaningful.
+
+Why it matters for the bigger redesign: title lookup is now another metadata facet with explicit semantics, not just UI garnish. That strengthens the original “projection” direction rather than weakening it.
+
+It also means the future probe layer should treat `current_title` as a first-class projected field alongside `cwd`, `created_at`, and `modified_at`, while keeping it out of the cheap `SessionPool` inventory path.
+
+The important decision was to preserve fast exact-id / recent-index paths and pay for title probing only in the late fallback path. So the redesign vector is still: keep the hot path skinny, move richer identity facets into a deliberate, composable probe stage.
