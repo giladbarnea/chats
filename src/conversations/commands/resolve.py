@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import sys
 from collections.abc import Callable, Iterable, Sequence
-from datetime import datetime
 from pathlib import Path
 
 from ..console import get_console, print_error
@@ -12,8 +11,9 @@ from ..ordering import is_single_negative_index, resolve_negative_index, sort_by
 from ..parsing import (
     extract_resolution_facets_from_jsonl,
     get_display_session_id,
+    get_jsonl_first_timestamp,
+    get_jsonl_last_timestamp,
     get_jsonl_session_adapter,
-    get_jsonl_timestamps,
     is_sidechain_session_file,
 )
 from ..pool_filter import PoolFilter
@@ -55,23 +55,11 @@ def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]
 
 def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
     """Load created/modified timestamps for a conversation file."""
-    ctime, mtime = get_jsonl_timestamps(conv_file)
-
-    if ctime is None or mtime is None:
-        try:
-            stat = conv_file.stat()
-            if ctime is None:
-                ctime = datetime.fromtimestamp(stat.st_birthtime)
-            if mtime is None:
-                mtime = datetime.fromtimestamp(stat.st_mtime)
-        except OSError:
-            pass
-
     adapter = get_jsonl_session_adapter(conv_file)
     return ConversationMetadata(
         conv_file,
-        ctime,
-        mtime,
+        get_jsonl_first_timestamp(conv_file),
+        get_jsonl_last_timestamp(conv_file),
         provider=adapter.name,
         forked_from=adapter.extract_forked_from(conv_file),
     )

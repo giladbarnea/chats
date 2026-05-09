@@ -3,6 +3,16 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-10] Probe only the timestamp each date filter actually needs
+
+### Changed
+
+- `--mafter` filtering now probes only the last in-band timestamp for rejected files; `--cafter` filtering probes only the first.
+- New `PoolFilter.passes_path_for_date(path)` consolidates the per-path date check into one cheap predicate that streams only the relevant end of the JSONL file.
+- `_load_conversation_metadata` now delegates timestamp probing (with stat fallback) to two cohesive helpers, `parsing.get_jsonl_first_timestamp` and `parsing.get_jsonl_last_timestamp`.
+- Real-world impact on a ~1500-file pool: `ccc search . -ma 4h --list` drops from ~0.8s to ~0.55s.
+
+---
 ## [2026-05-09] Speed up date-filtered search
 
 ### Changed

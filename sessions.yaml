@@ -26,14 +26,16 @@
 
 # -------
 sessions:
-  # May 09 26
+  # May 10 26
   e5b0d0ef-bce4-4793-978a-216622ddeb58:
-    description: "Optimized `ccc search` performance for date-filtered queries by short-circuiting on metadata probes before reading and parsing full conversation JSONL files. Identified that files outside the date window were being fully parsed only to be discarded; achieved a 5× speedup (4.4s → 0.8s) by reordering the filter gate. Locked the optimization with a TDD regression test."
+    description:
+      - "Optimized `ccc search` performance for date-filtered queries by short-circuiting on metadata probes before reading and parsing full conversation JSONL files. Achieved a 5× speedup (4.4s → 0.8s) by reordering the filter gate and re-using metadata to avoid redundant reads."
+      - "Further accelerated date-filtered searches (0.8s → 0.55s) by implementing a 'projection' layer in `PoolFilter` that probes only the specific timestamp needed by active filters. Refactored `parsing.py` to support streaming-based single-ended timestamp extraction and added a performance regression test with a 1200ms budget."
     directories: [~/dev/conversations]
-    keywords: [performance-optimization, search-performance, tdd]
+    keywords: [performance-optimization, search-performance, tdd, lazy-evaluation]
     prominent_tech_stack: []
-    updated_when_message_count_was: 13
-    edited_files: [src/conversations/commands/search.py, tests/test_search_orchestration.py, CHANGELOG.md, ARCHITECTURE.md]
+    updated_when_message_count_was: 26
+    edited_files: [src/conversations/commands/search.py, src/conversations/parsing.py, src/conversations/pool_filter.py, tests/test_search_orchestration.py, CHANGELOG.md, ARCHITECTURE.md]
     branch: main
 
   # May 08 26

@@ -12,6 +12,7 @@ import pytest
 from conversations import ConversationFlags, PoolFilter, SearchOutputMode, commands
 import conversations.commands.resolve as resolve_commands
 import conversations.commands.search as search_commands
+import conversations.parsing as parsing
 
 
 def _write_session(
@@ -253,4 +254,106 @@ def test_cmd_search_skips_full_parse_for_files_outside_date_window(
     assert fresh_path in parsed_paths, (
         "Expected the in-window file to still be parsed. "
         f"Got parsed files: {parsed_paths!r}"
+    )
+
+
+def test_cmd_search_skips_first_timestamp_probe_when_only_mafter_is_active(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """`-ma` alone should never probe first-timestamp for files outside the window."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    fresh_path = home / ".claude" / "projects" / "proj" / "fresh.jsonl"
+    stale_path = home / ".claude" / "projects" / "proj" / "stale.jsonl"
+
+    fresh_iso = (
+        (datetime.now(UTC) - timedelta(minutes=5))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    _write_session(fresh_path, "shared-needle-mafter-probe", timestamp=fresh_iso)
+    _write_session(
+        stale_path, "shared-needle-mafter-probe", timestamp="2020-01-01T00:00:00Z"
+    )
+
+    first_ts_calls: list[Path] = []
+    real_find_first_timestamp = parsing._find_first_timestamp
+
+    def tracked_find_first_timestamp(path: Path):
+        first_ts_calls.append(path)
+        return real_find_first_timestamp(path)
+
+    monkeypatch.setattr(
+        parsing, "_find_first_timestamp", tracked_find_first_timestamp
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "shared-needle-mafter-probe",
+            ConversationFlags(color="never", paging=False),
+            pool_filter=PoolFilter(mafter="1h"),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+        )
+
+    assert exc_info.value.code == 0, (
+        "Expected the in-window file to be reported. "
+        f"Got exit code: {exc_info.value.code}"
+    )
+    assert stale_path not in first_ts_calls, (
+        "Expected mafter-only filtering to skip first-timestamp probing for files "
+        f"outside the date window. Got first-timestamp probes for: {first_ts_calls!r}"
+    )
+
+
+def test_cmd_search_skips_last_timestamp_probe_when_only_cafter_is_active(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """`-ca` alone should never probe last-timestamp for files outside the window."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    fresh_path = home / ".claude" / "projects" / "proj" / "fresh.jsonl"
+    stale_path = home / ".claude" / "projects" / "proj" / "stale.jsonl"
+
+    fresh_iso = (
+        (datetime.now(UTC) - timedelta(minutes=5))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    _write_session(fresh_path, "shared-needle-cafter-probe", timestamp=fresh_iso)
+    _write_session(
+        stale_path, "shared-needle-cafter-probe", timestamp="2020-01-01T00:00:00Z"
+    )
+
+    last_ts_calls: list[Path] = []
+    real_find_last_timestamp = parsing._find_last_timestamp
+
+    def tracked_find_last_timestamp(path: Path, *args, **kwargs):
+        last_ts_calls.append(path)
+        return real_find_last_timestamp(path, *args, **kwargs)
+
+    monkeypatch.setattr(
+        parsing, "_find_last_timestamp", tracked_find_last_timestamp
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "shared-needle-cafter-probe",
+            ConversationFlags(color="never", paging=False),
+            pool_filter=PoolFilter(cafter="1h"),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+        )
+
+    assert exc_info.value.code == 0, (
+        "Expected the in-window file to be reported. "
+        f"Got exit code: {exc_info.value.code}"
+    )
+    assert stale_path not in last_ts_calls, (
+        "Expected cafter-only filtering to skip last-timestamp probing for files "
+        f"outside the date window. Got last-timestamp probes for: {last_ts_calls!r}"
     )

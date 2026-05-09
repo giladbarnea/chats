@@ -24,7 +24,11 @@ from pathlib import Path
 
 from .date_filters import parse_date_filter
 from .model import ConversationMetadata, Provider
-from .parsing import extract_cwd_from_jsonl_file
+from .parsing import (
+    extract_cwd_from_jsonl_file,
+    get_jsonl_first_timestamp,
+    get_jsonl_last_timestamp,
+)
 from .session_pool import SessionPool
 
 
@@ -68,6 +72,21 @@ class PoolFilter:
         if self.mafter_dt and (not meta.mtime or meta.mtime < self.mafter_dt):
             return False
         return not (self.cafter_dt and (not meta.ctime or meta.ctime < self.cafter_dt))
+
+    def has_date_filters(self) -> bool:
+        return self.mafter_dt is not None or self.cafter_dt is not None
+
+    def passes_path_for_date(self, path: Path) -> bool:
+        """Cheap per-path date check that probes only the timestamp each filter needs."""
+        if self.mafter_dt is not None:
+            mtime = get_jsonl_last_timestamp(path)
+            if mtime is None or mtime < self.mafter_dt:
+                return False
+        if self.cafter_dt is not None:
+            ctime = get_jsonl_first_timestamp(path)
+            if ctime is None or ctime < self.cafter_dt:
+                return False
+        return True
 
     def passes_cwd(self, cwd: str | None) -> bool:
         """Check a session's cwd against the dir filter."""

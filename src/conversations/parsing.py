@@ -44,13 +44,29 @@ def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | N
     Returns (created_at, modified_at) as datetime objects (or None).
     Uses optimized forward scan for start time and backward scan for end time.
     """
-    first_ts = _find_first_timestamp(file_path)
-    last_ts = _find_last_timestamp(file_path)
+    return get_jsonl_first_timestamp(file_path), get_jsonl_last_timestamp(file_path)
 
-    return (
-        _parse_iso_timestamp(first_ts) if first_ts else None,
-        _parse_iso_timestamp(last_ts) if last_ts else None,
-    )
+
+def get_jsonl_first_timestamp(file_path: Path) -> datetime | None:
+    """Stream a JSONL file forward for the first in-band timestamp, falling back to filesystem birth time."""
+    if first_ts := _find_first_timestamp(file_path):
+        if parsed := _parse_iso_timestamp(first_ts):
+            return parsed
+    try:
+        return datetime.fromtimestamp(file_path.stat().st_birthtime)
+    except OSError:
+        return None
+
+
+def get_jsonl_last_timestamp(file_path: Path) -> datetime | None:
+    """Stream a JSONL file backward for the last in-band timestamp, falling back to filesystem mtime."""
+    if last_ts := _find_last_timestamp(file_path):
+        if parsed := _parse_iso_timestamp(last_ts):
+            return parsed
+    try:
+        return datetime.fromtimestamp(file_path.stat().st_mtime)
+    except OSError:
+        return None
 
 
 def _find_first_timestamp(file_path: Path) -> str | None:
