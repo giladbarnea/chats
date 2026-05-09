@@ -1,13 +1,10 @@
 ---
 session_id: 019df352-fff8-7646-9df3-35fe83a842e4
-provider: pi
-directory: ~/dev/conversations
-history_path: ~/.pi/agent/sessions/--Users-giladbarnea-dev-conversations--/2026-05-04T14-09-56-217Z_019df352-fff8-7646-9df3-35fe83a842e4.jsonl
-created: "2026-05-04 17:09"
+reated: "2026-05-04 17:09"
 modified: "2026-05-05 09:06"
-messages: 14
 custom_title: "conversations optimize index-based session retrieval"
 ---
+<ai-coding-session-transcription-for-context>
 <user-message i="1">
 ## User
 
@@ -418,6 +415,9 @@ Added to `GOTCHAS.md`:
 New entry:
 > Assumed recent-index filtering had to build full metadata for the whole candidate pool before applying the index. In our case, `ccc -1 -d ...` loaded timestamps for every candidate session and then reread files for `cwd`, instead of probing incrementally and stopping at the newest matching session.
 </assistant-response>
+</ai-coding-session-transcription-for-context>
+
+#########
 
 ## FYI (May 8th update):
 
