@@ -209,6 +209,12 @@ def _search_hit_for_file(
     pool_filter: PoolFilter,
 ) -> SearchHit | None:
     """Return one search hit with metadata, or None when the file should not be shown."""
+    metadata: ConversationMetadata | None = None
+    if pool_filter.mafter_dt is not None or pool_filter.cafter_dt is not None:
+        metadata = resolve._load_conversation_metadata(conv_file)
+        if not pool_filter.passes_metadata(metadata):
+            return None
+
     content = conv_file.read_text(encoding="utf-8")
     if not _search_candidate_matches(content, pattern_arg, literal_candidate, flags):
         return None
@@ -228,9 +234,8 @@ def _search_hit_for_file(
     if not (matches or matching_summaries or matching_custom_titles):
         return None
 
-    metadata = resolve._load_conversation_metadata(conv_file)
-    if not pool_filter.passes_metadata(metadata):
-        return None
+    if metadata is None:
+        metadata = resolve._load_conversation_metadata(conv_file)
 
     return SearchHit(
         metadata=metadata,

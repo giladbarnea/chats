@@ -181,6 +181,9 @@ TIME   ACTOR                    ACTION                                         T
 │      cmd_search               pool_filter.candidate_files(pool)          ──► provider-narrowed files
 │
 ├───►  cmd_search               For each session file:
+│      │                        ├── [if -ma/-ca active]:
+│      │                        │   ├── _load_conversation_metadata(path)
+│      │                        │   └── pool_filter.passes_metadata(meta) → skip pre-parse
 │      │                        ├── content = path.read_text()
 │      │                        ├── _search_candidate_matches(content, ...)
 │      │                        │   └── Cheap skip for plain-literal misses
@@ -194,8 +197,7 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        │   ├── regex.search() summaries/titles
 │      │                        │   ├── _build_tool_id_map(messages)
 │      │                        │   └── regex.search(render_message_inner_xml(msg))
-│      │                        ├── _load_conversation_metadata(path)
-│      │                        ├── pool_filter.passes_metadata(meta)
+│      │                        ├── [if metadata not yet loaded]: _load_conversation_metadata(path)
 │      │                        └── Build SearchHit
 │
 ├───►  cmd_search               sort_by_modified_descending(hits)          ──► ordered SearchHit list

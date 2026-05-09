@@ -26,6 +26,16 @@
 
 # -------
 sessions:
+  # May 09 26
+  e5b0d0ef-bce4-4793-978a-216622ddeb58:
+    description: "Optimized `ccc search` performance for date-filtered queries by short-circuiting on metadata probes before reading and parsing full conversation JSONL files. Identified that files outside the date window were being fully parsed only to be discarded; achieved a 5× speedup (4.4s → 0.8s) by reordering the filter gate. Locked the optimization with a TDD regression test."
+    directories: [~/dev/conversations]
+    keywords: [performance-optimization, search-performance, tdd]
+    prominent_tech_stack: []
+    updated_when_message_count_was: 13
+    edited_files: [src/conversations/commands/search.py, tests/test_search_orchestration.py, CHANGELOG.md, ARCHITECTURE.md]
+    branch: main
+
   # May 08 26
   019e0731-d3da-73bb-bee7-2e97762c199b:
     description: "Supported session names (latest title only) as first-class lookup identifiers, with case-insensitive substring matching that prioritizes titles over summary-prefix hits. Unified title extraction across Claude, PI, and Codex adapters into a single current-facet model and implemented a targeted streaming resolution pass to avoid eager metadata indexing in `SessionPool`."

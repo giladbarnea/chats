@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-09] Speed up date-filtered search
+
+### Changed
+
+- `ccc search ... -ma DATE` and `ccc search ... -ca DATE` now reject candidate sessions outside the date window before reading or parsing their JSONL content.
+- Per-file timestamp metadata is probed only when a date filter is active, preserving the no-date-filter fast path that already skipped metadata for unrelated nonmatches.
+- Real-world impact on a ~1500-file pool: `ccc search . -ma 4h --list` drops from ~4.4s to ~0.8s.
+
+---
 ## [2026-05-08] Resolve sessions by current name and ignore historical titles
 
 ### Changed

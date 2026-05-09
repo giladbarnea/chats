@@ -4,16 +4,22 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, SearchOutputMode, commands
+from conversations import ConversationFlags, PoolFilter, SearchOutputMode, commands
 import conversations.commands.resolve as resolve_commands
 import conversations.commands.search as search_commands
 
 
-def _write_session(path: Path, text: str) -> None:
+def _write_session(
+    path: Path,
+    text: str,
+    *,
+    timestamp: str = "2025-01-01T00:00:00Z",
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "\n".join([
@@ -24,7 +30,7 @@ def _write_session(path: Path, text: str) -> None:
             }),
             json.dumps({
                 "type": "user",
-                "timestamp": "2025-01-01T00:00:00Z",
+                "timestamp": timestamp,
                 "cwd": "/tmp/search-orchestration",
                 "message": {"role": "user", "content": text},
             }),
@@ -184,4 +190,67 @@ def test_cmd_search_scans_candidate_sessions_newest_first(
     assert scanned_paths == [newer_path, older_path], (
         "Expected search to scan newer candidate sessions before older ones, even when "
         f"the filenames would sort the other way. Got scan order: {scanned_paths!r}"
+    )
+
+
+def test_cmd_search_skips_full_parse_for_files_outside_date_window(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """`-ma 1h` should not full-parse files whose in-band mtime is older than the cutoff."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    fresh_path = home / ".claude" / "projects" / "proj" / "fresh.jsonl"
+    stale_path = home / ".claude" / "projects" / "proj" / "stale.jsonl"
+
+    fresh_iso = (
+        (datetime.now(UTC) - timedelta(minutes=5))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    _write_session(fresh_path, "shared-needle-date-skip", timestamp=fresh_iso)
+    _write_session(stale_path, "shared-needle-date-skip", timestamp="2020-01-01T00:00:00Z")
+
+    parsed_paths: list[Path] = []
+    real_search_conversation_content = search_commands._search_conversation_content
+
+    def tracked_search_conversation_content(
+        conv_file: Path,
+        content: str,
+        regex,
+        flags: ConversationFlags,
+        pool_filter: PoolFilter,
+    ):
+        parsed_paths.append(conv_file)
+        return real_search_conversation_content(
+            conv_file, content, regex, flags, pool_filter
+        )
+
+    monkeypatch.setattr(
+        search_commands,
+        "_search_conversation_content",
+        tracked_search_conversation_content,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "shared-needle-date-skip",
+            ConversationFlags(color="never", paging=False),
+            pool_filter=PoolFilter(mafter="1h"),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=True,
+        )
+
+    assert exc_info.value.code == 0, (
+        "Expected the in-window file to be reported. "
+        f"Got exit code: {exc_info.value.code}"
+    )
+    assert stale_path not in parsed_paths, (
+        "Expected `cmd_search` with -ma 1h to skip parsing files whose in-band mtime "
+        f"is older than the cutoff. Got parsed files: {parsed_paths!r}"
+    )
+    assert fresh_path in parsed_paths, (
+        "Expected the in-window file to still be parsed. "
+        f"Got parsed files: {parsed_paths!r}"
     )
