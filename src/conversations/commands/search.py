@@ -209,7 +209,13 @@ def _search_hit_for_file(
     pool_filter: PoolFilter,
 ) -> SearchHit | None:
     """Return one search hit with metadata, or None when the file should not be shown."""
-    if pool_filter.has_date_filters() and not pool_filter.passes_path_for_date(conv_file):
+    if pool_filter.has_date_filters() and not pool_filter.passes_path_for_date(
+        conv_file
+    ):
+        return None
+    if pool_filter.needs_content_for_dir() and not pool_filter.passes_path_for_index(
+        conv_file
+    ):
         return None
 
     content = conv_file.read_text(encoding="utf-8")
@@ -292,7 +298,9 @@ def _search_conversation_content(
     if not pool_filter.passes_cwd(cwd):
         return None
 
-    matching_summaries = [summary for summary in scan.summaries if regex.search(summary)]
+    matching_summaries = [
+        summary for summary in scan.summaries if regex.search(summary)
+    ]
     matching_custom_titles = (
         [scan.custom_title]
         if scan.custom_title is not None and regex.search(scan.custom_title)

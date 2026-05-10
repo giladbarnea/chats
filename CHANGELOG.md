@@ -3,6 +3,25 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-10] Collapse recent-index resolution onto stat-mtime + cheap predicates
+
+### Changed
+
+- `_resolve_recent_conversation_file()` now walks candidates newest-first by `stat().st_mtime` and applies `PoolFilter.passes_path_for_index` (cwd) and `passes_path_for_date` (mtime/ctime) per file, short-circuiting at the Nth match.
+- Removed the eager `_build_conversation_metadata()` slow path and its `_order_metadata_by_modified_time` helper; full `ConversationMetadata` is now built only for the resolved winner (during display), never for the candidate pool.
+- Trade-off: "newest" is always filesystem mtime, not in-band semantic mtime. Extends the May 4 dir-only choice to all index-resolution filter combos.
+- Real-world impact on a ~1500-file pool: `ccc -1 -ma 4h` drops from ~1.13s to ~0.55s.
+
+---
+## [2026-05-10] Skip full read+parse when search dir filter rejects a candidate
+
+### Changed
+
+- `cmd_search` now applies `PoolFilter.passes_path_for_index` as a cheap streaming cwd probe before reading and parsing each candidate, mirroring the existing date pre-skip.
+- `ccc search ... -d DIR` no longer pays a full `read_text` + `SessionScan` for non-matching directories; the dir check happens once, at the top of `_search_hit_for_file`.
+- Real-world impact on a ~1500-file pool: `ccc search . -l -d .` drops from ~4.2s to ~1.45s. The remaining ~750ms is dominated by `SessionPool.discover` startup and full-parse of the matching files; further wins would require a `--list`-aware fast path inside `_search_conversation_content`.
+
+---
 ## [2026-05-10] Probe only the timestamp each date filter actually needs
 
 ### Changed

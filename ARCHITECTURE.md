@@ -110,8 +110,10 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        │   ├── is_single_negative_index()
 │      │                        │   │   └── _resolve_recent_conversation_file()
 │      │                        │   │       ├── Applies provider filter if supplied
-│      │                        │   │       ├── _build_conversation_metadata()
-│      │                        │   │       └── resolve_negative_index()
+│      │                        │   │       ├── Walks newest-first by stat mtime
+│      │                        │   │       ├── pool_filter.passes_path_for_index() (cwd)
+│      │                        │   │       ├── pool_filter.passes_path_for_date() (mtime/ctime)
+│      │                        │   │       └── short-circuits at the Nth match
 │      │                        │   ├── pool.resolve_exact_identifier()
 │      │                        │   ├── UUID-like miss short-circuit
 │      │                        │   ├── Summary prefix scan
@@ -182,8 +184,9 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_search               For each session file:
 │      │                        ├── [if -ma/-ca active]:
-│      │                        │   ├── _load_conversation_metadata(path)
-│      │                        │   └── pool_filter.passes_metadata(meta) → skip pre-parse
+│      │                        │   └── pool_filter.passes_path_for_date(path) → skip pre-parse
+│      │                        ├── [if -d active]:
+│      │                        │   └── pool_filter.passes_path_for_index(path) → skip pre-parse
 │      │                        ├── content = path.read_text()
 │      │                        ├── _search_candidate_matches(content, ...)
 │      │                        │   └── Cheap skip for plain-literal misses
@@ -429,8 +432,8 @@ Summary prefix ─────────────► │ extract_summaries_
                                │
                         ┌──────▼──────────┐  yes
                         │ Is negative     │──────► provider scope (optional)
-                        │ index (-N)?     │        → _build_conversation_metadata()
-                        │                 │        → resolve_negative_index()
+                        │ index (-N)?     │        → walk newest-first by stat mtime
+                        │                 │        → cheap predicates (cwd, date)
                         └──────┬──────────┘        → RESOLVED (Path) or NOT_FOUND
                                │ no
                         ┌──────▼──────────┐  yes
@@ -691,7 +694,7 @@ cli.py
 
 1. **Adapter Selection Is Path-Based**: `parse_jsonl_entries()` chooses the provider adapter from `source_path`, not by probing payload shape. Raw stdin JSONL with no source path falls through to the default adapter.
 2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
-3. **Recent Negative Indices Mostly Use Metadata Timestamps**: `_resolve_recent_conversation_file()` still usually goes through metadata building and in-band timestamps rather than `SessionPool.stat_mtime_sorted`. The current exception is the dir-only parse fast path (`-d ... -1` with no date filters), which probes newest-first and stops at the first matching session.
+3. **Recent Negative Indices Use Stat Mtime With Cheap Predicates**: `_resolve_recent_conversation_file()` walks candidates newest-first by `stat().st_mtime` and applies `PoolFilter.passes_path_for_index` (cwd) and `passes_path_for_date` (mtime/ctime) per candidate, short-circuiting at the Nth match. This unifies the dir-only fast path and the older metadata-eager slow path. The trade-off is that "newest" is always filesystem mtime, never in-band semantic mtime.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.
 5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the rendered XML of visible message content. If tools, thinking, agents, or plans are hidden by flags, they do not count as matches.
 6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled; it discovers more files by including Claude sidechain sessions in the `SessionPool`.

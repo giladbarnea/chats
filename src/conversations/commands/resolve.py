@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import sys
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from ..console import get_console, print_error
 from ..model import ConversationMetadata
-from ..ordering import is_single_negative_index, resolve_negative_index, sort_by_modified
+from ..ordering import is_single_negative_index
 from ..parsing import (
     extract_resolution_facets_from_jsonl,
     get_display_session_id,
@@ -18,12 +18,6 @@ from ..parsing import (
 )
 from ..pool_filter import PoolFilter
 from ..session_pool import SessionPool
-
-
-ConversationMetadataOrder = Callable[
-    [Iterable[ConversationMetadata]],
-    list[ConversationMetadata],
-]
 
 
 def find_all_conversations(projects_dir: Path) -> Iterable[Path]:
@@ -65,59 +59,30 @@ def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
     )
 
 
-def _order_metadata_by_modified_time(
-    metadata_items: Iterable[ConversationMetadata],
-) -> list[ConversationMetadata]:
-    """Order conversation metadata from oldest to newest by mtime."""
-    return sort_by_modified(metadata_items, modified_at=lambda item: item.mtime)
-
-
-def _build_conversation_metadata(
-    conversation_files: Iterable[Path],
-    *,
-    order: ConversationMetadataOrder = _order_metadata_by_modified_time,
-) -> list[ConversationMetadata]:
-    """Build ordered metadata for conversation files."""
-    return order(_load_conversation_metadata(conv_file) for conv_file in conversation_files)
-
-
 def _resolve_recent_conversation_file(
     identifier: str,
     conversation_files: Sequence[Path],
     pool_filter: PoolFilter | None = None,
 ) -> Path | None:
     """Resolve a negative index like '-1' against globally recent supported sessions."""
-    if pool_filter is not None and pool_filter.needs_content_for_dir():
-        if pool_filter.mafter_dt is None and pool_filter.cafter_dt is None:
-            remaining_matches = abs(int(identifier))
-            newest_first_paths = sorted(
-                conversation_files,
-                key=lambda candidate: candidate.stat().st_mtime,
-                reverse=True,
-            )
-            for path in newest_first_paths:
-                if is_sidechain_session_file(path):
-                    continue
-                if not pool_filter.passes_path_for_index(path):
-                    continue
-                remaining_matches -= 1
-                if remaining_matches == 0:
-                    return path
-            return None
-
-    ordered_metadata = _build_conversation_metadata(conversation_files)
-    eligible: list[Path] = []
-    for metadata in ordered_metadata:
-        if is_sidechain_session_file(metadata.path):
+    pool_filter = pool_filter or PoolFilter()
+    remaining_matches = abs(int(identifier))
+    newest_first_paths = sorted(
+        conversation_files,
+        key=lambda candidate: candidate.stat().st_mtime,
+        reverse=True,
+    )
+    for path in newest_first_paths:
+        if is_sidechain_session_file(path):
             continue
-        if pool_filter is not None and not pool_filter.passes_metadata(metadata):
+        if not pool_filter.passes_path_for_index(path):
             continue
-        eligible.append(metadata.path)
-
-    if pool_filter is not None and pool_filter.needs_content_for_dir():
-        eligible = pool_filter.narrow_for_index(eligible)
-
-    return resolve_negative_index(identifier, eligible)
+        if not pool_filter.passes_path_for_date(path):
+            continue
+        remaining_matches -= 1
+        if remaining_matches == 0:
+            return path
+    return None
 
 
 def _try_resolve_conversation_file(
@@ -282,6 +247,8 @@ def _write_parse_output(output: str, output_file: Path | None) -> None:
     """Write parse output either to stdout or an explicit output file."""
     if output_file is not None:
         output_file.write_text(output + "\n", encoding="utf-8")
-        print(f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr)
+        print(
+            f"[debug] Wrote formatted conversation to: {output_file}", file=sys.stderr
+        )
         return
     print(output)
