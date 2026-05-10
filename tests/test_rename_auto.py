@@ -168,13 +168,13 @@ class TestGenerateAutoName:
     def test_returns_parsed_name_on_success(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "conversations implement auto-rename\n"
-        with patch("conversations.commands.subprocess.run", return_value=mock_result):
+        with patch("conversations.commands.rename.subprocess.run", return_value=mock_result):
             name = _generate_auto_name(session_file, session_file.read_text())
         assert name == "conversations implement auto-rename"
 
     def test_raises_on_pi_not_found(self, session_file):
         with patch(
-            "conversations.commands.subprocess.run",
+            "conversations.commands.rename.subprocess.run",
             side_effect=FileNotFoundError,
         ):
             with pytest.raises(RuntimeError, match="not found"):
@@ -182,7 +182,7 @@ class TestGenerateAutoName:
 
     def test_raises_on_pi_nonzero_exit(self, session_file):
         with patch(
-            "conversations.commands.subprocess.run",
+            "conversations.commands.rename.subprocess.run",
             side_effect=subprocess.CalledProcessError(1, "pi"),
         ):
             with pytest.raises(RuntimeError, match="failed"):
@@ -191,14 +191,14 @@ class TestGenerateAutoName:
     def test_raises_on_unparseable_output(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "line one\nline two\nline three\n"
-        with patch("conversations.commands.subprocess.run", return_value=mock_result):
+        with patch("conversations.commands.rename.subprocess.run", return_value=mock_result):
             with pytest.raises(ValueError, match="could not pick"):
                 _generate_auto_name(session_file, session_file.read_text())
 
     def test_calls_pi_with_print_flag(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "conversations fix thing\n"
-        with patch("conversations.commands.subprocess.run", return_value=mock_result) as mock_run:
+        with patch("conversations.commands.rename.subprocess.run", return_value=mock_result) as mock_run:
             _generate_auto_name(session_file, session_file.read_text())
         args = mock_run.call_args[0][0]
         assert args[0] == "pi"
@@ -207,7 +207,7 @@ class TestGenerateAutoName:
     def test_uses_capture_output(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "conversations fix thing\n"
-        with patch("conversations.commands.subprocess.run", return_value=mock_result) as mock_run:
+        with patch("conversations.commands.rename.subprocess.run", return_value=mock_result) as mock_run:
             _generate_auto_name(session_file, session_file.read_text())
         kwargs = mock_run.call_args[1]
         assert kwargs.get("capture_output") is True
@@ -222,7 +222,7 @@ class TestCmdRenameAuto:
     def test_auto_renames_session(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "conversations implement auto-rename\n"
-        with patch("conversations.commands.subprocess.run", return_value=mock_result):
+        with patch("conversations.commands.rename.subprocess.run", return_value=mock_result):
             cmd_rename(str(session_file), None, auto=True)
 
         last = get_last_line_json(session_file)
@@ -241,7 +241,7 @@ class TestCmdRenameAuto:
 
     def test_auto_pi_not_found_exits(self, session_file):
         with patch(
-            "conversations.commands.subprocess.run",
+            "conversations.commands.rename.subprocess.run",
             side_effect=FileNotFoundError,
         ):
             with pytest.raises(SystemExit) as exc_info:
@@ -251,7 +251,7 @@ class TestCmdRenameAuto:
     def test_auto_bad_output_exits(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "line one\nline two\nline three\n"
-        with patch("conversations.commands.subprocess.run", return_value=mock_result):
+        with patch("conversations.commands.rename.subprocess.run", return_value=mock_result):
             with pytest.raises(SystemExit) as exc_info:
                 cmd_rename(str(session_file), None, auto=True)
         assert exc_info.value.code == 1
