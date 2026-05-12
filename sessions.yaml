@@ -26,6 +26,18 @@
 
 # -------
 sessions:
+  # May 12 26
+  019e1a89-7650-70e3-8dfd-be7c765d44cf:
+    description: "Implemented fully structured JSON output (`-f json`) by mapping XML-like metadata (attributes and tags) to first-class JSON fields. Refactored message and tool models to emit an ordered list of typed content blocks—thinking, tool-input, tool-output, and raw text—ensuring that raw text containing XML-like tags remains unparsed. Added comprehensive TDD coverage with cross-provider fixtures and verified compatibility across the entire test suite."
+    custom_title: "conversations structure CCC JSON output into fully structured test data"
+    directories: [~/dev/conversations]
+    updated_when_message_count_was: 6
+    keywords: [json-format, structured-data, tdd]
+    prominent_tech_stack: []
+    new_files: [tests/test_json_format_structured.py]
+    edited_files: [src/conversations/model.py, src/conversations/tools.py, src/conversations/formatting.py, README.md, CHANGELOG.md, tests/test_format.sh]
+    branch: main
+
   # May 10 26
   e5b0d0ef-bce4-4793-978a-216622ddeb58:
     description:
