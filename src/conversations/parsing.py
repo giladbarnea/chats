@@ -1351,7 +1351,8 @@ def _parse_pi_message_entry(
             "type": "tool_result",
             "tool_use_id": message_data.get("toolCallId"),
             "content": message_data.get("content", []),
-            "is_error": message_data.get("isError", False),
+            "is_error": message_data.get("isError", False)
+                or bool(message_data.get("details", {}).get("error")),
         })
         return msg
     else:

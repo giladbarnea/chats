@@ -845,3 +845,389 @@ def test_cmd_parse_treats_native_pi_session_name_as_custom_title(
         "Expected native PI session names not to render through the session-rename XML tag anymore. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
+
+
+def test_tool_error_isError_false_details_error_absent(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """isError=False without details.error: tool output should NOT be marked as error."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-05-12T08-34-34-538Z_no-error.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-no-error",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "session-no-error",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "read a file"}],
+                },
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-05-12T08:34:35.538Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "toolCall",
+                            "id": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                            "name": "read",
+                            "arguments": {"file_path": "/tmp/plan.md"},
+                        },
+                    ],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                },
+            },
+            {
+                "type": "message",
+                "id": "tool-result-1",
+                "parentId": "assistant-1",
+                "timestamp": "2026-05-12T08:34:36.538Z",
+                "message": {
+                    "role": "toolResult",
+                    "toolCallId": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                    "toolName": "read",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "# Plan\n\nHello world.",
+                        }
+                    ],
+                    "isError": False,
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(show_tools=True, color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert 'is_error="true"' not in captured.out, (
+        "Expected PI tool output without isError and without details.error NOT to carry "
+        f"is_error=true. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_tool_error_isError_true_details_error_absent(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """isError=True without details.error: tool output should be marked as error."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-05-12T08-34-34-538Z_iserror-true-no-details.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-iserror-true",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "session-iserror-true",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "read a nonexistent file"}],
+                },
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-05-12T08:34:35.538Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "toolCall",
+                            "id": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                            "name": "read",
+                            "arguments": {
+                                "file_path": "/nonexistent/path/to/nowhere.md"
+                            },
+                        },
+                    ],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                },
+            },
+            {
+                "type": "message",
+                "id": "tool-result-1",
+                "parentId": "assistant-1",
+                "timestamp": "2026-05-12T08:34:36.538Z",
+                "message": {
+                    "role": "toolResult",
+                    "toolCallId": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                    "toolName": "read",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Error reading file: ENOENT",
+                        }
+                    ],
+                    "isError": True,
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(show_tools=True, color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert 'is_error="true"' in captured.out, (
+        "Expected PI tool output with isError=true to carry is_error=true. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_tool_error_isError_true_details_error_present(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """isError=True with details.error: tool output should be marked as error."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-05-12T08-34-34-538Z_both-error.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-both-error",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "session-both-error",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "read a nonexistent file"}],
+                },
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-05-12T08:34:35.538Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "toolCall",
+                            "id": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                            "name": "read",
+                            "arguments": {
+                                "file_path": "/nonexistent/path/to/nowhere.md"
+                            },
+                        },
+                    ],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                },
+            },
+            {
+                "type": "message",
+                "id": "tool-result-1",
+                "parentId": "assistant-1",
+                "timestamp": "2026-05-12T08:34:36.538Z",
+                "message": {
+                    "role": "toolResult",
+                    "toolCallId": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                    "toolName": "read",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Error reading file: ENOENT",
+                        }
+                    ],
+                    "isError": True,
+                    "details": {
+                        "path": "/nonexistent/path/to/nowhere.md",
+                        "error": "ENOENT: no such file or directory",
+                    },
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(show_tools=True, color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert 'is_error="true"' in captured.out, (
+        "Expected PI tool output with both isError=true and details.error to carry "
+        f"is_error=true. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_tool_error_isError_false_details_error_present(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """isError=False WITH details.error: tool output should STILL be marked as error."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-05-12T08-34-34-538Z_details-error.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-details-error",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "session-details-error",
+                "timestamp": "2026-05-12T08:34:34.538Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "read a nonexistent file"}],
+                },
+            },
+            {
+                "type": "message",
+                "id": "assistant-1",
+                "parentId": "user-1",
+                "timestamp": "2026-05-12T08:34:35.538Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "toolCall",
+                            "id": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                            "name": "read",
+                            "arguments": {
+                                "file_path": "/nonexistent/path/to/nowhere.md"
+                            },
+                        },
+                    ],
+                    "provider": "openrouter",
+                    "model": "z-ai/glm-5",
+                },
+            },
+            {
+                "type": "message",
+                "id": "tool-result-1",
+                "parentId": "assistant-1",
+                "timestamp": "2026-05-12T08:34:36.538Z",
+                "message": {
+                    "role": "toolResult",
+                    "toolCallId": "call_00_pZnGyhqtwR73Ww7oyx9Y6251",
+                    "toolName": "read",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Error reading file \"/nonexistent/path/to/nowhere.md\": ENOENT: no such file or directory, access '/nonexistent/path/to/nowhere.md'",
+                        }
+                    ],
+                    "isError": False,
+                    "details": {
+                        "path": "/nonexistent/path/to/nowhere.md",
+                        "error": "ENOENT: no such file or directory, access '/nonexistent/path/to/nowhere.md'",
+                    },
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(show_tools=True, color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert 'is_error="true"' in captured.out, (
+        "Expected PI tool output with details.error to carry is_error=true even when "
+        f"isError=False. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )

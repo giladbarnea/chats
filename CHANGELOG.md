@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-12] Fix PI adapter false negative for tool errors with `details.error`
+
+### Fixed
+
+- PI `toolResult` messages whose `.isError` is `false` but `.details.error` is present were not recognized as errors. The adapter now checks both signals.
+- Added 4 regression tests covering the 2×2 matrix of `isError`={true,false} × `details.error`={present,absent}.
+
+---
 ## [2026-05-12] Make `-f json` emit fully structured message data
 
 ### Changed
