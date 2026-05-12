@@ -1,0 +1,10 @@
+[
+  {
+    "content": "get a vercel preview deployment up for this branch/pr. you have gh cli and vercel cli and skill",
+    "role": "user"
+  },
+  {
+    "content": "I'll check the current branch and then deploy via the Python requests method.",
+    "role": "assistant"
+  }
+]

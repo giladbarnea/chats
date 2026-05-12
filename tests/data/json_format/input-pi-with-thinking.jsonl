@@ -1,0 +1,2 @@
+{"type":"session","id":"pi-json-format-thinking"}
+{"type":"message","id":"a1","timestamp":"2026-05-12T10:00:01Z","message":{"role":"assistant","model":"deepseek/deepseek-v4-pro","content":[{"type":"thinking","thinking":"Now inspect the transcript before rewriting it."}]}}

@@ -1,0 +1,18 @@
+[
+  {
+    "type": "user-message",
+    "role": "user",
+    "original_index": 1,
+    "content": [
+      "My friend is a physical therapist, and I want a simple booking landing page."
+    ]
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 2,
+    "content": [
+      "I’ll create a simple React/Tailwind static app and keep the first pass focused on the booking flow."
+    ]
+  }
+]

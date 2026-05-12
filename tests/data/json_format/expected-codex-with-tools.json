@@ -1,0 +1,24 @@
+[
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 1,
+    "content": [
+      "I’m checking the tree state first, then I’ll stage, commit, and push the full set.",
+      {
+        "type": "tool-input",
+        "name": "Bash",
+        "id": "Cf2s",
+        "command": "git --no-pager status --short",
+        "workdir": "/Users/demo/portfolio",
+        "max_output_tokens": 12000
+      },
+      {
+        "type": "tool-output",
+        "name": "Bash",
+        "id": "Cf2s",
+        "content": " M vercel.json\n?? AGENTS.md\n"
+      }
+    ]
+  }
+]

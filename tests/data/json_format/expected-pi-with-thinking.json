@@ -1,0 +1,14 @@
+[
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 1,
+    "model": "deepseek/deepseek-v4-pro",
+    "content": [
+      {
+        "type": "thinking",
+        "content": "Now inspect the transcript before rewriting it."
+      }
+    ]
+  }
+]

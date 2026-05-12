@@ -1,0 +1,35 @@
+[
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 1,
+    "model": "deepseek/deepseek-v4-pro",
+    "content": [
+      {
+        "type": "tool-input",
+        "name": "Read",
+        "id": "00E1",
+        "file_path": "/Users/demo/PLAN.md"
+      }
+    ]
+  },
+  {
+    "type": "user-message",
+    "role": "user",
+    "original_index": 2,
+    "content": [
+      {
+        "type": "tool-output",
+        "name": "Read",
+        "id": "00E1",
+        "is_error": true,
+        "content": [
+          {
+            "type": "text",
+            "text": "Error reading file \"/Users/demo/PLAN.md\": ENOENT"
+          }
+        ]
+      }
+    ]
+  }
+]

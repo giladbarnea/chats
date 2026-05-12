@@ -1,0 +1,14 @@
+[
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 1,
+    "model": "sonnet-4-6",
+    "content": [
+      {
+        "type": "thinking",
+        "content": "I should verify the branch and the deployment path before I push anything."
+      }
+    ]
+  }
+]

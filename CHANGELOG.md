@@ -3,6 +3,16 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-12] Make `-f json` emit fully structured message data
+
+### Changed
+
+- JSON output now mirrors the structured message model instead of serializing XML-like wrappers into string content.
+- Each visible message now emits its wrapper tag as `type`, keeps wrapper metadata like `original_index`, `model`, `agent_id`, and `sourceToolUserId` as fields, and exposes `content` as an ordered array.
+- Thinking/tool blocks now become typed JSON objects (`thinking`, `tool-input`, `tool-output`) whose string values are the original content values rather than injected XML tags or fenced pseudo-markup.
+- Added cross-provider regression fixtures/tests covering Claude, PI, and Codex JSON output for plain text, thinking, and tool visibility.
+
+---
 ## [2026-05-10] Collapse recent-index resolution onto stat-mtime + cheap predicates
 
 ### Changed

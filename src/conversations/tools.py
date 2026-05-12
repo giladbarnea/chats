@@ -48,6 +48,28 @@ def tool_to_parts(tool: dict, id_map: dict[str, str] | None = None) -> ToolParts
     )
 
 
+def tool_to_json(
+    tool: dict,
+    id_map: dict[str, str] | None = None,
+) -> dict[str, object]:
+    """Convert a raw tool dict to structured JSON-friendly data."""
+    tool_type = tool.get("type", "")
+    input_tag = ContentBlockType.TOOL_INPUT.value.xml_tag
+    output_tag = ContentBlockType.TOOL_OUTPUT.value.xml_tag
+
+    if tool_type == "tool_use":
+        return _tool_use_to_json(tool, input_tag)
+
+    if tool_type == "tool_result":
+        return _tool_result_to_json(tool, output_tag, id_map)
+
+    return {
+        "type": input_tag,
+        "name": "Unknown",
+        "content": tool,
+    }
+
+
 def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
     """Convert tool_use to ToolParts."""
     name = tool.get("name", "Unknown")
@@ -76,6 +98,31 @@ def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
     return ToolParts(tag=tag, attrs=attrs, content=content, is_empty=not content)
 
 
+def _tool_use_to_json(tool: dict, tag: str) -> dict[str, object]:
+    """Convert tool_use to structured JSON data."""
+    payload: dict[str, object] = {
+        "type": tag,
+        "name": tool.get("name", "Unknown"),
+    }
+    if short_tool_id := shorten_tool_use_id(tool.get("id")):
+        payload["id"] = short_tool_id
+
+    input_data = tool.get("input", {})
+    if not input_data:
+        return payload
+    if not isinstance(input_data, dict):
+        payload["content"] = input_data
+        return payload
+
+    conflicting_keys = set(payload).intersection(input_data)
+    if conflicting_keys:
+        payload["input"] = input_data
+        return payload
+
+    payload.update(input_data)
+    return payload
+
+
 def _tool_result_to_parts(
     tool: dict, tag: str, id_map: dict[str, str] | None = None
 ) -> ToolParts:
@@ -95,6 +142,25 @@ def _tool_result_to_parts(
     content = f"```\n{content_text}\n```" if content_text else None
 
     return ToolParts(tag=tag, attrs=attrs, content=content, is_empty=not content)
+
+
+def _tool_result_to_json(
+    tool: dict,
+    tag: str,
+    id_map: dict[str, str] | None = None,
+) -> dict[str, object]:
+    """Convert tool_result to structured JSON data."""
+    payload: dict[str, object] = {"type": tag}
+    tool_use_id = tool.get("tool_use_id")
+    if id_map and tool_use_id and (name := id_map.get(tool_use_id)):
+        payload["name"] = name
+    if short_tool_id := shorten_tool_use_id(tool_use_id):
+        payload["id"] = short_tool_id
+    if tool.get("is_error", False):
+        payload["is_error"] = True
+    if "content" in tool:
+        payload["content"] = tool.get("content")
+    return payload
 
 
 def render_tool_xml(parts: ToolParts) -> str:

@@ -1,0 +1,2 @@
+{"type":"assistant","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"tool_use","id":"toolu_01Vt1234567890","name":"Skill","input":{"skill":"vercel"}}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01Vt1234567890","content":"Launching skill: vercel\n"}]}}

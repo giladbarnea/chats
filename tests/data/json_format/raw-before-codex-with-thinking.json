@@ -1,0 +1,10 @@
+[
+  {
+    "content": "$load-project-context  <effort>thoughts/26-04-\n30-codebase-simpification/**/*.studyalldocs\nthere.readinfullallrelatedsourcefiles.\nthenmentallyformaspecific,concreteplan\nforthesynthesis'sfirststepthatachieves\nthisstep'spurposeandplaysnicewiththe\nmoreadvancedsteps.thendored/greentdd. $tdd $write-tests",
+    "role": "user"
+  },
+  {
+    "content": "I’ll load the project baseline first, then read the simplification study docs and the source they point at before touching code. I’ll also treat `$tdd` and `$write-tests` as requested workflows, but those skill files are not available in this session, so I’ll use the project’s existing test style as the fallback.\n\nThe project root is loaded: the invariant that matters most here is “one core equation, malleable views,” with URL state on the frontend and strict replay on the backend. I’m moving into the Apr 30 simplification notes now, then I’ll trace only the source files implicated by the first synthesis step.\n\nThe synthesis itself makes the first step quite concrete: fix the asset/provider boundary before any timeline or frontend work. That means the immediate blast radius is the reference-data service, event stream, resolver, types, and the tests that encode rename/corporate-action behavior.",
+    "role": "assistant"
+  }
+]

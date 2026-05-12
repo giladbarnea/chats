@@ -1,0 +1,19 @@
+[
+  {
+    "type": "user-message",
+    "role": "user",
+    "original_index": 1,
+    "content": [
+      "get a vercel preview deployment up for this branch/pr. you have gh cli and vercel cli and skill"
+    ]
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 2,
+    "model": "sonnet-4-6",
+    "content": [
+      "I'll check the current branch and then deploy via the Python requests method."
+    ]
+  }
+]

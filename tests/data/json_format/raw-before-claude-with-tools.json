@@ -1,0 +1,10 @@
+[
+  {
+    "content": "<tool-input name=\"Skill\" id=\"01Vt\">\n```json\n{\n  \"skill\": \"vercel\"\n}\n```\n</tool-input>",
+    "role": "assistant"
+  },
+  {
+    "content": "<tool-output name=\"Skill\" id=\"01Vt\">\n```\nLaunching skill: vercel\n```\n</tool-output>",
+    "role": "user"
+  }
+]

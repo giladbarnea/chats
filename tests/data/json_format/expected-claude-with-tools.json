@@ -1,0 +1,29 @@
+[
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 1,
+    "model": "sonnet-4-6",
+    "content": [
+      {
+        "type": "tool-input",
+        "name": "Skill",
+        "id": "01Vt",
+        "skill": "vercel"
+      }
+    ]
+  },
+  {
+    "type": "user-message",
+    "role": "user",
+    "original_index": 2,
+    "content": [
+      {
+        "type": "tool-output",
+        "name": "Skill",
+        "id": "01Vt",
+        "content": "Launching skill: vercel\n"
+      }
+    ]
+  }
+]

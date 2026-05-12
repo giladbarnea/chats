@@ -71,21 +71,44 @@ fi
 
 # Check first message has required fields
 FIRST_ROLE=$(json_get_field "$OUTPUT_JSON" 0 "role")
-FIRST_CONTENT=$(json_get_field "$OUTPUT_JSON" 0 "content")
+FIRST_TYPE=$(json_get_field "$OUTPUT_JSON" 0 "type")
+FIRST_INDEX=$(json_get_field "$OUTPUT_JSON" 0 "original_index")
+FIRST_CONTENT_TYPE=$(printf '%s\n' "$OUTPUT_JSON" | jq -r '.[0].content | type' 2>/dev/null || printf '%s\n' "$OUTPUT_JSON" | $PY_CMD -c "import json, sys; print(type(json.load(sys.stdin)[0]['content']).__name__)" )
+FIRST_CONTENT_ITEM_TYPE=$(printf '%s\n' "$OUTPUT_JSON" | jq -r '.[0].content[0] | type' 2>/dev/null || printf '%s\n' "$OUTPUT_JSON" | $PY_CMD -c "import json, sys; print(type(json.load(sys.stdin)[0]['content'][0]).__name__)" )
 
 if [[ -z "$FIRST_ROLE" ]]; then
   echo "❌ First message missing 'role' field"
   exit 1
 fi
 
-if [[ -z "$FIRST_CONTENT" ]]; then
-  echo "❌ First message missing 'content' field"
+if [[ -z "$FIRST_TYPE" ]]; then
+  echo "❌ First message missing 'type' field"
+  exit 1
+fi
+
+if [[ -z "$FIRST_INDEX" ]]; then
+  echo "❌ First message missing 'original_index' field"
+  exit 1
+fi
+
+if [[ "$FIRST_CONTENT_TYPE" != "array" && "$FIRST_CONTENT_TYPE" != "list" ]]; then
+  echo "❌ Expected first message content to be an array/list, got: $FIRST_CONTENT_TYPE"
+  exit 1
+fi
+
+if [[ "$FIRST_CONTENT_ITEM_TYPE" != "string" && "$FIRST_CONTENT_ITEM_TYPE" != "str" ]]; then
+  echo "❌ Expected the first content item to stay a raw string, got: $FIRST_CONTENT_ITEM_TYPE"
   exit 1
 fi
 
 # Role should be either 'user' or 'assistant'
 if [[ "$FIRST_ROLE" != "user" && "$FIRST_ROLE" != "assistant" ]]; then
   echo "❌ Invalid role: $FIRST_ROLE (expected 'user' or 'assistant')"
+  exit 1
+fi
+
+if [[ "$FIRST_TYPE" != "$USER_MESSAGE_TAG" && "$FIRST_TYPE" != "$ASSISTANT_RESPONSE_TAG" ]]; then
+  echo "❌ Invalid wrapper type: $FIRST_TYPE"
   exit 1
 fi
 

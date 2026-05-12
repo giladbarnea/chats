@@ -10,7 +10,7 @@ from typing import Literal
 from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
 from .tool_filter import ToolFilter, resolve_tool_visibility
-from .tools import tool_to_parts
+from .tools import tool_to_json, tool_to_parts
 from .utils import shorten_data, truncate_middle
 
 Provider = Literal["claude", "pi", "codex"]
@@ -198,6 +198,76 @@ class Message:
 
         return parts
 
+    def iter_visible_json_content(
+        self,
+        flags: ConversationFlags,
+        tool_id_map: dict[str, str] | None = None,
+    ) -> list[str | dict[str, object]]:
+        """Yield visible content in a JSON-friendly structured form."""
+        content: list[str | dict[str, object]] = []
+
+        if self.text:
+            text = shorten_data(self.text) if flags.shorten else self.text
+            content.append(text)
+
+        if flags.show_thinking and self.thinking:
+            should_shorten_thinking = flags.shorten or flags.shorten_thinking
+            thinking = (
+                truncate_middle(self.thinking)
+                if should_shorten_thinking
+                else self.thinking
+            )
+            content.append({
+                "type": ContentBlockType.THINKING.value.xml_tag,
+                "content": thinking,
+            })
+
+        if flags.show_tools and self.tools:
+            content.extend(self._visible_tool_json_content(flags, tool_id_map))
+
+        if flags.show_plans and self.plan:
+            plan_content = shorten_data(self.plan) if flags.shorten else self.plan
+            content.append({
+                "type": ContentBlockType.TOOL_INPUT.value.xml_tag,
+                "name": "ExitPlanMode",
+                "plan": plan_content,
+            })
+
+        return content
+
+    def to_json_dict(
+        self,
+        flags: ConversationFlags,
+        tool_id_map: dict[str, str] | None = None,
+    ) -> dict[str, object] | None:
+        """Render one visible message to structured JSON data."""
+        content = self.iter_visible_json_content(flags, tool_id_map)
+        if not content:
+            return None
+
+        payload: dict[str, object] = {
+            "type": self.get_wrapper_type().value.xml_tag,
+            "role": self.role,
+            "original_index": self.index,
+            "content": content,
+        }
+
+        if self.role == "user":
+            if self.is_meta:
+                payload["isMeta"] = True
+            if self.source_tool_user_id:
+                payload["sourceToolUserId"] = self.source_tool_user_id
+
+        if self.agent_id:
+            payload["agent_id"] = self.agent_id
+            if self.subagent_type:
+                payload["subagent_type"] = self.subagent_type
+
+        if self.model:
+            payload["model"] = self.model.removeprefix("claude-")
+
+        return payload
+
     def _append_tool_parts(
         self,
         parts: list[MessagePart],
@@ -205,21 +275,10 @@ class Message:
         tool_id_map: dict[str, str] | None,
     ) -> None:
         """Append visible tool parts based on filters."""
-        id_map = tool_id_map or {}
-        filters = flags.show_tools
-
-        # Build local id_map when filters need name resolution and no global map provided
-        if (
-            isinstance(filters, list)
-            and not tool_id_map
-            and any(f.name is not None for f in filters)
-        ):
-            for tool in self.tools:
-                if tool.get("type") == "tool_use" and "id" in tool:
-                    id_map[tool["id"]] = tool.get("name", "Unknown")
+        id_map = self._tool_name_id_map(flags.show_tools, tool_id_map)
 
         for tool in self.tools:
-            show, filter_short = self._should_show_tool(tool, filters, id_map)
+            show, filter_short = self._should_show_tool(tool, flags.show_tools, id_map)
             if not show:
                 continue
 
@@ -231,6 +290,46 @@ class Message:
                 )
 
             parts.append(MessagePart(MessagePartKind.TOOL, tool_parts))
+
+    def _visible_tool_json_content(
+        self,
+        flags: ConversationFlags,
+        tool_id_map: dict[str, str] | None,
+    ) -> list[dict[str, object]]:
+        """Return visible tools in structured JSON form."""
+        id_map = self._tool_name_id_map(flags.show_tools, tool_id_map)
+        tools: list[dict[str, object]] = []
+
+        for tool in self.tools:
+            show, filter_short = self._should_show_tool(tool, flags.show_tools, id_map)
+            if not show:
+                continue
+
+            tool_json = tool_to_json(tool, id_map)
+            if flags.shorten or filter_short:
+                tool_json = shorten_data(tool_json)
+            tools.append(tool_json)
+
+        return tools
+
+    def _tool_name_id_map(
+        self,
+        filter_value: bool | list[ToolFilter],
+        tool_id_map: dict[str, str] | None,
+    ) -> dict[str, str]:
+        """Return a tool id map, building a local one only when needed."""
+        id_map = tool_id_map or {}
+        if not (
+            isinstance(filter_value, list)
+            and not tool_id_map
+            and any(filter_item.name is not None for filter_item in filter_value)
+        ):
+            return id_map
+
+        for tool in self.tools:
+            if tool.get("type") == "tool_use" and "id" in tool:
+                id_map[tool["id"]] = tool.get("name", "Unknown")
+        return id_map
 
     def _should_show_tool(
         self,

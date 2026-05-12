@@ -159,19 +159,39 @@ JSON array to stdout (no metadata; always valid JSON):
 ```json
 [
   {
-    "content": "User message text",
-    "role": "user"
+    "type": "user-message",
+    "role": "user",
+    "original_index": 1,
+    "content": [
+      "User message text"
+    ]
   },
   {
-    "content": "Assistant response text",
-    "role": "assistant"
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 2,
+    "model": "sonnet-4-6",
+    "content": [
+      "Assistant response text",
+      {
+        "type": "tool-input",
+        "name": "Bash",
+        "id": "abcd",
+        "command": "git status",
+        "workdir": "/tmp"
+      }
+    ]
   }
 ]
 ```
 
 JSON format:
 - Always outputs plain JSON (no Rich formatting)
-- Only includes text content from user/assistant messages
+- Mirrors the structured message model instead of embedding XML wrappers into strings
+- Each message carries its wrapper tag as `type` plus any XML-attribute metadata such as `original_index`, `model`, `agent_id`, or `sourceToolUserId`
+- `content` is an ordered array of raw strings and typed blocks like `thinking`, `tool-input`, and `tool-output`
+- Tool blocks expose structured fields instead of XML tags / fenced pseudo-content
+- Raw text that happens to contain XML-like strings stays a plain string value
 - Respects parse-mode visibility flags (`--only-user`, `--only-assistant`, `--no-user`, `--no-assistant`, `-T`, `-t`, `-a`, `-A`)
 - Suitable for programmatic processing
 

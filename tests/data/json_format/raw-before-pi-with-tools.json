@@ -1,0 +1,14 @@
+[
+  {
+    "content": "remove everything in the file here before  227 │ # Podcast Creator",
+    "role": "user"
+  },
+  {
+    "content": "<tool-input name=\"Read\" id=\"00_E\"></tool-input>",
+    "role": "assistant"
+  },
+  {
+    "content": "<tool-output name=\"Read\" id=\"00_E\">\n```\nError reading file \"/Users/giladbarnea/dev/TLDRScraper/thoughts/26-05-11-podcast-generation-v0/PLAN.md\": ENOENT: no such file or directory, access '/Users/giladbarnea/dev/TLDRScraper/thoughts/26-05-11-podcast-generation-v0/PLAN.md'\n```\n</tool-output>",
+    "role": "user"
+  }
+]

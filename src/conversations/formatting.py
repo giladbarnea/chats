@@ -113,18 +113,14 @@ def format_to_json(
     flags: ConversationFlags,
     tool_id_map: dict[str, str] | None = None,
 ) -> str:
-    """Format messages to JSON format."""
+    """Format messages to structured JSON."""
     output = []
 
     for msg in messages:
-        if msg.role not in ("user", "assistant", "session-rename"):
+        message_json = msg.to_json_dict(flags, tool_id_map)
+        if message_json is None:
             continue
-
-        content = render_message_inner_xml(msg, flags, tool_id_map)
-        if not content:
-            continue
-
-        output.append({"content": content.rstrip(), "role": msg.role})
+        output.append(message_json)
 
     return json.dumps(output, indent=2, ensure_ascii=False)
 
