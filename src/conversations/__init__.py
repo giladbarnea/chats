@@ -21,6 +21,7 @@ from .model import (  # noqa: F401
     MessageSelection,
     SearchOutputMode,
 )
+from .murmurs import MurmurFeatures, analyze_murmur, is_murmur  # noqa: F401
 from .parsing import parse_jsonl  # noqa: F401
 from .pool_filter import PoolFilter, add_pool_filter_args  # noqa: F401
 from .session_pool import SessionPool  # noqa: F401

@@ -1,0 +1,74 @@
+[
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 1,
+    "content": [
+      "Look at the **top toast only**. That session’s uncommitted app-facing change is very narrow.\n\nWhat changed, user-visible:\n1. **Toast press glow.**  \n   Tapping/clicking a toast should now produce a **warm radial light bloom from the contact point inside the toast**. That’s the new WebGL proof-of-value: `client/src/components/visual-effects/LiquidGlassTouchLight.jsx`.\n\n2. **Toast click-dismiss behavior.**  \n   Before, click-dismiss likely removed the toast immediately. Now click-dismiss first puts it into **exit animation**, then removes it after `350ms`. So you should notice:\n   - tap toast\n   - optional summary overlay opens as before\n   - toast still visibly animates out instead of disappearing abruptly\n\n3. **No broader UI rollout.**  \n   Nothing suggests ArticleCards, dock, overlay chrome, or other surfaces were converted to Liquid Glass. The change was intentionally kept toast-only.\n\nWhat to do in the app:\n1. Trigger a toast the normal way — easiest is a **summary-ready toast**.\n2. **Tap directly on the toast body**.\n3. Look for:\n   - a localized internal glow where you touched\n   - then a smooth exit-out instead of instant removal\n\nWhat is **not** a user-visible app change:\n- `docs/client/liquid-glass/accumulated-wisdom.md`\n- `docs/client/liquid-glass/mental-model.md`\n- `PROJECT_STRUCTURE.md`  \nThese are docs / bookkeeping. `PROJECT_STRUCTURE.md` was also touched by `setup.sh`.\n\nDirty tree signposts:\n- App-facing:\n  - `client/src/components/ToastContainer.jsx`\n  - `client/src/components/visual-effects/LiquidGlassTouchLight.jsx`\n- Non-app-facing:\n  - `docs/client/liquid-glass/accumulated-wisdom.md`\n  - `docs/client/liquid-glass/mental-model.md`\n  - `PROJECT_STRUCTURE.md`\n\nOne extra note: `sessions.yaml` does **not** yet include this `2cb581a8-...` session, so the dirty tree is the main clue right now.\n\nIf you want, I can also tell you **exactly how to trigger the toast fastest** from this app’s current flows."
+    ],
+    "model": "gpt-5.4"
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 2,
+    "content": [
+      "Done in `client/src/components/ToastContainer.jsx`.\n\nChanges:\n1. Added an always-on mock toast: `\"Mock Liquid Glass toast\"`.\n2. Made it persistent: no auto-dismiss, no click-dismiss.\n3. Increased toast height to about 150% via:\n   - `min-h-[84px]`\n   - `py-[21px]`\n   - `flex items-center`\n\nReal toasts also use the taller sizing now.\n\nRefresh the app and you should always see the mock toast at the top, ready for repeated touch-glow interaction."
+    ],
+    "model": "gpt-5.4"
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 3,
+    "content": [
+      "Added logs in both places:\n\n1. `client/src/components/ToastContainer.jsx`\n   - logs on toast click:\n   - `console.log('[Toast] click', { id, persistent, exiting })`\n\n2. `client/src/components/visual-effects/LiquidGlassTouchLight.jsx`\n   - logs on pointerdown:\n   - `console.log('[LiquidGlassTouchLight] pointerdown', { ...coords })`\n\nNow check DevTools console while pressing the mock toast.\n\nInterpretation:\n- If you see **both logs**, events are reaching both handlers and the visual issue is inside the WebGL/render path.\n- If you see only **`[Toast] click`**, the parent click fires but the touch-light `pointerdown` listener is not.\n- If you see only **`[LiquidGlassTouchLight] pointerdown`**, the glow path is getting input but toast click semantics differ.\n- If you see **neither**, the toast is not receiving interaction at all.\n\nIf you want, next I can add one more log around:\n- WebGL context creation success/failure\n- shader compile success/failure\n- first animation frame start\n\nThat would isolate the render path fast."
+    ],
+    "model": "gpt-5.4"
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 4,
+    "content": [
+      "That warning means the WebGL path is failing **before shader compilation**, specifically at `gl.createShader(...)`.\n\nI patched `client/src/components/visual-effects/LiquidGlassTouchLight.jsx` to:\n1. **fail explicitly** if `createShader()` returns null\n2. log WebGL setup stages:\n   - `\"[LiquidGlassTouchLight] webgl context\"`\n   - `\"[LiquidGlassTouchLight] shader program ready\"`\n   - `\"[LiquidGlassTouchLight] shader setup failed\"`\n   - `\"[LiquidGlassTouchLight] createBuffer failed\"`\n   - `\"[LiquidGlassTouchLight] uniform lookup failed\"`\n\nSo now refresh and check console again.\n\nWhat to look for:\n1. If you see  \n   `\"[LiquidGlassTouchLight] webgl context\" { supported: true }`  \n   then context creation works.\n\n2. If after that you see  \n   `\"[LiquidGlassTouchLight] shader setup failed\" Error: LiquidGlassTouchLight createShader failed...`  \n   then the browser/context exists but shader allocation is failing.\n\n3. If you see  \n   `supported: false`  \n   then this browser/runtime is not giving the canvas a WebGL context.\n\nPaste the new console output and I’ll narrow it down immediately."
+    ],
+    "model": "gpt-5.4"
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 5,
+    "content": [
+      "Root cause found.\n\n`WEBGL_lose_context` in cleanup was sabotaging the dev remount path. In React dev/StrictMode, the effect mounts, cleans up, then mounts again. Your first mount succeeded; cleanup force-lost the context; second mount got a poisoned canvas/context, so `createShader()` returned `null`. That aborted setup before the `pointerdown` listener was attached.\n\nThat matches your logs exactly:\n1. first mount: context OK, shader OK\n2. cleanup loses context\n3. second mount: context object exists, `createShader` fails\n4. later click: only `[Toast] click`, no `[LiquidGlassTouchLight] pointerdown`\n\nI removed the forced context loss from cleanup in:\n\n- `client/src/components/visual-effects/LiquidGlassTouchLight.jsx`\n\nNow refresh and test again.\n\nExpected now:\n1. page load:\n   - one or two `webgl context supported: true` logs in dev is fine\n   - no `createShader failed`\n   - `shader program ready`\n2. toast press:\n   - `[LiquidGlassTouchLight] pointerdown ...`\n   - and hopefully visible glow\n\nOne extra note: your mock toast is `persistent`, so `[Toast] click` is expected to do nothing beyond logging. The glow should come from `pointerdown`, not from click-dismiss logic."
+    ],
+    "model": "gpt-5.4"
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 6,
+    "content": [
+      "Good. It works.\n\nWhat changed:\n1. WebGL setup is now healthy on both dev remounts.\n2. `pointerdown` fires before click on mobile.\n3. Visible glow confirms the render path is fine.\n\nSo the failure was not the effect itself. It was the cleanup path killing the WebGL context during dev remount.\n\nCurrent state:\n- mock toast: always on\n- toast height: increased\n- touch glow: working\n- debug logs: still present\n\nIf you want, next I can:\n1. remove the debug logs,\n2. tune the glow,\n3. make the toast even taller,\n4. or make the mock toast non-persistent but auto-respawn for easier repeated testing."
+    ],
+    "model": "gpt-5.4"
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 7,
+    "content": [
+      "Added to `GOTCHAS.md`.\n\nNew entry: `2026-05-15: Forcing WEBGL_lose_context in React effect cleanup breaks dev remounts`."
+    ],
+    "model": "gpt-5.4"
+  },
+  {
+    "type": "assistant-response",
+    "role": "assistant",
+    "original_index": 8,
+    "content": [
+      "Yes. **From that AI session itself, the only intended runtime/UI change was toast behavior.**\n\nWhat that session intended to add:\n\n1. **Press-reactive glow inside the toast**  \n   This is the main feature. You already found it.\n\n2. **Click-dismiss should animate out instead of disappearing instantly**  \n   This only applies to **real dismissible toasts**, not the persistent mock toast we added later for testing.  \n   So if you trigger a normal toast and tap it, the intended behavior is:\n   - open whatever `onOpen` does\n   - toast enters exit animation\n   - then unmounts after ~350ms\n\nWhat was **not** intended in that session:\n- no Liquid Glass rollout to ArticleCards\n- no new glass surfaces elsewhere in the app\n- no motion-specular / tilt effects\n- no cross-surface glow bleed\n- no broader interaction changes\n\nWhat else changed in that session but is not user-visible:\n- docs updates\n- `mental-model.md`\n- `accumulated-wisdom.md`\n\nOne important distinction:\n- **The always-on mock toast** and **150% taller toast** were added by me **afterward**, not by that earlier AI session.\n- So if you mentally subtract my later debugging/test changes, the original session’s visible app delta is basically:\n  1. toast touch glow\n  2. animated click-dismiss for real toasts\n\nSo: **you’re not missing some larger hidden feature.** The session was intentionally very small-scope."
+    ],
+    "model": "gpt-5.4"
+  }
+]
