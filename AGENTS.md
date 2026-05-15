@@ -117,7 +117,7 @@ Then run the script with `uv run script.py`. No need to specify the Python versi
 
 ### A Cautious Note About Refactoring
 
-If throughout the development cycle you encounter some aspect of the software design or architecture that is a meaningful annoyance increasing the friction between you and solving the problem, and it could be relatively easily redesigned to significantly relieve that friction without requiring so much change that it constitutes an adventure of its own, please go ahead and make this refactor. I prefer that over you needing to do acrobatics to overcome a past, now irrelevant design decision.
+If you hit a design or architecture issue that's causing real friction for you, and reworking it wouldn't be a project in itself, go ahead and refactor it. I'd rather that than you doing acrobatics to work around a past design decision that no longer serves the problem.
 
 </development-rules>
 
