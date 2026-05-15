@@ -56,6 +56,42 @@ def _resolve_show_tools(
     return [parse_tool_spec(s) for s in specs]
 
 
+def _looks_like_positive_integer(candidate: str) -> bool:
+    """Return True when the candidate is a positive base-10 integer."""
+    return candidate.isdigit() and int(candidate) > 0
+
+
+def _is_valid_short_width_token(candidate: str) -> bool:
+    """Return True when the candidate is a valid explicit `--short` width."""
+    return candidate.isdigit() and int(candidate) > 7
+
+
+def _short_uses_attached_value(argv_tokens: list[str]) -> bool:
+    """Return True when `--short` was spelled with an attached `=NUMBER` value."""
+    return any(token.startswith(("--short=", "-s=")) for token in argv_tokens)
+
+
+def _resolve_short_width(
+    raw_short: bool | str | None,
+    *,
+    attached_value: bool = False,
+) -> int | None:
+    """Return the shortening width requested by `--short`, or None when disabled."""
+    if raw_short is None:
+        return None
+    if raw_short is True:
+        return 500
+    if attached_value and isinstance(raw_short, str):
+        if _is_valid_short_width_token(raw_short):
+            return int(raw_short)
+        raise ValueError(
+            f"Invalid --short value: {raw_short!r}. Expected digits > 7."
+        )
+    if isinstance(raw_short, str) and _is_valid_short_width_token(raw_short):
+        return int(raw_short)
+    return 500
+
+
 def _warn_only_override(only_flag: str, disabled_flags: list[str]) -> None:
     """Emit a consistent warning when an `--only-*` flag overrides extras."""
     joined = ", ".join(disabled_flags)
@@ -144,6 +180,10 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
     """Convert normalized parse-mode args into ConversationFlags."""
     show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
     message_selection = _resolve_message_selection(args)
+    shorten_width = _resolve_short_width(
+        args.short,
+        attached_value=getattr(args, "_short_uses_attached_value", False),
+    )
     return ConversationFlags(
         message_selection=message_selection,
         show_thinking=show_thinking,
@@ -151,7 +191,8 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         show_agents=args.agents or args.all,
         show_plans=args.plans or args.all,
         allow_empty_output=message_selection != MessageSelection.ALL,
-        shorten=args.short,
+        shorten=shorten_width is not None,
+        shorten_width=shorten_width or 500,
         shorten_thinking=shorten_thinking,
         color=args.color,
         paging=args.paging,
@@ -270,6 +311,43 @@ def _repair_visibility_option_positionals(
             args.tools = [True]
 
 
+def _repair_short_option_positionals(
+    args: argparse.Namespace,
+    *,
+    input_attr: str,
+    allow_slice: bool,
+) -> None:
+    """Undo argparse swallowing a positional into `-s/--short`."""
+    if not isinstance(args.short, str):
+        return
+    if getattr(args, "_short_uses_attached_value", False):
+        return
+    if _is_valid_short_width_token(args.short):
+        return
+
+    input_value = getattr(args, input_attr)
+    if input_value is None:
+        setattr(args, input_attr, args.short)
+        args.short = True
+        return
+
+    if allow_slice and _looks_like_slice(args.short):
+        if getattr(args, "slice", None) is None:
+            args.slice = args.short
+        else:
+            _add_repaired_slice(args, args.short)
+        args.short = True
+        return
+
+    if allow_slice and _looks_like_session_input(args.short) and _looks_like_slice(input_value):
+        if getattr(args, "slice", None) is None:
+            args.slice = input_value
+        else:
+            _add_repaired_slice(args, input_value)
+        setattr(args, input_attr, args.short)
+        args.short = True
+
+
 def main():
     """Main entry point."""
 
@@ -282,7 +360,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "search":
         # Parse search arguments
         parser = argparse.ArgumentParser(prog="ccc search")
-        parser.add_argument("pattern", help="Pattern to search for")
+        parser.add_argument("pattern", nargs="?", help="Pattern to search for")
         parser.add_argument(
             "-l",
             "--list",
@@ -340,7 +418,12 @@ def main():
             help="Show plan content (ExitPlanMode)",
         )
         parser.add_argument(
-            "-s", "--short", action="store_true", help="Shorten strings in output"
+            "-s",
+            "--short",
+            nargs="?",
+            const=True,
+            default=None,
+            help="Shorten strings in output (optional: width)",
         )
         parser.add_argument(
             "--color",
@@ -367,7 +450,14 @@ def main():
             help="Disable outputting metadata frontmatter",
         )
 
-        args = parser.parse_args(sys.argv[2:])
+        args, unknown = parser.parse_known_args(sys.argv[2:])
+        args._short_uses_attached_value = _short_uses_attached_value(sys.argv[2:])
+        if unknown:
+            parser.error(f"unrecognized arguments: {' '.join(unknown)}")
+        _repair_short_option_positionals(args, input_attr="pattern", allow_slice=False)
+        if args.pattern is None:
+            parser.error("the following arguments are required: pattern")
+
         output_mode = _resolve_search_output_mode(args)
         if output_mode == SearchOutputMode.ONLY_ID:
             args.paging = False
@@ -377,6 +467,10 @@ def main():
             show_thinking, shorten_thinking = _resolve_thinking_mode(
                 args.thinking, args.all
             )
+            shorten_width = _resolve_short_width(
+                args.short,
+                attached_value=getattr(args, "_short_uses_attached_value", False),
+            )
         except ValueError as exc:
             parser.error(str(exc))
         flags = ConversationFlags(
@@ -384,7 +478,8 @@ def main():
             show_tools=_resolve_show_tools(args.tools, args.all),
             show_agents=args.agents or args.all,
             show_plans=args.plans or args.all,
-            shorten=args.short,
+            shorten=shorten_width is not None,
+            shorten_width=shorten_width or 500,
             shorten_thinking=shorten_thinking,
             color=args.color,
             paging=args.paging,
@@ -612,7 +707,12 @@ Commands:
             help="Show plan content (ExitPlanMode)",
         )
         parser.add_argument(
-            "-s", "--short", action="store_true", help="Shorten strings in output"
+            "-s",
+            "--short",
+            nargs="?",
+            const=True,
+            default=None,
+            help="Shorten strings in output (optional: width)",
         )
         parser.add_argument(
             "--color",
@@ -656,10 +756,12 @@ Commands:
         # 1. Negative slices like "-5:" get interpreted as flags
         # 2. Positional args after --flag=value end up in unknown with nargs='?'
         args, unknown = parser.parse_known_args()
+        args._short_uses_attached_value = _short_uses_attached_value(sys.argv[1:])
 
         _repair_visibility_option_positionals(
             args, input_attr="input", allow_slice=True
         )
+        _repair_short_option_positionals(args, input_attr="input", allow_slice=True)
 
         slice_args = list(getattr(args, "_repaired_slices", []))
         if args.slice is not None:

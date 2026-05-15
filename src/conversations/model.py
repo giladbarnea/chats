@@ -65,6 +65,7 @@ class ConversationFlags:
     show_plans: bool
     allow_empty_output: bool
     shorten: bool
+    shorten_width: int
     shorten_thinking: bool
     color: bool
     paging: bool
@@ -79,6 +80,7 @@ class ConversationFlags:
         show_plans: bool = False,
         allow_empty_output: bool = False,
         shorten: bool = False,
+        shorten_width: int = 500,
         shorten_thinking: bool = False,
         color: bool = False,
         paging: bool | None = None,
@@ -90,6 +92,7 @@ class ConversationFlags:
         self.show_plans = show_plans
         self.allow_empty_output = allow_empty_output
         self.shorten = shorten
+        self.shorten_width = shorten_width
         self.shorten_thinking = shorten_thinking
         self.color = (color == "always") or (color == "auto" and sys.stdout.isatty())
         # Paging defaults to color value unless explicitly set
@@ -128,7 +131,7 @@ class ConversationFlags:
             f"show_thinking={self.show_thinking}, "
             f"show_tools={self.show_tools}, show_agents={self.show_agents}, "
             f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
-            f"shorten={self.shorten}, "
+            f"shorten={self.shorten}, shorten_width={self.shorten_width}, "
             f"shorten_thinking={self.shorten_thinking}, "
             f"color={self.color}, paging={self.paging})"
         )
@@ -168,14 +171,18 @@ class Message:
 
         # Text content
         if self.text:
-            text = shorten_data(self.text) if flags.shorten else self.text
+            text = (
+                shorten_data(self.text, width=flags.shorten_width)
+                if flags.shorten
+                else self.text
+            )
             parts.append(MessagePart(MessagePartKind.TEXT, text))
 
         # Thinking block
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking)
+                truncate_middle(self.thinking, max_len=flags.shorten_width)
                 if should_shorten_thinking
                 else self.thinking
             )
@@ -187,7 +194,11 @@ class Message:
 
         # Plan (as tool-like part with name="ExitPlanMode")
         if flags.show_plans and self.plan:
-            plan_content = shorten_data(self.plan) if flags.shorten else self.plan
+            plan_content = (
+                shorten_data(self.plan, width=flags.shorten_width)
+                if flags.shorten
+                else self.plan
+            )
             plan_parts = ToolParts(
                 tag=ContentBlockType.TOOL_INPUT.value.xml_tag,
                 attrs=[("name", "ExitPlanMode")],
@@ -207,13 +218,17 @@ class Message:
         content: list[str | dict[str, object]] = []
 
         if self.text:
-            text = shorten_data(self.text) if flags.shorten else self.text
+            text = (
+                shorten_data(self.text, width=flags.shorten_width)
+                if flags.shorten
+                else self.text
+            )
             content.append(text)
 
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking)
+                truncate_middle(self.thinking, max_len=flags.shorten_width)
                 if should_shorten_thinking
                 else self.thinking
             )
@@ -226,7 +241,11 @@ class Message:
             content.extend(self._visible_tool_json_content(flags, tool_id_map))
 
         if flags.show_plans and self.plan:
-            plan_content = shorten_data(self.plan) if flags.shorten else self.plan
+            plan_content = (
+                shorten_data(self.plan, width=flags.shorten_width)
+                if flags.shorten
+                else self.plan
+            )
             content.append({
                 "type": ContentBlockType.TOOL_INPUT.value.xml_tag,
                 "name": "ExitPlanMode",
@@ -286,7 +305,10 @@ class Message:
             should_shorten = flags.shorten or filter_short
             if should_shorten and tool_parts.content:
                 tool_parts = tool_parts._replace(
-                    content=truncate_middle(tool_parts.content)
+                    content=truncate_middle(
+                        tool_parts.content,
+                        max_len=flags.shorten_width,
+                    )
                 )
 
             parts.append(MessagePart(MessagePartKind.TOOL, tool_parts))
@@ -307,7 +329,7 @@ class Message:
 
             tool_json = tool_to_json(tool, id_map)
             if flags.shorten or filter_short:
-                tool_json = shorten_data(tool_json)
+                tool_json = shorten_data(tool_json, width=flags.shorten_width)
             tools.append(tool_json)
 
         return tools

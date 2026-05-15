@@ -165,15 +165,26 @@ def _build_codex_tool_name_map(entries: list[dict]) -> dict[str, str]:
     return id_map
 
 
-def _shorten_tool_payload(tool: dict, should_shorten: bool) -> dict:
+def _shorten_tool_payload(
+    tool: dict,
+    should_shorten: bool,
+    *,
+    width: int = 500,
+) -> dict:
     if not should_shorten:
         return copy.deepcopy(tool)
 
     shortened_tool = copy.deepcopy(tool)
     if shortened_tool.get("type") == "tool_use" and "input" in shortened_tool:
-        shortened_tool["input"] = shorten_data(shortened_tool.get("input"))
+        shortened_tool["input"] = shorten_data(
+            shortened_tool.get("input"),
+            width=width,
+        )
     elif shortened_tool.get("type") == "tool_result" and "content" in shortened_tool:
-        shortened_tool["content"] = shorten_data(shortened_tool.get("content"))
+        shortened_tool["content"] = shorten_data(
+            shortened_tool.get("content"),
+            width=width,
+        )
     return shortened_tool
 
 
@@ -203,7 +214,10 @@ def _filter_claude_assistant_content(
                 continue
             kept_item = copy.deepcopy(item)
             if flags.shorten or flags.shorten_thinking:
-                kept_item["thinking"] = truncate_middle(kept_item.get("thinking", ""))
+                kept_item["thinking"] = truncate_middle(
+                    kept_item.get("thinking", ""),
+                    max_len=flags.shorten_width,
+                )
             kept_items.append(kept_item)
             continue
 
@@ -231,7 +245,11 @@ def _filter_claude_assistant_content(
         if not show_tool:
             continue
 
-        kept_tool = _shorten_tool_payload(tool_payload, should_shorten)
+        kept_tool = _shorten_tool_payload(
+            tool_payload,
+            should_shorten,
+            width=flags.shorten_width,
+        )
         kept_items.append({
             **copy.deepcopy(item),
             "input": kept_tool.get("input", {}),
@@ -283,7 +301,11 @@ def _filter_claude_user_content(
         if not show_tool:
             continue
 
-        kept_tool = _shorten_tool_payload(tool_payload, should_shorten)
+        kept_tool = _shorten_tool_payload(
+            tool_payload,
+            should_shorten,
+            width=flags.shorten_width,
+        )
         kept_item = copy.deepcopy(item)
         kept_item["content"] = kept_tool.get("content", "")
         kept_items.append(kept_item)
@@ -345,7 +367,10 @@ def _rewrite_claude_entries(
             elif isinstance(tool_use_result, dict):
                 should_shorten = kept_tool_results[0][1]
                 if should_shorten:
-                    entry["toolUseResult"] = shorten_data(tool_use_result)
+                    entry["toolUseResult"] = shorten_data(
+                        tool_use_result,
+                        width=flags.shorten_width,
+                    )
                 if agent_id_map and tool_use_result.get("agentId") in agent_id_map:
                     entry["toolUseResult"]["agentId"] = agent_id_map[
                         tool_use_result["agentId"]
@@ -466,7 +491,10 @@ def _filter_pi_assistant_content(
                 continue
             kept_item = copy.deepcopy(item)
             if flags.shorten or flags.shorten_thinking:
-                kept_item["thinking"] = truncate_middle(kept_item.get("thinking", ""))
+                kept_item["thinking"] = truncate_middle(
+                    kept_item.get("thinking", ""),
+                    max_len=flags.shorten_width,
+                )
             kept_items.append(kept_item)
             continue
 
@@ -487,7 +515,10 @@ def _filter_pi_assistant_content(
 
         kept_item = copy.deepcopy(item)
         if should_shorten:
-            kept_item["arguments"] = shorten_data(kept_item.get("arguments", {}))
+            kept_item["arguments"] = shorten_data(
+                kept_item.get("arguments", {}),
+                width=flags.shorten_width,
+            )
         kept_items.append(kept_item)
 
     return kept_items
@@ -562,7 +593,10 @@ def _rewrite_pi_entries(
         if not show_tool:
             continue
         if should_shorten:
-            entry["message"]["content"] = shorten_data(message.get("content", []))
+            entry["message"]["content"] = shorten_data(
+                message.get("content", []),
+                width=flags.shorten_width,
+            )
         rewritten_entries.append(entry)
 
     return rewritten_entries
@@ -587,18 +621,18 @@ def _fork_pi_session(source_path: Path, flags: ConversationFlags) -> Path:
     return target_path
 
 
-def _shorten_codex_serialized_value(value: object) -> object:
+def _shorten_codex_serialized_value(value: object, *, width: int = 500) -> object:
     if isinstance(value, dict | list):
-        return shorten_data(value)
+        return shorten_data(value, width=width)
     if isinstance(value, str):
         stripped = value.strip()
         if stripped.startswith(("{", "[")):
             try:
                 parsed = json.loads(stripped)
             except json.JSONDecodeError:
-                return truncate_middle(value)
-            return json.dumps(shorten_data(parsed), separators=(",", ":"))
-        return truncate_middle(value)
+                return truncate_middle(value, max_len=width)
+            return json.dumps(shorten_data(parsed, width=width), separators=(",", ":"))
+        return truncate_middle(value, max_len=width)
     return value
 
 
@@ -712,7 +746,10 @@ def _rewrite_codex_entries(
                     continue
                 kept_item = copy.deepcopy(item)
                 if flags.shorten or flags.shorten_thinking:
-                    kept_item["text"] = truncate_middle(text)
+                    kept_item["text"] = truncate_middle(
+                        text,
+                        max_len=flags.shorten_width,
+                    )
                 filtered_summary.append(kept_item)
             if not filtered_summary:
                 continue
@@ -739,7 +776,8 @@ def _rewrite_codex_entries(
             if should_shorten:
                 field_name = "arguments" if payload_type == "function_call" else "input"
                 payload[field_name] = _shorten_codex_serialized_value(
-                    payload.get(field_name)
+                    payload.get(field_name),
+                    width=flags.shorten_width,
                 )
             rewritten_entries.append(entry)
             continue
@@ -758,7 +796,8 @@ def _rewrite_codex_entries(
                 continue
             if should_shorten:
                 payload["output"] = _shorten_codex_serialized_value(
-                    payload.get("output")
+                    payload.get("output"),
+                    width=flags.shorten_width,
                 )
             rewritten_entries.append(entry)
 
