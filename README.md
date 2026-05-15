@@ -362,7 +362,7 @@ All three native shapes surface back through the same shared current-title abstr
 Catalog conversation sessions by upserting entries to a sessions.yaml file.
 
 ```bash
-ccc catalog [SESSION_IDS OR FILE_PATHS]
+ccc catalog [SESSION_IDS OR FILE_PATHS] [-a STRING]
 ```
 
 This command uses an AI model (via the `claude` CLI) to analyze conversation sessions and maintain a `sessions.yaml` catalog file. The command reads session content and either creates new entries or updates existing ones with meaningful descriptions organized by date.
@@ -380,10 +380,14 @@ This command uses an AI model (via the `claude` CLI) to analyze conversation ses
 - Skips sessions already cataloged with the same message count
 - Supports an 'ignored' list for empty/meaningless sessions
 
+**Options:**
+- `-a STRING`, `--append-prompt STRING`: Append extra instructions to the AI user message, wrapped in `<additional-instructions>` tags.
+
 **Examples:**
 - Catalog a specific session: `ccc catalog 5078a7c7-0646-43cc-9412-7e1454a282b4`
 - Catalog from search results (uses only first result): `ccc search -ca 1d . -l | ccc catalog`
 - Catalog from multiple IDs (uses only first ID): `ccc catalog id1 id2`
+- Catalog with extra instructions: `ccc catalog <id> -a "Note the primary language used."`
 
 **Note:** This command requires the `claude` CLI to be configured in the user's environment.
 
