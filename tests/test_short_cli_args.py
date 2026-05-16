@@ -49,6 +49,7 @@ def _run_search_cli(monkeypatch, *argv: str) -> tuple[int, dict[str, object]]:
         pool_filter=None,
         *,
         output_mode=None,
+        output_format="xml",
         emit_metadata=True,
     ) -> None:
         captured["pattern"] = pattern_arg

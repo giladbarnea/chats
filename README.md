@@ -217,6 +217,7 @@ ccc search [OPTIONS] <pattern>
 - `-l`: List mode - show only file paths and metadata
 - `-ll`, `--only-id`: Show only matching session IDs (implies `--color never` and `--no-paging`)
 - `-f`, `--full`: Show entire matching conversations instead of only matching messages
+- `-r`, `--raw`: Render search results as plain markdown (implies `--no-metadata`, `--color never`, and `--no-paging`)
 - `-p, --provider claude|pi|codex`: Restrict search to sessions from a specific provider
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE
@@ -234,6 +235,8 @@ ccc search "implement.*feature"         # Regex pattern
 ccc search -l "bug fix"                 # List matching files only
 ccc search -ll "bug fix"                # Print only matching session IDs
 ccc search -f "bug fix"                 # Print full conversations that match
+ccc search -r "bug fix"                 # Print matching messages as plain markdown
+ccc search -r -f "bug fix"              # Print full matching conversations as plain markdown
 ccc search -d ~/dev/project "feature"   # Filter by directory
 ccc search --mafter=1d "TODO"           # Modified in last day
 ccc search --mafter=2024-12-01 "deploy" # Modified since Dec 1
@@ -252,6 +255,7 @@ ccc search -p codex "TODO"              # Search only Codex sessions
 - Plain-literal queries get a cheap candidate prefilter before the normal rendered-content confirmation pass
 - Results displayed newest first across Claude, PI, and Codex sessions
 - Extracts working directory from conversation files
+- `search --raw` mirrors parse raw output: a single visible message prints as content only; otherwise each session is labeled with a setext `Session <id>` heading and sessions are separated by one `---`
 - Full markdown rendering with syntax highlighting
 
 ### Fork Mode
@@ -452,7 +456,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 
 ## Technical Reference
 
-**Location:** `~/dev/conversations` (installed globally as `ccc` via `uv tool install -e .`)
+**Location:** `~/dev/conversations` (installed globally as `ccc` via `uv tool install -e . --force`)
 
 **Dependencies:**
 - Python 3.13+

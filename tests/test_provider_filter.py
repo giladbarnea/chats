@@ -212,6 +212,7 @@ def _make_fake_cmd_search(captured: dict):
         pool_filter=None,
         *,
         output_mode=SearchOutputMode.MATCHES,
+        output_format="xml",
         emit_metadata=True,
     ):
         captured["pool_filter"] = pool_filter

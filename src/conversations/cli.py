@@ -379,6 +379,12 @@ def main():
             action="store_true",
             help="Show full matching conversations instead of only matching messages",
         )
+        parser.add_argument(
+            "-r",
+            "--raw",
+            action="store_true",
+            help="Alias for raw markdown search output (implies --no-metadata, --color never, and --no-paging)",
+        )
         add_pool_filter_args(
             parser,
             dir_help="Restrict search to conversations in this directory",
@@ -459,7 +465,7 @@ def main():
             parser.error("the following arguments are required: pattern")
 
         output_mode = _resolve_search_output_mode(args)
-        if output_mode == SearchOutputMode.ONLY_ID:
+        if output_mode == SearchOutputMode.ONLY_ID or args.raw:
             args.paging = False
             args.color = "never"
 
@@ -489,7 +495,8 @@ def main():
             flags,
             PoolFilter.from_args(args),
             output_mode=output_mode,
-            emit_metadata=not args.no_metadata,
+            output_format="raw" if args.raw else "xml",
+            emit_metadata=not (args.no_metadata or args.raw),
         )
     elif len(sys.argv) > 1 and sys.argv[1] == "rename":
         # Parse rename arguments

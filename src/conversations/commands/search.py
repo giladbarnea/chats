@@ -9,6 +9,7 @@ from pathlib import Path
 
 from ..console import get_console, print_error
 from ..formatting import (
+    format_to_raw,
     format_to_xml,
     print_metadata,
     render_message_inner_xml,
@@ -44,6 +45,15 @@ class SearchHit:
 
 _RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
 _REGEX_META_CHARACTERS = frozenset(".^$*+?{}[]\\|()")
+
+
+def _display_messages_for_hit(
+    messages: list[Message],
+    matches: list[Message],
+    output_mode: SearchOutputMode,
+) -> list[Message]:
+    """Return the message list that should be rendered for one search hit."""
+    return messages if output_mode == SearchOutputMode.FULL else matches
 
 
 def display_search_result(
@@ -94,7 +104,7 @@ def display_search_result(
     if output_mode == SearchOutputMode.LIST:
         return
 
-    display_messages = messages if output_mode == SearchOutputMode.FULL else matches
+    display_messages = _display_messages_for_hit(messages, matches, output_mode)
     if not display_messages:
         return
 
@@ -113,6 +123,7 @@ def cmd_search(
     pool_filter: PoolFilter | None = None,
     *,
     output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+    output_format: str = "xml",
     emit_metadata: bool = True,
 ) -> None:
     """Handle the search subcommand."""
@@ -166,6 +177,12 @@ def cmd_search(
         hits,
         modified_at=lambda hit: hit.metadata.mtime,
     )
+    if output_format == "raw":
+        raw_output = _format_search_hits_to_raw(ordered_hits, flags, output_mode)
+        if raw_output:
+            print(raw_output)
+        sys.exit(0)
+
     pager_ctx = (
         nullcontext()
         if output_mode == SearchOutputMode.ONLY_ID or not flags.paging
@@ -198,6 +215,44 @@ def cmd_search(
             )
 
     sys.exit(0)
+
+
+def _format_search_hits_to_raw(
+    hits: list[SearchHit],
+    flags: ConversationFlags,
+    output_mode: SearchOutputMode,
+) -> str:
+    """Render search hits as plain raw markdown."""
+    rendered_sessions: list[tuple[str, str]] = []
+    total_visible_messages = 0
+
+    for hit in hits:
+        display_messages = _display_messages_for_hit(
+            hit.messages,
+            hit.matches,
+            output_mode,
+        )
+        if not display_messages:
+            continue
+
+        tool_id_map = _build_tool_id_map(hit.messages)
+        body = format_to_raw(display_messages, flags, tool_id_map)
+        if not body:
+            continue
+
+        total_visible_messages += len(display_messages)
+        session_label = f"Session {resolve.get_display_session_id(hit.metadata.path)}"
+        rendered_sessions.append((session_label, body))
+
+    if not rendered_sessions:
+        return ""
+    if len(rendered_sessions) == 1 and total_visible_messages == 1:
+        return rendered_sessions[0][1]
+
+    return "\n\n---\n\n".join(
+        f"{label}\n{'=' * len(label)}\n\n{body}"
+        for label, body in rendered_sessions
+    )
 
 
 def _search_hit_for_file(

@@ -3,6 +3,16 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-16] Add `search -r/--raw` plain-markdown output
+
+### Added
+
+- `ccc search -r/--raw` now mirrors parse raw formatting on the display path.
+- Raw search implies `--no-metadata`, `--color never`, and `--no-paging`.
+- If raw search would render exactly one visible message, it prints only that message content.
+- Otherwise, raw search renders each matching session as plain markdown with a setext `Session <id>` heading, parse-style message bodies, and a single `---` separator between sessions.
+
+---
 ## [2026-05-12] Fix PI adapter false negative for tool errors with `details.error`
 
 ### Fixed

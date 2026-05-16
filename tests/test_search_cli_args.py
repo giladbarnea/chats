@@ -16,6 +16,7 @@ def test_search_only_id_forces_plain_output(monkeypatch) -> None:
         pool_filter=None,
         *,
         output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
         emit_metadata: bool = True,
     ) -> None:
         captured["pattern"] = pattern_arg
@@ -53,6 +54,7 @@ def test_search_full_flag_reaches_cmd_search(monkeypatch) -> None:
         pool_filter=None,
         *,
         output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
         emit_metadata: bool = True,
     ) -> None:
         captured["pattern"] = pattern_arg
@@ -70,6 +72,58 @@ def test_search_full_flag_reaches_cmd_search(monkeypatch) -> None:
     )
 
 
+def test_search_raw_forces_plain_output_and_disables_metadata(monkeypatch) -> None:
+    """`search -r/--raw` should mirror parse raw behavior on the display path."""
+    captured: dict[str, object] = {}
+
+    def fake_cmd_search(
+        pattern_arg: str,
+        flags,
+        pool_filter=None,
+        *,
+        output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
+        emit_metadata: bool = True,
+    ) -> None:
+        captured["pattern"] = pattern_arg
+        captured["flags"] = flags
+        captured["output_mode"] = output_mode
+        captured["output_format"] = output_format
+        captured["emit_metadata"] = emit_metadata
+
+    monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
+    monkeypatch.setattr(
+        cli.sys,
+        "argv",
+        ["ccc", "search", "--raw", "--paging", "--color", "always", "needle"],
+    )
+
+    cli.main()
+
+    assert captured["pattern"] == "needle"
+    assert captured["output_mode"] == SearchOutputMode.MATCHES, (
+        "Expected raw search to keep the default matching-messages breadth unless "
+        f"`--full` was requested. Got: {captured.get('output_mode')!r}"
+    )
+    assert captured["output_format"] == "raw", (
+        "Expected `search --raw` to request raw output formatting. "
+        f"Got: {captured.get('output_format')!r}"
+    )
+    assert captured["emit_metadata"] is False, (
+        "Expected `search --raw` to imply `--no-metadata`. "
+        f"Got: {captured.get('emit_metadata')!r}"
+    )
+    flags = captured["flags"]
+    assert flags.color is False, (
+        "Expected `search --raw` to force plain output even when `--color always` "
+        f"was passed. Got: {flags!r}"
+    )
+    assert flags.paging is False, (
+        "Expected `search --raw` to bypass paging just like parse raw output. "
+        f"Got: {flags!r}"
+    )
+
+
 def test_search_default_output_mode_is_matching_messages(monkeypatch) -> None:
     """Bare `search` should keep showing only matching messages."""
     captured: dict[str, object] = {}
@@ -80,6 +134,7 @@ def test_search_default_output_mode_is_matching_messages(monkeypatch) -> None:
         pool_filter=None,
         *,
         output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
         emit_metadata: bool = True,
     ) -> None:
         captured["pattern"] = pattern_arg
@@ -107,6 +162,7 @@ def test_search_plans_flag_reaches_cmd_search(monkeypatch) -> None:
         pool_filter=None,
         *,
         output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
         emit_metadata: bool = True,
     ) -> None:
         captured["flags"] = flags
@@ -132,6 +188,7 @@ def test_search_all_includes_plans(monkeypatch) -> None:
         pool_filter=None,
         *,
         output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
         emit_metadata: bool = True,
     ) -> None:
         captured["flags"] = flags
