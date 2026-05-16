@@ -6,6 +6,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from conversations import ConversationFlags, cmd_parse, cmd_rename
 
 
@@ -1230,4 +1232,29 @@ def test_tool_error_isError_false_details_error_present(
     assert 'is_error="true"' in captured.out, (
         "Expected PI tool output with details.error to carry is_error=true even when "
         f"isError=False. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+@pytest.mark.skip(reason="Out of scope as of May 16")
+def test_rich_rendering_of_recursive_xml_matches_expected_colored_output(
+    capsys,
+) -> None:
+    """Rich-rendered output must match expected colored text when a user message embeds
+    a full ccc transcript (itself containing XML tags) wrapped in XML tags."""
+    session_path = Path(__file__).parent / "data" / "recursive_xml_rich_rendering.jsonl"
+
+    cmd_parse(
+        ConversationFlags(color="always", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    expected = ""  # TODO: fill in expected colored output string once bug is fixed
+    assert captured.out == expected, (
+        f"Rich rendering of session 019e2a43 with recursively embedded XML does not "
+        f"match expected colored output. Got:\n{captured.out[:500]!r}"
     )
