@@ -225,7 +225,7 @@ class TestCmdRenameAuto:
         with patch("conversations.commands.rename.subprocess.run", return_value=mock_result):
             cmd_rename(str(session_file), None, auto=True)
 
-        last = get_last_line_json(session_file)
+        last = get_last_line_json(session_file, -2)
         assert last["type"] == "agent-name"
         assert last["agentName"] == "conversations implement auto-rename"
 

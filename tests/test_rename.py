@@ -4,9 +4,10 @@ Unit tests for the rename command.
 
 Tests behavior (what rename does), not implementation (how it does it).
 
-For Claude sessions, the rename command appends two entries to the end of the session file:
+For Claude sessions, the rename command appends three entries to the end of the session file:
 1. {"type":"custom-title","customTitle":"<name>","sessionId":"<session_id>"}
 2. {"type":"agent-name","agentName":"<name>","sessionId":"<session_id>"}
+3. {"type":"system","subtype":"local_command","content":"<command-name>/rename</command-name>..."}
 
 For Claude sessions, it also appends a /rename entry to ~/.claude/history.jsonl:
 {"display":"/rename <name>","pastedContents":{},"timestamp":<ms>,"project":"<cwd>","sessionId":"<session_id>"}
@@ -189,7 +190,7 @@ class TestRenameAppendsCustomTitle:
         """Rename appends a custom-title entry as the second-to-last line."""
         cmd_rename(str(session_with_summary), "New Name Here")
 
-        custom_title = get_last_line_json(session_with_summary, -2)
+        custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["type"] == "custom-title"
         assert custom_title["customTitle"] == "New Name Here"
 
@@ -197,18 +198,18 @@ class TestRenameAppendsCustomTitle:
         """Session ID is extracted from the filename stem."""
         cmd_rename(str(session_with_summary), "Test Name")
 
-        custom_title = get_last_line_json(session_with_summary, -2)
+        custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["sessionId"] == "aaaa1111-with-summary"
 
-    def test_adds_two_lines(self, session_with_summary):
-        """Rename adds exactly two lines to the session file (custom-title + agent-name)."""
+    def test_adds_three_lines(self, session_with_summary):
+        """Rename adds exactly three lines to the session file (custom-title + agent-name + system command)."""
         original_count = count_lines(session_with_summary)
 
         cmd_rename(str(session_with_summary), "Another Name")
 
         new_count = count_lines(session_with_summary)
-        assert new_count == original_count + 2, (
-            f"Expected {original_count + 2} lines (original {original_count} + custom-title + agent-name), got {new_count}"
+        assert new_count == original_count + 3, (
+            f"Expected {original_count + 3} lines (original {original_count} + custom-title + agent-name + system command), got {new_count}"
         )
 
     def test_preserves_existing_content(self, session_with_summary):
@@ -222,7 +223,7 @@ class TestRenameAppendsCustomTitle:
             new_lines = f.readlines()
 
         # All original lines should still be there
-        assert new_lines[:-2] == original_lines
+        assert new_lines[:-3] == original_lines
 
     def test_works_without_summary(self, session_without_summary):
         """Rename works on files without an existing summary."""
@@ -230,11 +231,11 @@ class TestRenameAppendsCustomTitle:
 
         cmd_rename(str(session_without_summary), "Brand New Title")
 
-        custom_title = get_last_line_json(session_without_summary, -2)
+        custom_title = get_last_line_json(session_without_summary, -3)
         assert custom_title["type"] == "custom-title"
         assert custom_title["customTitle"] == "Brand New Title"
         assert custom_title["sessionId"] == "bbbb2222-without-summary"
-        assert count_lines(session_without_summary) == original_count + 2
+        assert count_lines(session_without_summary) == original_count + 3
 
 
 # =============================================================================
@@ -246,10 +247,10 @@ class TestRenameAppendsAgentName:
     """Test that rename appends an agent-name entry after custom-title."""
 
     def test_appends_agent_name_entry(self, session_with_summary):
-        """Rename appends an agent-name entry as the last line."""
+        """Rename appends an agent-name entry as the second-to-last line."""
         cmd_rename(str(session_with_summary), "My Agent Name")
 
-        last_line = get_last_line_json(session_with_summary)
+        last_line = get_last_line_json(session_with_summary, -2)
         assert last_line["type"] == "agent-name"
         assert last_line["agentName"] == "My Agent Name"
 
@@ -257,19 +258,75 @@ class TestRenameAppendsAgentName:
         """Agent-name entry has the correct sessionId."""
         cmd_rename(str(session_with_summary), "Test Name")
 
-        last_line = get_last_line_json(session_with_summary)
+        last_line = get_last_line_json(session_with_summary, -2)
         assert last_line["sessionId"] == "aaaa1111-with-summary"
 
     def test_agent_name_follows_custom_title(self, session_with_summary):
         """Agent-name entry immediately follows custom-title entry."""
         cmd_rename(str(session_with_summary), "Ordered Test")
 
-        custom_title = get_last_line_json(session_with_summary, -2)
-        agent_name = get_last_line_json(session_with_summary, -1)
+        custom_title = get_last_line_json(session_with_summary, -3)
+        agent_name = get_last_line_json(session_with_summary, -2)
 
         assert custom_title["type"] == "custom-title"
         assert agent_name["type"] == "agent-name"
         assert custom_title["customTitle"] == agent_name["agentName"] == "Ordered Test"
+
+
+# =============================================================================
+# cmd_rename() tests - System command entry
+# =============================================================================
+
+
+class TestRenameAppendsSystemCommand:
+    """Test that rename appends a system local_command entry recording /rename."""
+
+    def test_appends_system_command_entry(self, session_with_summary):
+        """Rename appends a system local_command entry as the last line."""
+        cmd_rename(str(session_with_summary), "System Test")
+
+        entry = get_last_line_json(session_with_summary)
+        assert entry["type"] == "system"
+        assert entry["subtype"] == "local_command"
+        assert entry["sessionId"] == "aaaa1111-with-summary"
+
+    def test_system_command_content(self, session_with_summary):
+        """System command entry contains the rename command XML."""
+        cmd_rename(str(session_with_summary), "Content Test")
+
+        entry = get_last_line_json(session_with_summary)
+        assert "/rename" in entry["content"]
+        assert "Content Test" in entry["content"]
+
+    def test_system_command_has_parent_uuid(self, session_with_summary):
+        """System command entry references the previous entry's uuid."""
+        cmd_rename(str(session_with_summary), "Parent Test")
+
+        entry = get_last_line_json(session_with_summary)
+        assert entry["parentUuid"] == "msg-1"
+
+    def test_system_command_has_cwd(self, session_with_summary):
+        """System command entry carries the session cwd."""
+        cmd_rename(str(session_with_summary), "Cwd Test")
+
+        entry = get_last_line_json(session_with_summary)
+        assert entry["cwd"] == "/test/project"
+
+    def test_system_command_has_uuid(self, session_with_summary):
+        """System command entry has its own generated uuid."""
+        cmd_rename(str(session_with_summary), "Uuid Test")
+
+        entry = get_last_line_json(session_with_summary)
+        assert "uuid" in entry
+        assert len(entry["uuid"]) > 0
+
+    def test_system_command_is_not_meta(self, session_with_summary):
+        """System command entry is not marked as meta."""
+        cmd_rename(str(session_with_summary), "Meta Test")
+
+        entry = get_last_line_json(session_with_summary)
+        assert entry["isMeta"] is False
+        assert not entry["isSidechain"]
 
 
 # =============================================================================
@@ -403,9 +460,9 @@ class TestRenameEdgeCases:
 
         cmd_rename(str(session_with_summary), special_name)
 
-        custom_title = get_last_line_json(session_with_summary, -2)
+        custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["customTitle"] == special_name
-        agent_name = get_last_line_json(session_with_summary)
+        agent_name = get_last_line_json(session_with_summary, -2)
         assert agent_name["agentName"] == special_name
 
     def test_very_long_name(self, session_with_summary):
@@ -414,7 +471,7 @@ class TestRenameEdgeCases:
 
         cmd_rename(str(session_with_summary), long_name)
 
-        custom_title = get_last_line_json(session_with_summary, -2)
+        custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["customTitle"] == long_name
 
     def test_unicode_name(self, session_with_summary):
@@ -423,7 +480,7 @@ class TestRenameEdgeCases:
 
         cmd_rename(str(session_with_summary), unicode_name)
 
-        custom_title = get_last_line_json(session_with_summary, -2)
+        custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["customTitle"] == unicode_name
 
     def test_json_special_chars_escaped(self, session_with_summary):
@@ -432,7 +489,7 @@ class TestRenameEdgeCases:
 
         cmd_rename(str(session_with_summary), tricky_name)
 
-        custom_title = get_last_line_json(session_with_summary, -2)
+        custom_title = get_last_line_json(session_with_summary, -3)
         # The name should be stored as a string value, not parsed as JSON
         assert custom_title["customTitle"] == tricky_name
         assert custom_title["type"] == "custom-title"  # Not overwritten
@@ -445,11 +502,11 @@ class TestRenameEdgeCases:
         cmd_rename(str(session_with_summary), "Second rename")
         cmd_rename(str(session_with_summary), "Third rename")
 
-        assert count_lines(session_with_summary) == original_count + 6, (
-            f"Expected {original_count + 6} lines (original {original_count} + 3 renames * 2 entries each)"
+        assert count_lines(session_with_summary) == original_count + 9, (
+            f"Expected {original_count + 9} lines (original {original_count} + 3 renames * 3 entries each)"
         )
 
-        last_agent_name = get_last_line_json(session_with_summary)
+        last_agent_name = get_last_line_json(session_with_summary, -2)
         assert last_agent_name["agentName"] == "Third rename"
 
 

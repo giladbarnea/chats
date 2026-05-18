@@ -1044,11 +1044,22 @@ def _require_last_entry_id(entries: list[dict], provider_name: str) -> str:
 
 
 def _build_claude_rename_entries(
-    _entries: list[dict],
+    entries: list[dict],
     session_id: str,
     new_name: str,
 ) -> list[dict]:
-    """Build Claude-native rename entries."""
+    """Build Claude-native rename entries including the /rename system command record."""
+    parent_uuid = entries[-1].get("uuid", "") if entries else ""
+    cwd = ""
+    version = "UNKNOWN"
+    git_branch = "HEAD"
+    for entry in reversed(entries):
+        if not cwd and "cwd" in entry:
+            cwd = entry["cwd"]
+        if not version and "version" in entry:
+            version = entry["version"]
+        if not git_branch and "gitBranch" in entry:
+            git_branch = entry["gitBranch"]
     return [
         {
             "type": "custom-title",
@@ -1059,6 +1070,23 @@ def _build_claude_rename_entries(
             "type": "agent-name",
             "agentName": new_name,
             "sessionId": session_id,
+        },
+        {
+            "parentUuid": parent_uuid,
+            "isSidechain": False,
+            "type": "system",
+            "subtype": "local_command",
+            "content": f"<command-name>/rename</command-name>\n <command-message>rename</command-message>\n <command-args>{new_name}</command-args>",
+            "level": "info",
+            "timestamp": _jsonl_timestamp_now(),
+            "uuid": uuid.uuid4().hex,
+            "isMeta": False,
+            "userType": "external",
+            "entrypoint": "cli",
+            "cwd": cwd,
+            "sessionId": session_id,
+            "version": version,
+            "gitBranch": git_branch,
         },
     ]
 
