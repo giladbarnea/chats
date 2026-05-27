@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from contextlib import nullcontext
 from pathlib import Path
 
-from ..console import get_console, print_error
+from ..console import UnicodeSafePager, get_console, print_error
 from ..formatting import (
     build_metadata_text,
     format_to_json,
@@ -231,7 +231,11 @@ def cmd_parse(
         resolve._write_parse_output(formatted, output_file)
         return
 
-    pager_ctx = get_console().pager(styles=True) if flags.paging else nullcontext()
+    pager_ctx = (
+        get_console().pager(pager=UnicodeSafePager(), styles=True)
+        if flags.paging
+        else nullcontext()
+    )
     with pager_ctx:
         render_messages_with_rich(messages, flags, tool_id_map)
 

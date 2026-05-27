@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from ..console import get_console, print_error
+from ..console import UnicodeSafePager, get_console, print_error
 from ..formatting import (
     format_to_raw,
     format_to_xml,
@@ -186,7 +186,7 @@ def cmd_search(
     pager_ctx = (
         nullcontext()
         if output_mode == SearchOutputMode.ONLY_ID or not flags.paging
-        else get_console().pager(styles=True)
+        else get_console().pager(pager=UnicodeSafePager(), styles=True)
     )
 
     with pager_ctx:

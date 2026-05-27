@@ -1,8 +1,41 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+
 from rich.console import Console
+from rich.pager import Pager
 
 from .theme import APP_THEME
+
+
+class UnicodeSafePager(Pager):
+    """Page Rich output via `less -r` so wide / ambiguous-width unicode survives.
+
+    `less` under -R (--RAW-CONTROL-CHARS) keeps screen-width tracking active and
+    mis-handles glyphs like ⏺, ⎿, and box drawing. Many shells (and Python's own
+    pydoc.pager backend, which Rich's default SystemPager uses) configure -R. We
+    bypass both by invoking `less` directly with -r on the command line, which
+    overrides any conflicting raw-mode toggle inherited via the LESS env.
+    """
+
+    def show(self, content: str) -> None:
+        try:
+            proc = subprocess.Popen(
+                ["less", "-r"],
+                stdin=subprocess.PIPE,
+                errors="backslashreplace",
+            )
+        except FileNotFoundError:
+            sys.stdout.write(content)
+            return
+        assert proc.stdin is not None
+        with proc.stdin as pipe:
+            try:
+                pipe.write(content)
+            except (BrokenPipeError, KeyboardInterrupt):
+                pass
+        proc.wait()
 
 # Module-level console instance for consistent formatting
 _console: Console | None = None
