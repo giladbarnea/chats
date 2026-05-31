@@ -229,6 +229,29 @@ class TestCmdRenameAuto:
         assert last["type"] == "agent-name"
         assert last["agentName"] == "conversations implement auto-rename"
 
+    def test_auto_dry_run_prints_generated_name_without_mutating_session(
+        self,
+        temp_claude_home,
+        session_file,
+        capsys,
+    ):
+        original_content = session_file.read_text()
+        mock_result = MagicMock()
+        mock_result.stdout = "conversations preview rename\n"
+
+        with patch("conversations.commands.rename.subprocess.run", return_value=mock_result):
+            cmd_rename(str(session_file), None, auto=True, dry_run=True)
+
+        assert capsys.readouterr().out == "conversations preview rename\n", (
+            "Expected rename --auto --dry-run to print only the generated name to stdout."
+        )
+        assert session_file.read_text() == original_content, (
+            "Expected rename --auto --dry-run not to modify the session JSONL file."
+        )
+        assert not (temp_claude_home / ".claude" / "history.jsonl").exists(), (
+            "Expected rename --auto --dry-run not to create Claude history side effects."
+        )
+
     def test_auto_and_name_raises(self, session_file):
         with pytest.raises(SystemExit) as exc_info:
             cmd_rename(str(session_file), "Explicit Name", auto=True)

@@ -349,6 +349,8 @@ Rename a conversation by appending a custom title entry.
 
 ```bash
 ccc rename <session> "New Title"
+ccc rename <session> --auto
+ccc rename -n <session> --auto
 ```
 
 This mutates the conversation file by appending the provider-native session-title entry shape:
@@ -357,6 +359,12 @@ This mutates the conversation file by appending the provider-native session-titl
 - PI: `session_info.name`
 
 All three native shapes surface back through the same shared current-title abstraction for resolution, search, and metadata. Only the latest title is acknowledged; older historical titles are ignored.
+
+**Options:**
+- `--auto`: Ask `pi` to generate the new title from the visible transcript.
+- `-n, --dry-run`: Print the resolved or generated title to stdout without modifying the session file.
+
+Dry-run still performs `--auto` generation work; it just stops before writing JSONL/history side effects and prints only the resulting title.
 
 **Session Resolution:**
 - **Direct file path**: `/path/to/session.jsonl`

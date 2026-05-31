@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-05-31] Add `rename -n/--dry-run`
+
+### Added
+
+- `ccc rename -n/--dry-run` now prints the resolved or generated title to stdout without mutating the session JSONL or Claude history.
+- Dry-run still performs `--auto` title generation, so `ccc rename -n <session> --auto` previews the real LLM result rather than a shortcut.
+
+---
 ## [2026-05-16] Add `search -r/--raw` plain-markdown output
 
 ### Added

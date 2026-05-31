@@ -222,10 +222,12 @@ TIME   ACTOR                    ACTION                                         T
 TIME   ACTOR                    ACTION                                         TARGET
 │
 ├───►  User                     Runs `ccc rename <id> <new_name>`          ──► cli.py:main()
+│                               or `ccc rename <id> --auto [-n]`
 │
 ├───►  main()                   Detects sys.argv[1] == "rename"            ──► argparse (rename parser)
 │
-├───►  main()                   cmd_rename(conversation_id, new_name)      ──► commands/
+├───►  main()                   cmd_rename(conversation_id, new_name,      ──► commands/
+│                               auto=..., dry_run=...)
 │
 ├───►  cmd_rename               resolve_conversation_file(conv_id)         ──► Path (or exit)
 │      │                        └── _try_resolve_conversation_file()
@@ -235,6 +237,11 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_rename               extract_cwd_from_jsonl(content)            ──► project path | None
 │      cmd_rename               decode_jsonl_entries(content)              ──► parsed entries
+│
+├───►  cmd_rename               [if --auto] _generate_auto_name(...)       ──► pi CLI subprocess
+│
+├───►  cmd_rename               [if --dry-run] print resolved/generated    ──► stdout
+│      │                        name and exit without writes
 │
 ├───►  cmd_rename               adapter.build_rename_entries(...)          ──► provider-native rename records
 │      │                        ├── Claude: custom-title + agent-name
@@ -645,8 +652,9 @@ cli.py:main()
 │       resolve → fork_session() → write provider-native fork
 │
 ├── [rename mode]
-│   └── cmd_rename(session_id, name)
-│       resolve → adapter.build_rename_entries() → append to file
+│   └── cmd_rename(session_id, name, auto=?, dry_run=?)
+│       resolve → optional auto-name generation → optional dry-run print
+│       → adapter.build_rename_entries() → append to file
 │
 ├── [rm mode]
 │   └── cmd_rm(session_id, dry_run)

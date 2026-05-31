@@ -131,7 +131,13 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
     return _parse_auto_session_name(result.stdout, cwd_name)
 
 
-def cmd_rename(conversation_id: str, new_name: str | None, *, auto: bool = False) -> None:
+def cmd_rename(
+    conversation_id: str,
+    new_name: str | None,
+    *,
+    auto: bool = False,
+    dry_run: bool = False,
+) -> None:
     """Rename a conversation by appending the provider-native session-title entry."""
     import time
 
@@ -164,6 +170,10 @@ def cmd_rename(conversation_id: str, new_name: str | None, *, auto: bool = False
             sys.exit(1)
 
     assert new_name is not None
+
+    if dry_run:
+        print(new_name)
+        return
 
     try:
         rename_entries = adapter.build_rename_entries(entries, session_id, new_name)

@@ -519,6 +519,12 @@ def main():
             action="store_true",
             help="Auto-generate a name using AI via pi (mutually exclusive with new_name)",
         )
+        parser.add_argument(
+            "-n",
+            "--dry-run",
+            action="store_true",
+            help="Print the resolved/generated name without modifying the session file",
+        )
 
         args = parser.parse_args(sys.argv[2:])
 
@@ -527,7 +533,12 @@ def main():
         if args.new_name and args.auto:
             parser.error("Cannot specify both a new name and --auto.")
 
-        cmd_rename(args.conversation_id, args.new_name, auto=args.auto)
+        cmd_rename(
+            args.conversation_id,
+            args.new_name,
+            auto=args.auto,
+            dry_run=args.dry_run,
+        )
     elif len(sys.argv) > 1 and sys.argv[1] == "fork":
         parser = argparse.ArgumentParser(
             prog="ccc fork",

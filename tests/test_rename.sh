@@ -57,4 +57,25 @@ assert_success
 assert_contains "$OUTPUT" "Confirmed Name"
 echo "  ✓ Test 3 passed"
 
+# =============================================================================
+# Test 4: Dry run prints name without modifying file
+# =============================================================================
+echo "Test 4: Dry run prints name without modifying file..."
+FIXTURE=$(setup_fixture "$DATA_WITH_SUMMARY" "test4.jsonl")
+ORIGINAL_CONTENT=$(cat "$FIXTURE")
+OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD rename -n "$FIXTURE" "Preview Name" 2>&1)
+assert_success
+if [[ "$OUTPUT" != $'Preview Name' && "$OUTPUT" != $'Preview Name\n' ]]; then
+  echo "❌ Dry run should print only the preview name"
+  printf 'Got:\n%s\n' "$OUTPUT"
+  exit 1
+fi
+CURRENT_CONTENT=$(cat "$FIXTURE")
+if [[ "$CURRENT_CONTENT" != "$ORIGINAL_CONTENT" ]]; then
+  echo "❌ Dry run modified the session file"
+  exit 1
+fi
+assert_not_contains "$OUTPUT" "Renamed"
+echo "  ✓ Test 4 passed"
+
 echo "✅ Rename CLI seam tests passed"
