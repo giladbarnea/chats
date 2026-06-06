@@ -39,6 +39,7 @@ def test_recent_index_dir_filter_under_1000ms() -> None:
     session cwd (config edits), so the newest-first cwd probe short-circuits
     near the top of the pool instead of relying on a project checkout existing.
     """
+    # This stays fast only as long as the most recent ~/.claude session sits near the top of the pool
     target_dir = os.path.expanduser("~/.claude")
     returncode, elapsed_ms, stderr = _time_ch(["-1", "-d", target_dir])
 
