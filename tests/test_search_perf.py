@@ -33,8 +33,13 @@ def test_search_mafter_4h_list_under_1000ms() -> None:
 
 
 def test_recent_index_dir_filter_under_1000ms() -> None:
-    """`ch -1 -d ~/dev/chats` must complete within 1000ms end-to-end."""
-    target_dir = os.path.expanduser("~/dev/chats")
+    """`ch -1 -d ~/.claude` must complete within 1000ms end-to-end.
+
+    `~/.claude` is a stable, always-present directory that is itself a recent
+    session cwd (config edits), so the newest-first cwd probe short-circuits
+    near the top of the pool instead of relying on a project checkout existing.
+    """
+    target_dir = os.path.expanduser("~/.claude")
     returncode, elapsed_ms, stderr = _time_ch(["-1", "-d", target_dir])
 
     assert returncode in (0, 1), (
