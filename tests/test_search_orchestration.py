@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, PoolFilter, SearchOutputMode, commands
-import conversations.commands.resolve as resolve_commands
-import conversations.commands.search as search_commands
-import conversations.parsing as parsing
+from chats import ConversationFlags, PoolFilter, SearchOutputMode, commands
+import chats.commands.resolve as resolve_commands
+import chats.commands.search as search_commands
+import chats.parsing as parsing
 
 
 def _write_session(

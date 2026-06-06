@@ -6,11 +6,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import conversations.cli as cli_module
-import conversations.commands as commands_module
-import conversations.forking as forking_module
-from conversations.model import ConversationFlags
-from conversations.tool_filter import ToolFilter
+import chats.cli as cli_module
+import chats.commands as commands_module
+import chats.forking as forking_module
+from chats.model import ConversationFlags
+from chats.tool_filter import ToolFilter
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -727,13 +727,13 @@ def test_fork_cli_treats_bare_tools_flag_like_parse_for_following_session_argume
     monkeypatch.setattr(
         cli_module.sys,
         "argv",
-        ["ccc", "fork", "-t", str(session_path)],
+        ["ch", "fork", "-t", str(session_path)],
     )
 
     cli_module.main()
 
     assert captured.get("session_arg") == str(session_path), (
-        "Expected `ccc fork -t <session>` to resolve the following path as the session positional, "
+        "Expected `ch fork -t <session>` to resolve the following path as the session positional, "
         f"matching parse-mode argument handling. Got: {captured!r}"
     )
     flags = captured.get("flags")

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, SearchOutputMode, cmd_search
+from chats import ConversationFlags, SearchOutputMode, cmd_search
 
 
 def test_cmd_search_only_id_mode_prints_plain_session_id(

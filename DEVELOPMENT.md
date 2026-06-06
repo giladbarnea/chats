@@ -1,4 +1,4 @@
-# `conversations` Skill Development
+# `chats` Development
 
 Current code quality issues, known technical debt, development conventions, and future ideas.
 
@@ -16,12 +16,12 @@ Current code quality issues, known technical debt, development conventions, and 
 
 ### Code Duplication
 
-- [ ] **Recursive data traversal** in `shorten_data()` and `extract_text_from_content()` (both in `src/conversations/utils.py`) uses very similar dict/list/str handling patterns.
+- [ ] **Recursive data traversal** in `shorten_data()` and `extract_text_from_content()` (both in `src/chats/utils.py`) uses very similar dict/list/str handling patterns.
   `effort::low`
 
 ### Mixed Concerns
 
-- [ ] **`cmd_parse()` (in `src/conversations/commands.py`)** currently covers a fairly wide set of responsibilities:
+- [ ] **`cmd_parse()` (in `src/chats/commands.py`)** currently covers a fairly wide set of responsibilities:
   - Input resolution
   - Content reading
   - Conversation parsing
@@ -29,7 +29,7 @@ Current code quality issues, known technical debt, development conventions, and 
   - Metadata printing
   - Output formatting decisions
 
-- [ ] **`main()` (in `src/conversations/cli.py`)** sets up four different `argparse` configurations inline, one per subcommand. These might be easier to manage as separate `parse_*_args()` helper functions.
+- [ ] **`main()` (in `src/chats/cli.py`)** sets up four different `argparse` configurations inline, one per subcommand. These might be easier to manage as separate `parse_*_args()` helper functions.
 
 ### Other Maintainability
 

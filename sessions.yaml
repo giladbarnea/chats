@@ -30,67 +30,67 @@ sessions:
   019e1a89-7650-70e3-8dfd-be7c765d44cf:
     description: "Implemented fully structured JSON output (`-f json`) by mapping XML-like metadata (attributes and tags) to first-class JSON fields. Refactored message and tool models to emit an ordered list of typed content blocks—thinking, tool-input, tool-output, and raw text—ensuring that raw text containing XML-like tags remains unparsed. Added comprehensive TDD coverage with cross-provider fixtures and verified compatibility across the entire test suite."
     custom_title: "conversations structure CCC JSON output into fully structured test data"
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     updated_when_message_count_was: 6
     keywords: [json-format, structured-data, tdd]
     prominent_tech_stack: []
     new_files: [tests/test_json_format_structured.py]
-    edited_files: [src/conversations/model.py, src/conversations/tools.py, src/conversations/formatting.py, README.md, CHANGELOG.md, tests/test_format.sh]
+    edited_files: [src/chats/model.py, src/chats/tools.py, src/chats/formatting.py, README.md, CHANGELOG.md, tests/test_format.sh]
     branch: main
 
   # May 10 26
   e5b0d0ef-bce4-4793-978a-216622ddeb58:
     description:
-      - "Optimized `ccc search` performance for date-filtered queries by short-circuiting on metadata probes before reading and parsing full conversation JSONL files. Achieved a 5× speedup (4.4s → 0.8s) by reordering the filter gate and re-using metadata to avoid redundant reads."
+      - "Optimized `ch search` performance for date-filtered queries by short-circuiting on metadata probes before reading and parsing full conversation JSONL files. Achieved a 5× speedup (4.4s → 0.8s) by reordering the filter gate and re-using metadata to avoid redundant reads."
       - "Further accelerated date-filtered searches (0.8s → 0.55s) by implementing a 'projection' layer in `PoolFilter` that probes only the specific timestamp needed by active filters. Refactored `parsing.py` to support streaming-based single-ended timestamp extraction and added a performance regression test with a 1200ms budget."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [performance-optimization, search-performance, tdd, lazy-evaluation]
     prominent_tech_stack: []
     updated_when_message_count_was: 26
-    edited_files: [src/conversations/commands/search.py, src/conversations/parsing.py, src/conversations/pool_filter.py, tests/test_search_orchestration.py, CHANGELOG.md, ARCHITECTURE.md]
+    edited_files: [src/chats/commands/search.py, src/chats/parsing.py, src/chats/pool_filter.py, tests/test_search_orchestration.py, CHANGELOG.md, ARCHITECTURE.md]
     branch: main
 
   # May 08 26
   019e0731-d3da-73bb-bee7-2e97762c199b:
     description: "Supported session names (latest title only) as first-class lookup identifiers, with case-insensitive substring matching that prioritizes titles over summary-prefix hits. Unified title extraction across Claude, PI, and Codex adapters into a single current-facet model and implemented a targeted streaming resolution pass to avoid eager metadata indexing in `SessionPool`."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [session-resolution, custom-titles, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 6
-    edited_files: [src/conversations/commands/resolve.py, src/conversations/parsing.py, src/conversations/session_scan.py, src/conversations/commands/search.py, src/conversations/commands/parse.py, tests/test_resolution.py, tests/test_session_scan.py, tests/test_session_search_space.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    edited_files: [src/chats/commands/resolve.py, src/chats/parsing.py, src/chats/session_scan.py, src/chats/commands/search.py, src/chats/commands/parse.py, tests/test_resolution.py, tests/test_session_scan.py, tests/test_session_search_space.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
     branch: main
 
   # May 04 26
   019df319-3dfa-70a8-8882-bac91f55ca4f:
-    description: "Optimized performance for finding index-based sessions with directory filters (e.g., `ccc -1 -d ...`). Identified a bottleneck where the app eagerly loaded metadata and read full JSONL files for all candidates; implemented a targeted fast path that sorts files by filesystem modification time and streams JSONL content line-by-line to extract the `cwd`, short-circuiting as soon as the requested index is reached."
-    directories: [~/dev/conversations]
+    description: "Optimized performance for finding index-based sessions with directory filters (e.g., `ch -1 -d ...`). Identified a bottleneck where the app eagerly loaded metadata and read full JSONL files for all candidates; implemented a targeted fast path that sorts files by filesystem modification time and streams JSONL content line-by-line to extract the `cwd`, short-circuiting as soon as the requested index is reached."
+    directories: [~/dev/chats]
     keywords: [performance-optimization, session-retrieval, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 12
     new_files: [tests/test_recent_index_orchestration.py]
-    edited_files: [src/conversations/commands.py, src/conversations/parsing.py, src/conversations/pool_filter.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    edited_files: [src/chats/commands.py, src/chats/parsing.py, src/chats/pool_filter.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
     branch: main
 
   # Apr 26 26
   019dc927-2c08-73e1-8c68-88e7bc74a26e:
     description:
-      - "Investigated why Codex and PI session names were not flowing through `ccc` like Claude custom titles, then aligned both providers with the shared session-title abstraction."
+      - "Investigated why Codex and PI session names were not flowing through `ch` like Claude custom titles, then aligned both providers with the shared session-title abstraction."
       - "Confirmed the parity path with focused regression tests, then updated the project docs and catalog after the full suite stayed green."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [session-names, codex, pi]
     prominent_tech_stack: []
     updated_when_message_count_was: 9
-    edited_files: [src/conversations/parsing.py, tests/test_codex_sessions.py, tests/test_pi_sessions.py, README.md, ARCHITECTURE.md, CHANGELOG.md, sessions.yaml]
+    edited_files: [src/chats/parsing.py, tests/test_codex_sessions.py, tests/test_pi_sessions.py, README.md, ARCHITECTURE.md, CHANGELOG.md, sessions.yaml]
     branch: main
 
   640c8bfb-0ffb-4f37-ab33-442419f8b7c5:
     description: "Researched whether Rich's theme system supports inline code padding (confirmed: no — `Style` has no spacing concept), then implemented `PaddedInlineCodeMarkdown`, a minimal `Markdown` subclass that injects 1-space padding into `code_inline` token content post-parse. TDD with 4 behavioral tests; 293 tests passing."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [rich-rendering, inline-code, tdd]
     prominent_tech_stack: [Rich]
     updated_when_message_count_was: 10
     new_files: [tests/test_inline_code_padding.py]
-    edited_files: [src/conversations/formatting.py, CHANGELOG.md]
+    edited_files: [src/chats/formatting.py, CHANGELOG.md]
     branch: main
 
   # Apr 25 26
@@ -98,206 +98,206 @@ sessions:
     description:
       - "Identified that parse-mode index input could reuse search's `-d/-ma/-ca/-p` filters, then designed a single declarative `PoolFilter` shared by both subcommands via `add_pool_filter_args`."
       - "Refactored `cmd_search`/`cmd_parse` to consume the bundle, generalized the parse warning to all four flags, and added TDD coverage for parse-index narrowing by provider and dir."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [pool-filter, argparse-composition, parse-index, declarative-config]
     prominent_tech_stack: []
     updated_when_message_count_was: 2
-    new_files: [src/conversations/pool_filter.py]
-    edited_files: [src/conversations/__init__.py, src/conversations/cli.py, src/conversations/commands.py, tests/test_parse_output_modes.py, tests/test_provider_filter.py, tests/test_search_cli_args.py, tests/test_session_search_space.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    new_files: [src/chats/pool_filter.py]
+    edited_files: [src/chats/__init__.py, src/chats/cli.py, src/chats/commands.py, tests/test_parse_output_modes.py, tests/test_provider_filter.py, tests/test_search_cli_args.py, tests/test_session_search_space.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
 
   # Apr 23 26
   019dbad2-2339-7a01-9659-dbb1d134be57:
     description:
       - "Added parse-mode `-l/--only-metadata` and `-ll/--only-id` so default parse output matches the existing search-mode output controls."
       - "Collapsed parse/search output-state booleans into explicit enums, then locked the refactor down with TDD coverage and a full-suite pass."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [parse-output-modes, metadata-frontmatter, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 2
     new_files: [tests/test_parse_output_modes.py]
-    edited_files: [src/conversations/cli.py, src/conversations/commands.py, src/conversations/formatting.py, src/conversations/model.py, tests/test_provider_filter.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    edited_files: [src/chats/cli.py, src/chats/commands.py, src/chats/formatting.py, src/chats/model.py, tests/test_provider_filter.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
     branch: main
   # Apr 20 26
   rollout-2026-04-20T13-30-00-0c1f9bda-9afe-4ea6-9f94-befd0b8d1234:
     description:
       - "Recognized `<command-*>` user inputs as YAML-like command blocks and now quote every scalar unless it is numeric, negative numeric, or the literal true/false."
       - "Documented the transformation with regression coverage and proved the change with `uv run pytest tests/test_meta_user_messages.py -q` plus `./tests/run_all.sh`."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [command-parsing, yaml-rendering, testing]
     prominent_tech_stack: []
     updated_when_message_count_was: 24
-    edited_files: [src/conversations/parsing.py, tests/test_meta_user_messages.py]
+    edited_files: [src/chats/parsing.py, tests/test_meta_user_messages.py]
     branch: main
   # Apr 16 26
   019d90d0-0895-7df1-97e6-b7878b0b158c:
     description:
-      - "Reframed `ccc` session lookup and search around the idea that Claude, PI, and Codex histories form one unified pool, then drove the next performance work as narrow TDD slices instead of a broad refactor."
+      - "Reframed `ch` session lookup and search around the idea that Claude, PI, and Codex histories form one unified pool, then drove the next performance work as narrow TDD slices instead of a broad refactor."
       - "Added `SessionPool` and `SessionScan`, made search metadata loading lazy, introduced a plain-literal candidate prefilter that preserves search semantics, and refreshed the README and architecture docs around the new model."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [search-performance, session-pool, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 41
-    new_files: [src/conversations/session_pool.py, src/conversations/session_scan.py, tests/test_session_scan.py, tests/test_search_orchestration.py, tests/test_search_visibility.py]
-    edited_files: [README.md, ARCHITECTURE.md, src/conversations/__init__.py, src/conversations/commands.py, src/conversations/parsing.py, tests/test_session_search_space.py]
+    new_files: [src/chats/session_pool.py, src/chats/session_scan.py, tests/test_session_scan.py, tests/test_search_orchestration.py, tests/test_search_visibility.py]
+    edited_files: [README.md, ARCHITECTURE.md, src/chats/__init__.py, src/chats/commands.py, src/chats/parsing.py, tests/test_session_search_space.py]
     branch: main
   # Apr 15 26
   229ad818-eb68-44e2-b9a7-378ff552a7ee:
     description: "Added a `provider` metadata field (`claude`, `pi`, `codex`) to session YAML frontmatter: introduced a `Provider` type alias (`Literal[...]`) in `model.py`, added it as a required field on `ConversationMetadata`, derived it from the adapter's name in `_load_conversation_metadata()`, emitted it via `print_metadata()`, and threaded it through the parse/search pipelines. Peer-reviewed and hardened with 10 tests covering per-adapter derivation and parse/search emission."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [provider-metadata, jsonl-adapter, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 38
     new_files: [tests/test_provider_metadata.py]
-    edited_files: [src/conversations/model.py, src/conversations/parsing.py, src/conversations/commands.py, src/conversations/formatting.py]
+    edited_files: [src/chats/model.py, src/chats/parsing.py, src/chats/commands.py, src/chats/formatting.py]
     branch: main
   b7ef205a-4400-49c2-aa0c-673e6986bb75:
-    description: "Added `-p`/`--provider` CLI flag to `ccc search` that filters sessions by provider (`claude`, `pi`, `codex`) before loading metadata — so unmatched sessions skip all stat/timestamp I/O. Peer review caught two improvements: typed `JsonlSessionAdapter.name` as `Provider` (was `str`) for static safety, and pushed the filter to the file-path level rather than the post-metadata level. 9 new integration tests cover all three provider values, no-match exit-1, and CLI seam; full suite 249 passed."
-    directories: [~/dev/conversations]
+    description: "Added `-p`/`--provider` CLI flag to `ch search` that filters sessions by provider (`claude`, `pi`, `codex`) before loading metadata — so unmatched sessions skip all stat/timestamp I/O. Peer review caught two improvements: typed `JsonlSessionAdapter.name` as `Provider` (was `str`) for static safety, and pushed the filter to the file-path level rather than the post-metadata level. 9 new integration tests cover all three provider values, no-match exit-1, and CLI seam; full suite 249 passed."
+    directories: [~/dev/chats]
     keywords: [provider-filter, cli-args, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 29
     new_files: [tests/test_provider_filter.py]
-    edited_files: [src/conversations/cli.py, src/conversations/commands.py, src/conversations/parsing.py, tests/test_search_cli_args.py, README.md, CHANGELOG.md]
+    edited_files: [src/chats/cli.py, src/chats/commands.py, src/chats/parsing.py, tests/test_search_cli_args.py, README.md, CHANGELOG.md]
     branch: main
     forked: 229ad818-eb68-44e2-b9a7-378ff552a7ee
   # Apr 14 26
   rollout-2026-04-14T17-58-43-70583a99-e247-4e3b-a5ec-589918fd23ff:
-    description: "Added an adapter-aware `ccc fork` command that duplicates Claude, Codex, and PI sessions into thinner resumable copies, then tightened CLI wiring, docs, and coverage before publishing the change."
-    directories: [~/dev/conversations]
+    description: "Added an adapter-aware `ch fork` command that duplicates Claude, Codex, and PI sessions into thinner resumable copies, then tightened CLI wiring, docs, and coverage before publishing the change."
+    directories: [~/dev/chats]
     keywords: [fork-command, session-rewrite, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 13
-    new_files: [src/conversations/forking.py, tests/test_fork.py]
-    edited_files: [README.md, src/conversations/__init__.py, src/conversations/cli.py, src/conversations/commands.py, src/conversations/model.py, src/conversations/parsing.py, src/conversations/tool_filter.py]
+    new_files: [src/chats/forking.py, tests/test_fork.py]
+    edited_files: [README.md, src/chats/__init__.py, src/chats/cli.py, src/chats/commands.py, src/chats/model.py, src/chats/parsing.py, src/chats/tool_filter.py]
     branch: main
   # Apr 12 26
   rollout-2026-04-12T13-41-58-019d8148-b1e3-7741-9a0e-321c48d1c346:
     description: "Finished the broken partial implementation of `-t:s` tool-body truncation left by a previous agent: fixed a missing `truncate_middle` import in `model.py`, changed tool shortening from recursive `shorten_data` on raw dicts to `truncate_middle` on the rendered `ToolParts.content` string, rewrote `truncate_middle` to use a 500-char budget with `\n...\n` placeholder and a 495-char activation threshold, rewrote cross-ecosystem integration tests (`Claude`/`Codex`/`PI`) with canonical session shapes, and updated the shell `-s` seam test to generate payloads exceeding the new threshold. Full suite green."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [tool-shortening, truncate_middle, bugfix]
     prominent_tech_stack: []
     updated_when_message_count_was: 1
     new_files: [tests/test_short_modifier.py]
-    edited_files: [src/conversations/model.py, src/conversations/utils.py, tests/test_tool_filter.py, tests/test_flags.sh]
+    edited_files: [src/chats/model.py, src/chats/utils.py, tests/test_tool_filter.py, tests/test_flags.sh]
     branch: main
 
   c7a08580-595f-45c7-95f3-29f4c5ac3adb:
     description:
       - "Loaded project context for `conversations` and planned cross-ecosystem parity work by dispatching 5 parallel gpt-5.4 research subagents across domains (resolution/identity, object-level parse/search, inter-object relations, rename/lifecycle, session topology) to produce concrete discrepancy matrices and TDD plans."
       - "Synthesized the 5 domain reports and implemented 6 vertical TDD slices: (1) rename parity — PI/Codex parsers surface `custom-title` as `session-rename` blocks; (2) filter Codex `<skill>` protocol payloads; (3) `rm` parity — non-Claude paths no longer crash in preview; (4) `catalog` accepts non-UUID identifiers; (5) `rm` resolver routes through the shared resolver; (6) search matches custom titles as a first-class dimension. 6 checkpoint commits; test count grew 198→211."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [codex-pi-parity, tdd, cross-ecosystem]
     prominent_tech_stack: []
     updated_when_message_count_was: 55
     new_files: []
-    edited_files: [src/conversations/parsing.py, src/conversations/commands.py, src/conversations/catalog/__init__.py, tests/test_codex_sessions.py, tests/test_pi_sessions.py, tests/test_rm.py, tests/test_catalog.py, tests/test_session_search_space.py]
+    edited_files: [src/chats/parsing.py, src/chats/commands.py, src/chats/catalog/__init__.py, tests/test_codex_sessions.py, tests/test_pi_sessions.py, tests/test_rm.py, tests/test_catalog.py, tests/test_session_search_space.py]
     branch: main
   # Apr 11 26
   rollout-2026-04-11T16-31-11-019d7cbd-4424-7360-ac86-fcb3c982cbd3:
     description:
-      - "Unified `ccc`'s supported-session search space so negative recent selectors and `search` now traverse Claude Code, Codex, and PI sessions together instead of keeping recency resolution Claude-only."
+      - "Unified `ch`'s supported-session search space so negative recent selectors and `search` now traverse Claude Code, Codex, and PI sessions together instead of keeping recency resolution Claude-only."
       - "Drove the fix with a new cross-ecosystem regression test that simulates Claude, PI, and Codex session fixtures with deliberate recency ordering, then aligned the docs to describe the shared discovery model and adapter-owned sidechain filtering."
-    directories: [~/dev/conversations, ~/dev/gchat, ~/dev/codexchats]
+    directories: [~/dev/chats, ~/dev/gchat, ~/dev/codexchats]
     keywords: [search-space, codex-sessions, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 7
     new_files: [tests/test_session_search_space.py]
-    edited_files: [src/conversations/parsing.py, src/conversations/commands.py, src/conversations/cli.py, src/conversations/__init__.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    edited_files: [src/chats/parsing.py, src/chats/commands.py, src/chats/cli.py, src/chats/__init__.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
     branch: main
   # Apr 10 26
   019d76a2-cbed-72d0-9551-ea5a8ad568de:
     description:
-      - "Added Codex-session support to `ccc` after researching real Codex JSONL history alongside `codexchats`, so Codex conversations can be parsed and resolved much like Claude and PI sessions."
+      - "Added Codex-session support to `ch` after researching real Codex JSONL history alongside `codexchats`, so Codex conversations can be parsed and resolved much like Claude and PI sessions."
       - "Covered the new behavior with TDD-style tests, clarified the default Codex preamble filtering policy, and aligned shell tests with the project's Python 3.13+ runtime; full suite green."
-    directories: [~/dev/conversations, ~/dev/codexchats, ~/dev/gchat]
+    directories: [~/dev/chats, ~/dev/codexchats, ~/dev/gchat]
     keywords: [codex-sessions, jsonl-adapter, py313-tests]
     prominent_tech_stack: []
     updated_when_message_count_was: 53
     new_files: [tests/test_codex_sessions.py]
-    edited_files: [src/conversations/parsing.py, src/conversations/commands.py, tests/lib.sh, tests/test_basic.sh, tests/test_colors.sh, tests/test_format.sh]
+    edited_files: [src/chats/parsing.py, src/chats/commands.py, tests/lib.sh, tests/test_basic.sh, tests/test_colors.sh, tests/test_format.sh]
     branch: main
   # Apr 05 26
   rollout-2026-04-05T13-56-06-019d5d49-210f-7c70-a302-e70162ba68bb:
     description:
       - "Added role-visibility CLI flags (`--only-user`, `--only-assistant`, `--no-user`, `--no-assistant`) to default parse mode, composing cleanly with the existing `--thinking`, `--tools`, and `--agents` additive flags. Contradiction handling (e.g. `--only-user` with `--thinking`) is normalized upstream in `cli.py` with a warning and explicit flag disabling; the downstream pipeline receives clean booleans and needs no branching logic."
       - "TDD via vertical slices covering all contradiction combinations — `--only-assistant` overriding additive flags, `--only-user --only-assistant` naturally yielding nothing, `--no-assistant --thinking` showing only thinking blocks. Full suite green; README, ARCHITECTURE, and CHANGELOG updated."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [cli, role-visibility, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 31
     new_files: [tests/test_parse_visibility_flags.py]
-    edited_files: [src/conversations/cli.py, src/conversations/model.py, src/conversations/parsing.py, src/conversations/commands.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
+    edited_files: [src/chats/cli.py, src/chats/model.py, src/chats/parsing.py, src/chats/commands.py, README.md, ARCHITECTURE.md, CHANGELOG.md]
     branch: main
   # Apr 04 26
   rollout-2026-04-04T22-59-20-019d5a14-1c98-7601-939e-637746986944:
     description:
       - "Introduced a `JsonlSessionAdapter` registry in `parsing.py` — the first adapter being PI (`~/.pi/...` paths) — enabling JSONL session formats from agents other than Claude to plug into the shared `Message` model without branching the core pipeline. PI adapter supports user/assistant text, thinking blocks, tool calls, and tool results. TDD throughout; 183 tests passing."
-      - "Extended `ccc <session-id>` with a fallback cascade: Claude Code sessions are searched first, then each adapter's own session-matching logic is tried in registry order (currently Claude → PI). Confirmed with real PI UUID `9a27c7d8-d58f-4179-bf0a-a4657c7dca64`; 185 tests passing. Follow-up discussion revealed that while the PI parser correctly iterates the ordered `message.content` list, the bucketed `Message` model fields (`text`, `thinking`, `tools`) lose the original inter-item order — a known gap."
-    directories: [~/dev/conversations]
+      - "Extended `ch <session-id>` with a fallback cascade: Claude Code sessions are searched first, then each adapter's own session-matching logic is tried in registry order (currently Claude → PI). Confirmed with real PI UUID `9a27c7d8-d58f-4179-bf0a-a4657c7dca64`; 185 tests passing. Follow-up discussion revealed that while the PI parser correctly iterates the ordered `message.content` list, the bucketed `Message` model fields (`text`, `thinking`, `tools`) lose the original inter-item order — a known gap."
+    directories: [~/dev/chats]
     keywords: [pi-sessions, jsonl-adapter, session-resolution]
     prominent_tech_stack: []
     updated_when_message_count_was: 50
     new_files: [tests/test_pi_sessions.py]
-    edited_files: [src/conversations/parsing.py, src/conversations/commands.py]
+    edited_files: [src/chats/parsing.py, src/chats/commands.py]
     branch: main
   # Mar 17 26
   0f24e0cc-0cab-4011-9cfa-6f92fb016da5:
     description: "Investigated which JSONL message shapes carry a `model` field (script over 50 project dirs confirmed only `assistant` entries have it at `message.model`); moved the `model` XML attribute from being gated behind `agent_id` to all assistant messages with `.removeprefix('claude-')`; added two tests — one asserting regular and agent assistant messages include `model=`, one asserting user messages never do."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [model-attribute, xml-metadata, jsonl-analysis]
     prominent_tech_stack: []
     updated_when_message_count_was: 23
-    edited_files: [src/conversations/model.py, tests/test_meta_user_messages.py]
+    edited_files: [src/chats/model.py, tests/test_meta_user_messages.py]
     branch: main
   # Mar 15 26
   34bf1e8a-f47c-49a2-bdb6-19c7371e9b31:
     description:
       - "Fixed three visual bugs in Rich-colored output (`--color=always`): double blank line after message headings, empty line before closing XML tags, and leading space on non-first opening tags. Root cause was `console.print()` defaulting to `sep=\" \"` combined with `Markdown()` adding block-level newlines; fixed by adjusting separators, header text, and closing tag format in `formatting.py`."
       - "Discovered the fix didn't generalize to tool calls with `--all --color=never`: double blank lines appeared after `# Assistant` when followed by `<thinking>` tags. Root cause was upstream in `render_message_inner_xml` prepending `\\n` to THINKING and TOOL parts; removed those leading newlines so both XML and Rich paths render consistently. Extended `test_rich_whitespace.sh` to cover all four flag combos; all tests pass."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [rich-rendering, whitespace-bugs, tdd]
     prominent_tech_stack: [Rich]
     updated_when_message_count_was: 61
     new_files: [tests/test_rich_whitespace.sh, tests/data/1e446a9f-08fd-43ac-be72-8ce337d01dcd.jsonl]
-    edited_files: [src/conversations/formatting.py, tests/lib.sh, tests/run_all.sh, tests/data/golden_xml_output.txt]
+    edited_files: [src/chats/formatting.py, tests/lib.sh, tests/run_all.sh, tests/data/golden_xml_output.txt]
     branch: main
   # Mar 13 26
   368d87c9-03a1-42a4-9610-d64aaaed9505:
-    description: "Enhanced `ccc rm` confirmation preview with richer metadata: files now show human-readable size (with commas) and line/message count; directories render as a recursive ASCII tree with per-file sizes and line counts. Implemented via four new helpers (`_human_size`, `_line_count`, `_file_meta`, `_render_dir_tree`) in `commands.py`; all 172 tests pass."
-    directories: [~/dev/conversations]
-    keywords: [ccc-rm, preview-metadata, ascii-tree]
+    description: "Enhanced `ch rm` confirmation preview with richer metadata: files now show human-readable size (with commas) and line/message count; directories render as a recursive ASCII tree with per-file sizes and line counts. Implemented via four new helpers (`_human_size`, `_line_count`, `_file_meta`, `_render_dir_tree`) in `commands.py`; all 172 tests pass."
+    directories: [~/dev/chats]
+    keywords: [ch-rm, preview-metadata, ascii-tree]
     prominent_tech_stack: []
     updated_when_message_count_was: 18
-    edited_files: [src/conversations/commands.py]
+    edited_files: [src/chats/commands.py]
     branch: main
   # Mar 09 26
   dc43ce9c-4948-4d17-aa19-866fc4389772:
-    description: "Fixed `cxc <codex-id> | ccc catalog` failing with 'No session IDs or file paths provided' — root cause was the UUID regex not matching Codex-format session IDs (e.g. `rollout-2026-...`); added a fallback that parses YAML frontmatter for any-format session_id and stores piped content as `preloaded_content`; refined so `_get_session_content()` is always attempted first, falling back to preloaded content only on failure."
-    directories: [~/dev/conversations]
+    description: "Fixed `cxc <codex-id> | ch catalog` failing with 'No session IDs or file paths provided' — root cause was the UUID regex not matching Codex-format session IDs (e.g. `rollout-2026-...`); added a fallback that parses YAML frontmatter for any-format session_id and stores piped content as `preloaded_content`; refined so `_get_session_content()` is always attempted first, falling back to preloaded content only on failure."
+    directories: [~/dev/chats]
     keywords: [catalog, piped-input, codex-sessions]
     prominent_tech_stack: []
     updated_when_message_count_was: 26
-    edited_files: [src/conversations/catalog/__init__.py]
+    edited_files: [src/chats/catalog/__init__.py]
     branch: main
   # Mar 07 26
   9fc38f50-14fd-48ae-9318-e68075228131:
     description: "Added `name` attribute to `tool-output` XML tags to match the existing `name` on `tool-input` tags, by threading `id_map` through `tool_to_parts()` and `_tool_result_to_parts()` in `tools.py` and `model.py`; updated one test assertion."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [tool-output, xml-formatting, tool-id-map]
     prominent_tech_stack: []
     updated_when_message_count_was: 14
-    edited_files: [src/conversations/tools.py, src/conversations/model.py, tests/test_meta_user_messages.py]
+    edited_files: [src/chats/tools.py, src/chats/model.py, tests/test_meta_user_messages.py]
     branch: main
   # Mar 01 26
   3bf9ac75-6064-446b-a173-b3dc613000cb:
     description:
       - "Designed a flexible, modular syntax for the `--tools` CLI option — supporting direction (input/output), error status, per-tool shortening, negation, order-independence, short/long modifier forms, and multiple simultaneous filters."
       - "Implemented TDD-style: tests first, then `tool_filter.py` with a declarative modifier map and flat guard-clause matching; updated `model.py`, `cli.py`, `__init__.py`, README, DEVELOPMENT.md, and ARCHITECTURE.md. All 161 unit + 12 shell integration tests pass."
-    directories: [~/dev/conversations]
+    directories: [~/dev/chats]
     keywords: [cli, tool-filtering, tdd]
     prominent_tech_stack: []
     updated_when_message_count_was: 34
-    new_files: [src/conversations/tool_filter.py]
-    edited_files: [src/conversations/model.py, src/conversations/cli.py, src/conversations/__init__.py, tests/test_tool_filter.py, tests/test_tool_filter.sh, README.md, DEVELOPMENT.md, ARCHITECTURE.md]
+    new_files: [src/chats/tool_filter.py]
+    edited_files: [src/chats/model.py, src/chats/cli.py, src/chats/__init__.py, tests/test_tool_filter.py, tests/test_tool_filter.sh, README.md, DEVELOPMENT.md, ARCHITECTURE.md]
     branch: main
 ignored: [dda16bd3-68fa-4cc9-86b5-fb6e6a532b41]

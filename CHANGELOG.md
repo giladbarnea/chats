@@ -7,15 +7,15 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- `ccc rename -n/--dry-run` now prints the resolved or generated title to stdout without mutating the session JSONL or Claude history.
-- Dry-run still performs `--auto` title generation, so `ccc rename -n <session> --auto` previews the real LLM result rather than a shortcut.
+- `ch rename -n/--dry-run` now prints the resolved or generated title to stdout without mutating the session JSONL or Claude history.
+- Dry-run still performs `--auto` title generation, so `ch rename -n <session> --auto` previews the real LLM result rather than a shortcut.
 
 ---
 ## [2026-05-16] Add `search -r/--raw` plain-markdown output
 
 ### Added
 
-- `ccc search -r/--raw` now mirrors parse raw formatting on the display path.
+- `ch search -r/--raw` now mirrors parse raw formatting on the display path.
 - Raw search implies `--no-metadata`, `--color never`, and `--no-paging`.
 - If raw search would render exactly one visible message, it prints only that message content.
 - Otherwise, raw search renders each matching session as plain markdown with a setext `Session <id>` heading, parse-style message bodies, and a single `---` separator between sessions.
@@ -46,7 +46,7 @@ All notable changes to the `conversations` skill.
 - `_resolve_recent_conversation_file()` now walks candidates newest-first by `stat().st_mtime` and applies `PoolFilter.passes_path_for_index` (cwd) and `passes_path_for_date` (mtime/ctime) per file, short-circuiting at the Nth match.
 - Removed the eager `_build_conversation_metadata()` slow path and its `_order_metadata_by_modified_time` helper; full `ConversationMetadata` is now built only for the resolved winner (during display), never for the candidate pool.
 - Trade-off: "newest" is always filesystem mtime, not in-band semantic mtime. Extends the May 4 dir-only choice to all index-resolution filter combos.
-- Real-world impact on a ~1500-file pool: `ccc -1 -ma 4h` drops from ~1.13s to ~0.55s.
+- Real-world impact on a ~1500-file pool: `ch -1 -ma 4h` drops from ~1.13s to ~0.55s.
 
 ---
 ## [2026-05-10] Skip full read+parse when search dir filter rejects a candidate
@@ -54,8 +54,8 @@ All notable changes to the `conversations` skill.
 ### Changed
 
 - `cmd_search` now applies `PoolFilter.passes_path_for_index` as a cheap streaming cwd probe before reading and parsing each candidate, mirroring the existing date pre-skip.
-- `ccc search ... -d DIR` no longer pays a full `read_text` + `SessionScan` for non-matching directories; the dir check happens once, at the top of `_search_hit_for_file`.
-- Real-world impact on a ~1500-file pool: `ccc search . -l -d .` drops from ~4.2s to ~1.45s. The remaining ~750ms is dominated by `SessionPool.discover` startup and full-parse of the matching files; further wins would require a `--list`-aware fast path inside `_search_conversation_content`.
+- `ch search ... -d DIR` no longer pays a full `read_text` + `SessionScan` for non-matching directories; the dir check happens once, at the top of `_search_hit_for_file`.
+- Real-world impact on a ~1500-file pool: `ch search . -l -d .` drops from ~4.2s to ~1.45s. The remaining ~750ms is dominated by `SessionPool.discover` startup and full-parse of the matching files; further wins would require a `--list`-aware fast path inside `_search_conversation_content`.
 
 ---
 ## [2026-05-10] Probe only the timestamp each date filter actually needs
@@ -65,16 +65,16 @@ All notable changes to the `conversations` skill.
 - `--mafter` filtering now probes only the last in-band timestamp for rejected files; `--cafter` filtering probes only the first.
 - New `PoolFilter.passes_path_for_date(path)` consolidates the per-path date check into one cheap predicate that streams only the relevant end of the JSONL file.
 - `_load_conversation_metadata` now delegates timestamp probing (with stat fallback) to two cohesive helpers, `parsing.get_jsonl_first_timestamp` and `parsing.get_jsonl_last_timestamp`.
-- Real-world impact on a ~1500-file pool: `ccc search . -ma 4h --list` drops from ~0.8s to ~0.55s.
+- Real-world impact on a ~1500-file pool: `ch search . -ma 4h --list` drops from ~0.8s to ~0.55s.
 
 ---
 ## [2026-05-09] Speed up date-filtered search
 
 ### Changed
 
-- `ccc search ... -ma DATE` and `ccc search ... -ca DATE` now reject candidate sessions outside the date window before reading or parsing their JSONL content.
+- `ch search ... -ma DATE` and `ch search ... -ca DATE` now reject candidate sessions outside the date window before reading or parsing their JSONL content.
 - Per-file timestamp metadata is probed only when a date filter is active, preserving the no-date-filter fast path that already skipped metadata for unrelated nonmatches.
-- Real-world impact on a ~1500-file pool: `ccc search . -ma 4h --list` drops from ~4.4s to ~0.8s.
+- Real-world impact on a ~1500-file pool: `ch search . -ma 4h --list` drops from ~4.4s to ~0.8s.
 
 ---
 ## [2026-05-08] Resolve sessions by current name and ignore historical titles
@@ -99,7 +99,7 @@ All notable changes to the `conversations` skill.
 
 ### Changed
 
-- `ccc -d DIR -1` no longer eagerly loads timestamp metadata for every candidate session when no date filters are present.
+- `ch -d DIR -1` no longer eagerly loads timestamp metadata for every candidate session when no date filters are present.
 - Dir-only recent-index resolution now walks candidates newest-first by filesystem mtime, streams each file only until it can extract `cwd`, and stops as soon as the requested negative index is satisfied.
 - Added regression coverage proving the dir-only fast path avoids eager metadata loading and short-circuits after the newest matching session.
 
@@ -110,7 +110,7 @@ All notable changes to the `conversations` skill.
 
 - Claude sidechain discovery now assumes only the `<session_id>/subagents/agent-*.jsonl` layout exists.
 - `find_all_supported_session_files()` now only discovers `agent-*.jsonl` inside Claude `subagents/`, so unrelated JSONL files in that directory no longer leak into parse/search/recent-index flows.
-- `ccc fork --agents` now always writes Claude sidechains back into `<new_session_id>/subagents/`.
+- `ch fork --agents` now always writes Claude sidechains back into `<new_session_id>/subagents/`.
 
 ---
 ## [2026-05-03] Fix Claude agent detection for new subagents/ layout
@@ -134,7 +134,7 @@ All notable changes to the `conversations` skill.
 
 ### Changed
 
-- `ccc rename` is now provider-aware on the write path instead of always appending Claude-only `custom-title` / `agent-name` records.
+- `ch rename` is now provider-aware on the write path instead of always appending Claude-only `custom-title` / `agent-name` records.
 - Claude rename behavior stays the same, including the `~/.claude/history.jsonl` side effect.
 - PI renames now append one native `session_info` record with a fresh entry id, a parent chain to the previous entry id, and the requested `name`.
 - Codex renames now append one native `event_msg` with `payload.type == "thread_name_updated"` and the canonical thread id.
@@ -145,7 +145,7 @@ All notable changes to the `conversations` skill.
 
 ### Changed
 
-- `ccc search` now scans candidate sessions newest first by filesystem mtime instead of walking the discovery pool in its implicit provider/lexical order.
+- `ch search` now scans candidate sessions newest first by filesystem mtime instead of walking the discovery pool in its implicit provider/lexical order.
 - Search results now display newest first by semantic conversation modified time, while recent negative selectors keep their existing `-1 == newest` behavior.
 - Added regression coverage for both result ordering and candidate scan ordering.
 
@@ -169,7 +169,7 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- `ccc search -f/--full` now renders every visible message from each matching conversation instead of only the messages that directly matched. Summary-only and custom-title-only hits also render the full visible conversation body in this mode.
+- `ch search -f/--full` now renders every visible message from each matching conversation instead of only the messages that directly matched. Summary-only and custom-title-only hits also render the full visible conversation body in this mode.
 
 ### Changed
 
@@ -180,7 +180,7 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- Default parse mode now accepts `-d, --dir`, `-ma, --mafter`, and `-ca, --cafter` for recent negative selectors, mirroring `ccc search`. So `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`.
+- Default parse mode now accepts `-d, --dir`, `-ma, --mafter`, and `-ca, --cafter` for recent negative selectors, mirroring `ch search`. So `ch -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`.
 - New `PoolFilter` declarative bundle (provider/dir/mafter/cafter) shared by both subcommands; `add_pool_filter_args` installs the same flag group on either parser.
 
 ### Changed
@@ -194,12 +194,12 @@ All notable changes to the `conversations` skill.
 ### Added
 
 - Default parse mode now accepts `-l, --only-metadata` to emit just the resolved session metadata frontmatter without the conversation body.
-- Default parse mode now accepts `-ll, --only-id` to emit just the resolved session ID, matching `ccc search --only-id`.
+- Default parse mode now accepts `-ll, --only-id` to emit just the resolved session ID, matching `ch search --only-id`.
 
 ### Changed
 
 - Parse `--only-id` now forces plain output and disables paging, mirroring the existing search-mode behavior.
-- Parse metadata-only output preserves the existing post-slice `messages:` count semantics, so `ccc -l <session> "-1"` reports the sliced visible count rather than the full conversation length.
+- Parse metadata-only output preserves the existing post-slice `messages:` count semantics, so `ch -l <session> "-1"` reports the sliced visible count rather than the full conversation length.
 
 ---
 ## [2026-04-23] Display fork ancestry metadata when available
@@ -214,7 +214,7 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- Default parse mode now accepts `-p, --provider claude|pi|codex` for recent negative selectors, so commands like `ccc -p codex -1` resolve the newest Codex session instead of the newest session overall.
+- Default parse mode now accepts `-p, --provider claude|pi|codex` for recent negative selectors, so commands like `ch -p codex -1` resolve the newest Codex session instead of the newest session overall.
 
 ### Changed
 
@@ -269,14 +269,14 @@ All notable changes to the `conversations` skill.
 
 ### Changed
 
-- `ccc catalog` now only processes the first session ID it finds in the input (arguments, piped content, or greppable text). This prevents accidentally batch-cataloging many sessions at once.
+- `ch catalog` now only processes the first session ID it finds in the input (arguments, piped content, or greppable text). This prevents accidentally batch-cataloging many sessions at once.
 
 ---
 ## [2026-04-15] Make search-only-id fully plain
 
 ### Changed
 
-- `ccc search --only-id` now forces plain output end to end: no Rich color, no pager, and direct stdout printing of session IDs even if `--color always` was passed.
+- `ch search --only-id` now forces plain output end to end: no Rich color, no pager, and direct stdout printing of session IDs even if `--color always` was passed.
 - Tightened the CLI seam and shell coverage so `--only-id --color always` still emits a bare session ID with no ANSI escapes.
 
 ---
@@ -284,7 +284,7 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- `ccc search -p claude|pi|codex` restricts search to sessions from a specific provider. Filtering happens before metadata loading, so unmatched sessions incur no I/O overhead.
+- `ch search -p claude|pi|codex` restricts search to sessions from a specific provider. Filtering happens before metadata loading, so unmatched sessions incur no I/O overhead.
 
 ---
 ## [2026-04-15] Add `provider` metadata field
@@ -300,7 +300,7 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- `ccc search --only-id` and its `-ll` shorthand now print only matching session IDs, one per line, instead of the full search metadata block.
+- `ch search --only-id` and its `-ll` shorthand now print only matching session IDs, one per line, instead of the full search metadata block.
 
 ---
 ## [2026-04-11] Unify supported-session search space
@@ -308,7 +308,7 @@ All notable changes to the `conversations` skill.
 ### Changed
 
 - Negative recent selectors (`-1`, `-2`, ...) now resolve across the same supported-session universe as direct file paths and adapter-backed session IDs, rather than only traversing Claude Code history.
-- `ccc search` now scans supported Claude Code, Codex, and PI session files through the same shared discovery path used by recency-aware resolution.
+- `ch search` now scans supported Claude Code, Codex, and PI session files through the same shared discovery path used by recency-aware resolution.
 
 ---
 ## [2026-04-05] Add parse-mode role visibility flags
@@ -408,15 +408,15 @@ Parse `type: "custom-title"` as `<session-rename>` blocks. Shown by default, sea
 - `54fcb6b` (2025-12-11 10:23) - Documentation updates
 
 **Changed files:**
-- `skills/conversations/scripts/parse.py` (+374 lines, -151 lines)
-- `skills/conversations/DEVELOPMENT.md` (marked 2 issues resolved)
+- `skills/chats/scripts/parse.py` (+374 lines, -151 lines)
+- `skills/chats/DEVELOPMENT.md` (marked 2 issues resolved)
 
 **New files:**
-- `skills/conversations/plan.claude.md` (implementation plan)
-- `skills/conversations/post-plan-implementation-review.md` (critique)
+- `skills/chats/plan.claude.md` (implementation plan)
+- `skills/chats/post-plan-implementation-review.md` (critique)
 
 **Unchanged:**
-- `skills/conversations/SKILL.md` (no user-facing changes)
+- `skills/chats/SKILL.md` (no user-facing changes)
 
 ### Fixed
 

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from conversations import SearchOutputMode, cli
+from chats import SearchOutputMode, cli
 
 
 def test_search_only_id_forces_plain_output(monkeypatch) -> None:
@@ -28,7 +28,7 @@ def test_search_only_id_forces_plain_output(monkeypatch) -> None:
     monkeypatch.setattr(
         cli.sys,
         "argv",
-        ["ccc", "search", "--only-id", "--paging", "--color", "always", "needle"],
+        ["ch", "search", "--only-id", "--paging", "--color", "always", "needle"],
     )
 
     cli.main()
@@ -61,13 +61,13 @@ def test_search_full_flag_reaches_cmd_search(monkeypatch) -> None:
         captured["output_mode"] = output_mode
 
     monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "-f", "needle"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "-f", "needle"])
 
     cli.main()
 
     assert captured["pattern"] == "needle"
     assert captured["output_mode"] == SearchOutputMode.FULL, (
-        "Expected `ccc search -f needle` to request full-conversation output. "
+        "Expected `ch search -f needle` to request full-conversation output. "
         f"Got: {captured.get('output_mode')!r}"
     )
 
@@ -95,7 +95,7 @@ def test_search_raw_forces_plain_output_and_disables_metadata(monkeypatch) -> No
     monkeypatch.setattr(
         cli.sys,
         "argv",
-        ["ccc", "search", "--raw", "--paging", "--color", "always", "needle"],
+        ["ch", "search", "--raw", "--paging", "--color", "always", "needle"],
     )
 
     cli.main()
@@ -141,7 +141,7 @@ def test_search_default_output_mode_is_matching_messages(monkeypatch) -> None:
         captured["output_mode"] = output_mode
 
     monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "needle"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "needle"])
 
     cli.main()
 
@@ -168,7 +168,7 @@ def test_search_plans_flag_reaches_cmd_search(monkeypatch) -> None:
         captured["flags"] = flags
 
     monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "--plans", "needle"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "--plans", "needle"])
 
     cli.main()
 
@@ -194,7 +194,7 @@ def test_search_all_includes_plans(monkeypatch) -> None:
         captured["flags"] = flags
 
     monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "--all", "needle"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "--all", "needle"])
 
     cli.main()
 

@@ -27,7 +27,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import cmd_rename, resolve_conversation_file
+from chats import cmd_rename, resolve_conversation_file
 
 # =============================================================================
 # Fixtures

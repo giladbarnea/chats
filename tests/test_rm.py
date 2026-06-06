@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import pytest
 
-from conversations import cmd_rm
+from chats import cmd_rm
 
 # =============================================================================
 # Fixtures

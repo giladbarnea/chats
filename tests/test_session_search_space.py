@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import (
+from chats import (
     ConversationFlags,
     MessageSelection,
     PoolFilter,

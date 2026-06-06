@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from conversations import cmd_search, ConversationFlags, SearchOutputMode
-from conversations.commands import find_agent_files_for_session
-from conversations.parsing import find_all_supported_session_files
+from chats import cmd_search, ConversationFlags, SearchOutputMode
+from chats.commands import find_agent_files_for_session
+from chats.parsing import find_all_supported_session_files
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:

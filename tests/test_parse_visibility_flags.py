@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from conversations.cli import main
+from chats.cli import main
 
 
 def _write_session(path: Path) -> None:
@@ -93,7 +93,7 @@ def _write_session_with_custom_title(path: Path) -> None:
 
 def _run_cli(monkeypatch, capsys, *argv: str) -> tuple[int, str, str]:
     """Execute the real CLI entrypoint and capture exit code + stdio."""
-    monkeypatch.setattr(sys, "argv", ["ccc", *argv])
+    monkeypatch.setattr(sys, "argv", ["ch", *argv])
     exit_code = 0
 
     try:

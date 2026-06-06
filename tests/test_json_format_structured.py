@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, cmd_parse
+from chats import ConversationFlags, cmd_parse
 
 FIXTURES_DIR = Path(__file__).parent / "data" / "json_format"
 

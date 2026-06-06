@@ -8,11 +8,11 @@ import subprocess
 import time
 
 
-def _time_ccc(args: list[str]) -> tuple[int, float, bytes]:
-    """Run `ccc` end-to-end and return (returncode, elapsed_ms, stderr)."""
+def _time_ch(args: list[str]) -> tuple[int, float, bytes]:
+    """Run `ch` end-to-end and return (returncode, elapsed_ms, stderr)."""
     start = time.perf_counter()
     result = subprocess.run(
-        ["uv", "run", "ccc", *args],
+        ["uv", "run", "ch", *args],
         check=False,
         capture_output=True,
     )
@@ -20,53 +20,53 @@ def _time_ccc(args: list[str]) -> tuple[int, float, bytes]:
 
 
 def test_search_mafter_4h_list_under_1000ms() -> None:
-    """`ccc search . -ma 4h --list` must complete within 1000ms end-to-end."""
-    returncode, elapsed_ms, stderr = _time_ccc(["search", ".", "-ma", "4h", "--list"])
+    """`ch search . -ma 4h --list` must complete within 1000ms end-to-end."""
+    returncode, elapsed_ms, stderr = _time_ch(["search", ".", "-ma", "4h", "--list"])
 
     assert returncode in (0, 1), (
-        f"`ccc search . -ma 4h --list` exited with {returncode}. "
+        f"`ch search . -ma 4h --list` exited with {returncode}. "
         f"stderr: {stderr.decode(errors='replace')!r}"
     )
     assert elapsed_ms < 1000, (
-        f"`ccc search . -ma 4h --list` took {elapsed_ms:.0f}ms; budget is 1000ms."
+        f"`ch search . -ma 4h --list` took {elapsed_ms:.0f}ms; budget is 1000ms."
     )
 
 
 def test_recent_index_dir_filter_under_1000ms() -> None:
-    """`ccc -1 -d ~/dev/conversations` must complete within 1000ms end-to-end."""
-    target_dir = os.path.expanduser("~/dev/conversations")
-    returncode, elapsed_ms, stderr = _time_ccc(["-1", "-d", target_dir])
+    """`ch -1 -d ~/dev/chats` must complete within 1000ms end-to-end."""
+    target_dir = os.path.expanduser("~/dev/chats")
+    returncode, elapsed_ms, stderr = _time_ch(["-1", "-d", target_dir])
 
     assert returncode in (0, 1), (
-        f"`ccc -1 -d {target_dir}` exited with {returncode}. "
+        f"`ch -1 -d {target_dir}` exited with {returncode}. "
         f"stderr: {stderr.decode(errors='replace')!r}"
     )
     assert elapsed_ms < 1000, (
-        f"`ccc -1 -d {target_dir}` took {elapsed_ms:.0f}ms; budget is 1000ms."
+        f"`ch -1 -d {target_dir}` took {elapsed_ms:.0f}ms; budget is 1000ms."
     )
 
 
 def test_recent_index_mafter_4h_under_1000ms() -> None:
-    """`ccc -1 -ma 4h` must complete within 1000ms end-to-end."""
-    returncode, elapsed_ms, stderr = _time_ccc(["-1", "-ma", "4h"])
+    """`ch -1 -ma 4h` must complete within 1000ms end-to-end."""
+    returncode, elapsed_ms, stderr = _time_ch(["-1", "-ma", "4h"])
 
     assert returncode in (0, 1), (
-        f"`ccc -1 -ma 4h` exited with {returncode}. "
+        f"`ch -1 -ma 4h` exited with {returncode}. "
         f"stderr: {stderr.decode(errors='replace')!r}"
     )
     assert elapsed_ms < 1000, (
-        f"`ccc -1 -ma 4h` took {elapsed_ms:.0f}ms; budget is 1000ms."
+        f"`ch -1 -ma 4h` took {elapsed_ms:.0f}ms; budget is 1000ms."
     )
 
 
 def test_search_dir_filter_list_under_2000ms() -> None:
-    """`ccc search . -l -d .` must complete within 2000ms end-to-end."""
-    returncode, elapsed_ms, stderr = _time_ccc(["search", ".", "-l", "-d", "."])
+    """`ch search . -l -d .` must complete within 2000ms end-to-end."""
+    returncode, elapsed_ms, stderr = _time_ch(["search", ".", "-l", "-d", "."])
 
     assert returncode in (0, 1), (
-        f"`ccc search . -l -d .` exited with {returncode}. "
+        f"`ch search . -l -d .` exited with {returncode}. "
         f"stderr: {stderr.decode(errors='replace')!r}"
     )
     assert elapsed_ms < 2000, (
-        f"`ccc search . -l -d .` took {elapsed_ms:.0f}ms; budget is 2000ms."
+        f"`ch search . -l -d .` took {elapsed_ms:.0f}ms; budget is 2000ms."
     )

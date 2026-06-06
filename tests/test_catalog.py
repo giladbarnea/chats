@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from conversations.catalog import _extract_metadata, _is_session_id, catalog_sessions
+from chats.catalog import _extract_metadata, _is_session_id, catalog_sessions
 
 
 def test_extract_metadata():
@@ -47,7 +47,7 @@ class TestCatalogSessionsGreppable:
         )
         collected_ids: list[str] = []
 
-        import conversations.catalog
+        import chats.catalog
 
         def fake_get_session_content(sid: str):
             nonlocal collected_ids
@@ -64,11 +64,11 @@ class TestCatalogSessionsGreppable:
 
         with (
             patch.object(
-                conversations.catalog,
+                chats.catalog,
                 "_get_session_content",
                 side_effect=fake_get_session_content,
             ),
-            patch("conversations.catalog.subprocess.run"),
+            patch("chats.catalog.subprocess.run"),
             patch("sys.stdin") as mock_stdin,
             patch("sys.exit"),
         ):
@@ -83,7 +83,7 @@ class TestCatalogSessionsGreppable:
         """When multiple session IDs are provided as arguments, only the first is cataloged."""
         collected_ids: list[str] = []
 
-        import conversations.catalog
+        import chats.catalog
 
         def fake_get_session_content(sid: str):
             nonlocal collected_ids
@@ -92,11 +92,11 @@ class TestCatalogSessionsGreppable:
 
         with (
             patch.object(
-                conversations.catalog,
+                chats.catalog,
                 "_get_session_content",
                 side_effect=fake_get_session_content,
             ),
-            patch("conversations.catalog.subprocess.run"),
+            patch("chats.catalog.subprocess.run"),
             patch("sys.stdin") as mock_stdin,
             patch("sys.exit"),
         ):

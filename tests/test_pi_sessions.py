@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, cmd_parse, cmd_rename
+from chats import ConversationFlags, cmd_parse, cmd_rename
 
 
 def _write_pi_session(path: Path, entries: list[dict]) -> None:
@@ -1240,7 +1240,7 @@ def test_rich_rendering_of_recursive_xml_matches_expected_colored_output(
     capsys,
 ) -> None:
     """Rich-rendered output must match expected colored text when a user message embeds
-    a full ccc transcript (itself containing XML tags) wrapped in XML tags."""
+    a full ch transcript (itself containing XML tags) wrapped in XML tags."""
     session_path = Path(__file__).parent / "data" / "recursive_xml_rich_rendering.jsonl"
 
     cmd_parse(

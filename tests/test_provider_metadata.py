@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
-from conversations.commands import _load_conversation_metadata
-from conversations.model import ConversationMetadata
+from chats import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
+from chats.commands import _load_conversation_metadata
+from chats.model import ConversationMetadata
 
 # ---------------------------------------------------------------------------
 # Unit: ConversationMetadata carries provider

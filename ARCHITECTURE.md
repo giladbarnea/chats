@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: Document the architecture of the `ccc` CLI tool.
+description: Document the architecture of the `ch` CLI tool.
 last_updated: 2026-04-16, working tree after 3cd8c1b
 ---
 
@@ -23,11 +23,11 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 │  EXTERNAL WORLD                                                             │
 │                                                                             │
 │  ┌────────┐      ┌─────────────────────────────────┐      ┌──────────────┐  │
-│  │  USER  │─────►│  CLI (ccc <subcommand> [args])  │◄─────│ stdin / pipe │  │
+│  │  USER  │─────►│  CLI (ch <subcommand> [args])  │◄─────│ stdin / pipe │  │
 │  └────────┘      └────────────────┬────────────────┘      └──────────────┘  │
 │                                   │                                         │
 ╞═══════════════════════════════════│═════════════════════════════════════════╡
-│  CCC (System Boundary)            │                                         │
+│  Chats (System Boundary)          │                                         │
 │                                   ▼                                         │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │
 │  │                      CLI ROUTER (cli.py:main)                        │   │
@@ -82,12 +82,12 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 
 ## Sequence Diagrams (Time)
 
-### Feature 1: Parse (`ccc [input] [slice ...]`)
+### Feature 1: Parse (`ch [input] [slice ...]`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ccc <input> [slice ...] [flags]`     ──► cli.py:main()
+├───►  User                     Runs `ch <input> [slice ...] [flags]`     ──► cli.py:main()
 │
 ├───►  main()                   Detects no subcommand keyword              ──► argparse (default parse)
 │      argparse                 Parses flags; handles edge cases:          ──► args namespace
@@ -160,12 +160,12 @@ TIME   ACTOR                    ACTION                                         T
 └───►  User                     Sees formatted conversation
 ```
 
-### Feature 2: Search (`ccc search <pattern>`)
+### Feature 2: Search (`ch search <pattern>`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ccc search <pattern> [flags]`        ──► cli.py:main()
+├───►  User                     Runs `ch search <pattern> [flags]`        ──► cli.py:main()
 │
 ├───►  main()                   Detects sys.argv[1] == "search"            ──► argparse (search parser)
 │      argparse                 Parses: pattern, -l, -ll, -d, -ma,        ──► args namespace
@@ -216,13 +216,13 @@ TIME   ACTOR                    ACTION                                         T
 └───►  cmd_search               sys.exit(0 if found_any else 1)
 ```
 
-### Feature 3: Rename (`ccc rename <id> <name>`)
+### Feature 3: Rename (`ch rename <id> <name>`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ccc rename <id> <new_name>`          ──► cli.py:main()
-│                               or `ccc rename <id> --auto [-n]`
+├───►  User                     Runs `ch rename <id> <new_name>`          ──► cli.py:main()
+│                               or `ch rename <id> --auto [-n]`
 │
 ├───►  main()                   Detects sys.argv[1] == "rename"            ──► argparse (rename parser)
 │
@@ -256,12 +256,12 @@ TIME   ACTOR                    ACTION                                         T
 └───►  cmd_rename               Print confirmation                         ──► console
 ```
 
-### Feature 4: Remove (`ccc rm <session>`)
+### Feature 4: Remove (`ch rm <session>`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ccc rm <session> [--dry-run]`        ──► cli.py:main()
+├───►  User                     Runs `ch rm <session> [--dry-run]`        ──► cli.py:main()
 │
 ├───►  main()                   Detects sys.argv[1] == "rm"                ──► argparse (rm parser)
 │
@@ -302,12 +302,12 @@ TIME   ACTOR                    ACTION                                         T
 └───►  cmd_rm                   Print summary                              ──► console
 ```
 
-### Feature 5: Catalog (`ccc catalog <args>`)
+### Feature 5: Catalog (`ch catalog <args>`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ccc catalog <session_ids|greppable>` ──► cli.py:main()
+├───►  User                     Runs `ch catalog <session_ids|greppable>` ──► cli.py:main()
 │                               (may also pipe content via stdin)
 │
 ├───►  main()                   Detects sys.argv[1] == "catalog"           ──► cmd_catalog(argv[2:])

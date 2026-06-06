@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from conversations import cli
-from conversations.commands import cmd_parse
-from conversations.model import ConversationFlags, ParseOutputMode
+from chats import cli
+from chats.commands import cmd_parse
+from chats.model import ConversationFlags, ParseOutputMode
 
 
 def _write_claude_session(path: Path) -> None:
@@ -57,7 +57,7 @@ def _write_claude_session(path: Path) -> None:
 
 
 def test_parse_cli_only_id_forces_plain_output(monkeypatch) -> None:
-    """`ccc -ll` should force plain output and pass `only_id=True` into parse."""
+    """`ch -ll` should force plain output and pass `only_id=True` into parse."""
     captured: dict[str, object] = {}
 
     def fake_cmd_parse(
@@ -80,7 +80,7 @@ def test_parse_cli_only_id_forces_plain_output(monkeypatch) -> None:
     monkeypatch.setattr(
         cli.sys,
         "argv",
-        ["ccc", "-ll", "--paging", "--color", "always", session_id],
+        ["ch", "-ll", "--paging", "--color", "always", session_id],
     )
 
     cli.main()
@@ -106,7 +106,7 @@ def test_parse_cli_only_id_forces_plain_output(monkeypatch) -> None:
 
 
 def test_parse_cli_only_metadata_reaches_cmd_parse(monkeypatch) -> None:
-    """`ccc -l` should enter parse metadata-only mode."""
+    """`ch -l` should enter parse metadata-only mode."""
     captured: dict[str, object] = {}
 
     def fake_cmd_parse(
@@ -125,7 +125,7 @@ def test_parse_cli_only_metadata_reaches_cmd_parse(monkeypatch) -> None:
 
     session_id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
     monkeypatch.setattr(cli, "cmd_parse", fake_cmd_parse)
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "-l", session_id])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "-l", session_id])
 
     cli.main()
 

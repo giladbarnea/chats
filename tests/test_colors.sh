@@ -17,7 +17,7 @@ OUTPUT_NEVER=$(TERM=xterm-256color $PY_CMD -c "
 import subprocess, os, pty
 
 master, slave = pty.openpty()
-proc = subprocess.Popen(['uv', 'run', 'ccc', '--color', 'never', '$DATA_FILE_SIMPLE'],
+proc = subprocess.Popen(['uv', 'run', 'ch', '--color', 'never', '$DATA_FILE_SIMPLE'],
                         stdout=slave, stderr=slave, stdin=subprocess.DEVNULL)
 os.close(slave)
 output = b''

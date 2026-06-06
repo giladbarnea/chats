@@ -7,8 +7,8 @@ import json
 import re
 from pathlib import Path
 
-from conversations import ConversationFlags, cmd_parse
-from conversations.tool_filter import ToolFilter
+from chats import ConversationFlags, cmd_parse
+from chats.tool_filter import ToolFilter
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:

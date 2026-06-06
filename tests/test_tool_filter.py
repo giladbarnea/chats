@@ -10,10 +10,10 @@ Covers:
 
 import pytest
 
-from conversations import ConversationFlags, Message
-from conversations.parts import MessagePartKind
-from conversations.tool_filter import ToolFilter, parse_tool_spec
-from conversations.utils import truncate_middle
+from chats import ConversationFlags, Message
+from chats.parts import MessagePartKind
+from chats.tool_filter import ToolFilter, parse_tool_spec
+from chats.utils import truncate_middle
 
 # =============================================================================
 # Shared tool dicts

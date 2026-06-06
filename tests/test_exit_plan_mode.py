@@ -12,7 +12,7 @@ Tests that:
 import sys
 from pathlib import Path
 
-from conversations import (
+from chats import (
     ConversationFlags,
     Message,
     parse_jsonl,

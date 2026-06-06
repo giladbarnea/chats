@@ -6,7 +6,7 @@ from io import StringIO
 
 from rich.console import Console
 
-from conversations.formatting import PaddedInlineCodeMarkdown
+from chats.formatting import PaddedInlineCodeMarkdown
 
 
 def _render(markup: str) -> str:

@@ -15,7 +15,7 @@ assert_success
 assert_contains "$OUTPUT" "<${AGENT_TAG}"
 assert_contains "$OUTPUT" "## Agent"
 assert_contains "$OUTPUT" 'agent_id="agent-abc-123"'
-assert_contains "$OUTPUT" 'model="claude-sonnet-4-5-20250929"'
+assert_contains "$OUTPUT" 'model="sonnet-4-5-20250929"'
 assert_contains "$OUTPUT" "Agent research complete: found 3 relevant files."
 echo "  ✓ -a flag shows agent messages with correct tag, header, and attributes"
 

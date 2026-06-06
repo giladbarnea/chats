@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, SearchOutputMode, cmd_search
+from chats import ConversationFlags, SearchOutputMode, cmd_search
 
 
 def _write_claude_session(path: Path, entries: list[dict]) -> None:

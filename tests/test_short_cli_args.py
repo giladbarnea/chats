@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from conversations import cli
+from chats import cli
 
 
 def _run_parse_cli(monkeypatch, *argv: str) -> tuple[int, dict[str, object]]:
@@ -28,7 +28,7 @@ def _run_parse_cli(monkeypatch, *argv: str) -> tuple[int, dict[str, object]]:
         captured["slice_str"] = slice_str
 
     monkeypatch.setattr(cli, "cmd_parse", fake_cmd_parse)
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", *argv])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", *argv])
 
     exit_code = 0
     try:
@@ -56,7 +56,7 @@ def _run_search_cli(monkeypatch, *argv: str) -> tuple[int, dict[str, object]]:
         captured["flags"] = flags
 
     monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", *argv])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", *argv])
 
     exit_code = 0
     try:

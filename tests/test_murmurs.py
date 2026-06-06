@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from conversations.murmurs import analyze_murmur, is_murmur
+from chats.murmurs import analyze_murmur, is_murmur
 
 DATASET_PATH = Path(__file__).parent / "data" / "murmur" / "dataset.jsonl"
 

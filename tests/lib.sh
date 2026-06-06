@@ -1,14 +1,13 @@
 #!/usr/bin/env zsh
 setopt EXTENDED_GLOB
 
-# Define data files relative to the test script location (assuming running from skill root)
-# But tests are usually run from skill root: ~/.claude/skills/conversations/
+# Define data files relative to the test script location (assuming running from repo root)
 # So tests/data/... is correct.
 DATA_FILE_SIMPLE="tests/data/a6f25fb8-e7a8-4411-b378-ad0f20e552d1.jsonl"
 DATA_FILE_COMPLEX="tests/data/91410674-da33-4697-b5a8-f334edbc5554.jsonl"
 
 cc_cmd() {
-  uv run ccc "$@"
+  uv run ch "$@"
 }
 CC_CMD="cc_cmd"
 
@@ -18,7 +17,7 @@ py_cmd() {
 PY_CMD="py_cmd"
 
 # For tests that need the actual command array (like pty.spawn)
-CC_CMD_BASE=("uv" "run" "ccc")
+CC_CMD_BASE=("uv" "run" "ch")
 
 # Supported message tags (centralized source of truth)
 declare -A SUPPORTED_MESSAGE_TAGS=(

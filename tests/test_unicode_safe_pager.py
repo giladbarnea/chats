@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations.console import UnicodeSafePager
+from chats.console import UnicodeSafePager
 
 
 HOSTILE_LESS_ENV = "--RAW-CONTROL-CHARS --use-color"

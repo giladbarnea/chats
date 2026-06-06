@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Tests for meta user messages linked to tool input/output chains."""
 
-from conversations import ConversationFlags, cmd_parse, parse_jsonl
-from conversations.formatting import format_to_xml
+from chats import ConversationFlags, cmd_parse, parse_jsonl
+from chats.formatting import format_to_xml
 
 
 def _build_tool_id_map(messages):

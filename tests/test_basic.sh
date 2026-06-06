@@ -41,7 +41,7 @@ OUTPUT_TTY=$(TERM=xterm-256color $PY_CMD -c "
 import subprocess, os, pty
 
 master, slave = pty.openpty()
-proc = subprocess.Popen(['uv', 'run', 'ccc', '$DATA_FILE_SIMPLE'],
+proc = subprocess.Popen(['uv', 'run', 'ch', '$DATA_FILE_SIMPLE'],
                         stdout=slave, stderr=slave, stdin=subprocess.DEVNULL)
 os.close(slave)
 output = b''

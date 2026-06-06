@@ -1,6 +1,6 @@
 session_id: session_id: e5b0d0ef-bce4-4793-978a-216622ddeb58
 
-Considered. Here's the honest breakdown for `ccc search . -l -d .`, wall time ~1.45–1.70s:
+Considered. Here's the honest breakdown for `ch search . -l -d .`, wall time ~1.45–1.70s:
 
 | Stage | Cost | In scope? |
 |---|---|---|

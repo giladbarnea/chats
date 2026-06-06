@@ -134,7 +134,7 @@ def _resolve_session_id(
 
 
 def catalog_sessions(args: list[str]) -> None:
-    parser = argparse.ArgumentParser(prog="ccc catalog", add_help=False)
+    parser = argparse.ArgumentParser(prog="ch catalog", add_help=False)
     parser.add_argument("-a", "--append-prompt", default=None, metavar="STRING")
     parsed, remaining = parser.parse_known_args(args)
     append_prompt: str | None = parsed.append_prompt

@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from pygments.token import Generic, Literal, Name, Punctuation, Text, Token
 
-from conversations.lexer import XmlmdLexer
+from chats.lexer import XmlmdLexer
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 

@@ -85,7 +85,7 @@ def load_labels(labels_path: Path = LABELS_PATH) -> tuple[SessionLabels, ...]:
 def export_session(session_id: str, output_path: Path) -> None:
     """Persist the assistant-only JSON export for one curated session."""
     completed = subprocess.run(
-        ["ccc", session_id, *EXPORT_COMMAND],
+        ["ch", session_id, *EXPORT_COMMAND],
         check=True,
         capture_output=True,
         text=True,
@@ -96,7 +96,7 @@ def export_session(session_id: str, output_path: Path) -> None:
 
 
 def export_sessions(labels: tuple[SessionLabels, ...]) -> None:
-    """Refresh all raw assistant-message exports from ccc."""
+    """Refresh all raw assistant-message exports from ch."""
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     for session in labels:
         export_session(session.session_id, RAW_DIR / f"{session.session_id}.json")

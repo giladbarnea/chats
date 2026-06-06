@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
+from chats import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
 
 
 def _utc_to_local_display(utc_iso: str) -> str:

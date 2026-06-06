@@ -359,7 +359,7 @@ def main():
     # Check for subcommands early (before argparse)
     if len(sys.argv) > 1 and sys.argv[1] == "search":
         # Parse search arguments
-        parser = argparse.ArgumentParser(prog="ccc search")
+        parser = argparse.ArgumentParser(prog="ch search")
         parser.add_argument("pattern", nargs="?", help="Pattern to search for")
         parser.add_argument(
             "-l",
@@ -501,7 +501,7 @@ def main():
     elif len(sys.argv) > 1 and sys.argv[1] == "rename":
         # Parse rename arguments
         parser = argparse.ArgumentParser(
-            prog="ccc rename",
+            prog="ch rename",
             description="Rename a conversation by updating its display name",
         )
         parser.add_argument(
@@ -541,7 +541,7 @@ def main():
         )
     elif len(sys.argv) > 1 and sys.argv[1] == "fork":
         parser = argparse.ArgumentParser(
-            prog="ccc fork",
+            prog="ch fork",
             description="Duplicate a supported session into a thinner resumable fork",
         )
         parser.add_argument(
@@ -601,7 +601,7 @@ def main():
     elif len(sys.argv) > 1 and sys.argv[1] == "rm":
         # Parse rm arguments
         parser = argparse.ArgumentParser(
-            prog="ccc rm",
+            prog="ch rm",
             description="Remove a conversation session and all associated files. "
             "Shows a preview, then prompts for confirmation before removal.",
         )
@@ -623,7 +623,7 @@ def main():
     else:
         # Default parse behavior
         parser = argparse.ArgumentParser(
-            prog="ccc",
+            prog="ch",
             description="Parse and format supported AI CLI conversation histories",
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""\
@@ -797,7 +797,7 @@ Commands:
                 args.input = candidate
                 unknown = unknown[1:]
 
-        # Bug: That means a typo like ccc session --colro never 1 can silently apply selector 1 instead of surfacing an option error, producing truncated output in a way that is hard to diagnose.
+        # Bug: That means a typo like ch session --colro never 1 can silently apply selector 1 instead of surfacing an option error, producing truncated output in a way that is hard to diagnose.
         for candidate in unknown:
             if _looks_like_slice(candidate):
                 slice_args.append(candidate)

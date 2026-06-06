@@ -19,13 +19,13 @@ from unittest.mock import patch
 
 import pytest
 
-from conversations import (
+from chats import (
     _try_resolve_conversation_file,
     commands,
     get_input_content,
     resolve_conversation_file,
 )
-import conversations.commands.resolve as resolve_commands
+import chats.commands.resolve as resolve_commands
 
 # =============================================================================
 # Fixtures (reuse rename_fixtures structure)
@@ -309,7 +309,7 @@ class TestExactIdentifierResolution:
                 resolve_commands, "_resolve_recent_conversation_file"
             ) as recent_lookup,
             patch(
-                "conversations.commands.resolve.extract_resolution_facets_from_jsonl"
+                "chats.commands.resolve.extract_resolution_facets_from_jsonl"
             ) as summary_lookup,
         ):
             resolved_path, ambiguous = _try_resolve_conversation_file(session_id)

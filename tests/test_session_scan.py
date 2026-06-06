@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from conversations import ConversationFlags, MessageSelection, SessionScan
+from chats import ConversationFlags, MessageSelection, SessionScan
 
 
 def test_session_scan_extracts_search_facets_independently_of_visible_messages(

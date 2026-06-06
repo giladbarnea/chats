@@ -1,15 +1,10 @@
----
-name: conversations
-description: Format, search, and manage supported AI CLI conversation history files from Claude Code, Codex, and PI JSONL session directories. Use this skill when users request formatting, converting, or reading .jsonl conversation history files, searching across sessions for specific content, or removing/deleting old Claude conversation sessions. The script extracts user messages and assistant text responses (excluding tool calls by default).
----
-
-# Conversations
+# Chats
 
 > Verified true as of 26-04-16, working tree after 3cd8c1b
 
 ## Overview
 
-Format and search supported AI CLI conversation history files. The `ccc` CLI converts session files to readable XML format with markdown rendering and provides powerful search capabilities across Claude Code, Codex, and PI sessions.
+Format and search supported AI CLI conversation history files. The `ch` CLI converts session files to readable XML format with markdown rendering and provides powerful search capabilities across Claude Code, Codex, and PI sessions.
 
 **Core functions:**
 - **Parse**: Convert conversation history to XML-tagged markdown
@@ -20,9 +15,9 @@ Format and search supported AI CLI conversation history files. The `ccc` CLI con
 - **Rename**: Assign custom titles to conversations for easier discovery
 - **Catalog**: AI-powered session cataloging to sessions.yaml files
 
-## When to Use This Skill
+## When to Use
 
-Use this skill when the user asks to:
+Use `ch` when you want to:
 - Format or convert a .jsonl conversation history file
 - Parse raw conversation transcripts (with ⏺ and > prefixes)
 - Search across all supported sessions for specific content or patterns
@@ -45,11 +40,11 @@ Convert conversation files to XML-tagged markdown.
 3. Conversation/session ID or filename: `b177e4f8-bb24-43e9-8a53-4e064be4457d`
 4. Current session name/title (case-insensitive substring match, latest title only): `"patch endpoint"`
 5. Summary text (case-insensitive prefix match): `"Extract PII"`
-6. Stdin: `cat file.jsonl | ccc`
+6. Stdin: `cat file.jsonl | ch`
 
 Negative recent indices resolve across the unified Claude/PI/Codex session pool using oldest→newest modified-time ordering, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
-The same session-pool filters used by `ccc search` also narrow the recent-index lookup: `-p, --provider claude|pi|codex`, `-d, --dir DIR`, `-ma, --mafter DATE`, and `-ca, --cafter DATE`. For example, `ccc -p codex -1` resolves the newest Codex session, and `ccc -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`. When only `--dir` is present, recent-index resolution now uses a cheap newest-first cwd probe instead of eagerly loading full metadata for the whole pool. These filters apply only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores them.
-Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any title/summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass. If exact-id resolution misses, `ccc` scans each session's latest title for a case-insensitive substring match before falling back to summary-prefix matching.
+The same session-pool filters used by `ch search` also narrow the recent-index lookup: `-p, --provider claude|pi|codex`, `-d, --dir DIR`, `-ma, --mafter DATE`, and `-ca, --cafter DATE`. For example, `ch -p codex -1` resolves the newest Codex session, and `ch -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`. When only `--dir` is present, recent-index resolution now uses a cheap newest-first cwd probe instead of eagerly loading full metadata for the whole pool. These filters apply only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores them.
+Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any title/summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass. If exact-id resolution misses, `ch` scans each session's latest title for a case-insensitive substring match before falling back to summary-prefix matching.
 
 Conversations can have multiple summary entries (prepended as conversation evolves), each with a unique `leafUuid` tracking the conversation endpoint. Summary matching searches all summaries in all files.
 
@@ -58,21 +53,21 @@ Conversations can have multiple summary entries (prepended as conversation evolv
 Optional second-and-later positional arguments use Python slice notation to select message ranges. Multiple selectors are ORed: each message matching any selector is included once in original conversation order.
 
 ```bash
-ccc -1              # Most recently modified supported session
-ccc -2              # Second most recently modified supported session
-ccc -l -1           # Metadata only for the newest supported session
-ccc -ll -1          # Only the newest supported session id
-ccc <id> "1"       # First message only
-ccc <id> "-1"      # Last message only
-ccc <id> "5:"      # From index 5 to end
-ccc <id> "-5:"     # Last 5 messages
-ccc <id> ":5"      # First 5 messages
-ccc <id> ":-5"     # All but last 5
-ccc <id> "2:5"     # Indices 2,3,4
-ccc <id> "2:-1"    # Index 2 to before last
-ccc <id> "-5:-1"   # 5th from end to before last
-ccc <id> "1" "2"   # First and second messages
-ccc <id> "1:7" "-2" "8:-3"
+ch -1              # Most recently modified supported session
+ch -2              # Second most recently modified supported session
+ch -l -1           # Metadata only for the newest supported session
+ch -ll -1          # Only the newest supported session id
+ch <id> "1"       # First message only
+ch <id> "-1"      # Last message only
+ch <id> "5:"      # From index 5 to end
+ch <id> "-5:"     # Last 5 messages
+ch <id> ":5"      # First 5 messages
+ch <id> ":-5"     # All but last 5
+ch <id> "2:5"     # Indices 2,3,4
+ch <id> "2:-1"    # Index 2 to before last
+ch <id> "-5:-1"   # 5th from end to before last
+ch <id> "1" "2"   # First and second messages
+ch <id> "1:7" "-2" "8:-3"
 ```
 
 **Format Detection:**
@@ -130,7 +125,7 @@ Automatically detects input format by examining **first non-empty line only** (d
 
 `--short` is greedy only for the token immediately following it: a detached width is consumed only when that token is all digits and `> 7`; otherwise `--short` is treated as bare and parsing continues normally. The attached form is strict: `--short=<value>` must satisfy the same validation or the CLI errors.
 
-`--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ccc --no-user --tools ...` still shows tool outputs from user turns, and `ccc --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
+`--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ch --no-user --tools ...` still shows tool outputs from user turns, and `ch --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
 
 Metadata frontmatter emits `forked_from:` only when the raw session exposes a fork parent id. Sessions without that data omit the field entirely.
 
@@ -210,7 +205,7 @@ Markdown-only output intended for piping into files or other tools.
 Search all supported sessions using regex patterns against visible rendered message content, summaries, and the latest current custom title.
 
 ```bash
-ccc search [OPTIONS] <pattern>
+ch search [OPTIONS] <pattern>
 ```
 
 **Options:**
@@ -230,19 +225,19 @@ ccc search [OPTIONS] <pattern>
 **Examples:**
 
 ```bash
-ccc search "error message"              # Case-insensitive search
-ccc search "implement.*feature"         # Regex pattern
-ccc search -l "bug fix"                 # List matching files only
-ccc search -ll "bug fix"                # Print only matching session IDs
-ccc search -f "bug fix"                 # Print full conversations that match
-ccc search -r "bug fix"                 # Print matching messages as plain markdown
-ccc search -r -f "bug fix"              # Print full matching conversations as plain markdown
-ccc search -d ~/dev/project "feature"   # Filter by directory
-ccc search --mafter=1d "TODO"           # Modified in last day
-ccc search --mafter=2024-12-01 "deploy" # Modified since Dec 1
-ccc search --cafter=1w --mafter=1d "."  # Created last week, modified today
-ccc search -p claude "bug fix"          # Search only Claude sessions
-ccc search -p codex "TODO"              # Search only Codex sessions
+ch search "error message"              # Case-insensitive search
+ch search "implement.*feature"         # Regex pattern
+ch search -l "bug fix"                 # List matching files only
+ch search -ll "bug fix"                # Print only matching session IDs
+ch search -f "bug fix"                 # Print full conversations that match
+ch search -r "bug fix"                 # Print matching messages as plain markdown
+ch search -r -f "bug fix"              # Print full matching conversations as plain markdown
+ch search -d ~/dev/project "feature"   # Filter by directory
+ch search --mafter=1d "TODO"           # Modified in last day
+ch search --mafter=2024-12-01 "deploy" # Modified since Dec 1
+ch search --cafter=1w --mafter=1d "."  # Created last week, modified today
+ch search -p claude "bug fix"          # Search only Claude sessions
+ch search -p codex "TODO"              # Search only Codex sessions
 ```
 
 **Search Features:**
@@ -263,7 +258,7 @@ ccc search -p codex "TODO"              # Search only Codex sessions
 Create a new supported session file that keeps only the parts of the conversation you want to carry forward.
 
 ```bash
-ccc fork [OPTIONS] <session>
+ch fork [OPTIONS] <session>
 ```
 
 `fork` resolves the input session the same way parse does for file paths, recent negative indices, session identifiers, and summary prefixes, then writes a new native session file back to disk. The fork keeps the original ecosystem’s on-disk format:
@@ -275,11 +270,11 @@ ccc fork [OPTIONS] <session>
 By default, `fork` strips thinking, tool payloads, plan content, and Claude sidechains, which makes the new session much smaller than the original transcript. You can opt content back in with the same visibility knobs as parse:
 
 ```bash
-ccc fork -1
-ccc fork --plans session-id
-ccc fork -t session-id
-ccc fork -T short -t Read:o:s -t Bash:i session-id
-ccc fork -A session-id
+ch fork -1
+ch fork --plans session-id
+ch fork -t session-id
+ch fork -T short -t Read:o:s -t Bash:i session-id
+ch fork -A session-id
 ```
 
 **Options:**
@@ -301,7 +296,7 @@ ccc fork -A session-id
 Remove a conversation session and all associated files.
 
 ```bash
-ccc rm [OPTIONS] <session>
+ch rm [OPTIONS] <session>
 ```
 
 **What Gets Removed:**
@@ -327,13 +322,13 @@ ccc rm [OPTIONS] <session>
 
 ```bash
 # Remove by UUID (shows preview, then prompts for confirmation)
-ccc rm 5078a7c7-0646-43cc-9412-7e1454a282b4
+ch rm 5078a7c7-0646-43cc-9412-7e1454a282b4
 
 # Remove by file path (shows preview, then prompts for confirmation)
-ccc rm ~/.claude/projects/my-project/session-id.jsonl
+ch rm ~/.claude/projects/my-project/session-id.jsonl
 
 # Dry run - preview only, no confirmation prompt
-ccc rm -n session-uuid
+ch rm -n session-uuid
 ```
 
 **Safety Features:**
@@ -348,9 +343,9 @@ ccc rm -n session-uuid
 Rename a conversation by appending a custom title entry.
 
 ```bash
-ccc rename <session> "New Title"
-ccc rename <session> --auto
-ccc rename -n <session> --auto
+ch rename <session> "New Title"
+ch rename <session> --auto
+ch rename -n <session> --auto
 ```
 
 This mutates the conversation file by appending the provider-native session-title entry shape:
@@ -376,15 +371,15 @@ Dry-run still performs `--auto` generation work; it just stops before writing JS
 Catalog conversation sessions by upserting entries to a sessions.yaml file.
 
 ```bash
-ccc catalog [SESSION_IDS OR FILE_PATHS] [-a STRING]
+ch catalog [SESSION_IDS OR FILE_PATHS] [-a STRING]
 ```
 
 This command uses an AI model (via the `claude` CLI) to analyze conversation sessions and maintain a `sessions.yaml` catalog file. The command reads session content and either creates new entries or updates existing ones with meaningful descriptions organized by date.
 
 **Input Methods:**
-- **Direct session IDs**: `ccc catalog 00000000-0000-0000-0000-000000000000`
-- **File paths**: `ccc catalog path/to/session.jsonl`
-- **Piped input**: `ccc search -ca 1d . -l | ccc catalog`
+- **Direct session IDs**: `ch catalog 00000000-0000-0000-0000-000000000000`
+- **File paths**: `ch catalog path/to/session.jsonl`
+- **Piped input**: `ch search -ca 1d . -l | ch catalog`
 - **Multiple sessions**: Accepts multiple sessions but **only catalogs the first one found**.
 
 **Features:**
@@ -398,10 +393,10 @@ This command uses an AI model (via the `claude` CLI) to analyze conversation ses
 - `-a STRING`, `--append-prompt STRING`: Append extra instructions to the AI user message, wrapped in `<additional-instructions>` tags.
 
 **Examples:**
-- Catalog a specific session: `ccc catalog 5078a7c7-0646-43cc-9412-7e1454a282b4`
-- Catalog from search results (uses only first result): `ccc search -ca 1d . -l | ccc catalog`
-- Catalog from multiple IDs (uses only first ID): `ccc catalog id1 id2`
-- Catalog with extra instructions: `ccc catalog <id> -a "Note the primary language used."`
+- Catalog a specific session: `ch catalog 5078a7c7-0646-43cc-9412-7e1454a282b4`
+- Catalog from search results (uses only first result): `ch search -ca 1d . -l | ch catalog`
+- Catalog from multiple IDs (uses only first ID): `ch catalog id1 id2`
+- Catalog with extra instructions: `ch catalog <id> -a "Note the primary language used."`
 
 **Note:** This command requires the `claude` CLI to be configured in the user's environment.
 
@@ -464,7 +459,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 
 ## Technical Reference
 
-**Location:** `~/dev/conversations` (installed globally as `ccc` via `uv tool install -e . --force`)
+**Location:** `~/dev/chats` (installed globally as `ch` via `uv tool install -e . --force`)
 
 **Dependencies:**
 - Python 3.13+

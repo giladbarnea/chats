@@ -7,7 +7,7 @@ from pygments.token import Generic, Literal, Name, Punctuation, Text
 
 
 class XmlmdLexer(RegexLexer):
-    """Pygments lexer for the ccc xmlmd conversation format.
+    """Pygments lexer for the ch xmlmd conversation format.
 
     Handles naive messages (user/assistant without tool blocks) wrapped in XML-like
     tags, with optional YAML frontmatter. Also tokenizes XML-like tags embedded

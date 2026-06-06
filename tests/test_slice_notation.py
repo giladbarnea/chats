@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-from conversations import parse_slice_notation
+from chats import parse_slice_notation
 
 
 class TestParseSliceNotation:
@@ -222,7 +222,7 @@ class TestSliceErrorCases:
             [
                 "python3",
                 "-c",
-                "from conversations import parse_slice_notation; parse_slice_notation('0')",
+                "from chats import parse_slice_notation; parse_slice_notation('0')",
             ],
             capture_output=True,
             text=True,
@@ -239,7 +239,7 @@ class TestSliceErrorCases:
             [
                 "python3",
                 "-c",
-                "from conversations import parse_slice_notation; parse_slice_notation('0:')",
+                "from chats import parse_slice_notation; parse_slice_notation('0:')",
             ],
             capture_output=True,
             text=True,
@@ -256,7 +256,7 @@ class TestSliceErrorCases:
             [
                 "python3",
                 "-c",
-                "from conversations import parse_slice_notation; parse_slice_notation(':0')",
+                "from chats import parse_slice_notation; parse_slice_notation(':0')",
             ],
             capture_output=True,
             text=True,

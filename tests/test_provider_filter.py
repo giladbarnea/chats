@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from conversations import cli
-from conversations.commands import _try_resolve_conversation_file, cmd_search
-from conversations.model import ConversationFlags, SearchOutputMode
-from conversations.pool_filter import PoolFilter
+from chats import cli
+from chats.commands import _try_resolve_conversation_file, cmd_search
+from chats.model import ConversationFlags, SearchOutputMode
+from chats.pool_filter import PoolFilter
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -223,7 +223,7 @@ def _make_fake_cmd_search(captured: dict):
 def test_cli_short_provider_flag(monkeypatch):
     captured: dict = {}
     monkeypatch.setattr(cli, "cmd_search", _make_fake_cmd_search(captured))
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "-p", "claude", "needle"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "-p", "claude", "needle"])
     cli.main()
     pf = captured.get("pool_filter")
     assert pf == PoolFilter(provider="claude"), (
@@ -235,7 +235,7 @@ def test_cli_long_provider_flag(monkeypatch):
     captured: dict = {}
     monkeypatch.setattr(cli, "cmd_search", _make_fake_cmd_search(captured))
     monkeypatch.setattr(
-        cli.sys, "argv", ["ccc", "search", "--provider", "pi", "needle"]
+        cli.sys, "argv", ["ch", "search", "--provider", "pi", "needle"]
     )
     cli.main()
     pf = captured.get("pool_filter")
@@ -247,7 +247,7 @@ def test_cli_long_provider_flag(monkeypatch):
 def test_cli_provider_codex(monkeypatch):
     captured: dict = {}
     monkeypatch.setattr(cli, "cmd_search", _make_fake_cmd_search(captured))
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "-p", "codex", "needle"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "-p", "codex", "needle"])
     cli.main()
     pf = captured.get("pool_filter")
     assert pf == PoolFilter(provider="codex"), (
@@ -258,7 +258,7 @@ def test_cli_provider_codex(monkeypatch):
 def test_cli_no_provider_flag_defaults_to_empty(monkeypatch):
     captured: dict = {}
     monkeypatch.setattr(cli, "cmd_search", _make_fake_cmd_search(captured))
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "search", "needle"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "needle"])
     cli.main()
     pf = captured.get("pool_filter")
     assert pf == PoolFilter(), f"Expected empty PoolFilter, got {pf!r}"
@@ -291,10 +291,10 @@ def _make_fake_cmd_parse(captured: dict):
 
 
 def test_parse_cli_provider_filter_reaches_cmd_parse_for_recent_index(monkeypatch):
-    """`ccc -p codex -1` passes PoolFilter(provider='codex') to parse."""
+    """`ch -p codex -1` passes PoolFilter(provider='codex') to parse."""
     captured: dict = {}
     monkeypatch.setattr(cli, "cmd_parse", _make_fake_cmd_parse(captured))
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "-p", "codex", "-1"])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "-p", "codex", "-1"])
     monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True)
 
     cli.main()
@@ -309,11 +309,11 @@ def test_parse_cli_provider_filter_reaches_cmd_parse_for_recent_index(monkeypatc
 
 
 def test_parse_cli_provider_filter_warns_and_ignores_session_id(monkeypatch, capsys):
-    """`ccc -p codex session-id` should warn and disable the pool filter."""
+    """`ch -p codex session-id` should warn and disable the pool filter."""
     captured: dict = {}
     session_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     monkeypatch.setattr(cli, "cmd_parse", _make_fake_cmd_parse(captured))
-    monkeypatch.setattr(cli.sys, "argv", ["ccc", "-p", "codex", session_id])
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "-p", "codex", session_id])
 
     cli.main()
 

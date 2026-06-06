@@ -1,5 +1,5 @@
 [project]
-name = "conversations"
+name = "chats"
 version = "0.1.0"
 description = "CLI for parsing and querying Claude Code conversations"
 readme = "README.md"
@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ccc = "conversations.cli:main"
+ch = "chats.cli:main"
 
 [build-system]
 requires = ["hatchling"]

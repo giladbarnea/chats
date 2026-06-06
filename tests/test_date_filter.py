@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conversations import parse_date_filter
+from chats import parse_date_filter
 
 
 class TestISODateFormats:

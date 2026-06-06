@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from conversations import ConversationFlags, ToolFilter, cmd_parse, cmd_rename
+from chats import ConversationFlags, ToolFilter, cmd_parse, cmd_rename
 
 
 def _write_codex_session(path: Path, entries: list[dict]) -> None:

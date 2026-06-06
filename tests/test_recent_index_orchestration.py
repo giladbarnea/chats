@@ -8,8 +8,8 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from conversations import PoolFilter, SessionPool, _try_resolve_conversation_file
-import conversations.commands.resolve as resolve_commands
+from chats import PoolFilter, SessionPool, _try_resolve_conversation_file
+import chats.commands.resolve as resolve_commands
 
 
 
