@@ -3,6 +3,16 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-07] Add Antigravity CLI adapter
+
+### Added
+
+- `ch` now discovers Antigravity CLI transcripts under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`.
+- Antigravity discovery prefers `transcript_full.jsonl` when it exists and falls back to `transcript.jsonl` only when the full variant is absent.
+- Antigravity `USER_INPUT`, `PLANNER_RESPONSE`, thinking, tool calls, and tool-result records parse into the shared message model; session ids come from the brain directory.
+- `--provider antigravitycli` is available anywhere provider-scoped filtering is supported.
+
+---
 ## [2026-05-31] Add `rename -n/--dry-run`
 
 ### Added

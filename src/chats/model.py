@@ -13,7 +13,8 @@ from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_to_json, tool_to_parts
 from .utils import shorten_data, truncate_middle
 
-Provider = Literal["claude", "pi", "codex"]
+Provider = Literal["claude", "pi", "codex", "antigravitycli"]
+PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex", "antigravitycli")
 
 
 class ParseOutputMode(StrEnum):

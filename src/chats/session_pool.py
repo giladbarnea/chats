@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from .model import Provider
+from .model import PROVIDERS, Provider
 from .parsing import (
     find_all_supported_session_files,
     get_jsonl_session_adapter,
@@ -42,9 +42,7 @@ class SessionPool:
         """Build a pool from a known supported-session sequence."""
         normalized_files = tuple(files)
         provider_groups: dict[Provider, list[Path]] = {
-            "claude": [],
-            "pi": [],
-            "codex": [],
+            provider: [] for provider in PROVIDERS
         }
         by_stem: dict[str, Path] = {}
         by_filename: dict[str, Path] = {}
@@ -58,8 +56,7 @@ class SessionPool:
         return cls(
             files=normalized_files,
             by_provider={
-                provider: tuple(provider_groups[provider])
-                for provider in ("claude", "pi", "codex")
+                provider: tuple(provider_groups[provider]) for provider in PROVIDERS
             },
             by_stem=by_stem,
             by_filename=by_filename,

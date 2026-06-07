@@ -3,7 +3,7 @@
 A `PoolFilter` is a declarative bundle of options that narrow the supported-
 session universe before resolution or search:
 
-  - `provider`  — restrict to one of: claude, pi, codex
+  - `provider`  — restrict to one supported provider
   - `dir`       — restrict to sessions whose cwd exactly matches this directory
   - `mafter`    — only sessions modified after DATE
   - `cafter`    — only sessions created after DATE
@@ -23,7 +23,7 @@ from functools import cached_property
 from pathlib import Path
 
 from .date_filters import parse_date_filter
-from .model import ConversationMetadata, Provider
+from .model import PROVIDERS, ConversationMetadata, Provider
 from .parsing import (
     extract_cwd_from_jsonl_file,
     get_jsonl_first_timestamp,
@@ -113,7 +113,7 @@ class PoolFilter:
 def add_pool_filter_args(
     parser: argparse.ArgumentParser,
     *,
-    provider_help: str = "Restrict to sessions from a specific provider (claude, pi, codex)",
+    provider_help: str = "Restrict to sessions from a specific provider",
     dir_help: str = "Restrict to sessions whose cwd exactly matches this directory",
     mafter_help: str = "Only sessions modified after DATE (e.g., 2024-12-15, 1d, 2w)",
     cafter_help: str = "Only sessions created after DATE",
@@ -130,7 +130,7 @@ def add_pool_filter_args(
     group.add_argument(
         "-p",
         "--provider",
-        choices=["claude", "pi", "codex"],
+        choices=list(PROVIDERS),
         default=None,
         help=provider_help,
     )

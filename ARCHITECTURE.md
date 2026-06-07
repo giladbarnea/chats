@@ -52,7 +52,7 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 │  │                        PARSING LAYER (parsing.py)                      │  │
 │  │  detect_format  decode_jsonl_entries  parse_jsonl_entries             │  │
 │  │  extract_*_from_entries  parse_raw_cli_transcript                     │  │
-│  │  JSONL session adapters: Claude / PI / Codex                          │  │
+│  │  JSONL session adapters: Claude / PI / Codex / Antigravity             │  │
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
@@ -718,4 +718,5 @@ cli.py
 15. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
 16. **Shared Session-Title Semantics**: metadata/resolution/search treat provider-native session-name records as one current-title abstraction: Claude `custom-title`, Codex `event_msg.payload.thread_name` when `payload.type == "thread_name_updated"`, and PI `session_info.name`. Only the latest title is acknowledged; historical titles are ignored.
 17. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
-18. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.
+18. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex/Antigravity sessions currently resolve to deleting the single JSONL file.
+19. **Antigravity Full Transcript Preference**: Antigravity session discovery treats `{session_id}/.system_generated/logs/transcript_full.jsonl` as canonical when present and falls back to `transcript.jsonl` only for sessions without the full variant. The brain directory name is the native session id.

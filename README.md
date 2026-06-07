@@ -4,7 +4,7 @@
 
 ## Overview
 
-Format and search supported AI CLI conversation history files. The `ch` CLI converts session files to readable XML format with markdown rendering and provides powerful search capabilities across Claude Code, Codex, and PI sessions.
+Format and search supported AI CLI conversation history files. The `ch` CLI converts session files to readable XML format with markdown rendering and provides powerful search capabilities across Claude Code, Codex, PI, and Antigravity CLI sessions.
 
 **Core functions:**
 - **Parse**: Convert conversation history to XML-tagged markdown
@@ -26,7 +26,7 @@ Use `ch` when you want to:
 - Delete or remove conversation sessions
 - Clean up old conversations
 - Catalog or organize conversation sessions
-- Work with files from `~/.claude/projects/*/`, `~/.codex/sessions/**`, or `~/.pi/agent/sessions/**`
+- Work with files from `~/.claude/projects/*/`, `~/.codex/sessions/**`, `~/.pi/agent/sessions/**`, or `~/.gemini/antigravity-cli/brain/*/.system_generated/logs/`
 
 ## Commands
 
@@ -42,9 +42,9 @@ Convert conversation files to XML-tagged markdown.
 5. Summary text (case-insensitive prefix match): `"Extract PII"`
 6. Stdin: `cat file.jsonl | ch`
 
-Negative recent indices resolve across the unified Claude/PI/Codex session pool using oldest→newest modified-time ordering, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
-The same session-pool filters used by `ch search` also narrow the recent-index lookup: `-p, --provider claude|pi|codex`, `-d, --dir DIR`, `-ma, --mafter DATE`, and `-ca, --cafter DATE`. For example, `ch -p codex -1` resolves the newest Codex session, and `ch -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`. When only `--dir` is present, recent-index resolution now uses a cheap newest-first cwd probe instead of eagerly loading full metadata for the whole pool. These filters apply only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores them.
-Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any title/summary scan, so PI and Codex session ids resolve directly without a separate provider-specific fallback pass. If exact-id resolution misses, `ch` scans each session's latest title for a case-insensitive substring match before falling back to summary-prefix matching.
+Negative recent indices resolve across the unified Claude/PI/Codex/Antigravity session pool using oldest→newest modified-time ordering, so `-1` means “the newest supported session”. Claude agent sidechain files are excluded from this selector.
+The same session-pool filters used by `ch search` also narrow the recent-index lookup: `-p, --provider claude|pi|codex|antigravitycli`, `-d, --dir DIR`, `-ma, --mafter DATE`, and `-ca, --cafter DATE`. For example, `ch -p codex -1` resolves the newest Codex session, and `ch -d ~/dev/proj -1` resolves the most recent session whose cwd exactly matches `~/dev/proj`. When only `--dir` is present, recent-index resolution now uses a cheap newest-first cwd probe instead of eagerly loading full metadata for the whole pool. These filters apply only when the first positional parse argument is a recent index; with session IDs, paths, summaries, or stdin, the CLI warns and ignores them.
+Single-token identifiers are matched against that same unified supported-session pool by exact filename/native session id before any title/summary scan, so PI, Codex, and Antigravity session ids resolve directly without a separate provider-specific fallback pass. If exact-id resolution misses, `ch` scans each session's latest title for a case-insensitive substring match before falling back to summary-prefix matching.
 
 Conversations can have multiple summary entries (prepended as conversation evolves), each with a unique `leafUuid` tracking the conversation endpoint. Summary matching searches all summaries in all files.
 
@@ -213,7 +213,7 @@ ch search [OPTIONS] <pattern>
 - `-ll`, `--only-id`: Show only matching session IDs (implies `--color never` and `--no-paging`)
 - `-f`, `--full`: Show entire matching conversations instead of only matching messages
 - `-r`, `--raw`: Render search results as plain markdown (implies `--no-metadata`, `--color never`, and `--no-paging`)
-- `-p, --provider claude|pi|codex`: Restrict search to sessions from a specific provider
+- `-p, --provider claude|pi|codex|antigravitycli`: Restrict search to sessions from a specific provider
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE
 - `-ca, --cafter DATE`: Only conversations created after DATE
@@ -238,6 +238,7 @@ ch search --mafter=2024-12-01 "deploy" # Modified since Dec 1
 ch search --cafter=1w --mafter=1d "."  # Created last week, modified today
 ch search -p claude "bug fix"          # Search only Claude sessions
 ch search -p codex "TODO"              # Search only Codex sessions
+ch search -p antigravitycli "TODO"     # Search only Antigravity CLI sessions
 ```
 
 **Search Features:**
@@ -248,7 +249,7 @@ ch search -p codex "TODO"              # Search only Codex sessions
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)
 - Plain-literal queries get a cheap candidate prefilter before the normal rendered-content confirmation pass
-- Results displayed newest first across Claude, PI, and Codex sessions
+- Results displayed newest first across Claude, PI, Codex, and Antigravity sessions
 - Extracts working directory from conversation files
 - `search --raw` mirrors parse raw output: a single visible message prints as content only; otherwise each session is labeled with a setext `Session <id>` heading and sessions are separated by one `---`
 - Full markdown rendering with syntax highlighting
@@ -448,6 +449,14 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Only the latest such entry is acknowledged for resolution, search, and metadata
    - Searchable in search mode and emitted as `custom_title:` in metadata frontmatter
 
+7. **Antigravity CLI transcript entries**
+   - Stored under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`
+   - `transcript_full.jsonl` is preferred when present; `transcript.jsonl` is used only when the full variant is missing
+   - Session identity comes from the `{session_id}` brain directory, not from in-record fields
+   - `USER_INPUT.content` renders only the `<USER_REQUEST>...</USER_REQUEST>` body by default, hiding Antigravity metadata wrappers
+   - `PLANNER_RESPONSE.content` renders as assistant text; `thinking` and `tool_calls` are opt-in through the standard `--thinking` and `--tools` flags
+   - Tool result records such as `RUN_COMMAND`, `VIEW_FILE`, and `CODE_ACTION` are paired positionally with preceding Antigravity tool calls
+
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)
 - Dispatched via `Task` tool with `subagent_type` (e.g., "Explore", "codebase-analyzer:single-subsystem")
@@ -478,7 +487,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 - `render_messages_with_rich()` - Rich markdown rendering
 - `print_metadata()` - Unified metadata output to stderr
 - `parse_slice_notation()` - Convert slice strings to indices
-- `find_all_supported_session_files()` - Find all supported Claude, PI, and Codex session files
+- `find_all_supported_session_files()` - Find all supported Claude, PI, Codex, and Antigravity session files
 - `sort_by_modified()` / `sort_by_modified_descending()` - Shared modified-time ordering helpers for recency-aware flows
 - `extract_cwd_from_jsonl()` / `extract_cwd_from_entries()` - Extract working directory from JSONL
 - `cmd_search()` - Search with rich display

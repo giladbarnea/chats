@@ -390,7 +390,7 @@ def main():
             dir_help="Restrict search to conversations in this directory",
             mafter_help="Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)",
             cafter_help="Only conversations created after DATE",
-            provider_help="Restrict search to sessions from a specific provider (claude, pi, codex)",
+            provider_help="Restrict search to sessions from a specific provider",
         )
         parser.add_argument(
             "-T",
