@@ -508,5 +508,11 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 
 ---
 
+## Development
+
+**scripts/dev/jsonl_scout.py:** Generic JSONL bloat analyzer — recursively traverses any JSONL with zero shape assumptions, reports string path heat, array cardinality hotspots, per-line outlier attribution, dedup candidates, and ranked surgical cut recommendations.
+
+---
+
 **Random Ideas:**
 - This file contains `/plan` mode and interactive user ask tool: `projects/-Users-giladbarnea--claude/c5c0741a-f696-47c2-8337-d1a20de84c7a.jsonl`. Can be interesting to display.
