@@ -1,0 +1,39 @@
+earendil-works-pi-packages-coding-agent:
+  logo-auto.svg: Minimal logo mark of the pi coding agent.
+  exy.png: Illustrative drawing of the Exy mascot pufferfish.
+  interactive-mode.png: Interactive terminal UI of the pi coding agent.
+  tree-view.png: Session tree navigation view in the terminal.
+  doom-extension.png: Doom game running as an extension in the terminal.
+garrytan-gstack:
+  github-2026.png: Garry Tan's GitHub contribution graph for 2026.
+  github-2013.png: Garry Tan's GitHub contribution graph for 2013.
+github-spec-kit:
+  spec-kit-video-header.jpg: YouTube video overview thumbnail for Spec Kit.
+  specify_cli.gif: Demonstration of the Specify CLI bootstrapping a project.
+  bootstrap-claude-code.gif: Demonstration of bootstrapping the Claude Code environment.
+  logo_large.webp: Large Spec Kit logo featuring a green seedling sprout.
+junegunn-fzf:
+  fzf-color.png: Official fzf logo in color.
+  fzf-mugs.jpg: Promotional merchandise coffee mugs with the fzf logo.
+  fzf-preview.png: Demonstration of fzf interactive mode with a file preview panel.
+  fzf-style-default.png: Screenshot of fzf running in its default display style.
+  fzf-style-full.png: Screenshot of fzf running in its full bordered display style.
+  fzf-style-minimal.png: Screenshot of fzf running in its minimal borderless display style.
+  fzf-4-borders.png: Demonstration of an advanced fzf layout with four bordered areas.
+sharkdp-bat:
+  logo-header.svg: Official logo header for bat showing a stylized geometric bat icon.
+sharkdp-fd:
+  screencast.svg: Animated SVG screencast demonstrating fd command-line usage.
+thedotmack-claude-mem:
+  claude-mem-logo-for-light-mode.webp: Claude-Mem logo for light mode with an orange sun icon.
+  cm-preview.gif: Preview demonstration of the Claude-Mem compression system in action.
+  image: GitHub star history chart showing the growth of stars over time.
+tobi-qmd:
+  qmd-architecture.png: System architecture diagram of QMD's search and reranking pipeline.
+ultraworkers-claw-code:
+  svg: GitHub star history chart showing the project's growth in an xkcd style.
+  claw-hero.jpeg: Pixel art illustration of the muscular red mascot with glowing eyes.
+zeroclaw-labs-zeroclaw:
+  zeroclaw-banner.png: Animated banner showing a smiling blue lobster mascot with lightning bolts and the text "ZEROCLAW".
+  svg: xkcd-style GitHub star history chart showing the growth of stars over time.
+  image: Contributor avatar graph showcasing the user avatars of the project contributors.
