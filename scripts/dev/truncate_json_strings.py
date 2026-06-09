@@ -6,6 +6,7 @@ Reads JSON from a file or stdin and recursively processes it to middle-truncate
 any string values longer than 200 characters with "..." placeholder.
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -35,22 +36,23 @@ def truncate_string(text: str, max_length: int = 200) -> str:
     return f"{text[:start_len]}...{text[-end_len:]}"
 
 
-def process_value(value: Any) -> Any:
+def process_value(value: Any, max_length: int = 200) -> Any:
     """
     Recursively process a JSON value, truncating strings as needed.
 
     Args:
         value: Any JSON-compatible value (dict, list, str, int, float, bool, None)
+        max_length: Maximum string length before truncation
 
     Returns:
         Processed value with truncated strings
     """
     if isinstance(value, dict):
-        return {key: process_value(val) for key, val in value.items()}
+        return {key: process_value(val, max_length) for key, val in value.items()}
     elif isinstance(value, list):
-        return [process_value(item) for item in value]
+        return [process_value(item, max_length) for item in value]
     elif isinstance(value, str):
-        return truncate_string(value)
+        return truncate_string(value, max_length)
     else:
         # int, float, bool, None - return as-is
         return value
@@ -58,35 +60,28 @@ def process_value(value: Any) -> Any:
 
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description="Truncate long string values in a JSON file or from stdin."
+    )
+    parser.add_argument("file", nargs="?", type=Path, help="JSON file to process (reads stdin if omitted)")
+    parser.add_argument("-m", "--max-length", type=int, default=200, metavar="INT", help="Maximum string length before truncation (default: 200)")
+    args = parser.parse_args()
+
     try:
-        # Determine input source: file or stdin
-        if len(sys.argv) > 1:
-            # Read from file
-            file_path = Path(sys.argv[1])
-
-            if not file_path.exists():
-                print(f"Error: File not found: {file_path}", file=sys.stderr)
+        if args.file is not None:
+            if not args.file.exists():
+                print(f"Error: File not found: {args.file}", file=sys.stderr)
                 sys.exit(1)
-
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(args.file, "r", encoding="utf-8") as f:
                 data = json.load(f)
         else:
-            # Read from stdin
             if sys.stdin.isatty():
-                print(
-                    "Usage: truncate_json_strings.py [<json-file-path>]",
-                    file=sys.stderr,
-                )
-                print(
-                    "  Reads from file if provided, or from stdin if not",
-                    file=sys.stderr,
-                )
+                parser.print_help(sys.stderr)
                 sys.exit(1)
-
             data = json.load(sys.stdin)
 
         # Process the data recursively
-        processed_data = process_value(data)
+        processed_data = process_value(data, args.max_length)
 
         # Output to stdout
         json.dump(processed_data, sys.stdout, indent=2, ensure_ascii=False)
