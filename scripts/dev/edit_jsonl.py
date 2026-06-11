@@ -12,6 +12,16 @@ invalid, the source file is left unchanged.
 
 Usage:
   edit_jsonl.py <jsonl_file> <0-index> <dotpath> <new_value>
+  edit_jsonl.py <jsonl_file> del <0-index>
+
+Delete mode:
+  Delete removes the whole JSONL line at the selected 0-index. It does not parse
+  that line first, so it can also remove malformed records.
+
+    edit_jsonl.py session.jsonl del 11
+
+  A bare command like edit_jsonl.py del 11 is intentionally not supported: the
+  script will not guess which JSONL file to mutate.
 
 Mental model:
   The current value at <dotpath> decides what <new_value> must be.
@@ -73,8 +83,9 @@ Shell quoting rule:
   inside the argument are preserved literally.
 
 Output shape:
-  The edited JSONL line is rewritten as compact JSON. Other lines are copied as
-  they were.
+  In set mode, the edited JSONL line is rewritten as compact JSON. Other lines
+  are copied as they were. In delete mode, the selected line is omitted and all
+  other lines are copied as they were.
 """
 import argparse
 import json
@@ -389,12 +400,7 @@ def compact_json(record: object) -> str:
     return json.dumps(record, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
-def edit_jsonl_file(
-    source_path: pathlib.Path,
-    target_index: int,
-    dotpath: str,
-    raw_value: str,
-) -> tuple[object, object, str | None]:
+def validate_edit_target(source_path: pathlib.Path, target_index: int) -> None:
     if target_index < 0:
         raise JsonlEditError(f"line index must be non-negative, got {target_index}")
 
@@ -403,6 +409,15 @@ def edit_jsonl_file(
 
     if not source_path.is_file():
         raise JsonlEditError(f"not a file: {source_path}")
+
+
+def edit_jsonl_file(
+    source_path: pathlib.Path,
+    target_index: int,
+    dotpath: str,
+    raw_value: str,
+) -> tuple[object, object, str | None]:
+    validate_edit_target(source_path, target_index)
 
     old_value: object = None
     new_value: object = None
@@ -455,6 +470,56 @@ def edit_jsonl_file(
             temporary_path.unlink()
 
 
+def delete_jsonl_line(source_path: pathlib.Path, target_index: int) -> str:
+    """Delete one physical JSONL line by 0-index and return the deleted line content.
+
+    >>> import tempfile
+    >>> with tempfile.NamedTemporaryFile('w+', encoding='utf-8') as file:
+    ...     _ = file.write('{"a":1}\\n{"b":2}\\n')
+    ...     file.flush()
+    ...     deleted_line = delete_jsonl_line(pathlib.Path(file.name), 0)
+    ...     deleted_line, pathlib.Path(file.name).read_text()
+    ('{"a":1}', '{"b":2}\\n')
+    """
+    validate_edit_target(source_path, target_index)
+
+    deleted_line: str | None = None
+    temporary_path: pathlib.Path | None = None
+    source_mode = source_path.stat().st_mode & 0o777
+
+    try:
+        with source_path.open("r", encoding="utf-8", newline="") as source_file:
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                newline="",
+                dir=source_path.parent,
+                prefix=f".{source_path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary_file:
+                temporary_path = pathlib.Path(temporary_file.name)
+
+                for current_index, line in enumerate(source_file):
+                    if current_index == target_index:
+                        deleted_line, _line_ending = split_line_ending(line)
+                        continue
+
+                    temporary_file.write(line)
+
+        if deleted_line is None:
+            raise JsonlEditError(f"line index {target_index} does not exist")
+
+        temporary_path.chmod(source_mode)
+        os.replace(temporary_path, source_path)
+        temporary_path = None
+        return deleted_line
+
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+
+
 class DocumentationArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> None:
         self.print_help(sys.stderr)
@@ -465,12 +530,44 @@ def parse_args() -> argparse.Namespace:
     parser = DocumentationArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        usage=(
+            "edit_jsonl.py <jsonl_file> <0-index> <dotpath> <new_value>\n"
+            "       edit_jsonl.py <jsonl_file> del <0-index>"
+        ),
     )
-    parser.add_argument("jsonl_file", help="Path to the JSONL file to edit in place")
-    parser.add_argument("index", type=int, help="0-indexed JSONL line to edit")
-    parser.add_argument("dotpath", help="Simple jq-like dotpath, e.g. .type or .message.content[0].text")
-    parser.add_argument("new_value", help="New value, cast to the target field's existing JSON type")
-    return parser.parse_args()
+    parser.add_argument("arguments", nargs="*", metavar="args")
+    parsed_args = parser.parse_args()
+    arguments: list[str] = parsed_args.arguments
+
+    if len(arguments) == 2 and arguments[0] == "del":
+        parser.error("delete mode needs a JSONL file: edit_jsonl.py <jsonl_file> del <0-index>")
+
+    if len(arguments) == 3 and arguments[1] == "del":
+        return argparse.Namespace(
+            command="delete",
+            jsonl_file=arguments[0],
+            index=parse_cli_index(arguments[2], parser),
+        )
+
+    if len(arguments) == 4 and arguments[1] != "del":
+        return argparse.Namespace(
+            command="set",
+            jsonl_file=arguments[0],
+            index=parse_cli_index(arguments[1], parser),
+            dotpath=arguments[2],
+            new_value=arguments[3],
+        )
+
+    parser.error("expected set mode '<jsonl_file> <0-index> <dotpath> <new_value>' or delete mode '<jsonl_file> del <0-index>'")
+
+
+def parse_cli_index(raw_index: str, parser: argparse.ArgumentParser) -> int:
+    try:
+        return int(raw_index)
+    except ValueError:
+        parser.error(f"line index must be an integer, got {raw_index!r}")
+
+    raise AssertionError("unreachable")
 
 
 def display_value(value: object, limit: int = 80) -> str:
@@ -486,6 +583,11 @@ def main() -> None:
     source_path = pathlib.Path(args.jsonl_file).expanduser()
 
     try:
+        if args.command == "delete":
+            deleted_line = delete_jsonl_line(source_path, args.index)
+            print(f"deleted {source_path}: index {args.index} {display_value(deleted_line)}")
+            return
+
         old_value, new_value, warning = edit_jsonl_file(source_path, args.index, args.dotpath, args.new_value)
     except JsonlEditError as error:
         print(f"error: {error}", file=sys.stderr)
