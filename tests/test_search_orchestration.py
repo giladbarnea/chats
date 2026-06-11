@@ -166,9 +166,7 @@ def test_cmd_search_scans_candidate_sessions_newest_first(
 
     def search_hit_for_file(
         conv_file: Path,
-        regex,
-        pattern_arg: str,
-        literal_candidate: str | None,
+        query,
         flags: ConversationFlags,
         pool_filter,
     ):
@@ -219,13 +217,13 @@ def test_cmd_search_skips_full_parse_for_files_outside_date_window(
     def tracked_search_conversation_content(
         conv_file: Path,
         content: str,
-        regex,
+        query,
         flags: ConversationFlags,
         pool_filter: PoolFilter,
     ):
         parsed_paths.append(conv_file)
         return real_search_conversation_content(
-            conv_file, content, regex, flags, pool_filter
+            conv_file, content, query, flags, pool_filter
         )
 
     monkeypatch.setattr(

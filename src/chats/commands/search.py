@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import re
+import functools
 import sys
+from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,6 +25,7 @@ from ..model import (
 )
 from ..ordering import sort_by_modified_descending
 from ..pool_filter import PoolFilter
+from ..search_query import SearchQuery, SearchQueryError, SearchTerm, parse_search_query
 from ..session_pool import SessionPool
 from ..session_scan import SessionScan
 from . import resolve
@@ -44,7 +46,6 @@ class SearchHit:
 
 
 _RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
-_REGEX_META_CHARACTERS = frozenset(".^$*+?{}[]\\|()")
 
 
 def _display_messages_for_hit(
@@ -128,18 +129,12 @@ def cmd_search(
 ) -> None:
     """Handle the search subcommand."""
     pool_filter = pool_filter or PoolFilter()
-    literal_candidate = None
 
     try:
-        regex = re.compile(pattern_arg, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-        if _is_plain_literal_search_pattern(pattern_arg):
-            literal_candidate = pattern_arg.casefold()
-    except re.error:
-        regex = re.compile(
-            re.escape(pattern_arg),
-            re.IGNORECASE | re.MULTILINE | re.DOTALL,
-        )
-        literal_candidate = pattern_arg.casefold()
+        query = parse_search_query(pattern_arg)
+    except SearchQueryError as error:
+        print_error(str(error))
+        sys.exit(2)
 
     pool = SessionPool.discover(include_sidechains=flags.show_agents)
     candidate_files = pool_filter.candidate_files(pool)
@@ -156,14 +151,7 @@ def cmd_search(
     hits: list[SearchHit] = []
     for conv_file in search_files:
         try:
-            hit = _search_hit_for_file(
-                conv_file,
-                regex,
-                pattern_arg,
-                literal_candidate,
-                flags,
-                pool_filter,
-            )
+            hit = _search_hit_for_file(conv_file, query, flags, pool_filter)
         except Exception as error:
             print_error(f"Error processing conversation file {conv_file}: {error}")
             continue
@@ -257,9 +245,7 @@ def _format_search_hits_to_raw(
 
 def _search_hit_for_file(
     conv_file: Path,
-    regex: re.Pattern,
-    pattern_arg: str,
-    literal_candidate: str | None,
+    query: SearchQuery,
     flags: ConversationFlags,
     pool_filter: PoolFilter,
 ) -> SearchHit | None:
@@ -274,10 +260,10 @@ def _search_hit_for_file(
         return None
 
     content = conv_file.read_text(encoding="utf-8")
-    if not _search_candidate_matches(content, pattern_arg, literal_candidate, flags):
+    if not _search_candidate_matches(content, query, flags):
         return None
 
-    result = _search_conversation_content(conv_file, content, regex, flags, pool_filter)
+    result = _search_conversation_content(conv_file, content, query, flags, pool_filter)
     if result is None:
         return None
 
@@ -305,16 +291,27 @@ def _search_hit_for_file(
 
 def _search_candidate_matches(
     content: str,
-    pattern_arg: str,
-    literal_candidate: str | None,
+    query: SearchQuery,
     flags: ConversationFlags,
 ) -> bool:
     """Return True when raw content is a plausible superset match candidate."""
-    if any(token in pattern_arg for token in _RENDER_DEPENDENT_SEARCH_TOKENS):
+    content_casefolded = functools.cache(content.casefold)
+    return query.evaluate(
+        lambda term: _term_candidate_matches(content_casefolded, term, flags)
+    )
+
+
+def _term_candidate_matches(
+    content_casefolded: Callable[[], str],
+    term: SearchTerm,
+    flags: ConversationFlags,
+) -> bool:
+    """Return True when raw content could plausibly satisfy one search term."""
+    if any(token in term.pattern for token in _RENDER_DEPENDENT_SEARCH_TOKENS):
         return True
-    if literal_candidate is None:
+    if term.literal_candidate is None:
         return True
-    if literal_candidate in content.casefold():
+    if term.literal_candidate in content_casefolded():
         return True
 
     markers: list[str] = []
@@ -327,25 +324,25 @@ def _search_candidate_matches(
     if flags.show_plans:
         markers.append("ExitPlanMode")
 
-    return any(literal_candidate in marker.casefold() for marker in markers)
-
-
-def _is_plain_literal_search_pattern(pattern: str) -> bool:
-    """Return True when a search pattern contains no regex metacharacters."""
-    return not any(character in _REGEX_META_CHARACTERS for character in pattern)
+    return any(term.literal_candidate in marker.casefold() for marker in markers)
 
 
 def _search_conversation_content(
     conv_file: Path,
     content: str,
-    regex: re.Pattern,
+    query: SearchQuery,
     flags: ConversationFlags,
     pool_filter: PoolFilter,
 ) -> (
     tuple[list[Message], list[Message], str | None, list[str], list[str], str | None]
     | None
 ):
-    """Search already-read conversation content."""
+    """Search already-read conversation content.
+
+    The boolean query is evaluated session-wide: each term is satisfied by a
+    match anywhere in the session (summaries, current title, or any rendered
+    message), so `and` terms may match in different messages.
+    """
     scan = SessionScan.from_content(content, flags, source_path=conv_file)
     messages = list(scan.messages)
     cwd = scan.cwd
@@ -353,19 +350,41 @@ def _search_conversation_content(
     if not pool_filter.passes_cwd(cwd):
         return None
 
+    tool_id_map = _build_tool_id_map(messages)
+    rendered_messages = [
+        (message, render_message_inner_xml(message, flags, tool_id_map))
+        for message in messages
+    ]
+
+    def term_matches_session(term: SearchTerm) -> bool:
+        return (
+            any(term.regex.search(summary) for summary in scan.summaries)
+            or (
+                scan.custom_title is not None
+                and bool(term.regex.search(scan.custom_title))
+            )
+            or any(term.regex.search(rendered) for _, rendered in rendered_messages)
+        )
+
+    if not query.evaluate(term_matches_session):
+        return None
+
+    terms = list(query.iter_terms())
     matching_summaries = [
-        summary for summary in scan.summaries if regex.search(summary)
+        summary
+        for summary in scan.summaries
+        if any(term.regex.search(summary) for term in terms)
     ]
     matching_custom_titles = (
         [scan.custom_title]
-        if scan.custom_title is not None and regex.search(scan.custom_title)
+        if scan.custom_title is not None
+        and any(term.regex.search(scan.custom_title) for term in terms)
         else []
     )
-    tool_id_map = _build_tool_id_map(messages)
     matches = [
         message
-        for message in messages
-        if regex.search(render_message_inner_xml(message, flags, tool_id_map))
+        for message, rendered in rendered_messages
+        if any(term.regex.search(rendered) for term in terms)
     ]
 
     return (

@@ -11,6 +11,7 @@ last_updated: 2026-04-16, working tree after 3cd8c1b
 - `SessionPool` (`session_pool.py`): the per-invocation inventory of all supported session files. It owns the "one big pool" mental model for exact-id resolution and provider-aware search routing.
 - `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, the current latest custom title, and already-visible messages.
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
+- `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery` tree over terms. Owns tokenizing, `and`/`or` grammar, and per-term regex/literal compilation.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
 
 ## Architecture Diagram (Space)
@@ -174,9 +175,11 @@ TIME   ACTOR                    ACTION                                         T
 ├───►  main()                   Builds ConversationFlags + PoolFilter      ──► flags, pool_filter
 │      main()                   cmd_search(pattern, flags, pool_filter, ...) ──► commands/
 │
-├───►  cmd_search               re.compile(pattern, IGNORECASE|...)        ──► regex
-│                               Falls back to re.escape on invalid regex
-│                               May also derive literal_candidate
+├───►  cmd_search               parse_search_query(pattern)                ──► SearchQuery tree
+│                               Bare lowercase and/or tokens → boolean tree
+│                               (exit 2 on malformed boolean queries);
+│                               otherwise one term: re.compile + re.escape
+│                               fallback + optional literal_candidate
 │
 ├───►  cmd_search               SessionPool.discover(include_sidechains=   ──► pool
 │                               flags.show_agents)
@@ -497,10 +500,10 @@ Summary prefix ─────────────► │ extract_summaries_
 
 ```
          ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-  args───►│ COMPILE      │─────►│ BUILD        │─────►│ ITERATE      │
-         │ regex +      │      │ SessionPool  │      │ search_files │
-         │ literal hint │      │ + provider   │      └──────┬───────┘
-         └──────────────┘      │ routing      │             │
+  args───►│ PARSE        │─────►│ BUILD        │─────►│ ITERATE      │
+         │ SearchQuery  │      │ SessionPool  │      │ search_files │
+         │ (terms +     │      │ + provider   │      └──────┬───────┘
+         │ and/or tree) │      │ routing      │             │
                                └──────────────┘      ┌──────▼────────────┐
                                                      │ Per file:         │
                                                  no  │ candidate pass?   │──► SKIP
@@ -675,7 +678,7 @@ cli.py:main()
 cli.py
 ├── commands/
 │   ├── parse.py      → model, parsing, formatting, console, ordering, utils
-│   ├── search.py     → model, parsing, formatting, session_scan, console, ordering
+│   ├── search.py     → model, parsing, formatting, session_scan, search_query, console, ordering
 │   ├── rename.py     → model, parsing, formatting, console
 │   ├── resolve.py    → model, parsing, session_pool, ordering, utils
 │   ├── rm.py         → model, parsing, console, utils
@@ -683,6 +686,7 @@ cli.py
 ├── catalog/          → commands, console, model
 ├── formatting.py     → model, parsing, console, tools, utils
 ├── parsing.py        → model, utils
+├── search_query.py
 ├── session_pool.py   → model, parsing
 ├── session_scan.py   → model, parsing, ordering, pool_filter
 ├── forking.py        → model, parsing, utils
@@ -720,3 +724,4 @@ cli.py
 17. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
 18. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex/Antigravity sessions currently resolve to deleting the single JSONL file.
 19. **Antigravity Full Transcript Preference**: Antigravity session discovery treats `{session_id}/.system_generated/logs/transcript_full.jsonl` as canonical when present and falls back to `transcript.jsonl` only for sessions without the full variant. The brain directory name is the native session id.
+20. **Boolean Search Is Session-Scoped**: `parse_search_query` interprets bare lowercase `and`/`or` word tokens as a boolean query tree (with parens; `and` binds tighter). Each term is satisfied by a match anywhere in the session's facets (summaries, current title, rendered messages), so `and` terms may match in different messages; displayed matches are the union over all terms. Patterns without such tokens — including regex parens, uppercase `AND`, and unterminated quotes — keep verbatim single-regex semantics. Malformed boolean queries exit 2. The literal candidate prefilter evaluates the same tree over per-term raw-content plausibility.

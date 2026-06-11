@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-10] Add boolean `and`/`or` search operators
+
+### Added
+
+- `ch search` patterns now support lowercase `and`/`or` operators with parentheses, e.g. `'docker and timeout'`, `'deploy and (staging or prod)'`. `and` binds tighter than `or`.
+- Terms are evaluated session-wide: `and` terms may match in different messages, summaries, or the current title. Displayed matches are the union of messages matching any term.
+- Multi-word or regex-shaped terms must be quoted once an operator is present (`'"hello world" and foo'`); malformed boolean queries exit with code 2 and a quoting hint.
+- Patterns without a bare lowercase `and`/`or` token keep single-regex semantics, so `hello world`, `deploy-(prod|staging)`, and `black AND white` behave as before.
+- New `search_query` module owns tokenizing, parsing, and per-term regex/literal compilation; the candidate prefilter now evaluates the same boolean tree over per-term raw-content plausibility with a lazily casefolded haystack.
+
+---
 ## [2026-06-07] Add Antigravity CLI adapter
 
 ### Added

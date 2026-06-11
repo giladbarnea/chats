@@ -138,9 +138,6 @@ from .search import (
     SearchHit as SearchHit,
 )
 from .search import (
-    _is_plain_literal_search_pattern as _is_plain_literal_search_pattern,
-)
-from .search import (
     _search_candidate_matches as _search_candidate_matches,
 )
 from .search import (
