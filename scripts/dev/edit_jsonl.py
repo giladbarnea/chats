@@ -3,7 +3,7 @@
 # requires-python = "==3.12.*"
 # dependencies = []
 # ///
-"""Edit one existing scalar or list field in one JSONL record, without assuming any record schema."""
+"""Edit one existing scalar, list, or object field in one JSONL record, without assuming any record schema."""
 import argparse
 import json
 import math
@@ -12,6 +12,9 @@ import pathlib
 import re
 import sys
 import tempfile
+from typing import Literal
+
+ContainerType = Literal["list", "object"]
 
 
 class JsonlEditError(Exception):
@@ -105,7 +108,16 @@ def cast_value_to_existing_type(raw_value: str, existing_value: object) -> tuple
     (True, None)
     >>> cast_value_to_existing_type('[42, "hello"]', [])
     ([42, 'hello'], None)
+    >>> cast_value_to_existing_type('{"nested": [null]}', {})
+    ({'nested': [None]}, None)
     """
+    requested_container_type = parse_requested_container_type(raw_value)
+    existing_container_type = container_type(existing_value)
+    if requested_container_type is not None and requested_container_type != existing_container_type:
+        raise JsonlEditError(
+            f"cannot set {json_type_name(existing_value)} field from {requested_container_type} value {raw_value!r}"
+        )
+
     if type(existing_value) is str:
         return raw_value, quoted_string_warning(raw_value)
 
@@ -120,6 +132,9 @@ def cast_value_to_existing_type(raw_value: str, existing_value: object) -> tuple
 
     if type(existing_value) is list:
         return cast_list(raw_value), None
+
+    if type(existing_value) is dict:
+        return cast_object(raw_value), None
 
     if existing_value is None:
         return cast_null(raw_value), None
@@ -174,8 +189,56 @@ def cast_null(raw_value: str) -> None:
     raise JsonlEditError(f"cannot infer a non-null type from existing null; expected 'null', got {raw_value!r}")
 
 
+def json_type_name(value: object) -> str:
+    if type(value) is str:
+        return "string"
+
+    if type(value) is bool:
+        return "bool"
+
+    if type(value) is int:
+        return "int"
+
+    if type(value) is float:
+        return "float"
+
+    if type(value) is list:
+        return "list"
+
+    if type(value) is dict:
+        return "object"
+
+    if value is None:
+        return "null"
+
+    return type(value).__name__
+
+
+def container_type(value: object) -> ContainerType | None:
+    if type(value) is list:
+        return "list"
+
+    if type(value) is dict:
+        return "object"
+
+    return None
+
+
+def parse_requested_container_type(raw_value: str) -> ContainerType | None:
+    stripped_value = raw_value.strip()
+    if not stripped_value.startswith(("[", "{")):
+        return None
+
+    try:
+        value = json.loads(stripped_value, parse_constant=reject_json_constant)
+    except json.JSONDecodeError:
+        return None
+
+    return container_type(value)
+
+
 def reject_json_constant(constant: str) -> object:
-    raise JsonlEditError(f"invalid JSON constant in list value: {constant}")
+    raise JsonlEditError(f"invalid JSON constant in JSON value: {constant}")
 
 
 def cast_list(raw_value: str) -> list[object]:
@@ -186,6 +249,18 @@ def cast_list(raw_value: str) -> list[object]:
 
     if type(value) is not list:
         raise JsonlEditError(f"cannot set list field from {raw_value!r}; expected a JSON array")
+
+    return value
+
+
+def cast_object(raw_value: str) -> dict[str, object]:
+    try:
+        value = json.loads(raw_value, parse_constant=reject_json_constant)
+    except json.JSONDecodeError as error:
+        raise JsonlEditError(f"cannot set object field from {raw_value!r}; expected a JSON object") from error
+
+    if type(value) is not dict:
+        raise JsonlEditError(f"cannot set object field from {raw_value!r}; expected a JSON object")
 
     return value
 
@@ -225,7 +300,7 @@ def set_child(container: object, token: str | int, value: object, dotpath: str) 
 
 
 def replace_value(record: object, dotpath: str, raw_value: str) -> tuple[object, object, str | None]:
-    """Replace one existing scalar or list field in a parsed JSON record.
+    """Replace one existing scalar, list, or object field in a parsed JSON record.
 
     >>> record = {'attachment': {'exitCode': 0}}
     >>> replace_value(record, '.attachment.exitCode', '1')[:2]
@@ -235,6 +310,9 @@ def replace_value(record: object, dotpath: str, raw_value: str) -> tuple[object,
     >>> record = {'message': {'content': [{'type': 'tool_use'}]}}
     >>> replace_value(record, '.message.content', '[42, "hello world"]')[:2]
     ([{'type': 'tool_use'}], [42, 'hello world'])
+    >>> record = {'message': {'content': [{'old': True}]}}
+    >>> replace_value(record, '.message.content[0]', '{"whatever": ["i", "want"]}')[:2]
+    ({'old': True}, {'whatever': ['i', 'want']})
     """
     tokens = parse_dotpath(dotpath)
     parent = record
@@ -244,9 +322,9 @@ def replace_value(record: object, dotpath: str, raw_value: str) -> tuple[object,
 
     final_token = tokens[-1]
     existing_value = get_child(parent, final_token, dotpath)
-    if not is_scalar(existing_value) and type(existing_value) is not list:
+    if not is_scalar(existing_value) and type(existing_value) not in {list, dict}:
         raise JsonlEditError(
-            f"target value at {dotpath!r} is {type(existing_value).__name__}, not a scalar or list"
+            f"target value at {dotpath!r} is {type(existing_value).__name__}, not a scalar, list, or object"
         )
 
     new_value, warning = cast_value_to_existing_type(raw_value, existing_value)
@@ -331,7 +409,7 @@ def edit_jsonl_file(source_path: pathlib.Path, target_index: int, dotpath: str, 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Edit one existing scalar or list field in one 0-indexed JSONL record, preserving the field's JSON type."
+        description="Edit one existing scalar, list, or object field in one 0-indexed JSONL record, preserving the field's JSON type."
     )
     parser.add_argument("jsonl_file", help="Path to the JSONL file to edit in place")
     parser.add_argument("index", type=int, help="0-indexed JSONL line to edit")
