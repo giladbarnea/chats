@@ -3,7 +3,7 @@
 # requires-python = "==3.12.*"
 # dependencies = []
 # ///
-"""Edit one scalar field in one JSONL record, without assuming any record schema."""
+"""Edit one existing scalar or list field in one JSONL record, without assuming any record schema."""
 import argparse
 import json
 import math
@@ -97,12 +97,14 @@ def is_scalar(value: object) -> bool:
 
 
 def cast_value_to_existing_type(raw_value: str, existing_value: object) -> tuple[object, str | None]:
-    """Cast a CLI string into the exact JSON scalar type already present at the target.
+    """Cast a CLI string into the JSON type already present at the target.
 
     >>> cast_value_to_existing_type('42', 0)
     (42, None)
     >>> cast_value_to_existing_type('true', False)
     (True, None)
+    >>> cast_value_to_existing_type('[42, "hello"]', [])
+    ([42, 'hello'], None)
     """
     if type(existing_value) is str:
         return raw_value, quoted_string_warning(raw_value)
@@ -116,10 +118,13 @@ def cast_value_to_existing_type(raw_value: str, existing_value: object) -> tuple
     if type(existing_value) is float:
         return cast_float(raw_value), None
 
+    if type(existing_value) is list:
+        return cast_list(raw_value), None
+
     if existing_value is None:
         return cast_null(raw_value), None
 
-    raise JsonlEditError(f"target value is not a scalar: {type(existing_value).__name__}")
+    raise JsonlEditError(f"target value is not a supported editable type: {type(existing_value).__name__}")
 
 
 def quoted_string_warning(raw_value: str) -> str | None:
@@ -169,6 +174,22 @@ def cast_null(raw_value: str) -> None:
     raise JsonlEditError(f"cannot infer a non-null type from existing null; expected 'null', got {raw_value!r}")
 
 
+def reject_json_constant(constant: str) -> object:
+    raise JsonlEditError(f"invalid JSON constant in list value: {constant}")
+
+
+def cast_list(raw_value: str) -> list[object]:
+    try:
+        value = json.loads(raw_value, parse_constant=reject_json_constant)
+    except json.JSONDecodeError as error:
+        raise JsonlEditError(f"cannot set list field from {raw_value!r}; expected a JSON array") from error
+
+    if type(value) is not list:
+        raise JsonlEditError(f"cannot set list field from {raw_value!r}; expected a JSON array")
+
+    return value
+
+
 def get_child(container: object, token: str | int, dotpath: str) -> object:
     if type(container) is dict and type(token) is str:
         if token not in container:
@@ -204,13 +225,16 @@ def set_child(container: object, token: str | int, value: object, dotpath: str) 
 
 
 def replace_value(record: object, dotpath: str, raw_value: str) -> tuple[object, object, str | None]:
-    """Replace one existing scalar field in a parsed JSON record.
+    """Replace one existing scalar or list field in a parsed JSON record.
 
     >>> record = {'attachment': {'exitCode': 0}}
     >>> replace_value(record, '.attachment.exitCode', '1')[:2]
     (0, 1)
     >>> record
     {'attachment': {'exitCode': 1}}
+    >>> record = {'message': {'content': [{'type': 'tool_use'}]}}
+    >>> replace_value(record, '.message.content', '[42, "hello world"]')[:2]
+    ([{'type': 'tool_use'}], [42, 'hello world'])
     """
     tokens = parse_dotpath(dotpath)
     parent = record
@@ -220,8 +244,10 @@ def replace_value(record: object, dotpath: str, raw_value: str) -> tuple[object,
 
     final_token = tokens[-1]
     existing_value = get_child(parent, final_token, dotpath)
-    if not is_scalar(existing_value):
-        raise JsonlEditError(f"target value at {dotpath!r} is {type(existing_value).__name__}, not a scalar")
+    if not is_scalar(existing_value) and type(existing_value) is not list:
+        raise JsonlEditError(
+            f"target value at {dotpath!r} is {type(existing_value).__name__}, not a scalar or list"
+        )
 
     new_value, warning = cast_value_to_existing_type(raw_value, existing_value)
     set_child(parent, final_token, new_value, dotpath)
@@ -305,12 +331,12 @@ def edit_jsonl_file(source_path: pathlib.Path, target_index: int, dotpath: str, 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Edit one existing scalar field in one 0-indexed JSONL record, preserving the field's JSON type."
+        description="Edit one existing scalar or list field in one 0-indexed JSONL record, preserving the field's JSON type."
     )
     parser.add_argument("jsonl_file", help="Path to the JSONL file to edit in place")
     parser.add_argument("index", type=int, help="0-indexed JSONL line to edit")
     parser.add_argument("dotpath", help="Simple jq-like dotpath, e.g. .type or .message.content[0].text")
-    parser.add_argument("new_value", help="New scalar value, cast to the target field's existing JSON type")
+    parser.add_argument("new_value", help="New value, cast to the target field's existing JSON type")
     return parser.parse_args()
 
 
