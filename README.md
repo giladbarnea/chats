@@ -371,7 +371,7 @@ This mutates the conversation file by appending the provider-native session-titl
 All three native shapes surface back through the same shared current-title abstraction for resolution, search, and metadata. Only the latest title is acknowledged; older historical titles are ignored.
 
 **Options:**
-- `--auto`: Ask `pi` to generate the new title from the visible transcript.
+- `--auto`: Ask `pi` to generate the new title from the visible transcript. The generated title is prefixed with the `MM-DD` date of the session's first message (e.g. `06-11 chats fix flaky tests`).
 - `-n, --dry-run`: Print the resolved or generated title to stdout without modifying the session file.
 
 Dry-run still performs `--auto` generation work; it just stops before writing JSONL/history side effects and prints only the resulting title.

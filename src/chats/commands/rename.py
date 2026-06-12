@@ -13,6 +13,7 @@ from ..parsing import (
     decode_jsonl_entries,
     detect_format,
     extract_cwd_from_jsonl,
+    get_jsonl_first_timestamp,
     get_jsonl_session_adapter,
     get_native_session_id,
     parse_jsonl,
@@ -24,9 +25,8 @@ from .common import _build_tool_id_map
 
 _AUTO_NAME_MAX_LENGTH = 150
 _AUTO_NAME_PROMPT = (
-    "Name this session. The format is <session's working directory's name> "
-    "[verb] <One phrase expressing the purpose of the session in its entirety — "
-    "the end state the user wants to achieve>.\n"
+    "Name this session. The format is [verb] <One phrase expressing the purpose "
+    "of the session in its entirety — the end state the user wants to achieve>.\n"
     "Clarification about `[verb]`: a single lowercase word pinning down the "
     "type of the session’s task."
 )
@@ -43,7 +43,7 @@ def _clean_line(line: str) -> str:
     return line[:_AUTO_NAME_MAX_LENGTH].strip()
 
 
-def _parse_auto_session_name(output_text: str, cwd_name: str) -> str:
+def _parse_auto_session_name(output_text: str) -> str:
     """Parse LLM output into a session name."""
     output_lines = [
         cleaned
@@ -61,11 +61,6 @@ def _parse_auto_session_name(output_text: str, cwd_name: str) -> str:
     else:
         raise ValueError(
             f"could not pick a session name from model output:\n{output_text}"
-        )
-
-    if picked.lower() == cwd_name.lower():
-        raise ValueError(
-            f"refusing useless session name (same as cwd):\n{output_text}"
         )
 
     return picked
@@ -96,8 +91,7 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
     prompt = (
         f"<transcript-of-session-to-name>\n{transcript}\n</transcript-of-session-to-name>"
         "\n\n===\n\n"
-        f"<task>\n{_AUTO_NAME_PROMPT}\n\n"
-        f"The session working directory name is: {cwd_name}\n</task>"
+        f"<task>\n{_AUTO_NAME_PROMPT}\n</task>"
     )
 
     try:
@@ -128,7 +122,11 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
             "'pi' command not found. Ensure it is installed and in PATH."
         ) from error
 
-    return _parse_auto_session_name(result.stdout, cwd_name)
+    generated_name = _parse_auto_session_name(result.stdout)
+    first_timestamp = get_jsonl_first_timestamp(conv_file)
+    if first_timestamp is None:
+        raise ValueError(f"could not determine first timestamp of {conv_file}")
+    return f"{first_timestamp:%m-%d} {cwd_name} {generated_name}"
 
 
 def cmd_rename(

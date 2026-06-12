@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-11] Prefix auto-generated rename titles with session date and cwd
+
+### Changed
+
+- `ch rename --auto` titles are now assembled programmatically as `MM-DD <cwd name> <generated phrase>` (date from the first message's in-band timestamp, falling back to file birth time), e.g. `06-11 chats fix flaky tests`. The LLM prompt only generates the phrase and is oblivious to both date and cwd. Explicit renames are unaffected; `--dry-run` prints the full title.
+
+---
 ## [2026-06-10] Add boolean `and`/`or` search operators
 
 ### Added

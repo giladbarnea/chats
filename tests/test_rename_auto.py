@@ -30,6 +30,11 @@ from chats.commands import (
     _generate_auto_name,
     _parse_auto_session_name,
 )
+from chats.parsing import get_jsonl_first_timestamp
+
+
+def expected_date_prefix(session_file: Path) -> str:
+    return f"{get_jsonl_first_timestamp(session_file):%m-%d}"
 
 # =============================================================================
 # Fixtures (reuse rename_fixtures data)
@@ -112,51 +117,43 @@ class TestCleanLine:
 
 class TestParseAutoSessionName:
     def test_single_line_returns_name(self):
-        result = _parse_auto_session_name("conversations implement auto-rename feature", "conversations")
-        assert result == "conversations implement auto-rename feature"
+        result = _parse_auto_session_name("implement auto-rename feature")
+        assert result == "implement auto-rename feature"
 
     def test_two_lines_first_ends_with_colon_returns_second(self):
-        output = "Session name:\nconversations implement auto-rename feature"
-        result = _parse_auto_session_name(output, "conversations")
-        assert result == "conversations implement auto-rename feature"
+        output = "Session name:\nimplement auto-rename feature"
+        result = _parse_auto_session_name(output)
+        assert result == "implement auto-rename feature"
 
     def test_empty_output_raises(self):
         with pytest.raises(ValueError, match="empty"):
-            _parse_auto_session_name("", "conversations")
+            _parse_auto_session_name("")
 
     def test_whitespace_only_output_raises(self):
         with pytest.raises(ValueError, match="empty"):
-            _parse_auto_session_name("   \n\n  ", "conversations")
+            _parse_auto_session_name("   \n\n  ")
 
     def test_multiline_no_colon_pattern_raises(self):
         output = "line one\nline two\nline three"
         with pytest.raises(ValueError, match="could not pick"):
-            _parse_auto_session_name(output, "conversations")
+            _parse_auto_session_name(output)
 
     def test_two_lines_neither_ends_with_colon_raises(self):
         output = "line one\nline two"
         with pytest.raises(ValueError, match="could not pick"):
-            _parse_auto_session_name(output, "conversations")
-
-    def test_name_same_as_cwd_raises(self):
-        with pytest.raises(ValueError, match="useless"):
-            _parse_auto_session_name("conversations", "conversations")
-
-    def test_name_same_as_cwd_case_insensitive_raises(self):
-        with pytest.raises(ValueError, match="useless"):
-            _parse_auto_session_name("CONVERSATIONS", "conversations")
+            _parse_auto_session_name(output)
 
     def test_strips_quotes_from_output(self):
-        result = _parse_auto_session_name('"conversations fix bug"', "conversations")
-        assert result == "conversations fix bug"
+        result = _parse_auto_session_name('"fix bug"')
+        assert result == "fix bug"
 
     def test_strips_backticks_from_output(self):
-        result = _parse_auto_session_name("`conversations fix bug`", "conversations")
-        assert result == "conversations fix bug"
+        result = _parse_auto_session_name("`fix bug`")
+        assert result == "fix bug"
 
     def test_trailing_blank_lines_ignored(self):
-        result = _parse_auto_session_name("conversations fix bug\n\n\n", "conversations")
-        assert result == "conversations fix bug"
+        result = _parse_auto_session_name("fix bug\n\n\n")
+        assert result == "fix bug"
 
 
 # =============================================================================
@@ -167,10 +164,10 @@ class TestParseAutoSessionName:
 class TestGenerateAutoName:
     def test_returns_parsed_name_on_success(self, session_file):
         mock_result = MagicMock()
-        mock_result.stdout = "conversations implement auto-rename\n"
+        mock_result.stdout = "implement auto-rename\n"
         with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
             name = _generate_auto_name(session_file, session_file.read_text())
-        assert name == "conversations implement auto-rename"
+        assert name == f"{expected_date_prefix(session_file)} project implement auto-rename"
 
     def test_raises_on_pi_not_found(self, session_file):
         with patch(
@@ -197,7 +194,7 @@ class TestGenerateAutoName:
 
     def test_calls_pi_with_print_flag(self, session_file):
         mock_result = MagicMock()
-        mock_result.stdout = "conversations fix thing\n"
+        mock_result.stdout = "fix thing\n"
         with patch("chats.commands.rename.subprocess.run", return_value=mock_result) as mock_run:
             _generate_auto_name(session_file, session_file.read_text())
         args = mock_run.call_args[0][0]
@@ -206,7 +203,7 @@ class TestGenerateAutoName:
 
     def test_uses_capture_output(self, session_file):
         mock_result = MagicMock()
-        mock_result.stdout = "conversations fix thing\n"
+        mock_result.stdout = "fix thing\n"
         with patch("chats.commands.rename.subprocess.run", return_value=mock_result) as mock_run:
             _generate_auto_name(session_file, session_file.read_text())
         kwargs = mock_run.call_args[1]
@@ -220,14 +217,15 @@ class TestGenerateAutoName:
 
 class TestCmdRenameAuto:
     def test_auto_renames_session(self, session_file):
+        date_prefix = expected_date_prefix(session_file)
         mock_result = MagicMock()
-        mock_result.stdout = "conversations implement auto-rename\n"
+        mock_result.stdout = "implement auto-rename\n"
         with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
             cmd_rename(str(session_file), None, auto=True)
 
         last = get_last_line_json(session_file, -2)
         assert last["type"] == "agent-name"
-        assert last["agentName"] == "conversations implement auto-rename"
+        assert last["agentName"] == f"{date_prefix} project implement auto-rename"
 
     def test_auto_dry_run_prints_generated_name_without_mutating_session(
         self,
@@ -237,12 +235,12 @@ class TestCmdRenameAuto:
     ):
         original_content = session_file.read_text()
         mock_result = MagicMock()
-        mock_result.stdout = "conversations preview rename\n"
+        mock_result.stdout = "preview rename\n"
 
         with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
             cmd_rename(str(session_file), None, auto=True, dry_run=True)
 
-        assert capsys.readouterr().out == "conversations preview rename\n", (
+        assert capsys.readouterr().out == f"{expected_date_prefix(session_file)} project preview rename\n", (
             "Expected rename --auto --dry-run to print only the generated name to stdout."
         )
         assert session_file.read_text() == original_content, (
