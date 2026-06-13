@@ -64,6 +64,11 @@ TOOL_SCHEMAS: dict[str, ToolSchema] = {
     "WebFetch": ToolSchema(["url"], "prompt", None),
     "WebSearch": ToolSchema(["query"], None, None),
     "Patch": ToolSchema([], "input", "diff"),
+    "TaskNotification": ToolSchema(
+        ["tool_use_id", "status", "summary"],
+        "result",
+        None,
+    ),
 }
 
 

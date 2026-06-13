@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-12] Classify Claude background-task notifications as the TaskNotification tool
+
+### Changed
+
+- Claude `type: "user"` entries carrying a `<task-notification>...</task-notification>` payload (emitted when a background `Agent` task finishes) no longer render as regular user messages. They now parse into a synthetic `tool_use` named `TaskNotification`: hidden by default, shown with `-t`, and filterable by name like any tool (`-t TaskNotification`, `-t !TaskNotification`).
+- Three fields become `<tool-input>` XML attributes — the shortened `tool_use_id` (which links back to the originating `Agent` dispatch), `status`, and `summary` — and the `result` markdown becomes the tool body. Double quotes embedded in attribute values are downgraded to single quotes rather than escaped. JSON output exposes the same fields on a typed `tool-input` block.
+
+---
 ## [2026-06-11] Prefix auto-generated rename titles with session date and cwd
 
 ### Changed

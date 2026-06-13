@@ -542,6 +542,45 @@ def _extract_text_blocks(content_data: object) -> list[str]:
     return text_blocks
 
 
+_TASK_NOTIFICATION_PATTERN = re.compile(
+    r"\s*<task-notification>(?P<body>.*)</task-notification>\s*",
+    re.DOTALL,
+)
+# Synthetic TaskNotification tool input keys mapped to their payload tags.
+# `result` is the tool body; the rest become <tool-input> attributes.
+_TASK_NOTIFICATION_FIELD_TAGS: dict[str, str] = {
+    "tool_use_id": "tool-use-id",
+    "status": "status",
+    "summary": "summary",
+    "result": "result",
+}
+
+
+def _parse_task_notification_tool(content: str) -> dict | None:
+    """Convert a Claude background-task notification payload into a synthetic
+    TaskNotification tool_use, so it classifies (and filters) as a tool."""
+    match = _TASK_NOTIFICATION_PATTERN.fullmatch(content)
+    if match is None:
+        return None
+
+    body = match.group("body")
+    input_data: dict[str, str] = {}
+    for input_key, tag in _TASK_NOTIFICATION_FIELD_TAGS.items():
+        if field_match := re.search(rf"<{tag}>(.*?)</{tag}>", body, re.DOTALL):
+            value = field_match.group(1).strip()
+            # Attribute values render unescaped, so neutralize embedded double
+            # quotes by downgrading them to single quotes. The result body is
+            # markdown, not an attribute, so it keeps its quotes verbatim.
+            if input_key != "result":
+                value = value.replace('"', "'")
+            input_data[input_key] = value
+
+    if "tool_use_id" in input_data:
+        input_data["tool_use_id"] = shorten_tool_use_id(input_data["tool_use_id"])
+
+    return {"type": "tool_use", "name": "TaskNotification", "input": input_data}
+
+
 _COMMAND_TAG_LINE_PATTERN = re.compile(
     r"(?P<indent>[ \t]*)<(?P<tag>command-[a-z0-9-]+)>(?P<value>.*?)</(?P=tag)>[ \t]*",
     re.DOTALL,
@@ -1482,6 +1521,13 @@ def _parse_user_entry(
         is_meta=entry.get("isMeta") is True,
         source_tool_user_id=shorten_tool_use_id(source_tool_use_id),
     )
+
+    if isinstance(content_data, str) and (
+        task_notification := _parse_task_notification_tool(content_data)
+    ):
+        if flags.show_tools:
+            msg.tools.append(task_notification)
+        return msg
 
     show_user_text = flags.show_user_messages and (not msg.is_meta or flags.show_tools)
 

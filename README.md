@@ -425,6 +425,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - `message.content`: string or array (can include tool results)
    - User-side local command protocol payloads stay hidden by default across adapters, including Claude `<command-*>...</command-*>` inputs and `<local-command-stdout>...</local-command-stdout>` outputs
    - Claude `isMeta=true` user messages also stay hidden by default and become visible only with `-t, --tools`
+   - Claude background-task notifications (string content wrapped in `<task-notification>...</task-notification>`, emitted when a background `Agent` task finishes) classify as a synthetic `TaskNotification` tool: hidden by default, shown with `-t`, name-filterable (`-t TaskNotification`). The `tool_use_id` (linking back to the originating `Agent` dispatch), `status`, and `summary` render as `<tool-input>` attributes and the task result as the body; double quotes in attribute values are downgraded to single quotes
    - Common fields: `cwd`, `sessionId`, `version`, `gitBranch`, `uuid`, `parentUuid`, `timestamp`
 
 2. **Assistant messages** (`type: "assistant"`)
@@ -479,6 +480,10 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 - Include `agentId` field and `isSidechain: true` at entry level
 - Agent messages render as `<agent agent_id="..." subagent_type="...">`
 - Tool results from agents include `agentId: xxx (for resuming...)` in content
+
+**Why `TaskNotification` is an unpaired tool:**
+
+Every other tool comes as an input/output pair. A `TaskNotification` is the exception: it's a standalone message Claude injects when a *background* `Agent` task finishes, long after the dispatch. It has no output of its own — instead its `tool_use_id` points back at the original `Agent` call (which keeps its own normal pair), so you can trace a finished task to where it started. That id is surfaced as a plain attribute rather than the tool's real id on purpose: reusing it would overwrite the `Agent` call's name in the id→name map and mislabel that call's output.
 
 ## Technical Reference
 
