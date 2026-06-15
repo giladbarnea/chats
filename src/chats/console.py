@@ -76,3 +76,14 @@ def print_warning(*print_args) -> None:
     if _warning_console is None:
         _warning_console = Console(stderr=True)
     _warning_console.print(*print_args, style="yellow")
+
+
+_hint_console: Console | None = None
+
+
+def print_hint(message: str) -> None:
+    """Print a low-key informational message (e.g. no results) to stderr, dimmed."""
+    global _hint_console
+    if _hint_console is None:
+        _hint_console = Console(stderr=True, theme=APP_THEME)
+    _hint_console.print(message, style="search.empty")

@@ -8,7 +8,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from ..console import UnicodeSafePager, get_console, print_error
+from rich.console import Group
+from rich.text import Text
+
+from ..console import UnicodeSafePager, get_console, print_error, print_hint
 from ..formatting import (
     format_to_raw,
     format_to_xml,
@@ -28,6 +31,7 @@ from ..pool_filter import PoolFilter
 from ..search_query import SearchQuery, SearchQueryError, SearchTerm, parse_search_query
 from ..session_pool import SessionPool
 from ..session_scan import SessionScan
+from ..utils import age_style, collapse_home, elide_to_width, humanize_age
 from . import resolve
 from .common import _build_tool_id_map
 
@@ -55,6 +59,103 @@ def _display_messages_for_hit(
 ) -> list[Message]:
     """Return the message list that should be rendered for one search hit."""
     return messages if output_mode == SearchOutputMode.FULL else matches
+
+
+def _headline(hit: SearchHit) -> tuple[str, bool]:
+    """Return the row headline and whether it is a fallback (not a real title)."""
+    if hit.last_custom_title:
+        return hit.last_custom_title, False
+    if hit.matching_summaries:
+        return hit.matching_summaries[0], True
+    for message in hit.matches:
+        first_line = message.text.strip().splitlines()
+        if first_line:
+            return first_line[0], True
+    return "(untitled session)", True
+
+
+def _build_search_list_row(
+    hit: SearchHit,
+    *,
+    now: datetime,
+    width: int,
+    show_provider: bool,
+) -> Group:
+    """Build one two-line search-list row: bold headline, then a dim facts line."""
+    session_id = resolve.get_display_session_id(hit.metadata.path)
+    headline, is_fallback = _headline(hit)
+
+    title_line = Text(no_wrap=True, overflow="ellipsis")
+    title_line.append("▎ ", style="search.tick")
+    title_line.append(
+        elide_to_width(headline, max(8, width - 2)),
+        style="search.title.fallback" if is_fallback else "search.title",
+    )
+
+    match_count = (
+        len(hit.matches)
+        + len(hit.matching_summaries)
+        + len(hit.matching_custom_titles)
+    )
+    match_word = "match" if match_count == 1 else "matches"
+    age_label = humanize_age(hit.metadata.mtime, now) if hit.metadata.mtime else "?"
+    provider = hit.metadata.provider
+
+    reserved = (
+        len(f" · {session_id}")
+        + len(f" · {match_count} {match_word}")
+        + len(f" · {age_label}")
+    )
+    if show_provider:
+        reserved += len(f" · {provider}")
+    directory = collapse_home(hit.cwd) if hit.cwd else "(unknown directory)"
+    directory = elide_to_width(directory, max(16, width - 4 - reserved), where="middle")
+
+    facts_line = Text(no_wrap=True, overflow="ellipsis")
+    facts_line.append("  ")
+    facts_line.append(directory, style="search.dir")
+    if show_provider:
+        facts_line.append(" · ", style="search.sep")
+        facts_line.append(provider, style="search.label")
+    facts_line.append(" · ", style="search.sep")
+    facts_line.append(str(match_count), style="search.count")
+    facts_line.append(f" {match_word}", style="search.label")
+    facts_line.append(" · ", style="search.sep")
+    facts_line.append(
+        age_label,
+        style=age_style(hit.metadata.mtime, now) if hit.metadata.mtime else "search.age.old",
+    )
+    facts_line.append(" · ", style="search.sep")
+    facts_line.append(session_id[:8], style="search.id.head")
+    facts_line.append(session_id[8:], style="search.id.tail")
+
+    return Group(title_line, facts_line)
+
+
+def _render_search_list(hits: list[SearchHit], flags: ConversationFlags) -> None:
+    """Render search hits as a scannable, colored list of rows."""
+    console = get_console()
+    width = console.width
+    providers = {hit.metadata.provider for hit in hits}
+    show_provider = len(providers) > 1
+    now = datetime.now()
+
+    header = Text()
+    header.append(
+        f"{len(hits)} session" + ("" if len(hits) == 1 else "s"),
+        style="search.header",
+    )
+    header.append("  ·  newest first", style="search.sep")
+    console.print(header)
+    console.print()
+
+    for hit in hits:
+        console.print(
+            _build_search_list_row(
+                hit, now=now, width=width, show_provider=show_provider
+            )
+        )
+        console.print()
 
 
 def display_search_result(
@@ -159,6 +260,9 @@ def cmd_search(
             hits.append(hit)
 
     if not hits:
+        if output_mode != SearchOutputMode.ONLY_ID:
+            suffix = "" if pool_filter.is_empty() else " with the current filters"
+            print_hint(f'No sessions match "{pattern_arg}"{suffix}.')
         sys.exit(1)
 
     ordered_hits = sort_by_modified_descending(
@@ -178,29 +282,32 @@ def cmd_search(
     )
 
     with pager_ctx:
-        for hit in ordered_hits:
-            metadata = hit.metadata
-            if output_mode != SearchOutputMode.ONLY_ID:
-                get_console().rule(
-                    title=f"[bold white]{resolve.get_display_session_id(metadata.path)}[/]",
-                    style="#00ffba",
+        if output_mode == SearchOutputMode.LIST and flags.color:
+            _render_search_list(ordered_hits, flags)
+        else:
+            for hit in ordered_hits:
+                metadata = hit.metadata
+                if output_mode != SearchOutputMode.ONLY_ID:
+                    get_console().rule(
+                        title=f"[bold white]{resolve.get_display_session_id(metadata.path)}[/]",
+                        style="#00ffba",
+                    )
+                display_search_result(
+                    metadata.path,
+                    hit.messages,
+                    hit.matches,
+                    hit.cwd,
+                    flags,
+                    output_mode=output_mode,
+                    emit_metadata=emit_metadata,
+                    provider=metadata.provider,
+                    forked_from=metadata.forked_from,
+                    created_at=metadata.ctime,
+                    modified_at=metadata.mtime,
+                    matching_summaries=hit.matching_summaries,
+                    matching_custom_titles=hit.matching_custom_titles,
+                    last_custom_title=hit.last_custom_title,
                 )
-            display_search_result(
-                metadata.path,
-                hit.messages,
-                hit.matches,
-                hit.cwd,
-                flags,
-                output_mode=output_mode,
-                emit_metadata=emit_metadata,
-                provider=metadata.provider,
-                forked_from=metadata.forked_from,
-                created_at=metadata.ctime,
-                modified_at=metadata.mtime,
-                matching_summaries=hit.matching_summaries,
-                matching_custom_titles=hit.matching_custom_titles,
-                last_custom_title=hit.last_custom_title,
-            )
 
     sys.exit(0)
 
