@@ -23,6 +23,54 @@ def _write_jsonl(path: Path, entries: list[dict]) -> None:
 SESSION_ID = "aaaa-bbbb-cccc-dddd"
 
 
+def _user(text: str, timestamp: str) -> dict:
+    return {
+        "type": "user",
+        "timestamp": timestamp,
+        "message": {"role": "user", "content": text},
+    }
+
+
+def _assistant(text: str, timestamp: str) -> dict:
+    return {
+        "type": "assistant",
+        "timestamp": timestamp,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": text}]},
+    }
+
+
+def _write_agent(
+    project_dir: Path,
+    agent_id: str,
+    prompt: str,
+    reply: str,
+    started_at: str,
+    replied_at: str,
+) -> None:
+    """Write a Claude subagent transcript (prompt + reply) plus its meta sidecar."""
+    agent_file = project_dir / SESSION_ID / "subagents" / f"agent-{agent_id}.jsonl"
+    _write_jsonl(agent_file, [
+        {
+            "type": "user",
+            "sessionId": SESSION_ID,
+            "agentId": agent_id,
+            "timestamp": started_at,
+            "message": {"role": "user", "content": prompt},
+        },
+        {
+            "type": "assistant",
+            "sessionId": SESSION_ID,
+            "agentId": agent_id,
+            "timestamp": replied_at,
+            "message": {"role": "assistant", "content": [{"type": "text", "text": reply}]},
+        },
+    ])
+    agent_file.with_suffix(".meta.json").write_text(
+        json.dumps({"agentType": "general-purpose", "toolUseId": f"toolu_{agent_id}"}),
+        encoding="utf-8",
+    )
+
+
 # =============================================================================
 # find_agent_files_for_session
 # =============================================================================
@@ -159,6 +207,54 @@ class TestClaudeAgentBlockRendering:
         )
         assert "\n  <subagent-task>" in output and "\n  CLAUDE_AGENT_REPLY" in output, (
             f"Expected agent inner content indented 2 spaces. Got:\n{output}"
+        )
+
+
+class TestSubagentChronologicalPlacement:
+    """Each subagent block merges at its own dispatch time, not all clustered at the
+    earliest agent's timestamp. A late agent must land near where it ran."""
+
+    def test_late_agent_lands_after_intervening_main_messages(
+        self, tmp_path: Path, monkeypatch
+    ):
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        project_dir = tmp_path / ".claude" / "projects" / "proj"
+
+        conv_file = project_dir / f"{SESSION_ID}.jsonl"
+        _write_jsonl(conv_file, [
+            _user("MAIN_START", "2025-01-01T00:00:00Z"),
+            _assistant("EARLY_DISPATCH", "2025-01-01T00:01:00Z"),
+            _assistant("MAIN_MID", "2025-01-01T00:10:00Z"),
+            _assistant("LATE_DISPATCH", "2025-01-01T00:21:00Z"),
+            _assistant("MAIN_FINAL", "2025-01-01T00:30:00Z"),
+        ])
+
+        _write_agent(
+            project_dir, "early", "EARLY_TASK", "EARLY_REPLY",
+            "2025-01-01T00:02:00Z", "2025-01-01T00:02:30Z",
+        )
+        _write_agent(
+            project_dir, "late", "LATE_TASK", "LATE_REPLY",
+            "2025-01-01T00:22:00Z", "2025-01-01T00:22:30Z",
+        )
+
+        flags = ConversationFlags(show_agents=True, color="never")
+        messages = parse_jsonl(conv_file.read_text(), flags, source_path=conv_file)
+        merged = _merge_agent_messages(messages, conv_file, flags)
+        output = format_to_xml(merged, flags)
+
+        chronological = [
+            "MAIN_START", "EARLY_DISPATCH", "EARLY_REPLY", "MAIN_MID",
+            "LATE_DISPATCH", "LATE_REPLY", "MAIN_FINAL",
+        ]
+        for marker in chronological:
+            assert marker in output, f"{marker} missing from merged output:\n{output}"
+
+        by_position = sorted(chronological, key=output.find)
+        assert by_position == chronological, (
+            "Merged timeline is not chronological: a late agent was clustered with the "
+            f"earliest agent instead of landing at its own dispatch time.\n"
+            f"Expected order {chronological}\nGot order      {by_position}\n\n{output}"
         )
 
 

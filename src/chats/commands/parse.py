@@ -248,12 +248,14 @@ def _merge_agent_messages(
     """Merge subagent transcripts into the main timeline.
 
     Provider-agnostic: discovery and identity are resolved per adapter. Each
-    subagent's messages are stamped with its agent_id, nickname, type, and model.
+    subagent's messages are stamped with its agent_id, nickname, type, and model,
+    and its block is placed at its own dispatch time so late or concurrent agents
+    land where they ran instead of clustering at the earliest agent's timestamp.
     """
     session_id = get_display_session_id(input_file_path)
     transcripts = resolve.find_subagent_transcripts(input_file_path, session_id)
 
-    all_agent_messages: list[Message] = []
+    agent_blocks: list[list[Message]] = []
     for transcript in transcripts:
         agent_content = transcript.read_text(encoding="utf-8")
         agent_messages = parse_jsonl(agent_content, flags, source_path=transcript)
@@ -261,22 +263,38 @@ def _merge_agent_messages(
             continue
 
         meta = resolve.read_subagent_metadata(transcript)
-        all_agent_messages.extend(_build_subagent_block(agent_messages, meta))
+        block = _build_subagent_block(agent_messages, meta)
+        if block:
+            agent_blocks.append(block)
 
-    if not all_agent_messages:
+    if not agent_blocks:
         return messages
 
-    all_agent_messages.sort(key=lambda message: message.timestamp or "")
-    first_agent_timestamp = all_agent_messages[0].timestamp
-    insert_index = 0
-    for index, message in enumerate(messages):
-        if message.timestamp and message.timestamp < first_agent_timestamp:
-            insert_index = index + 1
-
-    messages[insert_index:insert_index] = all_agent_messages
-    for index, message in enumerate(messages, start=1):
+    merged = _interleave_subagent_blocks(messages, agent_blocks)
+    for index, message in enumerate(merged, start=1):
         message.index = index
-    return messages
+    return merged
+
+
+def _interleave_subagent_blocks(
+    messages: list[Message], agent_blocks: list[list[Message]]
+) -> list[Message]:
+    """Merge each contiguous subagent block into the timeline at its own anchor time.
+
+    A block is anchored by its first message's timestamp and emitted just before the
+    first main message that does not predate it — the same per-dispatch placement a
+    single agent already received, now applied independently per agent so blocks stay
+    contiguous and chronologically ordered.
+    """
+    pending = sorted(agent_blocks, key=lambda block: block[0].timestamp or "")
+    merged: list[Message] = []
+    for message in messages:
+        while pending and message.timestamp and (pending[0][0].timestamp or "") <= message.timestamp:
+            merged.extend(pending.pop(0))
+        merged.append(message)
+    for block in pending:
+        merged.extend(block)
+    return merged
 
 
 def _build_subagent_block(
