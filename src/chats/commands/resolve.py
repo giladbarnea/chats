@@ -47,6 +47,20 @@ def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]
     return sorted(agent_files)
 
 
+def read_agent_type(agent_file: Path) -> str | None:
+    """Read `agentType` from an agent file's sibling `.meta.json` sidecar.
+
+    >>> read_agent_type(Path("/does/not/exist/agent-x.jsonl")) is None
+    True
+    """
+    meta_path = agent_file.with_suffix(".meta.json")
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    return meta.get("agentType")
+
+
 def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
     """Load created/modified timestamps for a conversation file."""
     adapter = get_jsonl_session_adapter(conv_file)

@@ -152,7 +152,7 @@ def cmd_parse(
         cwd = None
 
     if flags.show_agents and input_file_path and format_type == "jsonl":
-        messages = _merge_agent_messages(messages, content, input_file_path, flags)
+        messages = _merge_agent_messages(messages, input_file_path, flags)
 
     if not messages:
         if flags.allow_empty_output:
@@ -242,37 +242,28 @@ def cmd_parse(
 
 def _merge_agent_messages(
     messages: list[Message],
-    content: str,
     input_file_path: Path,
     flags: ConversationFlags,
 ) -> list[Message]:
-    """Merge agent messages into the main conversation timeline."""
+    """Merge agent sidechain conversations into the main timeline.
+
+    Each agent file has a sibling `.meta.json` sidecar carrying its `agentType`,
+    which becomes the merged messages' `subagent_type`.
+    """
     session_id = get_display_session_id(input_file_path)
     agent_files = resolve.find_agent_files_for_session(input_file_path, session_id)
-    task_dispatches = _extract_task_dispatches(content)
 
     all_agent_messages: list[Message] = []
     for agent_file in agent_files:
-        try:
-            agent_content = agent_file.read_text(encoding="utf-8")
-            agent_messages = parse_jsonl(agent_content, flags, source_path=agent_file)
-            if not agent_messages or not agent_messages[0].timestamp:
-                continue
-
-            first_timestamp = agent_messages[0].timestamp
-            matched_subagent_type = None
-            for dispatch_timestamp, subagent_type in task_dispatches:
-                if first_timestamp > dispatch_timestamp:
-                    matched_subagent_type = subagent_type
-
-            if matched_subagent_type is None:
-                continue
-
-            for message in agent_messages:
-                message.subagent_type = matched_subagent_type
-            all_agent_messages.extend(agent_messages)
-        except Exception:
+        agent_content = agent_file.read_text(encoding="utf-8")
+        agent_messages = parse_jsonl(agent_content, flags, source_path=agent_file)
+        if not agent_messages or not agent_messages[0].timestamp:
             continue
+
+        subagent_type = resolve.read_agent_type(agent_file)
+        for message in agent_messages:
+            message.subagent_type = subagent_type
+        all_agent_messages.extend(agent_messages)
 
     if not all_agent_messages:
         return messages
@@ -288,35 +279,3 @@ def _merge_agent_messages(
     for index, message in enumerate(messages, start=1):
         message.index = index
     return messages
-
-
-def _extract_task_dispatches(content: str) -> list[tuple[str, str]]:
-    """Extract Task tool dispatches from JSONL content."""
-    dispatches: list[tuple[str, str]] = []
-    for line in content.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if entry.get("type") != "assistant":
-            continue
-
-        timestamp = entry.get("timestamp")
-        if not timestamp:
-            continue
-
-        content_items = entry.get("message", {}).get("content", [])
-        if not isinstance(content_items, list):
-            continue
-
-        for item in content_items:
-            if not isinstance(item, dict):
-                continue
-            if item.get("type") != "tool_use" or item.get("name") != "Task":
-                continue
-            subagent_type = item.get("input", {}).get("subagent_type", "")
-            dispatches.append((timestamp, subagent_type))
-    return dispatches
