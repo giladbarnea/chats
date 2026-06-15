@@ -39,7 +39,7 @@ _HEADER_BADGE_STYLE: dict[str, str] = {
     "user-command-output": "bold white on #3b82f6",
     "recap": "bold white on #1d4ed8",
     "assistant-response": "bold white on #7c3aed",
-    "agent": "bold white on #9333ea",
+    "agent": "bold white on #0f766e",
     "session-rename": "bold white on #d97706",
 }
 
