@@ -36,6 +36,7 @@ class ContentBlockType(Enum):
     THINKING = ContentBlockInfo("thinking", None, "dim italic")
     TOOL_INPUT = ContentBlockInfo("tool-input", None, "dim")
     TOOL_OUTPUT = ContentBlockInfo("tool-output", None, "dim")
+    SUBAGENT_TASK = ContentBlockInfo("subagent-task", None, "italic")
 
 
 class ToolSchema(NamedTuple):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import textwrap
 from datetime import datetime
 from pathlib import Path
 
@@ -70,6 +71,11 @@ def render_message_inner_xml(
             tag = ContentBlockType.THINKING.value.xml_tag
             output_parts.append(f"<{tag}>\n{part.data}\n</{tag}>")
 
+        elif part.kind == MessagePartKind.SUBAGENT_TASK:
+            flush_tools()
+            tag = ContentBlockType.SUBAGENT_TASK.value.xml_tag
+            output_parts.append(f"<{tag}>\n{part.data}\n</{tag}>")
+
         elif part.kind == MessagePartKind.TOOL:
             tool_parts.append(render_tool_xml(part.data))
 
@@ -100,8 +106,11 @@ def format_to_xml(
 
         wrapper_type = msg.get_wrapper_type()
         tag = wrapper_type.value.xml_tag
-        header = wrapper_type.value.header
+        header = msg.get_header()
         attrs = msg.get_wrapper_attrs()
+
+        if wrapper_type is ContentBlockType.AGENT:
+            content = textwrap.indent(content, "  ")
 
         output_parts.append(f"<{tag} {attrs}>\n{header}\n\n{content}\n</{tag}>")
 
@@ -150,7 +159,9 @@ def format_to_raw(
 
     blocks: list[str] = []
     for msg, content in visible:
-        header = msg.get_wrapper_type().value.header
+        header = msg.get_header()
+        if msg.get_wrapper_type() is ContentBlockType.AGENT:
+            content = textwrap.indent(content, "  ")
         block = f"{header}\n\n{content}" if header else content
         blocks.append(block)
 
@@ -298,7 +309,7 @@ def render_messages_with_rich(
 
         wrapper_type = msg.get_wrapper_type()
         tag = wrapper_type.value.xml_tag
-        header = wrapper_type.value.header
+        header = msg.get_header()
         attrs = msg.get_wrapper_attrs()
 
         print_targets.append(Text(f"<{tag} {attrs}>\n", style="dim"))
@@ -324,6 +335,12 @@ def render_messages_with_rich(
 
             elif part.kind == MessagePartKind.THINKING:
                 bt = ContentBlockType.THINKING
+                print_targets.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
+                print_targets.append(Text(part.data, style=bt.value.rich_style))
+                print_targets.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))
+
+            elif part.kind == MessagePartKind.SUBAGENT_TASK:
+                bt = ContentBlockType.SUBAGENT_TASK
                 print_targets.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
                 print_targets.append(Text(part.data, style=bt.value.rich_style))
                 print_targets.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))

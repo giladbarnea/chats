@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .model import ConversationFlags, Message, Provider
+from .model import ConversationFlags, Message, Provider, SubagentMetadata
 from .registry import (
     ContentBlockType,
     normalize_tool_input_keys,
@@ -709,7 +709,39 @@ def _parse_default_jsonl_entries(
             messages.append(msg)
             index += 1
 
+    _suppress_claude_agent_dispatch(messages)
     return messages
+
+
+_CLAUDE_AGENT_DISPATCH_TOOLS = frozenset({"Agent", "Task"})
+
+
+def _suppress_claude_agent_dispatch(messages: list[Message]) -> None:
+    """Drop the Agent/Task dispatch tool_use and its tool_result in place.
+
+    The merged agent block (and its <subagent-task>) is their representation, so
+    the raw dispatch pair is plumbing — abstracted away like Codex spawn/wait/close.
+    """
+    dispatch_ids = {
+        tool.get("id")
+        for message in messages
+        for tool in message.tools
+        if tool.get("type") == "tool_use"
+        and tool.get("name") in _CLAUDE_AGENT_DISPATCH_TOOLS
+    }
+    for message in messages:
+        message.tools = [
+            tool
+            for tool in message.tools
+            if not (
+                tool.get("type") == "tool_use"
+                and tool.get("name") in _CLAUDE_AGENT_DISPATCH_TOOLS
+            )
+            and not (
+                tool.get("type") == "tool_result"
+                and tool.get("tool_use_id") in dispatch_ids
+            )
+        ]
 
 
 def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
@@ -744,6 +776,9 @@ def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
     return _parse_pi_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
+_CODEX_AGENT_LIFECYCLE_TOOLS = frozenset({"spawn_agent", "wait_agent", "close_agent"})
+
+
 def _parse_codex_jsonl_entries(
     entries: list[dict], flags: ConversationFlags
 ) -> list[Message]:
@@ -751,6 +786,9 @@ def _parse_codex_jsonl_entries(
     messages = []
     index = 1
     current_assistant: Message | None = None
+    # Subagent dispatch is abstracted away by the merged agent block, so the
+    # spawn/wait/close calls (and their outputs, tracked by call_id) never render.
+    agent_lifecycle_call_ids: set[str] = set()
 
     def flush_assistant() -> None:
         nonlocal current_assistant, index
@@ -827,27 +865,34 @@ def _parse_codex_jsonl_entries(
             assistant.thinking = _append_codex_block(assistant.thinking, thinking_text)
             continue
 
-        if payload_type == "function_call" and flags.show_tools:
-            assistant = ensure_assistant(timestamp)
-            tool_name = _normalize_codex_tool_name(payload.get("name"))
-            assistant.tools.append({
-                "type": "tool_use",
-                "id": payload.get("call_id"),
-                "name": tool_name,
-                "input": _normalize_codex_tool_input(
-                    tool_name, payload.get("arguments")
-                ),
-            })
+        if payload_type == "function_call":
+            if payload.get("name") in _CODEX_AGENT_LIFECYCLE_TOOLS:
+                agent_lifecycle_call_ids.add(payload.get("call_id"))
+                continue
+            if flags.show_tools:
+                assistant = ensure_assistant(timestamp)
+                tool_name = _normalize_codex_tool_name(payload.get("name"))
+                assistant.tools.append({
+                    "type": "tool_use",
+                    "id": payload.get("call_id"),
+                    "name": tool_name,
+                    "input": _normalize_codex_tool_input(
+                        tool_name, payload.get("arguments")
+                    ),
+                })
             continue
 
-        if payload_type == "function_call_output" and flags.show_tools:
-            assistant = ensure_assistant(timestamp)
-            assistant.tools.append({
-                "type": "tool_result",
-                "tool_use_id": payload.get("call_id"),
-                "content": _parse_codex_tool_output(payload.get("output", "")),
-                "is_error": False,
-            })
+        if payload_type == "function_call_output":
+            if payload.get("call_id") in agent_lifecycle_call_ids:
+                continue
+            if flags.show_tools:
+                assistant = ensure_assistant(timestamp)
+                assistant.tools.append({
+                    "type": "tool_result",
+                    "tool_use_id": payload.get("call_id"),
+                    "content": _parse_codex_tool_output(payload.get("output", "")),
+                    "is_error": False,
+                })
             continue
 
         if payload_type == "custom_tool_call" and flags.show_tools:
@@ -1069,6 +1114,51 @@ def _find_codex_session_files() -> list[Path]:
     if not sessions_dir.exists():
         return []
     return sorted(sessions_dir.rglob("*.jsonl"))
+
+
+def find_codex_subagent_transcripts(session_file: Path, session_id: str) -> list[Path]:
+    """Find Codex subagent rollout files spawned by this session.
+
+    Subagent rollouts are ordinary Codex sessions whose session_meta carries a
+    `parent_thread_id` pointing back at the spawning session's id.
+    """
+    return [
+        path
+        for path in _find_codex_session_files()
+        if _extract_codex_session_meta_field(path, "parent_thread_id") == session_id
+    ]
+
+
+def _extract_codex_turn_context_model(session_file: Path) -> str | None:
+    """Read the model from the first Codex `turn_context` entry."""
+    try:
+        with open(session_file, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    continue
+                if entry.get("type") != "turn_context":
+                    continue
+                model = entry.get("payload", {}).get("model")
+                if isinstance(model, str) and model:
+                    return model
+    except OSError:
+        pass
+    return None
+
+
+def extract_codex_subagent_metadata(transcript: Path) -> SubagentMetadata:
+    """Read a Codex subagent's identity from its rollout's session_meta + turn_context."""
+    return SubagentMetadata(
+        agent_id=_extract_codex_session_meta_field(transcript, "id"),
+        name=_extract_codex_session_meta_field(transcript, "agent_nickname"),
+        subagent_type=_extract_codex_session_meta_field(transcript, "agent_role"),
+        model=_extract_codex_turn_context_model(transcript),
+    )
 
 
 def _extract_antigravity_session_id(session_file: Path) -> str | None:
@@ -1522,11 +1612,9 @@ def _parse_user_entry(
         source_tool_user_id=shorten_tool_use_id(source_tool_use_id),
     )
 
-    if isinstance(content_data, str) and (
-        task_notification := _parse_task_notification_tool(content_data)
-    ):
-        if flags.show_tools:
-            msg.tools.append(task_notification)
+    # Background-task notifications are dispatch plumbing — abstracted away by the
+    # merged agent block (and its <subagent-task>), so they never render.
+    if isinstance(content_data, str) and _parse_task_notification_tool(content_data):
         return msg
 
     show_user_text = flags.show_user_messages and (not msg.is_meta or flags.show_tools)
@@ -1822,6 +1910,8 @@ def _is_codex_preamble_text(text: str) -> bool:
     if stripped.startswith("# AGENTS.md instructions for "):
         return True
     if stripped.startswith("<environment_context>"):
+        return True
+    if stripped.startswith("<subagent_notification>"):
         return True
     return bool(stripped.startswith("<skill>"))
 

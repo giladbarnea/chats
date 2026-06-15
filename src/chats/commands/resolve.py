@@ -6,10 +6,12 @@ from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from ..console import get_console, print_error
-from ..model import ConversationMetadata
+from ..model import ConversationMetadata, SubagentMetadata
 from ..ordering import is_single_negative_index
 from ..parsing import (
+    extract_codex_subagent_metadata,
     extract_resolution_facets_from_jsonl,
+    find_codex_subagent_transcripts,
     get_display_session_id,
     get_jsonl_first_timestamp,
     get_jsonl_last_timestamp,
@@ -59,6 +61,24 @@ def read_agent_type(agent_file: Path) -> str | None:
     except (json.JSONDecodeError, OSError):
         return None
     return meta.get("agentType")
+
+
+def find_subagent_transcripts(session_file: Path, session_id: str) -> list[Path]:
+    """Find a session's subagent transcript files, dispatching by provider."""
+    adapter = get_jsonl_session_adapter(session_file)
+    if adapter.name == "codex":
+        return find_codex_subagent_transcripts(session_file, session_id)
+    if adapter.name == "claude":
+        return find_agent_files_for_session(session_file, session_id)
+    return []
+
+
+def read_subagent_metadata(transcript: Path) -> SubagentMetadata:
+    """Read a subagent's identity from its transcript, dispatching by provider."""
+    adapter = get_jsonl_session_adapter(transcript)
+    if adapter.name == "codex":
+        return extract_codex_subagent_metadata(transcript)
+    return SubagentMetadata(subagent_type=read_agent_type(transcript))
 
 
 def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:

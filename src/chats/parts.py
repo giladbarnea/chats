@@ -10,6 +10,7 @@ class MessagePartKind(Enum):
     TEXT = "text"
     THINKING = "thinking"
     TOOL = "tool"
+    SUBAGENT_TASK = "subagent-task"
 
 
 class ToolParts(NamedTuple):

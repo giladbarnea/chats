@@ -56,6 +56,20 @@ class ConversationMetadata:
     forked_from: str | None = None
 
 
+@dataclass(frozen=True)
+class SubagentMetadata:
+    """Identity of a spawned subagent, read from its transcript.
+
+    `name` is the subagent's nickname (Codex assigns these, e.g. "Leibniz";
+    Claude does not, so it stays None).
+    """
+
+    agent_id: str | None = None
+    name: str | None = None
+    subagent_type: str | None = None
+    model: str | None = None
+
+
 class ConversationFlags:
     """Flags controlling what content to include."""
 
@@ -151,6 +165,8 @@ class Message:
     agent_id: str | None = None
     timestamp: str | None = None  # ISO timestamp for chronological sorting
     subagent_type: str | None = None  # e.g., "codebase-analyzer:multiple-subsystems"
+    name: str | None = None  # subagent nickname (Codex assigns these; Claude does not)
+    subagent_task: str | None = None  # the prompt given to a subagent, shown as a block
     model: str | None = None  # e.g., "claude-sonnet-4-5-20250929"
     is_meta: bool = False
     source_tool_user_id: str | None = None
@@ -169,6 +185,10 @@ class Message:
         Plans are represented as TOOL parts with name="ExitPlanMode".
         """
         parts: list[MessagePart] = []
+
+        # Subagent task prompt — always shown (it is what was handed to the agent).
+        if self.subagent_task:
+            parts.append(MessagePart(MessagePartKind.SUBAGENT_TASK, self.subagent_task))
 
         # Text content
         if self.text:
@@ -217,6 +237,9 @@ class Message:
     ) -> list[str | dict[str, object]]:
         """Yield visible content in a JSON-friendly structured form."""
         content: list[str | dict[str, object]] = []
+
+        if self.subagent_task:
+            content.append({"type": "subagent-task", "content": self.subagent_task})
 
         if self.text:
             text = (
@@ -365,19 +388,33 @@ class Message:
 
     def has_content(self) -> bool:
         """Check if message has any displayable content."""
-        return bool(self.text or self.thinking or self.tools or self.plan)
+        return bool(
+            self.text or self.thinking or self.tools or self.plan or self.subagent_task
+        )
 
     def get_wrapper_type(self) -> ContentBlockType:
-        """Return the XML wrapper type for this message."""
+        """Return the XML wrapper type for this message.
+
+        agent_id takes precedence over role so that every message belonging to a
+        subagent (including its tool-result `user` entries) renders as one block.
+        """
         if self.wrapper_type is not None:
             return self.wrapper_type
+        if self.agent_id:
+            return ContentBlockType.AGENT
         if self.role == "user":
             return ContentBlockType.USER_MESSAGE
-        elif self.role == "session-rename":
+        if self.role == "session-rename":
             return ContentBlockType.SESSION_RENAME
-        elif self.agent_id:
-            return ContentBlockType.AGENT
         return ContentBlockType.ASSISTANT_RESPONSE
+
+    def get_header(self) -> str | None:
+        """Return the wrapper header, enriched with the subagent nickname when present."""
+        wrapper = self.get_wrapper_type()
+        header = wrapper.value.header
+        if wrapper is ContentBlockType.AGENT and self.name:
+            return f"{header} '{self.name}'"
+        return header
 
     def get_wrapper_attrs(self) -> str:
         """Build XML attributes string for this message's wrapper tag."""
@@ -391,6 +428,8 @@ class Message:
             attrs.append(f'agent_id="{self.agent_id}"')
             if self.subagent_type:
                 attrs.append(f'subagent_type="{self.subagent_type}"')
+            if self.name:
+                attrs.append(f'name="{self.name}"')
         if self.model:
             attrs.append(f'model="{self.model.removeprefix("claude-")}"')
         return " ".join(attrs)

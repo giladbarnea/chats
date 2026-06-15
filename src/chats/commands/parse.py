@@ -15,7 +15,7 @@ from ..formatting import (
     print_metadata,
     render_messages_with_rich,
 )
-from ..model import ConversationFlags, Message, ParseOutputMode
+from ..model import ConversationFlags, Message, ParseOutputMode, SubagentMetadata
 from ..parsing import (
     detect_format,
     extract_cwd_from_jsonl,
@@ -245,25 +245,23 @@ def _merge_agent_messages(
     input_file_path: Path,
     flags: ConversationFlags,
 ) -> list[Message]:
-    """Merge agent sidechain conversations into the main timeline.
+    """Merge subagent transcripts into the main timeline.
 
-    Each agent file has a sibling `.meta.json` sidecar carrying its `agentType`,
-    which becomes the merged messages' `subagent_type`.
+    Provider-agnostic: discovery and identity are resolved per adapter. Each
+    subagent's messages are stamped with its agent_id, nickname, type, and model.
     """
     session_id = get_display_session_id(input_file_path)
-    agent_files = resolve.find_agent_files_for_session(input_file_path, session_id)
+    transcripts = resolve.find_subagent_transcripts(input_file_path, session_id)
 
     all_agent_messages: list[Message] = []
-    for agent_file in agent_files:
-        agent_content = agent_file.read_text(encoding="utf-8")
-        agent_messages = parse_jsonl(agent_content, flags, source_path=agent_file)
+    for transcript in transcripts:
+        agent_content = transcript.read_text(encoding="utf-8")
+        agent_messages = parse_jsonl(agent_content, flags, source_path=transcript)
         if not agent_messages or not agent_messages[0].timestamp:
             continue
 
-        subagent_type = resolve.read_agent_type(agent_file)
-        for message in agent_messages:
-            message.subagent_type = subagent_type
-        all_agent_messages.extend(agent_messages)
+        meta = resolve.read_subagent_metadata(transcript)
+        all_agent_messages.extend(_build_subagent_block(agent_messages, meta))
 
     if not all_agent_messages:
         return messages
@@ -279,3 +277,42 @@ def _merge_agent_messages(
     for index, message in enumerate(messages, start=1):
         message.index = index
     return messages
+
+
+def _build_subagent_block(
+    agent_messages: list[Message], meta: SubagentMetadata
+) -> list[Message]:
+    """Reframe a subagent transcript for display.
+
+    The initiating prompt (the last user-text message before the agent's first
+    reply) becomes a `<subagent-task>` head; the leading prompt/context messages
+    are dropped; and every message is stamped with the subagent's identity.
+    """
+    first_reply = next(
+        (index for index, message in enumerate(agent_messages) if message.role != "user"),
+        len(agent_messages),
+    )
+    leading, rest = agent_messages[:first_reply], agent_messages[first_reply:]
+    task_text = next((message.text for message in reversed(leading) if message.text), None)
+
+    block: list[Message] = []
+    if task_text:
+        block.append(
+            Message(role="agent", timestamp=leading[0].timestamp, subagent_task=task_text)
+        )
+    block.extend(rest)
+
+    # Claude carries identity on each message; Codex carries it in metadata. Resolve
+    # both so the synthetic task message is stamped consistently with the rest.
+    agent_id = meta.agent_id or next(
+        (message.agent_id for message in agent_messages if message.agent_id), None
+    )
+    model = meta.model or next(
+        (message.model for message in agent_messages if message.model), None
+    )
+    for message in block:
+        message.agent_id = agent_id
+        message.name = meta.name
+        message.subagent_type = meta.subagent_type
+        message.model = model
+    return block

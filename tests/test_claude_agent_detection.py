@@ -7,8 +7,9 @@ from pathlib import Path
 import pytest
 
 from chats import cmd_search, ConversationFlags, SearchOutputMode
-from chats.commands import find_agent_files_for_session
-from chats.parsing import find_all_supported_session_files
+from chats.commands import _merge_agent_messages, find_agent_files_for_session
+from chats.formatting import format_to_xml
+from chats.parsing import find_all_supported_session_files, parse_jsonl
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -98,6 +99,66 @@ class TestFindAgentFilesNewLayout:
         result = find_agent_files_for_session(conv_file, SESSION_ID)
         assert result == [], (
             f"Expected empty list when no subagents/ dir. Got: {result}"
+        )
+
+
+class TestClaudeAgentBlockRendering:
+    """Merged Claude subagents render like Codex: ## Agent + <subagent-task>, indented,
+    but with no nickname."""
+
+    def test_claude_agent_block_has_task_and_indent_no_name(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        project_dir = tmp_path / ".claude" / "projects" / "proj"
+
+        conv_file = project_dir / f"{SESSION_ID}.jsonl"
+        _write_jsonl(conv_file, [{
+            "type": "user",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "message": {"role": "user", "content": "spawn an agent"},
+        }])
+
+        agent_file = project_dir / SESSION_ID / "subagents" / "agent-beef.jsonl"
+        _write_jsonl(agent_file, [
+            {
+                "type": "user",
+                "sessionId": SESSION_ID,
+                "agentId": "beef",
+                "timestamp": "2025-01-01T00:01:00Z",
+                "message": {"role": "user", "content": "CLAUDE_TASK_PROMPT"},
+            },
+            {
+                "type": "assistant",
+                "sessionId": SESSION_ID,
+                "agentId": "beef",
+                "timestamp": "2025-01-01T00:01:01Z",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "CLAUDE_AGENT_REPLY"}],
+                },
+            },
+        ])
+        agent_file.with_suffix(".meta.json").write_text(
+            json.dumps({"agentType": "general-purpose", "toolUseId": "toolu_x"}),
+            encoding="utf-8",
+        )
+
+        flags = ConversationFlags(show_agents=True, color="never")
+        messages = parse_jsonl(conv_file.read_text(), flags, source_path=conv_file)
+        merged = _merge_agent_messages(messages, conv_file, flags)
+        output = format_to_xml(merged, flags)
+
+        assert "## Agent" in output, f"Expected an agent block. Got:\n{output}"
+        assert "name=" not in output, (
+            f"Claude subagents have no nickname, so no name attribute. Got:\n{output}"
+        )
+        assert "<subagent-task>" in output and "CLAUDE_TASK_PROMPT" in output, (
+            f"Expected the prompt rendered as <subagent-task>. Got:\n{output}"
+        )
+        assert output.count("CLAUDE_TASK_PROMPT") == 1, (
+            f"Expected the prompt only inside <subagent-task>, not duplicated. Got:\n{output}"
+        )
+        assert "\n  <subagent-task>" in output and "\n  CLAUDE_AGENT_REPLY" in output, (
+            f"Expected agent inner content indented 2 spaces. Got:\n{output}"
         )
 
 
