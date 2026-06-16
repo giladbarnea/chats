@@ -263,7 +263,8 @@ ch search -p antigravitycli "TODO"     # Search only Antigravity CLI sessions
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)
 - Plain-literal queries get a cheap candidate prefilter before the normal rendered-content confirmation pass
-- Results displayed newest first across Claude, PI, Codex, and Antigravity sessions
+- Results stream to the terminal as each match is confirmed, so the first hit appears in well under a second instead of after the whole pool is scanned. Colored, paged output is streamed through `less -r` (quit early with `q` to stop the scan)
+- Results are displayed newest first by filesystem mtime (scan order) across Claude, PI, Codex, and Antigravity sessions. `-r/--raw` is the exception and stays buffered, since its single-message formatting needs every hit first. In the colored `-l` view, the `N sessions · newest first` count prints as a trailing summary
 - Extracts working directory from conversation files
 - `search --raw` mirrors parse raw output: a single visible message prints as content only; otherwise each session is labeled with a setext `Session <id>` heading and sessions are separated by one `---`
 - Full markdown rendering with syntax highlighting

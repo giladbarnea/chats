@@ -185,7 +185,8 @@ TIME   ACTOR                    ACTION                                         T
 │                               flags.show_agents)
 │      cmd_search               pool_filter.candidate_files(pool)          ──► provider-narrowed files
 │
-├───►  cmd_search               For each session file:
+├───►  cmd_search               iter_hits() — lazily, newest-first by stat   ──► yields SearchHit
+│      │                        mtime (reversed pool.stat_mtime_sorted):       as each is confirmed
 │      │                        ├── [if -ma/-ca active]:
 │      │                        │   └── pool_filter.passes_path_for_date(path) → skip pre-parse
 │      │                        ├── [if -d active]:
@@ -203,18 +204,22 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        │   ├── regex.search() summaries/titles
 │      │                        │   ├── _build_tool_id_map(messages)
 │      │                        │   └── regex.search(render_message_inner_xml(msg))
-│      │                        ├── [if metadata not yet loaded]: _load_conversation_metadata(path)
-│      │                        └── Build SearchHit
+│      │                        ├── _load_conversation_metadata(path)
+│      │                        └── Build + yield SearchHit
 │
-├───►  cmd_search               sort_by_modified_descending(hits)          ──► ordered SearchHit list
-│
-├───►  cmd_search               display_search_result() for each hit:
-│      │                        ├── [--only-id]: print session ID only
-│      │                        ├── [--raw]: plain markdown output
-│      │                        ├── print_metadata() (YAML frontmatter)
-│      │                        ├── [--list]: stop after metadata
-│      │                        ├── default: render matching messages
-│      │                        └── [--full]: render all visible messages
+├───►  cmd_search               [if --raw] collect all hits, then            ──► single buffered emit
+│                               _format_search_hits_to_raw (single-message
+│                               special case needs the full set)
+│                               OTHERWISE _stream_search_results(iter_hits):
+│      │                        spawn StreamingPager (less -r) when color +
+│      │                        paging, then per hit as it arrives:
+│      │                        ├── _emit(): render via console.capture(),
+│      │                        │   write+flush to less (else print direct)
+│      │                        ├── _display_hit():
+│      │                        │   ├── [--only-id]: print session ID only
+│      │                        │   ├── [--list+color]: stream one row
+│      │                        │   └── else: rule + display_search_result()
+│      │                        └── [pager quit early] stop scanning
 │
 └───►  cmd_search               sys.exit(0 if found_any else 1)
 ```
@@ -529,19 +534,19 @@ Summary prefix ─────────────► │ extract_summaries_
                                                      └──────┬────────────┘
                                                             │ yes
                                                      ┌──────▼────────────┐
-                                                     │ collect SearchHit │
+                                                     │ yield SearchHit   │
                                                      └──────┬────────────┘
-                                                            │
-                                        none found ──► exit(1)
-                                                            │
+                                                            │ (raw: collect all, buffer)
                                                      ┌──────▼────────────┐
-                                                     │ sort hits by      │
-                                                     │ modified time     │
+                                                     │ STREAM hit now:   │
+                                                     │ render → less -r  │
+                                                     │ (or stdout) as it │
+                                                     │ arrives, in scan  │
+                                                     │ order (no re-sort)│
                                                      └──────┬────────────┘
-                                                            │
-                                                     ┌──────▼────────────┐
-                                                     │ DISPLAY / exit(0) │
-                                                     └───────────────────┘
+                                                            │ pager quit? ──► stop scanning
+                                                            ▼
+                                              none found ──► exit(1) else exit(0)
 ```
 
 ### Remove Feature State Machine
@@ -645,10 +650,11 @@ cli.py:main()
 │   └── cmd_search(pattern, flags, pool_filter, output_mode)
 │
 │       1. Compile regex, derive literal candidate
-│       2. SessionPool.discover() → candidate files
-│       3. Per-file: candidate prefilter → SessionScan → regex confirm
-│       4. Collect SearchHit objects, sort by modified time
-│       5. Display (matches-only / full, metadata, id-only)
+│       2. SessionPool.discover() → candidate files (newest-first by stat mtime)
+│       3. Per-file: candidate prefilter → SessionScan → regex confirm → yield SearchHit
+│       4. Stream each hit as it is confirmed (no global re-sort); page colored
+│          output through a StreamingPager (less -r) writing+flushing per hit
+│       5. raw mode is the exception: collect all, then one buffered emit
 │
 ├── [fork mode]
 │   └── cmd_fork(session_id, flags)
@@ -678,7 +684,7 @@ cli.py:main()
 cli.py
 ├── commands/
 │   ├── parse.py      → model, parsing, formatting, console, ordering, utils
-│   ├── search.py     → model, parsing, formatting, session_scan, search_query, console, ordering
+│   ├── search.py     → model, parsing, formatting, session_scan, search_query, console
 │   ├── rename.py     → model, parsing, formatting, console
 │   ├── resolve.py    → model, parsing, session_pool, ordering, utils
 │   ├── rm.py         → model, parsing, console, utils
@@ -725,3 +731,4 @@ cli.py
 18. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex/Antigravity sessions currently resolve to deleting the single JSONL file.
 19. **Antigravity Full Transcript Preference**: Antigravity session discovery treats `{session_id}/.system_generated/logs/transcript_full.jsonl` as canonical when present and falls back to `transcript.jsonl` only for sessions without the full variant. The brain directory name is the native session id.
 20. **Boolean Search Is Session-Scoped**: `parse_search_query` interprets bare lowercase `and`/`or` word tokens as a boolean query tree (with parens; `and` binds tighter). Each term is satisfied by a match anywhere in the session's facets (summaries, current title, rendered messages), so `and` terms may match in different messages; displayed matches are the union over all terms. Patterns without such tokens — including regex parens, uppercase `AND`, and unterminated quotes — keep verbatim single-regex semantics. Malformed boolean queries exit 2. The literal candidate prefilter evaluates the same tree over per-term raw-content plausibility.
+21. **Search Displays As It Scans**: `cmd_search` streams each `SearchHit` the instant `iter_hits()` confirms it, in scan order (newest first by filesystem mtime), instead of buffering, re-sorting by in-band mtime, then paging. `_stream_search_results` renders each hit via `get_console().capture()` and feeds the ANSI to a `StreamingPager` (a long-lived `less -r`) that flushes per hit; quitting `less` early sets `pager.closed`, which stops the scan. Display order is therefore filesystem mtime, not semantic mtime — the same trade-off already accepted for recent-index resolution (note 3), and the enabler for sub-second first results. Two consequences for the colored `-l` view, whose aggregates can't be known mid-stream: the `N sessions · newest first` line is a trailing summary, and per-row provider labels key off whether the candidate pool spans providers rather than the final hit set. `-r/--raw` opts out (collect-all, single buffered emit) because its single-visible-message rule needs the whole set.

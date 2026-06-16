@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import functools
 import sys
-from collections.abc import Callable
-from contextlib import nullcontext
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -11,7 +10,7 @@ from pathlib import Path
 from rich.console import Group
 from rich.text import Text
 
-from ..console import UnicodeSafePager, get_console, print_error, print_hint
+from ..console import StreamingPager, get_console, print_error, print_hint
 from ..formatting import (
     format_to_raw,
     format_to_xml,
@@ -20,13 +19,13 @@ from ..formatting import (
     render_messages_with_rich,
 )
 from ..model import (
+    PROVIDERS,
     ConversationFlags,
     ConversationMetadata,
     Message,
     Provider,
     SearchOutputMode,
 )
-from ..ordering import sort_by_modified_descending
 from ..pool_filter import PoolFilter
 from ..search_query import SearchQuery, SearchQueryError, SearchTerm, parse_search_query
 from ..session_pool import SessionPool
@@ -132,30 +131,83 @@ def _build_search_list_row(
     return Group(title_line, facts_line)
 
 
-def _render_search_list(hits: list[SearchHit], flags: ConversationFlags) -> None:
-    """Render search hits as a scannable, colored list of rows."""
-    console = get_console()
-    width = console.width
-    providers = {hit.metadata.provider for hit in hits}
-    show_provider = len(providers) > 1
-    now = datetime.now()
+def _list_show_provider(
+    pool: SessionPool,
+    candidate_file_set: set[Path],
+    pool_filter: PoolFilter,
+) -> bool:
+    """Whether colored list rows should be labeled with their provider.
 
-    header = Text()
-    header.append(
-        f"{len(hits)} session" + ("" if len(hits) == 1 else "s"),
+    Hoisted out of the per-hit loop so rows can stream without first collecting
+    every hit: shown when the searched candidate pool spans more than one
+    provider and no provider filter already pinned it to a single one.
+    """
+    if pool_filter.provider is not None:
+        return False
+    present = {
+        provider
+        for provider in PROVIDERS
+        if candidate_file_set.intersection(pool.by_provider[provider])
+    }
+    return len(present) > 1
+
+
+def _display_list_summary(count: int) -> None:
+    """Print the colored-list trailing summary line (count known only at the end)."""
+    summary = Text()
+    summary.append(
+        f"{count} session" + ("" if count == 1 else "s"),
         style="search.header",
     )
-    header.append("  ·  newest first", style="search.sep")
-    console.print(header)
-    console.print()
+    summary.append("  ·  newest first", style="search.sep")
+    get_console().print(summary)
 
-    for hit in hits:
+
+def _display_hit(
+    hit: SearchHit,
+    flags: ConversationFlags,
+    output_mode: SearchOutputMode,
+    emit_metadata: bool,
+    *,
+    show_provider: bool,
+    now: datetime,
+) -> None:
+    """Render one search hit to the module console: id, colored row, or rule+body."""
+    metadata = hit.metadata
+    if output_mode == SearchOutputMode.ONLY_ID:
+        print(resolve.get_display_session_id(metadata.path))
+        return
+
+    if output_mode == SearchOutputMode.LIST and flags.color:
+        console = get_console()
         console.print(
             _build_search_list_row(
-                hit, now=now, width=width, show_provider=show_provider
+                hit, now=now, width=console.width, show_provider=show_provider
             )
         )
         console.print()
+        return
+
+    get_console().rule(
+        title=f"[bold white]{resolve.get_display_session_id(metadata.path)}[/]",
+        style="#00ffba",
+    )
+    display_search_result(
+        metadata.path,
+        hit.messages,
+        hit.matches,
+        hit.cwd,
+        flags,
+        output_mode=output_mode,
+        emit_metadata=emit_metadata,
+        provider=metadata.provider,
+        forked_from=metadata.forked_from,
+        created_at=metadata.ctime,
+        modified_at=metadata.mtime,
+        matching_summaries=hit.matching_summaries,
+        matching_custom_titles=hit.matching_custom_titles,
+        last_custom_title=hit.last_custom_title,
+    )
 
 
 def display_search_result(
@@ -228,7 +280,13 @@ def cmd_search(
     output_format: str = "xml",
     emit_metadata: bool = True,
 ) -> None:
-    """Handle the search subcommand."""
+    """Handle the search subcommand, streaming results to the terminal as found.
+
+    Hits are displayed in scan order (newest first by filesystem mtime) the
+    moment each is confirmed, instead of buffering the whole pool, sorting, then
+    paging. `raw` is the one exception: its single-message special case needs
+    every hit up front, so it stays buffered.
+    """
     pool_filter = pool_filter or PoolFilter()
 
     try:
@@ -249,66 +307,114 @@ def cmd_search(
         if session_file in candidate_file_set
     ]
 
-    hits: list[SearchHit] = []
-    for conv_file in search_files:
-        try:
-            hit = _search_hit_for_file(conv_file, query, flags, pool_filter)
-        except Exception as error:
-            print_error(f"Error processing conversation file {conv_file}: {error}")
-            continue
-        if hit is not None:
-            hits.append(hit)
+    def iter_hits() -> Iterable[SearchHit]:
+        for conv_file in search_files:
+            try:
+                hit = _search_hit_for_file(conv_file, query, flags, pool_filter)
+            except Exception as error:
+                print_error(
+                    f"Error processing conversation file {conv_file}: {error}"
+                )
+                continue
+            if hit is not None:
+                yield hit
 
-    if not hits:
-        if output_mode != SearchOutputMode.ONLY_ID:
-            suffix = "" if pool_filter.is_empty() else " with the current filters"
-            print_hint(f'No sessions match "{pattern_arg}"{suffix}.')
-        sys.exit(1)
-
-    ordered_hits = sort_by_modified_descending(
-        hits,
-        modified_at=lambda hit: hit.metadata.mtime,
-    )
     if output_format == "raw":
-        raw_output = _format_search_hits_to_raw(ordered_hits, flags, output_mode)
+        hits = list(iter_hits())
+        if not hits:
+            _emit_no_results(pattern_arg, pool_filter, output_mode)
+        raw_output = _format_search_hits_to_raw(hits, flags, output_mode)
         if raw_output:
             print(raw_output)
         sys.exit(0)
 
-    pager_ctx = (
-        nullcontext()
-        if output_mode == SearchOutputMode.ONLY_ID or not flags.paging
-        else get_console().pager(pager=UnicodeSafePager(), styles=True)
+    show_provider = (
+        _list_show_provider(pool, candidate_file_set, pool_filter)
+        if output_mode == SearchOutputMode.LIST and flags.color
+        else False
+    )
+    _stream_search_results(
+        iter_hits(),
+        flags,
+        output_mode=output_mode,
+        emit_metadata=emit_metadata,
+        show_provider=show_provider,
+        pattern_arg=pattern_arg,
+        pool_filter=pool_filter,
     )
 
-    with pager_ctx:
-        if output_mode == SearchOutputMode.LIST and flags.color:
-            _render_search_list(ordered_hits, flags)
-        else:
-            for hit in ordered_hits:
-                metadata = hit.metadata
-                if output_mode != SearchOutputMode.ONLY_ID:
-                    get_console().rule(
-                        title=f"[bold white]{resolve.get_display_session_id(metadata.path)}[/]",
-                        style="#00ffba",
-                    )
-                display_search_result(
-                    metadata.path,
-                    hit.messages,
-                    hit.matches,
-                    hit.cwd,
-                    flags,
-                    output_mode=output_mode,
-                    emit_metadata=emit_metadata,
-                    provider=metadata.provider,
-                    forked_from=metadata.forked_from,
-                    created_at=metadata.ctime,
-                    modified_at=metadata.mtime,
-                    matching_summaries=hit.matching_summaries,
-                    matching_custom_titles=hit.matching_custom_titles,
-                    last_custom_title=hit.last_custom_title,
-                )
 
+def _emit_no_results(
+    pattern_arg: str, pool_filter: PoolFilter, output_mode: SearchOutputMode
+) -> None:
+    """Print the no-match hint (unless id-only) and exit with code 1."""
+    if output_mode != SearchOutputMode.ONLY_ID:
+        suffix = "" if pool_filter.is_empty() else " with the current filters"
+        print_hint(f'No sessions match "{pattern_arg}"{suffix}.')
+    sys.exit(1)
+
+
+def _emit(pager: StreamingPager | None, render: Callable[[], None]) -> None:
+    """Render via the module console, routing to the pager or straight to stdout.
+
+    When paging, the hit is rendered into a captured ANSI buffer and written to
+    `less` immediately; otherwise it prints directly, which is already
+    incremental.
+    """
+    if pager is None:
+        render()
+        return
+    with get_console().capture() as capture:
+        render()
+    pager.write(capture.get())
+
+
+def _stream_search_results(
+    hits: Iterable[SearchHit],
+    flags: ConversationFlags,
+    *,
+    output_mode: SearchOutputMode,
+    emit_metadata: bool,
+    show_provider: bool,
+    pattern_arg: str,
+    pool_filter: PoolFilter,
+) -> None:
+    """Display search hits incrementally, paging through `less` as they arrive."""
+    use_pager = (
+        flags.color and flags.paging and output_mode != SearchOutputMode.ONLY_ID
+    )
+    pager = StreamingPager() if use_pager else None
+    now = datetime.now()
+    found = 0
+    try:
+        for hit in hits:
+            found += 1
+            _emit(
+                pager,
+                lambda current=hit: _display_hit(
+                    current,
+                    flags,
+                    output_mode,
+                    emit_metadata,
+                    show_provider=show_provider,
+                    now=now,
+                ),
+            )
+            if pager is not None and pager.closed:
+                break
+        if (
+            output_mode == SearchOutputMode.LIST
+            and flags.color
+            and found
+            and (pager is None or not pager.closed)
+        ):
+            _emit(pager, lambda: _display_list_summary(found))
+    finally:
+        if pager is not None:
+            pager.close()
+
+    if found == 0:
+        _emit_no_results(pattern_arg, pool_filter, output_mode)
     sys.exit(0)
 
 

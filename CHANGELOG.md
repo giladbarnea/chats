@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-16] Stream search results to the terminal as they are found
+
+### Changed
+
+- `ch search` now displays each matching session the moment it is confirmed instead of scanning the whole pool, sorting, then paging. On a ~1900-file pool, the first result appears in well under a second (e.g. ~0.76s) rather than after the full ~9–13s scan, making a bare `ch search <pattern>` usable again.
+- Paged, colored output streams through `less -r` via a new `StreamingPager`: `less` is spawned up front and each hit's Rich-rendered ANSI is written and flushed as it is produced (instead of Rich's `Console.pager()`, which buffers everything until the scan finishes). Quitting `less` early stops the search and tears down cleanly, mirroring `UnicodeSafePager`'s SIGPIPE handling.
+- Display order is now scan order — newest first by filesystem mtime — rather than a post-scan re-sort by in-band (semantic) modified time. This matches the precedent already set by recent-index resolution and is what enables streaming; the two orderings are near-identical in practice (they differ only for artifacts like forks whose file mtime and last in-band timestamp diverge).
+- The colored `ch search -l` list view streams its rows; its `N sessions · newest first` line now prints as a trailing summary (the count is only known once scanning finishes), and per-row provider labels are decided from whether the searched candidate pool spans multiple providers rather than from the providers among the final hits.
+- `ch search -r/--raw` stays buffered: its single-visible-message special case needs every hit up front.
+
+---
 ## [2026-06-12] Classify Claude background-task notifications as the TaskNotification tool
 
 ### Changed

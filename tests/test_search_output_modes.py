@@ -226,6 +226,13 @@ def test_cmd_search_lists_newest_match_first(
         encoding="utf-8",
     )
 
+    # Streaming display emits in scan order (newest first by filesystem mtime),
+    # so pin the mtimes instead of relying on sub-tick write timing.
+    import os
+
+    os.utime(older_path, (1_700_000_000, 1_700_000_000))
+    os.utime(newer_path, (1_700_001_000, 1_700_001_000))
+
     with pytest.raises(SystemExit) as exc_info:
         cmd_search(
             "shared-ordering-needle",
