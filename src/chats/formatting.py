@@ -6,9 +6,10 @@ import textwrap
 from datetime import datetime
 from pathlib import Path
 
-from rich.console import Group
+from rich.console import Console, ConsoleOptions, Group, RenderResult
 from rich.markdown import Markdown as _Markdown
 from rich.padding import Padding
+from rich.segment import Segment
 from rich.text import Text
 
 from .console import get_console
@@ -32,6 +33,57 @@ class PaddedInlineCodeMarkdown(_Markdown):
 
 
 Markdown = PaddedInlineCodeMarkdown
+
+
+class HighlightedMarkdown:
+    """Render Markdown, then re-style substrings matching a regex (search hits).
+
+    Works on the rendered segment stream rather than reaching into Rich's
+    Markdown internals, so the term highlight survives full markdown formatting
+    and the renderable still wraps/sizes itself inside a Panel. Matches that fall
+    within one rendered run — the common case for a search term — are
+    highlighted; a term split across a style boundary is left untouched.
+    """
+
+    def __init__(self, markup: str, regex: re.Pattern[str], style: str) -> None:
+        self.markup = markup
+        self.regex = regex
+        self.style_name = style
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        highlight = console.get_style(self.style_name)
+        for text, style, control in console.render(Markdown(self.markup), options):
+            if control is not None or not text or not self.regex.search(text):
+                yield Segment(text, style, control)
+                continue
+            cursor = 0
+            for match in self.regex.finditer(text):
+                if match.start() > cursor:
+                    yield Segment(text[cursor : match.start()], style, control)
+                combined = style + highlight if style else highlight
+                yield Segment(match.group(), combined, control)
+                cursor = match.end()
+            if cursor < len(text):
+                yield Segment(text[cursor:], style, control)
+
+
+def _text_renderable(markup: str, highlight_regex: re.Pattern[str] | None):
+    """Return a Markdown renderable, highlighting search terms when asked."""
+    if highlight_regex is None:
+        return Markdown(markup)
+    return HighlightedMarkdown(markup, highlight_regex, "search.match")
+
+
+def _compact_header_meta(msg: Message, conversation_tag: str | None) -> str:
+    """Dim suffix after a compact role badge: conversation id · #index · model."""
+    parts = (
+        conversation_tag,
+        f"#{msg.index}",
+        msg.model.removeprefix("claude-") if msg.model else None,
+    )
+    return "  ·  ".join(part for part in parts if part)
 
 _HEADER_BADGE_STYLE: dict[str, str] = {
     "user-message": "bold white on #3b82f6",
@@ -281,18 +333,29 @@ def print_metadata(
             print("---")
 
 
-def render_messages_with_rich(
+def build_messages_group(
     messages: list[Message],
     flags: ConversationFlags,
     tool_id_map: dict[str, str] | None = None,
-) -> None:
-    """Render messages to Rich console.
+    *,
+    highlight_regex: re.Pattern[str] | None = None,
+    conversation_tag: str | None = None,
+    compact_header: bool = False,
+) -> Group:
+    """Build the Rich renderable for a list of messages.
 
     Key invariant: Only TEXT content is passed to Markdown().
     XML-like tags are always rendered as dim Text.
 
     This fixes the bug where Rich's Markdown() stripped custom tags like
     <thinking> and <tool-input> because it treated them as HTML.
+
+    Search passes ``highlight_regex`` to mark matched terms in bodies and
+    ``conversation_tag`` to restate the session's short id on every message
+    header; both default to off, so parse output is unchanged. ``compact_header``
+    (used by the search Panel) folds the role, id, index, and model onto one
+    line and drops the dim ``<tag>`` open/close lines, which the Panel and its
+    ``---`` separators already make redundant.
     """
     # Pattern to detect HTML/XML-like tags in content
     xml_tag_pattern = re.compile(r"<[a-zA-Z][a-zA-Z0-9\\-]*[>\\s]")
@@ -312,13 +375,27 @@ def render_messages_with_rich(
         header = msg.get_header()
         attrs = msg.get_wrapper_attrs()
 
-        print_targets.append(Text(f"<{tag} {attrs}>\n", style="dim"))
+        if not compact_header:
+            print_targets.append(Text(f"<{tag} {attrs}>\n", style="dim"))
 
         if header:
             header_text = re.sub(r"^#+\s*", "", header)
             badge_style = _HEADER_BADGE_STYLE.get(tag, "bold white on blue")
-            print_targets.append(Text(f" {header_text} ", style=badge_style))
-            print_targets.append(Text("\n"))
+            if compact_header:
+                header_line = Text()
+                header_line.append(f" {header_text} ", style=badge_style)
+                meta = _compact_header_meta(msg, conversation_tag)
+                if meta:
+                    header_line.append(f"  ·  {meta}", style="search.idtag")
+                print_targets.append(header_line)
+                print_targets.append(Text(""))
+            else:
+                print_targets.append(Text(f" {header_text} ", style=badge_style))
+                if conversation_tag:
+                    print_targets.append(
+                        Text(f"  ·  {conversation_tag}", style="search.idtag")
+                    )
+                print_targets.append(Text("\n"))
 
         for part in parts:
             if part.kind == MessagePartKind.TEXT:
@@ -329,9 +406,11 @@ def render_messages_with_rich(
                         r"\\<\1\2\3>",
                         part.data,
                     )
-                    print_targets.append(Markdown(escaped_data))
+                    print_targets.append(
+                        _text_renderable(escaped_data, highlight_regex)
+                    )
                 else:
-                    print_targets.append(Markdown(part.data))
+                    print_targets.append(_text_renderable(part.data, highlight_regex))
 
             elif part.kind == MessagePartKind.THINKING:
                 bt = ContentBlockType.THINKING
@@ -349,6 +428,17 @@ def render_messages_with_rich(
                 print_targets.append(Text("\n", style="dim"))
                 print_targets.extend(render_tool_rich(part.data))
 
-        print_targets.append(Text(f"</{tag}>", style="dim"))
+        if not compact_header:
+            print_targets.append(Text(f"</{tag}>", style="dim"))
 
-    get_console().print(Padding(Group(*print_targets), pad=(0, 2, 0, 2)))
+    return Group(*print_targets)
+
+
+def render_messages_with_rich(
+    messages: list[Message],
+    flags: ConversationFlags,
+    tool_id_map: dict[str, str] | None = None,
+) -> None:
+    """Render messages to the module console with the standard parse padding."""
+    group = build_messages_group(messages, flags, tool_id_map)
+    get_console().print(Padding(group, pad=(0, 2, 0, 2)))

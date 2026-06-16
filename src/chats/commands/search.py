@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import functools
+import re
 import sys
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from rich import box
 from rich.console import Group
+from rich.panel import Panel
 from rich.text import Text
 
 from ..console import StreamingPager, get_console, print_error, print_hint
 from ..formatting import (
+    build_messages_group,
     format_to_raw,
     format_to_xml,
     print_metadata,
@@ -49,6 +53,37 @@ class SearchHit:
 
 
 _RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
+
+# Border hues cycled per conversation in the colored full/matches view, so the
+# persistent left edge of each Panel changes color at every conversation
+# boundary — the orientation cue that survives scrolling through `less`.
+_CONVERSATION_BORDER_CYCLE: tuple[str, ...] = (
+    "#5cc8a8",
+    "#9d7cd8",
+    "#d8a657",
+    "#7aa2f7",
+)
+
+
+def _build_highlight_regex(query: SearchQuery) -> re.Pattern[str] | None:
+    """Compile one case-insensitive regex over the query's plain-literal terms.
+
+    Only literal terms are highlighted; regex terms are skipped to avoid greedy
+    spans painting half a message. Longer literals first so alternation prefers
+    the most specific match.
+    """
+    literals = sorted(
+        {
+            term.pattern
+            for term in query.iter_terms()
+            if term.literal_candidate is not None and term.pattern
+        },
+        key=len,
+        reverse=True,
+    )
+    if not literals:
+        return None
+    return re.compile("|".join(re.escape(literal) for literal in literals), re.IGNORECASE)
 
 
 def _display_messages_for_hit(
@@ -163,6 +198,92 @@ def _display_list_summary(count: int) -> None:
     get_console().print(summary)
 
 
+def _panel_title(hit: SearchHit, *, width: int, now: datetime) -> Text:
+    """Build the conversation Panel's border title: tick, headline, short id, age."""
+    session_id = resolve.get_display_session_id(hit.metadata.path)
+    headline, is_fallback = _headline(hit)
+    age_label = humanize_age(hit.metadata.mtime, now) if hit.metadata.mtime else "?"
+
+    title = Text(no_wrap=True, overflow="ellipsis")
+    title.append("▎ ", style="search.tick")
+    title.append(
+        elide_to_width(headline, max(8, width - 24)),
+        style="search.title.fallback" if is_fallback else "search.title",
+    )
+    title.append(f"  ·  {session_id[:8]}", style="search.id.head")
+    title.append(
+        f"  ·  {age_label}",
+        style=age_style(hit.metadata.mtime, now) if hit.metadata.mtime else "search.age.old",
+    )
+    return title
+
+
+def _panel_facts_line(hit: SearchHit, *, width: int) -> Text:
+    """Build the in-Panel facts line: directory · provider · match count."""
+    directory = collapse_home(hit.cwd) if hit.cwd else "(unknown directory)"
+    match_count = (
+        len(hit.matches)
+        + len(hit.matching_summaries)
+        + len(hit.matching_custom_titles)
+    )
+    match_word = "match" if match_count == 1 else "matches"
+
+    line = Text(no_wrap=True, overflow="ellipsis")
+    line.append(
+        elide_to_width(directory, max(16, width - 28), where="middle"),
+        style="search.dir",
+    )
+    line.append(" · ", style="search.sep")
+    line.append(hit.metadata.provider, style="search.label")
+    line.append(" · ", style="search.sep")
+    line.append(str(match_count), style="search.count")
+    line.append(f" {match_word}", style="search.label")
+    return line
+
+
+def _render_conversation_panel(
+    hit: SearchHit,
+    flags: ConversationFlags,
+    output_mode: SearchOutputMode,
+    emit_metadata: bool,
+    *,
+    highlight_regex: re.Pattern[str] | None,
+    ordinal: int,
+    now: datetime,
+) -> None:
+    """Render one hit as a titled Panel whose border hue keys off its ordinal."""
+    console = get_console()
+    session_id = resolve.get_display_session_id(hit.metadata.path)
+    border = _CONVERSATION_BORDER_CYCLE[ordinal % len(_CONVERSATION_BORDER_CYCLE)]
+
+    display_messages = _display_messages_for_hit(hit.messages, hit.matches, output_mode)
+    body = build_messages_group(
+        display_messages,
+        flags,
+        _build_tool_id_map(hit.messages),
+        highlight_regex=highlight_regex,
+        conversation_tag=session_id[:8],
+        compact_header=True,
+    )
+
+    rows: list = []
+    if emit_metadata:
+        rows.append(_panel_facts_line(hit, width=console.width))
+        rows.append(Text(""))
+    rows.append(body)
+
+    console.print(
+        Panel(
+            Group(*rows),
+            title=_panel_title(hit, width=console.width, now=now),
+            title_align="left",
+            border_style=border,
+            box=box.ROUNDED,
+            padding=(0, 1),
+        )
+    )
+
+
 def _display_hit(
     hit: SearchHit,
     flags: ConversationFlags,
@@ -171,6 +292,8 @@ def _display_hit(
     *,
     show_provider: bool,
     now: datetime,
+    highlight_regex: re.Pattern[str] | None = None,
+    ordinal: int = 0,
 ) -> None:
     """Render one search hit to the module console: id, colored row, or rule+body."""
     metadata = hit.metadata
@@ -186,6 +309,18 @@ def _display_hit(
             )
         )
         console.print()
+        return
+
+    if flags.color and output_mode in (SearchOutputMode.MATCHES, SearchOutputMode.FULL):
+        _render_conversation_panel(
+            hit,
+            flags,
+            output_mode,
+            emit_metadata,
+            highlight_regex=highlight_regex,
+            ordinal=ordinal,
+            now=now,
+        )
         return
 
     get_console().rule(
@@ -341,6 +476,7 @@ def cmd_search(
         show_provider=show_provider,
         pattern_arg=pattern_arg,
         pool_filter=pool_filter,
+        highlight_regex=_build_highlight_regex(query),
     )
 
 
@@ -378,6 +514,7 @@ def _stream_search_results(
     show_provider: bool,
     pattern_arg: str,
     pool_filter: PoolFilter,
+    highlight_regex: re.Pattern[str] | None = None,
 ) -> None:
     """Display search hits incrementally, paging through `less` as they arrive."""
     use_pager = (
@@ -388,18 +525,20 @@ def _stream_search_results(
     found = 0
     try:
         for hit in hits:
-            found += 1
             _emit(
                 pager,
-                lambda current=hit: _display_hit(
+                lambda current=hit, ordinal=found: _display_hit(
                     current,
                     flags,
                     output_mode,
                     emit_metadata,
                     show_provider=show_provider,
                     now=now,
+                    highlight_regex=highlight_regex,
+                    ordinal=ordinal,
                 ),
             )
+            found += 1
             if pager is not None and pager.closed:
                 break
         if (
