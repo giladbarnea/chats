@@ -25,6 +25,14 @@ APP_THEME = Theme(
         # and the amber pop used to highlight matched query terms in bodies.
         "message.meta": "#646a70",
         "search.match": "bold #14181d on #e6b450",
+        # Tool blocks: ⏺ call / ⎿ result markers + the left rail marking each
+        # block's extent. Call bright, result dim, error red.
+        "tool.call": "bold #7fb4c4",
+        "tool.result": "#5f7e86",
+        "tool.error": "bold #e06c75",
+        # Edit-tool diff bodies.
+        "diff.add": "#98c379",
+        "diff.remove": "#e06c75",
         "search.age.now": "#a9aeb4",
         "search.age.week": "#878c92",
         "search.age.month": "#6b7076",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import json
 import re
 import textwrap
@@ -13,15 +14,16 @@ from rich.padding import Padding
 from rich.panel import Panel
 from rich.segment import Segment
 from rich.style import Style
+from rich.syntax import Syntax
 from rich.text import Text
 
 from .console import get_console
 from .model import ConversationFlags, Message, Provider
 from .parsing import get_display_session_id
-from .parts import MessagePart, MessagePartKind
+from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
-from .tools import render_tool_rich, render_tool_xml
-from .utils import collapse_home
+from .tools import render_tool_xml
+from .utils import collapse_home, elide_to_width
 
 
 class PaddedInlineCodeMarkdown(_Markdown):
@@ -79,6 +81,178 @@ def _text_renderable(markup: str, highlight_regex: re.Pattern[str] | None):
     return HighlightedMarkdown(markup, highlight_regex, "search.match")
 
 
+class LeftRail:
+    """Prefix every line of a renderable with a thin colored left rail (``▎``).
+
+    The rail's vertical span marks a tool block's extent without a horizontal
+    rule (which is already the message/conversation separator). Renders the
+    child at reduced width so the rail fits inside its enclosing Panel.
+    """
+
+    def __init__(self, renderable, style: str, glyph: str = "▎ ") -> None:
+        self.renderable = renderable
+        self.style = style
+        self.glyph = glyph
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        rail = Segment(self.glyph, console.get_style(self.style))
+        inner = options.update_width(max(1, options.max_width - len(self.glyph)))
+        lines = console.render_lines(self.renderable, inner, pad=False)
+
+        is_blank = lambda line: all(not segment.text.strip() for segment in line)
+        start, end = 0, len(lines)
+        while start < end and is_blank(lines[start]):
+            start += 1
+        while end > start and is_blank(lines[end - 1]):
+            end -= 1
+
+        for line in lines[start:end]:
+            yield rail
+            yield from line
+            yield Segment.line()
+
+
+def _tool_key_arg(attrs: list[tuple[str, str]]) -> str | None:
+    """The first display-worthy tool argument (path / pattern / url), collapsed."""
+    for key, value in attrs:
+        if key in ("name", "id", "is_error"):
+            continue
+        collapsed = collapse_home(value)
+        if "/" in collapsed:
+            collapsed = elide_to_width(collapsed, 44, where="middle")
+        return collapsed
+    return None
+
+
+def _edit_diff_renderable(input_data: dict, accent: str) -> LeftRail | None:
+    """Render an Edit's old_string→new_string as a colored unified diff."""
+    old = str(input_data.get("old_string", "")).splitlines()
+    new = str(input_data.get("new_string", "")).splitlines()
+    body = Text()
+    for line in list(difflib.unified_diff(old, new, lineterm="", n=2))[2:]:
+        if line.startswith("@@"):
+            continue
+        style = (
+            "diff.add"
+            if line.startswith("+")
+            else "diff.remove"
+            if line.startswith("-")
+            else "dim"
+        )
+        body.append(line + "\n", style=style)
+    return LeftRail(body, accent) if body else None
+
+
+def _strip_read_line_numbers(text: str) -> tuple[str, int]:
+    """Strip Read's ``<n>\\t`` line-number gutter, returning (code, first_line)."""
+    lines = text.split("\n")
+    stripped: list[str] = []
+    first: int | None = None
+    matched = 0
+    for line in lines:
+        match = re.match(r"\s*(\d+)\t(.*)$", line)
+        if match:
+            matched += 1
+            first = first if first is not None else int(match.group(1))
+            stripped.append(match.group(2))
+        else:
+            stripped.append(line)
+    if matched < max(1, len(lines) // 2):
+        return text, 1
+    return "\n".join(stripped), first or 1
+
+
+def _read_output_renderable(
+    output_text: str, file_path: str, accent: str
+) -> LeftRail:
+    """Render a Read tool result as source highlighted by the file's extension."""
+    code, start_line = _strip_read_line_numbers(output_text)
+    try:
+        lexer = Syntax.guess_lexer(file_path, code)
+    except Exception:
+        lexer = "text"
+    syntax = Syntax(
+        code,
+        lexer,
+        theme="monokai",
+        line_numbers=True,
+        start_line=start_line,
+        word_wrap=True,
+    )
+    return LeftRail(syntax, accent)
+
+
+def render_tool_rich(
+    parts: ToolParts, input_by_id: dict[str, dict] | None = None
+) -> list:
+    """Render a tool call/result tag-free: a ⏺/⎿ header plus a colored left rail.
+
+    Edit renders as a diff and a Read result is highlighted by the extension of
+    its paired input's path (looked up via ``input_by_id``); every other tool
+    falls back to its fenced markdown content.
+    """
+    is_result = parts.tag == ContentBlockType.TOOL_OUTPUT.value.xml_tag
+    is_error = any(key == "is_error" for key, _ in parts.attrs)
+    name = parts.name or next(
+        (value for key, value in parts.attrs if key == "name"), "Tool"
+    )
+
+    accent = "tool.error" if is_error else "tool.result" if is_result else "tool.call"
+    header = Text()
+    header.append(f"{'⎿' if is_result else '⏺'} ", style=accent)
+    header.append(name, style=accent)
+    if is_error:
+        header.append("  ·  error", style="tool.error")
+    if key_arg := _tool_key_arg(parts.attrs):
+        header.append(f"  ·  {key_arg}", style="message.meta")
+
+    out: list = [header]
+    out.append(_tool_body_renderable(parts, name, is_error, is_result, accent, input_by_id))
+    return [item for item in out if item is not None]
+
+
+def _tool_body_renderable(
+    parts: ToolParts,
+    name: str,
+    is_error: bool,
+    is_result: bool,
+    accent: str,
+    input_by_id: dict[str, dict] | None,
+):
+    """Pick the richest body for a tool: Edit diff, Read highlight, or fenced content."""
+    if name == "Edit" and parts.input_data:
+        return _edit_diff_renderable(parts.input_data, accent)
+
+    read_input = (input_by_id or {}).get(parts.tool_use_id or "")
+    if (
+        is_result
+        and not is_error
+        and name == "Read"
+        and parts.output_text
+        and read_input
+        and read_input.get("file_path")
+    ):
+        return _read_output_renderable(
+            parts.output_text, read_input["file_path"], accent
+        )
+
+    if not parts.is_empty and parts.content:
+        return LeftRail(Markdown(parts.content), accent)
+    return None
+
+
+def _tool_input_by_id(messages: list[Message]) -> dict[str, dict]:
+    """Map each tool_use id to its raw input, so an output can find its input."""
+    return {
+        tool["id"]: tool.get("input", {})
+        for message in messages
+        for tool in message.tools
+        if tool.get("type") == "tool_use" and "id" in tool
+    }
+
+
 def _compact_header_meta(msg: Message, conversation_tag: str | None) -> str:
     """Dim suffix after a compact role badge: conversation id · #index · model."""
     parts = (
@@ -90,7 +264,9 @@ def _compact_header_meta(msg: Message, conversation_tag: str | None) -> str:
 
 
 def _message_content_renderables(
-    parts: list[MessagePart], highlight_regex: re.Pattern[str] | None
+    parts: list[MessagePart],
+    highlight_regex: re.Pattern[str] | None,
+    input_by_id: dict[str, dict] | None = None,
 ) -> list:
     """Render a message's visible parts (text, thinking, tools) to renderables.
 
@@ -101,6 +277,9 @@ def _message_content_renderables(
     xml_tag_pattern = re.compile(r"<[a-zA-Z][a-zA-Z0-9\\-]*[>\\s]")
     out: list = []
     for part in parts:
+        if out:
+            out.append(Text(""))
+
         if part.kind == MessagePartKind.TEXT:
             # Use Text() for content with XML tags to avoid Markdown mangling
             if xml_tag_pattern.search(part.data):
@@ -114,20 +293,15 @@ def _message_content_renderables(
                 out.append(_text_renderable(part.data, highlight_regex))
 
         elif part.kind == MessagePartKind.THINKING:
-            bt = ContentBlockType.THINKING
-            out.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
-            out.append(Text(part.data, style=bt.value.rich_style))
-            out.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))
+            out.append(Text("✻ thinking", style="message.meta"))
+            out.append(LeftRail(Text(part.data, style="dim italic"), "message.meta"))
 
         elif part.kind == MessagePartKind.SUBAGENT_TASK:
-            bt = ContentBlockType.SUBAGENT_TASK
-            out.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
-            out.append(Text(part.data, style=bt.value.rich_style))
-            out.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))
+            out.append(Text("✻ subagent task", style="message.meta"))
+            out.append(LeftRail(Text(part.data, style="italic"), "message.meta"))
 
         elif part.kind == MessagePartKind.TOOL:
-            out.append(Text("\n", style="dim"))
-            out.extend(render_tool_rich(part.data))
+            out.extend(render_tool_rich(part.data, input_by_id))
 
     return out
 
@@ -424,6 +598,7 @@ def build_messages_group(
     line and drops the dim ``<tag>`` open/close lines, which the Panel and its
     ``---`` separators already make redundant.
     """
+    input_by_id = _tool_input_by_id(messages)
     print_targets = []
 
     for i, msg in enumerate(messages):
@@ -461,7 +636,9 @@ def build_messages_group(
                     )
                 print_targets.append(Text("\n"))
 
-        print_targets.extend(_message_content_renderables(parts, highlight_regex))
+        print_targets.extend(
+            _message_content_renderables(parts, highlight_regex, input_by_id)
+        )
 
         if not compact_header:
             print_targets.append(Text(f"</{tag}>", style="dim"))
@@ -493,12 +670,13 @@ def build_message_panels(
     colorful title chip, which carries the role plus index and model. Border and
     chip keep each message type's existing hue.
     """
+    input_by_id = _tool_input_by_id(messages)
     panels: list = []
     for msg in messages:
         parts = msg.iter_visible_parts(flags, tool_id_map)
         if not parts:
             continue
-        body = _message_content_renderables(parts, highlight_regex)
+        body = _message_content_renderables(parts, highlight_regex, input_by_id)
         panels.append(
             Panel(
                 Group(*body),

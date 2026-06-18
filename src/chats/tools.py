@@ -2,9 +2,6 @@ from __future__ import annotations
 
 import json
 
-from rich.markdown import Markdown
-from rich.text import Text
-
 from .parts import ToolParts
 from .registry import TOOL_SCHEMAS, ContentBlockType
 from .utils import extract_text_from_content, shorten_tool_use_id
@@ -95,7 +92,15 @@ def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
     elif input_data:
         content = f"```json\n{json.dumps(input_data, indent=2)}\n```"
 
-    return ToolParts(tag=tag, attrs=attrs, content=content, is_empty=not content)
+    return ToolParts(
+        tag=tag,
+        attrs=attrs,
+        content=content,
+        is_empty=not content,
+        name=name,
+        input_data=input_data if isinstance(input_data, dict) else None,
+        tool_use_id=tool.get("id"),
+    )
 
 
 def _tool_use_to_json(tool: dict, tag: str) -> dict[str, object]:
@@ -131,8 +136,9 @@ def _tool_result_to_parts(
     is_error = tool.get("is_error", False)
     tool_use_id = tool.get("tool_use_id")
 
+    name = id_map.get(tool_use_id, "") if id_map and tool_use_id else ""
     attrs: list[tuple[str, str]] = []
-    if id_map and tool_use_id and (name := id_map.get(tool_use_id)):
+    if name:
         attrs.append(("name", name))
     if short_tool_id := shorten_tool_use_id(tool_use_id):
         attrs.append(("id", short_tool_id))
@@ -141,7 +147,15 @@ def _tool_result_to_parts(
 
     content = f"```\n{content_text}\n```" if content_text else None
 
-    return ToolParts(tag=tag, attrs=attrs, content=content, is_empty=not content)
+    return ToolParts(
+        tag=tag,
+        attrs=attrs,
+        content=content,
+        is_empty=not content,
+        name=name,
+        output_text=content_text or None,
+        tool_use_id=tool_use_id,
+    )
 
 
 def _tool_result_to_json(
@@ -171,18 +185,3 @@ def render_tool_xml(parts: ToolParts) -> str:
     if parts.is_empty:
         return f"{tag_open}</{parts.tag}>"
     return f"{tag_open}\n{parts.content}\n</{parts.tag}>"
-
-
-def render_tool_rich(parts: ToolParts) -> list[Text | Markdown]:
-    """Render ToolParts to Rich objects for console.print()."""
-    attr_str = " ".join(f'{k}="{v}"' for k, v in parts.attrs)
-    tag_open = f"<{parts.tag} {attr_str}>" if attr_str else f"<{parts.tag}>"
-
-    if parts.is_empty:
-        return [Text(f"{tag_open}</{parts.tag}>", style="dim")]
-
-    result: list[Text | Markdown] = [Text(tag_open, style="dim")]
-    if parts.content:
-        result.append(Markdown(parts.content))
-    result.append(Text(f"</{parts.tag}>", style="dim"))
-    return result
