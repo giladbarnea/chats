@@ -1,9 +1,6 @@
 #!/usr/bin/env zsh -i
 source tests/lib.sh
 
-USER_MESSAGE_TAG="${SUPPORTED_MESSAGE_TAGS[user-message]:?'user-message' not in SUPPORTED_MESSAGE_TAGS}"
-ASSISTANT_RESPONSE_TAG="${SUPPORTED_MESSAGE_TAGS[assistant-response]:?'assistant-response' not in SUPPORTED_MESSAGE_TAGS}"
-
 echo "Running structured rendering tests..."
 DATA_FILE_SYNTHETIC="tests/data/synthetic_flags.jsonl"
 GOLDEN_FILE="tests/data/golden_xml_output.txt"
@@ -53,39 +50,36 @@ if [[ "$actual" != "$expected" ]]; then
 fi
 echo "  ✓ XML output matches golden reference"
 
-# Test 2: Rich output contains thinking content
-echo "Testing Rich output contains thinking..."
+# Test 2: Rich thinking renders tag-free under a ✻ marker (not <thinking> tags).
+# tests/test_colored_rendering.py pins the colored structure in detail; this is the
+# CLI-seam check that the same tag-free shape reaches the terminal through `ch`.
+echo "Testing Rich thinking renders tag-free..."
 output=$($CC_CMD -T "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
-assert_contains "$output" "<thinking>"
-assert_contains "$output" "</thinking>"
+assert_contains "$output" "✻ thinking"
 assert_contains "$output" "I should reply hello"
-echo "  ✓ Rich output contains thinking"
+assert_not_contains "$output" "<thinking>"
+echo "  ✓ Rich thinking is tag-free (✻ marker)"
 
-# Test 3: Rich output contains tool content
-echo "Testing Rich output contains tools..."
+# Test 3: Rich tools render tag-free as ⏺ call / ⎿ result headers (not <tool-*> tags).
+echo "Testing Rich tools render tag-free..."
 output=$($CC_CMD -t "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
-assert_contains "$output" "<tool-input"
-assert_contains "$output" "</tool-input>"
-assert_contains "$output" "<tool-output"
-assert_contains "$output" "</tool-output>"
+assert_contains "$output" "⏺"
+assert_contains "$output" "⎿"
 assert_contains "$output" "result"
-echo "  ✓ Rich output contains tools"
+assert_not_contains "$output" "<tool-input"
+assert_not_contains "$output" "<tool-output"
+echo "  ✓ Rich tools are tag-free (⏺/⎿ markers)"
 
-# Test 4: Rich/XML structural equivalence
-echo "Testing Rich/XML tag count equivalence..."
-xml_output=$($CC_CMD -T -t "$DATA_FILE_SYNTHETIC" --color=never 2>/dev/null)
-rich_output=$($CC_CMD -T -t "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
-
-for tag in "<${USER_MESSAGE_TAG}" "</${USER_MESSAGE_TAG}>" "<${ASSISTANT_RESPONSE_TAG}" "</${ASSISTANT_RESPONSE_TAG}>" \
-           "<thinking>" "</thinking>" "<tool-input" "</tool-input>" "<tool-output>" "</tool-output>"; do
-    xml_count=$(echo "$xml_output" | grep -c "$tag" || echo 0)
-    rich_count=$(echo "$rich_output" | grep -c "$tag" || echo 0)
-    if [[ "$xml_count" != "$rich_count" ]]; then
-        echo "❌ Tag count mismatch for $tag: XML=$xml_count, Rich=$rich_count"
-        exit 1
-    fi
-done
-echo "  ✓ Rich/XML tag counts match"
+# Test 4: colored and plain views diverge by design — colored is tag-free, while
+# plain (--color=never) keeps the XML tags (the form meant for piping to tools/LLMs).
+echo "Testing colored is tag-free while plain keeps tags..."
+plain=$($CC_CMD -T -t "$DATA_FILE_SYNTHETIC" --color=never 2>/dev/null)
+rich=$($CC_CMD -T -t "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
+assert_contains "$plain" "<thinking>"
+assert_contains "$plain" "<tool-input"
+assert_not_contains "$rich" "<thinking>"
+assert_not_contains "$rich" "<tool-input"
+echo "  ✓ colored tag-free, plain keeps tags"
 
 # Test 5: Rich output contains headers
 echo "Testing Rich output contains headers..."

@@ -10,7 +10,6 @@ from pathlib import Path
 from rich import box
 from rich.console import Console, ConsoleOptions, Group, RenderResult
 from rich.markdown import Markdown as _Markdown
-from rich.padding import Padding
 from rich.panel import Panel
 from rich.segment import Segment
 from rich.style import Style
@@ -306,19 +305,24 @@ def _message_content_renderables(
     return out
 
 
-def _message_panel_title(msg: Message) -> Text:
-    """Colorful Panel title for the parse view: role chip + dim index/model."""
+def _message_header_badge(msg: Message, *, conversation_tag: str | None = None) -> Text:
+    """A message's role badge: colored role chip + dim id/index/model suffix.
+
+    Shared by both colored views — the parse per-message Panel title and the
+    search Panel's inline per-message headers (the latter passing the
+    conversation's short id as ``conversation_tag``).
+    """
     tag = msg.get_wrapper_type().value.xml_tag
     header = msg.get_header()
     header_text = re.sub(r"^#+\s*", "", header) if header else msg.role.title()
-    title = Text()
-    title.append(
+    badge = Text()
+    badge.append(
         f" {header_text} ", style=_HEADER_BADGE_STYLE.get(tag, "bold white on blue")
     )
-    meta = _compact_header_meta(msg, conversation_tag=None)
+    meta = _compact_header_meta(msg, conversation_tag)
     if meta:
-        title.append(f"  ·  {meta}", style="message.meta")
-    return title
+        badge.append(f"  ·  {meta}", style="message.meta")
+    return badge
 
 
 def _message_border_style(tag: str) -> Style:
@@ -581,22 +585,12 @@ def build_messages_group(
     *,
     highlight_regex: re.Pattern[str] | None = None,
     conversation_tag: str | None = None,
-    compact_header: bool = False,
 ) -> Group:
-    """Build the Rich renderable for a list of messages.
+    """Build the inline Rich body for a conversation (the search Panel's content).
 
-    Key invariant: Only TEXT content is passed to Markdown().
-    XML-like tags are always rendered as dim Text.
-
-    This fixes the bug where Rich's Markdown() stripped custom tags like
-    <thinking> and <tool-input> because it treated them as HTML.
-
-    Search passes ``highlight_regex`` to mark matched terms in bodies and
-    ``conversation_tag`` to restate the session's short id on every message
-    header; both default to off, so parse output is unchanged. ``compact_header``
-    (used by the search Panel) folds the role, id, index, and model onto one
-    line and drops the dim ``<tag>`` open/close lines, which the Panel and its
-    ``---`` separators already make redundant.
+    Each message renders as a one-line role badge over its parts, with ``---``
+    rules between messages. ``highlight_regex`` marks matched search terms in
+    bodies; ``conversation_tag`` restates the session's short id on each header.
     """
     input_by_id = _tool_input_by_id(messages)
     print_targets = []
@@ -609,51 +603,15 @@ def build_messages_group(
         if i > 0:
             print_targets.append(Markdown("---"))
 
-        wrapper_type = msg.get_wrapper_type()
-        tag = wrapper_type.value.xml_tag
-        header = msg.get_header()
-        attrs = msg.get_wrapper_attrs()
-
-        if not compact_header:
-            print_targets.append(Text(f"<{tag} {attrs}>\n", style="dim"))
-
-        if header:
-            header_text = re.sub(r"^#+\s*", "", header)
-            badge_style = _HEADER_BADGE_STYLE.get(tag, "bold white on blue")
-            if compact_header:
-                header_line = Text()
-                header_line.append(f" {header_text} ", style=badge_style)
-                meta = _compact_header_meta(msg, conversation_tag)
-                if meta:
-                    header_line.append(f"  ·  {meta}", style="message.meta")
-                print_targets.append(header_line)
-                print_targets.append(Text(""))
-            else:
-                print_targets.append(Text(f" {header_text} ", style=badge_style))
-                if conversation_tag:
-                    print_targets.append(
-                        Text(f"  ·  {conversation_tag}", style="message.meta")
-                    )
-                print_targets.append(Text("\n"))
-
+        print_targets.append(
+            _message_header_badge(msg, conversation_tag=conversation_tag)
+        )
+        print_targets.append(Text(""))
         print_targets.extend(
             _message_content_renderables(parts, highlight_regex, input_by_id)
         )
 
-        if not compact_header:
-            print_targets.append(Text(f"</{tag}>", style="dim"))
-
     return Group(*print_targets)
-
-
-def render_messages_with_rich(
-    messages: list[Message],
-    flags: ConversationFlags,
-    tool_id_map: dict[str, str] | None = None,
-) -> None:
-    """Render messages to the module console with the standard parse padding."""
-    group = build_messages_group(messages, flags, tool_id_map)
-    get_console().print(Padding(group, pad=(0, 2, 0, 2)))
 
 
 def build_message_panels(
@@ -680,7 +638,7 @@ def build_message_panels(
         panels.append(
             Panel(
                 Group(*body),
-                title=_message_panel_title(msg),
+                title=_message_header_badge(msg),
                 title_align="left",
                 border_style=_message_border_style(msg.get_wrapper_type().value.xml_tag),
                 box=box.ROUNDED,

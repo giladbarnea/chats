@@ -20,7 +20,6 @@ from ..formatting import (
     format_to_xml,
     print_metadata,
     render_message_inner_xml,
-    render_messages_with_rich,
 )
 from ..model import (
     PROVIDERS,
@@ -263,7 +262,6 @@ def _render_conversation_panel(
         _build_tool_id_map(hit.messages),
         highlight_regex=highlight_regex,
         conversation_tag=session_id[:8],
-        compact_header=True,
     )
 
     rows: list = []
@@ -398,10 +396,6 @@ def display_search_result(
         return
 
     tool_id_map = _build_tool_id_map(messages)
-    if flags.color:
-        render_messages_with_rich(display_messages, flags, tool_id_map)
-        return
-
     print(format_to_xml(display_messages, flags, tool_id_map))
     print()
 
