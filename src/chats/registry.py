@@ -9,34 +9,29 @@ class ContentBlockInfo(NamedTuple):
 
     xml_tag: str
     header: str | None  # None for inner blocks (thinking, tools)
-    rich_style: str  # Rich style for colored output
 
 
 class ContentBlockType(Enum):
     """All XML content block types the system outputs."""
 
     # Message wrappers (outer)
-    USER_MESSAGE = ContentBlockInfo("user-message", "## User", "bold cyan")
+    USER_MESSAGE = ContentBlockInfo("user-message", "## User")
     USER_COMMAND_INPUT = ContentBlockInfo(
-        "user-command-input", "## User Command Input", "bold cyan"
+        "user-command-input", "## User Command Input"
     )
     USER_COMMAND_OUTPUT = ContentBlockInfo(
-        "user-command-output", "## User Command Output", "bold cyan"
+        "user-command-output", "## User Command Output"
     )
-    RECAP = ContentBlockInfo("recap", "## Recap", "bold blue")
-    ASSISTANT_RESPONSE = ContentBlockInfo(
-        "assistant-response", "## Assistant", "bold green"
-    )
-    AGENT = ContentBlockInfo("agent", "## Agent", "bold magenta")
-    SESSION_RENAME = ContentBlockInfo(
-        "session-rename", "## Renamed Session", "bold yellow"
-    )
+    RECAP = ContentBlockInfo("recap", "## Recap")
+    ASSISTANT_RESPONSE = ContentBlockInfo("assistant-response", "## Assistant")
+    AGENT = ContentBlockInfo("agent", "## Agent")
+    SESSION_RENAME = ContentBlockInfo("session-rename", "## Renamed Session")
 
     # Content blocks (inner)
-    THINKING = ContentBlockInfo("thinking", None, "dim italic")
-    TOOL_INPUT = ContentBlockInfo("tool-input", None, "dim")
-    TOOL_OUTPUT = ContentBlockInfo("tool-output", None, "dim")
-    SUBAGENT_TASK = ContentBlockInfo("subagent-task", None, "italic")
+    THINKING = ContentBlockInfo("thinking", None)
+    TOOL_INPUT = ContentBlockInfo("tool-input", None)
+    TOOL_OUTPUT = ContentBlockInfo("tool-output", None)
+    SUBAGENT_TASK = ContentBlockInfo("subagent-task", None)
 
 
 class ToolSchema(NamedTuple):
