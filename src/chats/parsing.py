@@ -1340,7 +1340,7 @@ _ANTIGRAVITY_USER_REQUEST_PATTERN = re.compile(
 
 
 def _extract_antigravity_user_text(content: object) -> str:
-    """Extract the user-authored request from Antigravity's XML-ish user content.
+    r"""Extract the user-authored request from Antigravity's XML-ish user content.
 
     >>> _extract_antigravity_user_text('<USER_REQUEST>\nhello\n</USER_REQUEST><ADDITIONAL_METADATA>x</ADDITIONAL_METADATA>')
     'hello'
