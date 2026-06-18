@@ -273,17 +273,17 @@ def _message_content_renderables(
     shared by the inline (search) and per-message-Panel (parse) views.
     """
     # Pattern to detect HTML/XML-like tags in content
-    xml_tag_pattern = re.compile(r"<[a-zA-Z][a-zA-Z0-9\\-]*[>\\s]")
+    xml_tag_pattern = re.compile(r"<[a-zA-Z][a-zA-Z0-9-]*[>\s]")
     out: list = []
     for part in parts:
         if out:
             out.append(Text(""))
 
         if part.kind == MessagePartKind.TEXT:
-            # Use Text() for content with XML tags to avoid Markdown mangling
+            # Escape tag-like text so Markdown leaves it literal, not dropped
             if xml_tag_pattern.search(part.data):
                 escaped_data = re.sub(
-                    r"<(/?)([a-zA-Z][a-zA-Z0-9\\-]*)(\\s+[^>]*?)?>",
+                    r"<(/?)([a-zA-Z][a-zA-Z0-9-]*)(\s+[^>]*?)?>",
                     r"\\<\1\2\3>",
                     part.data,
                 )

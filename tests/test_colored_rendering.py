@@ -234,6 +234,32 @@ def test_thinking_is_detagged(tmp_path, monkeypatch):
     assert "<thinking>" not in out, f"Thinking must be tag-free in color. Got:\n{out}"
 
 
+def test_colored_text_preserves_attributed_xml_tags(tmp_path, monkeypatch):
+    """Tag-like text with attributes survives the colored view, not stripped by Markdown.
+
+    Message text is escaped before Markdown so XML/HTML-like tags render literally.
+    A bare tag (<thinking>) was already escaped, but an attributed tag like
+    <div class="box"> slipped past the guard and Markdown silently dropped it.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_claude_session(
+        home, "aaaaaaaa-aaaa-bbbb-cccc-000000000001",
+        [_assistant(text='Wrap it in <div class="box"> please.')],
+    )
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False), sid, None, None,
+        output_format="xml", emit_metadata=False,
+    )
+
+    assert '<div class="box">' in out, (
+        f"An attributed XML-like tag in message text must survive the colored view "
+        f"(escaped, rendered literally), not be stripped by Markdown. Got:\n{out}"
+    )
+
+
 def test_role_colors_are_preserved(tmp_path, monkeypatch):
     """Each message type keeps its hue: assistant violet, user blue."""
     home = tmp_path / "home"
