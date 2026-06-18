@@ -6,16 +6,19 @@ import textwrap
 from datetime import datetime
 from pathlib import Path
 
+from rich import box
 from rich.console import Console, ConsoleOptions, Group, RenderResult
 from rich.markdown import Markdown as _Markdown
 from rich.padding import Padding
+from rich.panel import Panel
 from rich.segment import Segment
+from rich.style import Style
 from rich.text import Text
 
 from .console import get_console
 from .model import ConversationFlags, Message, Provider
 from .parsing import get_display_session_id
-from .parts import MessagePartKind
+from .parts import MessagePart, MessagePartKind
 from .registry import ContentBlockType
 from .tools import render_tool_rich, render_tool_xml
 from .utils import collapse_home
@@ -84,6 +87,70 @@ def _compact_header_meta(msg: Message, conversation_tag: str | None) -> str:
         msg.model.removeprefix("claude-") if msg.model else None,
     )
     return "  ·  ".join(part for part in parts if part)
+
+
+def _message_content_renderables(
+    parts: list[MessagePart], highlight_regex: re.Pattern[str] | None
+) -> list:
+    """Render a message's visible parts (text, thinking, tools) to renderables.
+
+    The message wrapper tag/header is the caller's job; this is only the body,
+    shared by the inline (search) and per-message-Panel (parse) views.
+    """
+    # Pattern to detect HTML/XML-like tags in content
+    xml_tag_pattern = re.compile(r"<[a-zA-Z][a-zA-Z0-9\\-]*[>\\s]")
+    out: list = []
+    for part in parts:
+        if part.kind == MessagePartKind.TEXT:
+            # Use Text() for content with XML tags to avoid Markdown mangling
+            if xml_tag_pattern.search(part.data):
+                escaped_data = re.sub(
+                    r"<(/?)([a-zA-Z][a-zA-Z0-9\\-]*)(\\s+[^>]*?)?>",
+                    r"\\<\1\2\3>",
+                    part.data,
+                )
+                out.append(_text_renderable(escaped_data, highlight_regex))
+            else:
+                out.append(_text_renderable(part.data, highlight_regex))
+
+        elif part.kind == MessagePartKind.THINKING:
+            bt = ContentBlockType.THINKING
+            out.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
+            out.append(Text(part.data, style=bt.value.rich_style))
+            out.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))
+
+        elif part.kind == MessagePartKind.SUBAGENT_TASK:
+            bt = ContentBlockType.SUBAGENT_TASK
+            out.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
+            out.append(Text(part.data, style=bt.value.rich_style))
+            out.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))
+
+        elif part.kind == MessagePartKind.TOOL:
+            out.append(Text("\n", style="dim"))
+            out.extend(render_tool_rich(part.data))
+
+    return out
+
+
+def _message_panel_title(msg: Message) -> Text:
+    """Colorful Panel title for the parse view: role chip + dim index/model."""
+    tag = msg.get_wrapper_type().value.xml_tag
+    header = msg.get_header()
+    header_text = re.sub(r"^#+\s*", "", header) if header else msg.role.title()
+    title = Text()
+    title.append(
+        f" {header_text} ", style=_HEADER_BADGE_STYLE.get(tag, "bold white on blue")
+    )
+    meta = _compact_header_meta(msg, conversation_tag=None)
+    if meta:
+        title.append(f"  ·  {meta}", style="message.meta")
+    return title
+
+
+def _message_border_style(tag: str) -> Style:
+    """The message's role hue (its badge background) used for the Panel border."""
+    bgcolor = Style.parse(_HEADER_BADGE_STYLE.get(tag, "bold white on blue")).bgcolor
+    return Style(color=bgcolor) if bgcolor is not None else Style(color="blue")
 
 _HEADER_BADGE_STYLE: dict[str, str] = {
     "user-message": "bold white on #3b82f6",
@@ -357,9 +424,6 @@ def build_messages_group(
     line and drops the dim ``<tag>`` open/close lines, which the Panel and its
     ``---`` separators already make redundant.
     """
-    # Pattern to detect HTML/XML-like tags in content
-    xml_tag_pattern = re.compile(r"<[a-zA-Z][a-zA-Z0-9\\-]*[>\\s]")
-
     print_targets = []
 
     for i, msg in enumerate(messages):
@@ -386,47 +450,18 @@ def build_messages_group(
                 header_line.append(f" {header_text} ", style=badge_style)
                 meta = _compact_header_meta(msg, conversation_tag)
                 if meta:
-                    header_line.append(f"  ·  {meta}", style="search.idtag")
+                    header_line.append(f"  ·  {meta}", style="message.meta")
                 print_targets.append(header_line)
                 print_targets.append(Text(""))
             else:
                 print_targets.append(Text(f" {header_text} ", style=badge_style))
                 if conversation_tag:
                     print_targets.append(
-                        Text(f"  ·  {conversation_tag}", style="search.idtag")
+                        Text(f"  ·  {conversation_tag}", style="message.meta")
                     )
                 print_targets.append(Text("\n"))
 
-        for part in parts:
-            if part.kind == MessagePartKind.TEXT:
-                # Use Text() for content with XML tags to avoid Markdown mangling
-                if xml_tag_pattern.search(part.data):
-                    escaped_data = re.sub(
-                        r"<(/?)([a-zA-Z][a-zA-Z0-9\\-]*)(\\s+[^>]*?)?>",
-                        r"\\<\1\2\3>",
-                        part.data,
-                    )
-                    print_targets.append(
-                        _text_renderable(escaped_data, highlight_regex)
-                    )
-                else:
-                    print_targets.append(_text_renderable(part.data, highlight_regex))
-
-            elif part.kind == MessagePartKind.THINKING:
-                bt = ContentBlockType.THINKING
-                print_targets.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
-                print_targets.append(Text(part.data, style=bt.value.rich_style))
-                print_targets.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))
-
-            elif part.kind == MessagePartKind.SUBAGENT_TASK:
-                bt = ContentBlockType.SUBAGENT_TASK
-                print_targets.append(Text(f"\n<{bt.value.xml_tag}>\n", style="dim"))
-                print_targets.append(Text(part.data, style=bt.value.rich_style))
-                print_targets.append(Text(f"\n</{bt.value.xml_tag}>", style="dim"))
-
-            elif part.kind == MessagePartKind.TOOL:
-                print_targets.append(Text("\n", style="dim"))
-                print_targets.extend(render_tool_rich(part.data))
+        print_targets.extend(_message_content_renderables(parts, highlight_regex))
 
         if not compact_header:
             print_targets.append(Text(f"</{tag}>", style="dim"))
@@ -442,3 +477,45 @@ def render_messages_with_rich(
     """Render messages to the module console with the standard parse padding."""
     group = build_messages_group(messages, flags, tool_id_map)
     get_console().print(Padding(group, pad=(0, 2, 0, 2)))
+
+
+def build_message_panels(
+    messages: list[Message],
+    flags: ConversationFlags,
+    tool_id_map: dict[str, str] | None = None,
+    *,
+    highlight_regex: re.Pattern[str] | None = None,
+) -> Group:
+    """Render each message as its own titled, role-colored Panel (parse color view).
+
+    The message wrapper tags are dropped; their job is taken over by the box
+    (per-message orientation that survives scrolling a large message) and the
+    colorful title chip, which carries the role plus index and model. Border and
+    chip keep each message type's existing hue.
+    """
+    panels: list = []
+    for msg in messages:
+        parts = msg.iter_visible_parts(flags, tool_id_map)
+        if not parts:
+            continue
+        body = _message_content_renderables(parts, highlight_regex)
+        panels.append(
+            Panel(
+                Group(*body),
+                title=_message_panel_title(msg),
+                title_align="left",
+                border_style=_message_border_style(msg.get_wrapper_type().value.xml_tag),
+                box=box.ROUNDED,
+                padding=(0, 1),
+            )
+        )
+    return Group(*panels)
+
+
+def render_message_panels(
+    messages: list[Message],
+    flags: ConversationFlags,
+    tool_id_map: dict[str, str] | None = None,
+) -> None:
+    """Print the colored per-message Panel view (parse color path)."""
+    get_console().print(build_message_panels(messages, flags, tool_id_map))

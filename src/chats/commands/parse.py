@@ -13,7 +13,7 @@ from ..formatting import (
     format_to_raw,
     format_to_xml,
     print_metadata,
-    render_messages_with_rich,
+    render_message_panels,
 )
 from ..model import ConversationFlags, Message, ParseOutputMode, SubagentMetadata
 from ..parsing import (
@@ -237,7 +237,7 @@ def cmd_parse(
         else nullcontext()
     )
     with pager_ctx:
-        render_messages_with_rich(messages, flags, tool_id_map)
+        render_message_panels(messages, flags, tool_id_map)
 
 
 def _merge_agent_messages(

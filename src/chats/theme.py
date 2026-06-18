@@ -21,9 +21,9 @@ APP_THEME = Theme(
         "search.id.tail": "#646a70",
         "search.header": "#7e8389",
         "search.empty": "#878c92",
-        # Per-message short-id restated in the full search view, and the amber
-        # pop used to highlight matched query terms inside rendered bodies.
-        "search.idtag": "#646a70",
+        # Dim metadata trailing a message's role badge (short id, index, model),
+        # and the amber pop used to highlight matched query terms in bodies.
+        "message.meta": "#646a70",
         "search.match": "bold #14181d on #e6b450",
         "search.age.now": "#a9aeb4",
         "search.age.week": "#878c92",
