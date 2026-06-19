@@ -38,6 +38,19 @@ from . import resolve
 from .common import _build_tool_id_map
 
 
+def _total_match_count(
+    matches: list[Message],
+    matching_summaries: list[str],
+    matching_custom_titles: list[str],
+) -> int:
+    """Total matches for a hit: matched messages + summaries + custom titles.
+
+    >>> _total_match_count([], ["summary"], ["title-a", "title-b"])
+    3
+    """
+    return len(matches) + len(matching_summaries) + len(matching_custom_titles)
+
+
 @dataclass
 class SearchHit:
     """One matched conversation ready for ordered display."""
@@ -49,6 +62,13 @@ class SearchHit:
     matching_summaries: list[str]
     matching_custom_titles: list[str]
     last_custom_title: str | None
+
+    @property
+    def match_count(self) -> int:
+        """Total matches across messages, summaries, and custom titles."""
+        return _total_match_count(
+            self.matches, self.matching_summaries, self.matching_custom_titles
+        )
 
 
 _RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
@@ -125,11 +145,7 @@ def _build_search_list_row(
         style="search.title.fallback" if is_fallback else "search.title",
     )
 
-    match_count = (
-        len(hit.matches)
-        + len(hit.matching_summaries)
-        + len(hit.matching_custom_titles)
-    )
+    match_count = hit.match_count
     match_word = "match" if match_count == 1 else "matches"
     age_label = humanize_age(hit.metadata.mtime, now) if hit.metadata.mtime else "?"
     provider = hit.metadata.provider
@@ -220,11 +236,7 @@ def _panel_title(hit: SearchHit, *, width: int, now: datetime) -> Text:
 def _panel_facts_line(hit: SearchHit, *, width: int) -> Text:
     """Build the in-Panel facts line: directory · provider · match count."""
     directory = collapse_home(hit.cwd) if hit.cwd else "(unknown directory)"
-    match_count = (
-        len(hit.matches)
-        + len(hit.matching_summaries)
-        + len(hit.matching_custom_titles)
-    )
+    match_count = hit.match_count
     match_word = "match" if match_count == 1 else "matches"
 
     line = Text(no_wrap=True, overflow="ellipsis")
@@ -366,10 +378,8 @@ def display_search_result(
         return
 
     if emit_metadata:
-        match_count = (
-            len(matches)
-            + (len(matching_summaries) if matching_summaries else 0)
-            + (len(matching_custom_titles) if matching_custom_titles else 0)
+        match_count = _total_match_count(
+            matches, matching_summaries or [], matching_custom_titles or []
         )
         is_list_output = output_mode == SearchOutputMode.LIST
         print_metadata(
