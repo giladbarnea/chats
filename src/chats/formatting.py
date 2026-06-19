@@ -317,7 +317,8 @@ def _message_header_badge(msg: Message, *, conversation_tag: str | None = None) 
     header_text = re.sub(r"^#+\s*", "", header) if header else msg.role.title()
     badge = Text()
     badge.append(
-        f" {header_text} ", style=_HEADER_BADGE_STYLE.get(tag, "bold white on blue")
+        f" {header_text} ",
+        style=f"bold white on {_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE)}",
     )
     meta = _compact_header_meta(msg, conversation_tag)
     if meta:
@@ -326,18 +327,20 @@ def _message_header_badge(msg: Message, *, conversation_tag: str | None = None) 
 
 
 def _message_border_style(tag: str) -> Style:
-    """The message's role hue (its badge background) used for the Panel border."""
-    bgcolor = Style.parse(_HEADER_BADGE_STYLE.get(tag, "bold white on blue")).bgcolor
-    return Style(color=bgcolor) if bgcolor is not None else Style(color="blue")
+    """The message's role hue, used as the Panel border color."""
+    return Style(color=_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE))
 
-_HEADER_BADGE_STYLE: dict[str, str] = {
-    "user-message": "bold white on #3b82f6",
-    "user-command-input": "bold white on #3b82f6",
-    "user-command-output": "bold white on #3b82f6",
-    "recap": "bold white on #1d4ed8",
-    "assistant-response": "bold white on #7c3aed",
-    "agent": "bold white on #0f766e",
-    "session-rename": "bold white on #d97706",
+
+_DEFAULT_ROLE_HUE = "blue"
+
+_ROLE_HUE: dict[str, str] = {
+    "user-message": "#3b82f6",
+    "user-command-input": "#3b82f6",
+    "user-command-output": "#3b82f6",
+    "recap": "#1d4ed8",
+    "assistant-response": "#7c3aed",
+    "agent": "#0f766e",
+    "session-rename": "#d97706",
 }
 
 
