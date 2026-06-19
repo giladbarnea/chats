@@ -1,6 +1,6 @@
 # Chats
 
-> Verified true as of 26-04-16, working tree after 3cd8c1b
+> Verified true as of 26-06-19, working tree after d1992c0
 
 ## Overview
 
@@ -147,7 +147,7 @@ Metadata frontmatter (optional), XML to stdout, separated by `---`:
 </assistant-response>
 ```
 
-Rich mode renders markdown with syntax highlighting and auto-dedenting.
+In a terminal, colored output drops the XML tags and renders each message as its own rounded panel titled with a colored role badge (role hue, index, and model): the body is markdown with syntax highlighting, thinking appears under a `✻ thinking` marker, and tools render as tag-free `⏺` call / `⎿` result headers over a colored left rail (an Edit shows a unified diff; a Read result is syntax-highlighted by file extension). The XML tags are kept only in plain output (`--color=never`, `-f raw`) — the form meant for piping into tools or LLMs.
 
 **JSON Format:**
 
@@ -300,12 +300,7 @@ ch fork -A session-id
 - `--plans`: Include plan content (`ExitPlanMode`)
 - `-A, --all`: Include thinking, tools, agents, and plans
 
-**Display:**
-- File paths: cyan bold
-- Metadata: dim gray
-- Message indices: green
-- User messages: blue, assistant: yellow
-- 4-space indented content
+**Display:** On success, prints a one-line confirmation — a green `v` followed by the source and new session filenames in cyan (e.g. `v Forked <source>.jsonl -> <new-id>.jsonl`).
 
 ### Rm Mode
 
@@ -504,7 +499,7 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 - `parse_jsonl()` / `parse_jsonl_entries()` - Parse JSONL conversation files
 - `parse_raw_cli_transcript()` - Parse raw CLI transcripts
 - `format_to_xml()` - Convert messages to XML format
-- `render_messages_with_rich()` - Rich markdown rendering
+- `render_message_panels()` - Colored per-message panel rendering (parse color path)
 - `print_metadata()` - Unified metadata output to stderr
 - `parse_slice_notation()` - Convert slice strings to indices
 - `find_all_supported_session_files()` - Find all supported Claude, PI, Codex, and Antigravity session files
@@ -512,7 +507,7 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 - `extract_cwd_from_jsonl()` / `extract_cwd_from_entries()` - Extract working directory from JSONL
 - `cmd_search()` - Search with rich display
 - `cmd_rm()` - Remove session and all associated files
-- `display_search_result()` - Rich console output for search
+- `display_search_result()` - Plain (non-color) XML output for a search hit; colored search renders via `build_messages_group()`
 
 **Error Handling:**
 - Gracefully handles malformed JSON

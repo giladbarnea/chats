@@ -3,6 +3,19 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-18] Redesign the colored view as tag-free panels
+
+### Changed
+
+- Colored output (`--color=auto`/`always`) no longer wraps messages in XML tags. Parse renders each message as its own rounded panel titled with a colored role badge (role hue, index, model); `ch search` renders each matching conversation as one panel whose border hue cycles per conversation. The XML tags remain only in plain output (`--color=never`, `-f raw`) — the form meant for piping to tools or LLMs (`-f json` is structured separately and unaffected).
+- Inside a message, thinking renders under a `✻ thinking` marker, subagent tasks under `✻ subagent task`, and tools as tag-free `⏺` call / `⎿` result headers over a colored left rail. Edit calls render as a unified diff and a Read result is syntax-highlighted by file extension; other tools fall back to fenced markdown.
+- Internal cleanup: removed the dead `render_messages_with_rich` path and unified the duplicate header builders into one badge, dropped the unused `ContentBlockInfo.rich_style` field, deduped the search match-count behind one helper and `SearchHit.match_count`, and stored role hues bare so the panel border no longer re-parses a composite style string.
+
+### Fixed
+
+- Colored output silently dropped message text containing attributed XML-like tags (e.g. `<div class="box">`): Rich's Markdown treated them as unknown HTML and stripped them. Such tags are now escaped before rendering so they survive literally (bare tags like `<thinking>` were already handled, attributed ones were not).
+
+---
 ## [2026-06-16] Stream search results to the terminal as they are found
 
 ### Changed

@@ -1,7 +1,7 @@
 ---
 name: architecture
 description: Document the architecture of the `ch` CLI tool.
-last_updated: 2026-04-16, working tree after 3cd8c1b
+last_updated: 2026/06/19 14:46
 ---
 
 # ARCHITECTURE.md
@@ -155,7 +155,7 @@ TIME   ACTOR                    ACTION                                         T
 ├───►  cmd_parse                Emit output:
 │      │                        ├── output_file.write_text()               ──► File
 │      │                        ├── print(formatted)                       ──► stdout (json/raw/no-color)
-│      │                        └── render_messages_with_rich()            ──► Rich console (color)
+│      │                        └── render_message_panels()                ──► Rich console (color)
 │      │                            └── [pager if flags.paging]
 │
 └───►  User                     Sees formatted conversation
@@ -218,7 +218,9 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        ├── _display_hit():
 │      │                        │   ├── [--only-id]: print session ID only
 │      │                        │   ├── [--list+color]: stream one row
-│      │                        │   └── else: rule + display_search_result()
+│      │                        │   ├── [color+matches/full]: per-conversation Panel
+│      │                        │   │   (_render_conversation_panel)
+│      │                        │   └── else (plain): rule + display_search_result()
 │      │                        └── [pager quit early] stop scanning
 │
 └───►  cmd_search               sys.exit(0 if found_any else 1)
@@ -702,8 +704,8 @@ cli.py
 ├── model.py          → utils
 ├── ordering.py
 ├── lexer.py          (XmlmdLexer — rendering grammar)
-├── parts.py          (MessagePart, ContentBlockType — structured message model)
-├── registry.py       (ToolSchema, normalize_tool_name — tool normalization)
+├── parts.py          (MessagePart, MessagePartKind, ToolParts — structured message parts)
+├── registry.py       (ContentBlockType, ToolSchema, normalize_tool_name — blocks + tool normalization)
 └── theme.py          (Rich theme definitions)
 ```
 
