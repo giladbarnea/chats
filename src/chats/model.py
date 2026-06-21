@@ -17,6 +17,36 @@ Provider = Literal["claude", "pi", "codex", "antigravitycli"]
 PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex", "antigravitycli")
 
 
+def _message_timestamp_datetime(timestamp: str | None) -> datetime | None:
+    """
+    Parse a message timestamp into local time.
+
+    >>> _message_timestamp_datetime("2026-06-21T09:30:00").date().isoformat()
+    '2026-06-21'
+    >>> _message_timestamp_datetime(None) is None
+    True
+    """
+    if timestamp is None:
+        return None
+    parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed
+    return parsed.astimezone().replace(tzinfo=None)
+
+
+def _ordinal_day(day: int) -> str:
+    """
+    Render a calendar day with an English ordinal suffix.
+
+    >>> [_ordinal_day(day) for day in (1, 2, 3, 4, 11, 12, 13, 21)]
+    ['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st']
+    """
+    if 10 <= day % 100 <= 20:
+        return f"{day}th"
+    suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
+    return f"{day}{suffix}"
+
+
 class ParseOutputMode(StrEnum):
     """Special parse output modes."""
 
@@ -416,6 +446,19 @@ class Message:
             return f"{header} '{self.name}'"
         return header
 
+    def get_date_attribute(self) -> str | None:
+        """Return the message date for XML attributes."""
+        if timestamp := _message_timestamp_datetime(self.timestamp):
+            return timestamp.date().isoformat()
+        return None
+
+    def get_display_date(self) -> str | None:
+        """Return the message date for Rich panel titles."""
+        timestamp = _message_timestamp_datetime(self.timestamp)
+        if timestamp is None:
+            return None
+        return f"{timestamp:%B} {_ordinal_day(timestamp.day)}"
+
     def get_wrapper_attrs(self) -> str:
         """Build XML attributes string for this message's wrapper tag."""
         attrs = [f'i="{self.index}"']
@@ -432,4 +475,6 @@ class Message:
                 attrs.append(f'name="{self.name}"')
         if self.model:
             attrs.append(f'model="{self.model.removeprefix("claude-")}"')
+        if date := self.get_date_attribute():
+            attrs.append(f'date="{date}"')
         return " ".join(attrs)

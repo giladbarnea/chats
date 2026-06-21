@@ -144,7 +144,7 @@ def test_cmd_parse_supports_basic_text_from_codex_session_path(
     )
 
     captured = capsys.readouterr()
-    assert '<user-message i="1">' in captured.out, (
+    assert '<user-message i="1" date="2026-04-10">' in captured.out, (
         "Expected the first visible Codex turn to render as a standard user message. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

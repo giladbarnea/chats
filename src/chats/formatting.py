@@ -253,11 +253,12 @@ def _tool_input_by_id(messages: list[Message]) -> dict[str, dict]:
 
 
 def _compact_header_meta(msg: Message, conversation_tag: str | None) -> str:
-    """Dim suffix after a compact role badge: conversation id · #index · model."""
+    """Dim suffix after a compact role badge: conversation id · #index · model · date."""
     parts = (
         conversation_tag,
         f"#{msg.index}",
         msg.model.removeprefix("claude-") if msg.model else None,
+        msg.get_display_date(),
     )
     return "  ·  ".join(part for part in parts if part)
 

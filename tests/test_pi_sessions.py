@@ -94,7 +94,7 @@ def test_cmd_parse_supports_basic_text_from_pi_session_path(
     )
 
     captured = capsys.readouterr()
-    assert '<user-message i="1">' in captured.out, (
+    assert '<user-message i="1" date="2026-04-04">' in captured.out, (
         "Expected a PI user message to render through the standard XML wrapper. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

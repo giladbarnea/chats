@@ -91,6 +91,27 @@ def test_user_messages_have_no_model_attribute():
     )
 
 
+def test_message_wrappers_include_date_attribute_from_timestamp():
+    """Plain XML message wrappers should expose the message's calendar date."""
+    content = (
+        '{"type":"user","timestamp":"2026-06-21T09:30:00Z",'
+        '"message":{"role":"user","content":"hello"}}\n'
+        '{"type":"assistant","timestamp":"2026-06-21T09:31:00Z",'
+        '"message":{"role":"assistant","model":"claude-opus-4-8",'
+        '"content":[{"type":"text","text":"reply"}]}}'
+    )
+    flags = ConversationFlags(color="never")
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert '<user-message i="1" date="2026-06-21">' in output, (
+        f"Expected user wrapper to include date attr. Got:\n{output}"
+    )
+    assert '<assistant-response i="2" model="opus-4-8" date="2026-06-21">' in output, (
+        f"Expected assistant wrapper to include model then date attrs. Got:\n{output}"
+    )
+
+
 def test_cmd_parse_slice_preserves_tool_name_on_tool_output(tmp_path, capsys):
     """Sliced parse output should still know the originating tool name."""
     content = """{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_013cAqxRaJroBvWdutKHWm47","name":"Skill","input":{"prompt":"go"}}]}}

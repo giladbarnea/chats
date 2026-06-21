@@ -81,6 +81,27 @@ def test_colored_parse_is_tag_free(tmp_path, monkeypatch):
     )
 
 
+def test_colored_parse_panel_title_includes_message_date(tmp_path, monkeypatch):
+    """The colored parse panel title includes the message date in human form."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_claude_session(
+        home, "11111111-aaaa-bbbb-cccc-000000000003",
+        [_assistant(text="Dated reply.", ts="2026-06-21T09:00:00Z")],
+    )
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False), sid, None, None,
+        output_format="xml", emit_metadata=False,
+    )
+
+    assert "Assistant" in out, f"Expected the assistant title. Got:\n{out}"
+    assert "#1" in out, f"Expected the message index in the title. Got:\n{out}"
+    assert "opus-4-8" in out, f"Expected the model in the title. Got:\n{out}"
+    assert "June 21st" in out, f"Expected the human message date in the title. Got:\n{out}"
+
+
 def test_plain_parse_keeps_xml_tags(tmp_path, monkeypatch, capsys):
     """The plain (--color never) parse view keeps tags: the form meant for piping."""
     home = tmp_path / "home"
@@ -331,6 +352,7 @@ def test_colored_search_highlights_matched_term(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("module_name", [
+    "chats.model",
     "chats.utils",
     "chats.search_query",
     "chats.parsing",
