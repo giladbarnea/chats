@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-21] Capture user-initiated `/fork` subagents under `--agents`
+
+### Added
+
+- `-a, --agents` now also splices user-initiated `/fork` transcripts into the timeline, not just agent-initiated `Task` subagents. A `/fork` is a detached sidechain: the main session keeps only the `/fork` command and the returning `<task-notification>`, while the fork's transcript lives in `subagents/agent-{slug}-{taskId}.jsonl` whose leading `fork-context-ref` links back to the parent via `parentSessionId` (no in-thread `Task` anchor). Discovery previously matched a subagent file by its first line's `sessionId`, which a fork's `fork-context-ref` header lacks, so every fork was silently dropped; `chats.commands.resolve.find_agent_files_for_session` now also matches `fork-context-ref.parentSessionId`.
+- A fork is labelled `Fork` (its `## Fork` header and colored badge) to set it apart from agent-initiated `Task` subagents, which stay `Agent`. The distinction is also machine-readable: a fork carries `subagent_type="fork"` (read from its `.meta.json` `agentType`), already surfaced as an XML/JSON attribute on the `<agent>` block.
+
+---
 ## [2026-06-21] Detect and gate off-main-branch (rewound) Claude messages
 
 ### Added

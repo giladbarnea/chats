@@ -481,11 +481,12 @@ In `ch` output, messages on an abandoned **rewind** branch are hidden by default
 
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)
-- Dispatched via `Task` tool with `subagent_type` (e.g., "Explore", "codebase-analyzer:single-subsystem")
-- Stored separately as `agent-{shortId}.jsonl` under `{session_id}/subagents/` (e.g., `{session_id}/subagents/agent-51c28bca.jsonl`)
+- Two kinds are captured: agent-initiated subagents dispatched via the `Task` tool with `subagent_type` (e.g., "Explore", "codebase-analyzer:single-subsystem"), and user-initiated `/fork` background agents
+- Stored separately as `agent-{shortId}.jsonl` under `{session_id}/subagents/` (e.g., `{session_id}/subagents/agent-51c28bca.jsonl`); a `/fork` instead uses `agent-{slug}-{taskId}.jsonl` with a sibling `.meta.json` carrying `agentType: "fork"`
 - Same structure as main conversations
 - Include `agentId` field and `isSidechain: true` at entry level
-- Agent messages render as `<agent agent_id="..." subagent_type="...">`
+- Agent messages render as `<agent agent_id="..." subagent_type="...">`. A user-initiated `/fork` carries `subagent_type="fork"` and is headed `Fork` (a `Fork` badge in colored output) to set it apart from agent-initiated `Task` subagents, which stay `Agent`
+- A classic subagent is anchored in-thread by its first line's `sessionId`; a `/fork` has no in-thread anchor and is matched instead by its leading `fork-context-ref.parentSessionId`
 - Tool results from agents include `agentId: xxx (for resuming...)` in content
 
 **Why `TaskNotification` is an unpaired tool:**

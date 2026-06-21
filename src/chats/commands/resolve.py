@@ -41,12 +41,36 @@ def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]
             if not first_line:
                 continue
             entry = json.loads(first_line)
-            if entry.get("sessionId") == session_id:
+            if _agent_first_entry_matches_session(entry, session_id):
                 agent_files.append(agent_file)
         except (json.JSONDecodeError, OSError):
             continue
 
     return sorted(agent_files)
+
+
+def _agent_first_entry_matches_session(entry: dict, session_id: str) -> bool:
+    """Whether a subagent transcript's first entry anchors it to `session_id`.
+
+    Classic agent-initiated subagents carry the parent `sessionId` on every message.
+    A user-initiated `/fork` instead leads with a `fork-context-ref` header that links
+    back to the parent via `parentSessionId`, with no first-line `sessionId`.
+
+    >>> _agent_first_entry_matches_session({"sessionId": "s"}, "s")
+    True
+    >>> _agent_first_entry_matches_session(
+    ...     {"type": "fork-context-ref", "parentSessionId": "s"}, "s"
+    ... )
+    True
+    >>> _agent_first_entry_matches_session({"type": "fork-context-ref"}, "s")
+    False
+    """
+    if entry.get("sessionId") == session_id:
+        return True
+    return (
+        entry.get("type") == "fork-context-ref"
+        and entry.get("parentSessionId") == session_id
+    )
 
 
 def read_agent_type(agent_file: Path) -> str | None:

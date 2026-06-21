@@ -453,10 +453,18 @@ class Message:
         return ContentBlockType.ASSISTANT_RESPONSE
 
     def get_header(self) -> str | None:
-        """Return the wrapper header, enriched with the subagent nickname when present."""
+        """Return the wrapper header, enriched with the subagent nickname when present.
+
+        A user-initiated `/fork` (subagent_type "fork") is labelled `Fork` to set it
+        apart from agent-initiated `Task` subagents, which stay `Agent`.
+        """
         wrapper = self.get_wrapper_type()
         header = wrapper.value.header
-        if wrapper is ContentBlockType.AGENT and self.name:
+        if wrapper is not ContentBlockType.AGENT:
+            return header
+        if self.subagent_type == "fork":
+            return "## Fork"
+        if self.name:
             return f"{header} '{self.name}'"
         return header
 
