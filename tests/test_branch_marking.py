@@ -10,6 +10,11 @@ from chats.formatting import build_message_panels, format_to_xml
 from chats.theme import APP_THEME
 
 FIXTURE = Path(__file__).parent / "data" / "claude-branches-compaction.jsonl"
+LEAF_ABOVE_TIP = Path(__file__).parent / "data" / "claude-branch-leaf-above-tip.jsonl"
+ROOT_REWIND = Path(__file__).parent / "data" / "claude-branch-root-rewind.jsonl"
+COMPACTED_ROOT_REWIND = (
+    Path(__file__).parent / "data" / "claude-branch-compacted-root-rewind.jsonl"
+)
 
 
 def _parse(show_branches: bool = True):
@@ -145,4 +150,68 @@ def test_branches_hidden_by_default():
     )
     assert all(m.branch_id is None for m in messages), (
         "No message in the default view should carry a branch id."
+    )
+
+
+def test_turns_below_the_recorded_leaf_stay_on_main_thread():
+    """The reply (and further turns) below the last `last-prompt` leaf must not be hidden.
+
+    The recorded leaf is where the most recent prompt attached; the assistant's answer
+    lands below it. Resolution must follow the chosen branch down to its tip, not stop
+    at the recorded leaf.
+    """
+    flags = ConversationFlags(color="never")  # default view: branches hidden
+    messages = parse_jsonl(LEAF_ABOVE_TIP.read_text(), flags, source_path=LEAF_ABOVE_TIP)
+    texts = [m.text or "" for m in messages]
+
+    assert any("SECOND user message below the recorded leaf" in t for t in texts), (
+        "The user turn below the recorded leaf must stay visible by default."
+    )
+    assert any("second assistant reply below the recorded leaf" in t for t in texts), (
+        "The assistant reply below the recorded leaf must stay visible by default."
+    )
+    assert all(m.branch_id is None for m in messages), (
+        "A purely linear thread has no abandoned branches to mark."
+    )
+
+
+def test_first_message_rewind_marks_abandoned_root_offbranch():
+    """A rewind to the first message creates a second `parentUuid: null` user root; the
+    abandoned attempt must be off-branch, not duplicated in the default view."""
+    default = parse_jsonl(
+        ROOT_REWIND.read_text(), ConversationFlags(color="never"), source_path=ROOT_REWIND
+    )
+    default_texts = [m.text or "" for m in default]
+    assert any("KEPT real attempt" in t for t in default_texts), (
+        "The kept (active-leaf) root must stay on the main branch."
+    )
+    assert not any("ABANDONED first attempt" in t for t in default_texts), (
+        "The abandoned first-message attempt must be hidden by default, not duplicated."
+    )
+
+    with_branches = parse_jsonl(
+        ROOT_REWIND.read_text(),
+        ConversationFlags(color="never", show_branches=True),
+        source_path=ROOT_REWIND,
+    )
+    abandoned = [m for m in with_branches if "ABANDONED first attempt" in (m.text or "")]
+    assert abandoned and abandoned[0].branch_id is not None, (
+        "With -b the abandoned attempt reappears and carries a branch id."
+    )
+
+
+def test_root_rewind_before_compaction_marks_abandoned_root_offbranch():
+    """When the active leaf lives in a compaction era, a pre-compaction first-message
+    rewind's abandoned root is still off-branch — resolved via the boundary's
+    `logicalParentUuid`, which points at the real lineage."""
+    messages = parse_jsonl(
+        COMPACTED_ROOT_REWIND.read_text(),
+        ConversationFlags(color="never"),
+        source_path=COMPACTED_ROOT_REWIND,
+    )
+    texts = [m.text or "" for m in messages]
+    assert any("REAL root attempt" in t for t in texts), "The real era-0 root must remain."
+    assert any("post-compaction reply" in t for t in texts), "The post-compaction era must remain."
+    assert not any("ABANDONED root attempt" in t for t in texts), (
+        "The abandoned pre-compaction root must be hidden by default, not duplicated."
     )

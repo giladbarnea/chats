@@ -794,13 +794,14 @@ def _deepest_descendant(
 def _resolve_branch_map(entries: list[dict]) -> dict[str, str]:
     """Map each off-main-branch node uuid to a stable branch id.
 
-    A Claude transcript is a forest: each `parentUuid: null` entry starts an era (a
-    session start or a `/compact` boundary). Within each era the main thread is the
-    path from the active leaf — the latest `last-prompt` `leafUuid` landing in that
-    era — up to the era root; with no recorded leaf, the longest continuation wins.
-    A node off every era's main path belongs to an abandoned rewind branch, identified
-    by its *head*: the first node that diverged from the main thread. Every message on
-    one detour shares a head, hence one id; ids are numbered by first appearance.
+    A Claude transcript is a forest. Real eras are the session start and each
+    `/compact` boundary; a rewind to the first message adds an abandoned null-parent
+    user root, which is a detour, not an era. Within each era the active branch is
+    chosen by the latest `last-prompt` `leafUuid` and followed *down* to its tip (the
+    reply below the recorded leaf), then up to the root; with no recorded leaf the
+    longest continuation wins. Nodes off every era's main path are abandoned rewind
+    branches, each identified by its *head* — the first node that left the main thread
+    — so one detour shares one id; ids are numbered by first appearance.
     """
     nodes = {entry["uuid"]: entry for entry in entries if "uuid" in entry}
     if not nodes:
@@ -813,9 +814,9 @@ def _resolve_branch_map(entries: list[dict]) -> dict[str, str]:
         children[parent_uuid].append(node_uuid)
         parent[node_uuid] = parent_uuid
 
-    # A root starts a tree/era: parentUuid is null (session start, compaction) or
-    # points outside this file (a transcript snippet whose head was truncated).
-    roots = [
+    # A root starts a tree: parentUuid is null (session start or compaction boundary)
+    # or points outside this file (a snippet whose head was truncated).
+    all_roots = [
         node_uuid
         for node_uuid, node in nodes.items()
         if node.get("parentUuid") is None or node.get("parentUuid") not in nodes
@@ -825,16 +826,44 @@ def _resolve_branch_map(entries: list[dict]) -> dict[str, str]:
         for entry in entries
         if entry.get("type") == "last-prompt" and entry.get("leafUuid") in nodes
     ]
-    depth = _subtree_depths(roots, children)
+    depth = _subtree_depths(all_roots, children)
+
+    # Compaction boundaries are real eras. Session-start roots are real too, except
+    # that a rewind to the first message leaves a second null-parent user root: only
+    # the one holding the active leaf is real, the rest are abandoned. When the leaf
+    # can't disambiguate them (it lives in a later era, or none is recorded), keep all.
+    def _is_compaction(node_uuid: str) -> bool:
+        node = nodes[node_uuid]
+        return node.get("type") == "system" and node.get("subtype") == "compact_boundary"
+
+    def _origin_session_root(start_leaf: str) -> str | None:
+        """The session-start root of the lineage the active leaf belongs to, hopping
+        back across compaction boundaries via their `logicalParentUuid`."""
+        cursor: str | None = start_leaf
+        visited: set[str] = set()
+        while cursor in nodes and cursor not in visited:
+            visited.add(cursor)
+            root = cursor
+            while parent.get(root) in nodes:
+                root = parent[root]
+            if not _is_compaction(root):
+                return root
+            cursor = nodes[root].get("logicalParentUuid")
+        return None
+
+    active_leaf = leaves[-1] if leaves else None
+    session_roots = [root for root in all_roots if not _is_compaction(root)]
+    compaction_roots = [root for root in all_roots if _is_compaction(root)]
+    origin_root = _origin_session_root(active_leaf) if active_leaf else None
+    era_roots = compaction_roots + ([origin_root] if origin_root else session_roots)
 
     main: set[str] = set()
-    for root in roots:
+    for root in era_roots:
         members = _collect_subtree(root, children)
-        active_leaf = next(
-            (leaf for leaf in reversed(leaves) if leaf in members),
-            _deepest_descendant(root, children, depth),
-        )
-        cursor = active_leaf
+        anchor = next((leaf for leaf in reversed(leaves) if leaf in members), root)
+        # Follow the chosen branch down to its tip so the reply below the recorded
+        # leaf stays on the main thread, then walk up to the root.
+        cursor = _deepest_descendant(anchor, children, depth)
         while cursor in nodes:
             main.add(cursor)
             cursor = parent.get(cursor)

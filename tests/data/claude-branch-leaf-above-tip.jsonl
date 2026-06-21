@@ -1,0 +1,7 @@
+{"type":"user","uuid":"a-u1","parentUuid":null,"timestamp":"2026-06-20T10:00:00.000Z","sessionId":"00000000-0000-0000-0000-0000000000aa","message":{"role":"user","content":"fixture A: first user message"}}
+{"type":"assistant","uuid":"a-a1","parentUuid":"a-u1","timestamp":"2026-06-20T10:01:00.000Z","sessionId":"00000000-0000-0000-0000-0000000000aa","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"text","text":"fixture A: first assistant reply"}]}}
+{"type":"system","subtype":"turn_duration","uuid":"a-s1","parentUuid":"a-a1","timestamp":"2026-06-20T10:01:30.000Z","sessionId":"00000000-0000-0000-0000-0000000000aa","durationMs":1000,"isMeta":false}
+{"type":"last-prompt","leafUuid":"a-s1","sessionId":"00000000-0000-0000-0000-0000000000aa"}
+{"type":"user","uuid":"a-u2","parentUuid":"a-s1","timestamp":"2026-06-20T10:02:00.000Z","sessionId":"00000000-0000-0000-0000-0000000000aa","message":{"role":"user","content":"fixture A: SECOND user message below the recorded leaf"}}
+{"type":"assistant","uuid":"a-a2","parentUuid":"a-u2","timestamp":"2026-06-20T10:03:00.000Z","sessionId":"00000000-0000-0000-0000-0000000000aa","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"text","text":"fixture A: second assistant reply below the recorded leaf"}]}}
+{"type":"system","subtype":"turn_duration","uuid":"a-s2","parentUuid":"a-a2","timestamp":"2026-06-20T10:03:30.000Z","sessionId":"00000000-0000-0000-0000-0000000000aa","durationMs":1000,"isMeta":false}
