@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-21] Add `info` command for per-session statistics (Claude and PI)
+
+### Added
+
+- `ch info <session>` aggregates and prints one session's statistics: name, file, id, wall-clock and API durations, per-model token usage with cost, message counts (user, assistant, tool calls, tool results), aggregate token totals, and total cost. It resolves a session the same way parse does (id, name, recent negative index, or file path) and is currently scoped to Claude and PI; a Codex or Antigravity session is rejected with a clear error rather than producing a half-filled report. Logic lives in `chats.commands.info`.
+- Wall-clock duration is the span between the first and last in-band timestamps. API duration is shown only when real generation-time data exists — for Claude that is the sum of `system`/`turn_duration` `durationMs` entries (emitted only by recent CLI versions); PI records none, so the line is omitted rather than inferred from timestamp gaps.
+- Token usage is grouped by the per-message model, so a session that switched models mid-stream reports each model separately. Claude writes one API response across several JSONL lines that repeat the same `message.id` and `usage`, so usage and the assistant-message count are deduplicated by `message.id`; `<synthetic>` placeholder and API-error lines are excluded. Tool calls are counted by distinct `tool_use` block id and tool results by distinct `tool_result` `tool_use_id`, so the split-line layout never double-counts.
+- Where the file states a value, `info` reads it rather than recomputing: PI's per-message `totalTokens` is summed for the token total (Claude has no such field, so there it is the sum of the four categories), and cost comes straight from PI's stored `usage.cost.total`. Claude stores no cost, so it is computed from a per-model price table (cache reads at 0.1x input) that tolerates bare and date-stamped model ids. Cache writes are priced per TTL bucket from the `cache_creation` breakdown Claude records — `ephemeral_1h_input_tokens` at 2x input and `ephemeral_5m_input_tokens` at 1.25x — which matches Claude Code's 1-hour-cache billing; absent the breakdown the aggregate write count falls back to the 5-minute rate.
+- The aggregate token total and the message total both include every category — cache-write tokens are part of the token total, and tool results count toward the message total while tool calls (which live inside assistant messages) are reported separately.
+
+---
 ## [2026-06-21] Capture user-initiated `/fork` subagents under `--agents`
 
 ### Added

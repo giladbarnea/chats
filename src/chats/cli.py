@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from . import commands as commands_module
-from .commands import cmd_catalog, cmd_parse, cmd_rename, cmd_rm, cmd_search
+from .commands import cmd_catalog, cmd_info, cmd_parse, cmd_rename, cmd_rm, cmd_search
 from .console import init_module_console, print_warning
 from .model import (
     ConversationFlags,
@@ -628,6 +628,17 @@ def main():
         # Pass all remaining arguments to catalog command
         # This is a simple passthrough to the shell script
         cmd_catalog(sys.argv[2:])
+    elif len(sys.argv) > 1 and sys.argv[1] == "info":
+        parser = argparse.ArgumentParser(
+            prog="ch info",
+            description="Show aggregated statistics for a Claude or PI session",
+        )
+        parser.add_argument(
+            "session",
+            help="Conversation/session ID, name, recent negative index, or file path",
+        )
+        args = parser.parse_args(sys.argv[2:])
+        cmd_info(args.session)
     else:
         # Default parse behavior
         parser = argparse.ArgumentParser(
@@ -641,6 +652,7 @@ Commands:
   fork     Duplicate a session into a thinner resumable copy
   rm       Remove a conversation session and all associated files
   catalog  AI-powered session cataloging
+  info     Show aggregated statistics for a Claude or PI session
 """,
         )
 

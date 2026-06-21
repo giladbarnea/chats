@@ -24,11 +24,21 @@ from ..model import (
 from ..model import (
     SearchOutputMode as SearchOutputMode,
 )
+from . import info as info
 from . import parse as parse
 from . import rename as rename
 from . import resolve as resolve
 from . import rm as rm
 from . import search as search
+from .info import (
+    build_session_info as build_session_info,
+)
+from .info import (
+    cmd_info as cmd_info,
+)
+from .info import (
+    render_session_info as render_session_info,
+)
 from .parse import (
     _apply_slice_selectors as _apply_slice_selectors,
 )

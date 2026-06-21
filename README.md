@@ -14,6 +14,7 @@ Format and search supported AI CLI conversation history files. The `ch` CLI conv
 - **Remove**: Safely delete conversation sessions and all associated files
 - **Rename**: Assign custom titles to conversations for easier discovery
 - **Catalog**: AI-powered session cataloging to sessions.yaml files
+- **Info**: Aggregate per-session statistics (tokens, cost, durations, message counts) for Claude and PI
 
 ## When to Use
 
@@ -411,6 +412,54 @@ This command uses an AI model (via the `claude` CLI) to analyze conversation ses
 - Catalog with extra instructions: `ch catalog <id> -a "Note the primary language used."`
 
 **Note:** This command requires the `claude` CLI to be configured in the user's environment.
+
+### Info Mode
+
+Aggregate and print one session's statistics.
+
+```bash
+ch info <session>
+```
+
+`info` resolves the session the same way parse does (file path, recent negative index, session id, or name), then prints a report:
+
+```
+Session Info
+
+ Name: [06-21] session status info
+ File: /Users/.../8f0a0094-9a14-4103-82ac-8db2ba8a46e0.jsonl
+ ID: 8f0a0094-9a14-4103-82ac-8db2ba8a46e0
+ Total duration (API):  11s
+ Total duration (wall): 31m 03s
+ Usage by model:
+    claude-opus-4-8:  5.8k input, 37.8k output, 4.5m cache read, 346.3k cache write ($5.41)
+
+Messages
+ User: 2
+ Assistant: 22
+ Tool Calls: 40
+ Tool Results: 39
+ Total: 63
+
+Tokens
+ Input: 5,811
+ Output: 37,793
+ Cache Read: 4,546,764
+ Cache Write: 346,253
+ Total: 4,936,621
+
+Cost
+ Total: 5.4113
+```
+
+**Scope:** Claude and PI only. A Codex or Antigravity session is rejected with a clear error.
+
+**Data points:**
+- **Durations.** Wall-clock is the span between the first and last in-band timestamps. API (generation) duration is shown only when the file records it — for Claude that is the sum of `turn_duration` system entries (recent CLI versions only); PI records none, so the line is omitted rather than guessed from timestamp gaps.
+- **Usage by model.** Token usage and cost are grouped by the per-message model, so a session that switched models mid-stream reports each separately. Claude writes one API response across several JSONL lines that repeat the same `message.id` and `usage`, so usage and the assistant-message count are deduplicated by `message.id`; `<synthetic>` placeholder and API-error lines are excluded.
+- **Messages.** `Total` is users + assistants + tool results. Tool calls live inside assistant messages, so they are reported separately rather than added. Tool calls are counted by distinct `tool_use` id and tool results by distinct `tool_result` id.
+- **Cost.** Taken straight from PI's stored `usage.cost`. Claude does not store cost, so it is computed from a per-model price table (cache reads at 0.1x input) that tolerates bare and date-stamped model ids. Cache writes are priced per TTL bucket from the `cache_creation` breakdown Claude records — 1-hour writes at 2x input, 5-minute writes at 1.25x — matching Claude Code's 1-hour-cache billing.
+- **Provided over computed.** Where a file states a value, `info` reads it: PI's per-message `totalTokens` is summed for the token Total (Claude has no such field, so there it is the sum of the four categories).
 
 ## Conversation File Structure
 
