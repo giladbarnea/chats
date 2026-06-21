@@ -160,12 +160,14 @@ def _aggregate_claude(entries: list[dict]) -> dict[str, object]:
     """Aggregate token usage, cost, and message counts from Claude entries.
 
     Claude writes one assistant API response across several lines (one per
-    content block) that repeat the same `message.usage` and `message.id`, so
-    usage and assistant-message counts are deduplicated by `message.id`. Cost is
+    content block) that repeat the same `message.id`. The lines share every usage
+    field except `output_tokens`, which grows as blocks are appended — a response
+    opening with a thinking block carries a partial count on its first line and
+    the final total on its last. Usage is therefore keyed by `message.id` with the
+    last line winning, and folded into per-model totals after the scan. Cost is
     not stored and is computed from a per-model pricing table.
     """
-    usage_by_model: dict[str, ModelUsage] = {}
-    seen_message_ids: set[str] = set()
+    latest_usage_by_id: dict[str, tuple[str, dict]] = {}
     assistant_ids: set[str] = set()
     tool_call_ids: set[str] = set()
     tool_result_ids: set[str] = set()
@@ -175,11 +177,23 @@ def _aggregate_claude(entries: list[dict]) -> dict[str, object]:
         entry_type = entry.get("type")
         if entry_type == "assistant":
             _accumulate_claude_assistant(
-                entry, usage_by_model, seen_message_ids, assistant_ids, tool_call_ids
+                entry, latest_usage_by_id, assistant_ids, tool_call_ids
             )
         elif entry_type == "user":
             if _count_claude_user_message(entry, tool_result_ids):
                 user_messages += 1
+
+    usage_by_model: dict[str, ModelUsage] = {}
+    for model, usage in latest_usage_by_id.values():
+        usage_by_model.setdefault(model, ModelUsage()).add(
+            ModelUsage(
+                usage.get("input_tokens", 0),
+                usage.get("output_tokens", 0),
+                usage.get("cache_read_input_tokens", 0),
+                usage.get("cache_creation_input_tokens", 0),
+                _claude_model_cost(model, usage),
+            )
+        )
 
     return {
         "usage_by_model": usage_by_model,
@@ -194,12 +208,11 @@ def _aggregate_claude(entries: list[dict]) -> dict[str, object]:
 
 def _accumulate_claude_assistant(
     entry: dict,
-    usage_by_model: dict[str, ModelUsage],
-    seen_message_ids: set[str],
+    latest_usage_by_id: dict[str, tuple[str, dict]],
     assistant_ids: set[str],
     tool_call_ids: set[str],
 ) -> None:
-    """Fold one Claude assistant line into the running aggregates."""
+    """Record one Claude assistant line's tool calls and latest usage by id."""
     message = entry.get("message", {})
     model = message.get("model")
     is_real = model != "<synthetic>" and not entry.get("isApiErrorMessage")
@@ -212,22 +225,9 @@ def _accumulate_claude_assistant(
         return
 
     message_id = message.get("id")
-    if message_id:
-        assistant_ids.add(message_id)
-        if message_id in seen_message_ids:
-            return
-        seen_message_ids.add(message_id)
-
-    usage = message.get("usage") or {}
-    usage_by_model.setdefault(model, ModelUsage()).add(
-        ModelUsage(
-            usage.get("input_tokens", 0),
-            usage.get("output_tokens", 0),
-            usage.get("cache_read_input_tokens", 0),
-            usage.get("cache_creation_input_tokens", 0),
-            _claude_model_cost(model, usage),
-        )
-    )
+    assistant_ids.add(message_id)
+    # Last line wins: output_tokens is only final on the response's last line.
+    latest_usage_by_id[message_id] = (model, message.get("usage") or {})
 
 
 def _count_claude_user_message(entry: dict, tool_result_ids: set[str]) -> bool:
@@ -469,4 +469,6 @@ def cmd_info(session: str) -> None:
     except ValueError as error:
         print_error(str(error))
         sys.exit(1)
-    get_console().print(render_session_info(info), soft_wrap=True)
+    # markup=False so a name like "[06-21][avidor-run] ..." is not parsed as Rich
+    # console markup (which would silently drop the bracketed segments).
+    get_console().print(render_session_info(info), soft_wrap=True, markup=False)

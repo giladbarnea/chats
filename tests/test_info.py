@@ -228,6 +228,44 @@ def test_claude_deduplicates_usage_across_repeated_message_lines(tmp_path):
     )
 
 
+def test_claude_dedup_keeps_final_output_tokens_not_thinking_partial(tmp_path):
+    """When a response opens with a thinking block, the first line's output_tokens
+    is a partial; the final total is on a later line. Dedup must keep the last."""
+    path = tmp_path / "claude-thinking-first.jsonl"
+    _write_session(
+        path,
+        [
+            {
+                "type": "assistant",
+                "timestamp": "2026-06-21T18:45:31.000Z",
+                "message": {
+                    "id": "msg_x",
+                    "model": "claude-opus-4-8",
+                    "usage": {"input_tokens": 10, "output_tokens": 49},
+                    "content": [{"type": "thinking", "thinking": "..."}],
+                },
+            },
+            {
+                "type": "assistant",
+                "timestamp": "2026-06-21T18:45:33.000Z",
+                "message": {
+                    "id": "msg_x",
+                    "model": "claude-opus-4-8",
+                    "usage": {"input_tokens": 10, "output_tokens": 5942},
+                    "content": [{"type": "text", "text": "answer"}],
+                },
+            },
+        ],
+    )
+
+    info = build_session_info(path)
+
+    assert info.usage_by_model["claude-opus-4-8"].output_tokens == 5942, (
+        "Dedup must keep the final output_tokens (5942), not the thinking-only "
+        f"partial (49); got {info.usage_by_model['claude-opus-4-8'].output_tokens}"
+    )
+
+
 def test_claude_computes_cost_from_pricing_table(tmp_path):
     path = tmp_path / "claude-session.jsonl"
     _write_session(path, _claude_entries())
@@ -369,6 +407,43 @@ def test_render_contains_all_sections(tmp_path):
         assert marker in rendered, f"Expected {marker!r} in rendered report"
     assert " Total: 1,350" in rendered, (
         f"Total tokens should include cache write; report was:\n{rendered}"
+    )
+
+
+def test_cmd_info_preserves_bracketed_session_name(tmp_path, capsys):
+    """Square brackets in a name must survive printing, not be eaten as Rich markup."""
+    path = tmp_path / "claude-bracket.jsonl"
+    _write_session(
+        path,
+        [
+            {
+                "type": "custom-title",
+                "customTitle": "[06-21][avidor-run] dormant-insole 00",
+                "sessionId": "s",
+            },
+            {
+                "type": "user",
+                "timestamp": "2026-06-21T18:45:29.010Z",
+                "message": {"role": "user", "content": "hi"},
+            },
+            {
+                "type": "assistant",
+                "timestamp": "2026-06-21T18:45:31.000Z",
+                "message": {
+                    "id": "m",
+                    "model": "claude-opus-4-8",
+                    "usage": {"input_tokens": 1, "output_tokens": 1},
+                    "content": [{"type": "text", "text": "ok"}],
+                },
+            },
+        ],
+    )
+
+    cmd_info(str(path))
+
+    out = capsys.readouterr().out
+    assert "[06-21][avidor-run] dormant-insole 00" in out, (
+        f"Bracketed name must print verbatim, not be consumed as markup; got:\n{out}"
     )
 
 
