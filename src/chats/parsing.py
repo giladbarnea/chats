@@ -1634,6 +1634,11 @@ def _parse_user_entry(
         if text_blocks and show_user_text:
             msg.text = "\n\n".join(text_blocks)
 
+    # A post-compaction summary is injected as a user turn but is its own block:
+    # shown by default like a recap, labeled Compaction rather than User.
+    if entry.get("isCompactSummary") is True:
+        msg.wrapper_type = ContentBlockType.COMPACTION
+
     return msg
 
 

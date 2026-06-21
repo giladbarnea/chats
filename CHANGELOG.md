@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-21] Render Claude compaction summaries as Compaction blocks
+
+### Added
+
+- Claude `type: "user"` entries flagged `isCompactSummary: true` (the summary injected when a conversation is continued past its context limit) now render as a `<compaction>` block with a `## Compaction` header, shown by default like `<recap>` rather than as a regular `<user-message>`. In colored output the block gets its own fuchsia hue (`#a21caf`) and a "Compaction" badge; `-f json` emits `type: "compaction"`.
+
+---
 ## [2026-06-18] Redesign the colored view as tag-free panels
 
 ### Changed

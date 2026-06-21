@@ -304,6 +304,34 @@ def test_role_colors_are_preserved(tmp_path, monkeypatch):
     )
 
 
+def test_compaction_message_has_its_own_badge_and_hue(tmp_path, monkeypatch):
+    """A compaction summary renders a 'Compaction' badge in its own fuchsia hue."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_claude_session(
+        home, "77777777-aaaa-bbbb-cccc-000000000002",
+        [{"type": "user", "isCompactSummary": True, "timestamp": "2026-06-16T11:01:00Z",
+          "cwd": "/tmp/proj",
+          "message": {"role": "user", "content": "Summary of the prior conversation."}}],
+    )
+
+    styled = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False),
+        sid, None, None, output_format="xml", emit_metadata=False, styles=True,
+    )
+
+    assert "Compaction" in styled, (
+        f"Expected the compaction badge to read 'Compaction'. Got:\n{styled}"
+    )
+    assert "User" not in styled, (
+        f"A compaction message must not be labeled 'User'. Got:\n{styled}"
+    )
+    assert "38;2;162;28;175" in styled, (
+        f"Expected the compaction fuchsia hue (#a21caf) on its panel. Got:\n{styled}"
+    )
+
+
 def test_colored_search_banner_leads_with_title(tmp_path, monkeypatch):
     """A colored search hit is framed by a banner showing the custom title + short id."""
     home = tmp_path / "home"

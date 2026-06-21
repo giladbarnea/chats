@@ -23,6 +23,7 @@ class ContentBlockType(Enum):
         "user-command-output", "## User Command Output"
     )
     RECAP = ContentBlockInfo("recap", "## Recap")
+    COMPACTION = ContentBlockInfo("compaction", "## Compaction")
     ASSISTANT_RESPONSE = ContentBlockInfo("assistant-response", "## Assistant")
     AGENT = ContentBlockInfo("agent", "## Agent")
     SESSION_RENAME = ContentBlockInfo("session-rename", "## Renamed Session")

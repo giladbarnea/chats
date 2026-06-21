@@ -339,6 +339,7 @@ _ROLE_HUE: dict[str, str] = {
     "user-command-input": "#3b82f6",
     "user-command-output": "#3b82f6",
     "recap": "#1d4ed8",
+    "compaction": "#a21caf",
     "assistant-response": "#7c3aed",
     "agent": "#0f766e",
     "session-rename": "#d97706",

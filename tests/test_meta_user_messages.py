@@ -252,3 +252,30 @@ def test_away_summary_system_message_renders_as_recap_without_disable_suffix():
         "Fixing the Elaborate-on-selected-text feature in the mobile web client."
         in output
     ), f"Expected recap body to be preserved. Got:\n{output}"
+
+
+def test_compaction_user_message_renders_as_compaction_block_by_default():
+    """Claude isCompactSummary user entries render as a Compaction block by default."""
+    content = (
+        '{"type":"user","isCompactSummary":true,"message":{"role":"user","content":"'
+        "This session is being continued from a previous conversation that ran out "
+        "of context.\\n\\nSummary:\\n1. Primary Request and Intent."
+        '"}}'
+    )
+    flags = ConversationFlags(color="never")
+
+    messages = parse_jsonl(content, flags)
+    output = format_to_xml(messages, flags)
+
+    assert '<compaction i="1">' in output, (
+        f"Expected isCompactSummary user entries to render as <compaction>. Got:\n{output}"
+    )
+    assert "## Compaction" in output, (
+        f"Expected the Compaction header in output. Got:\n{output}"
+    )
+    assert "<user-message" not in output, (
+        f"A compaction entry must not render as a plain user message. Got:\n{output}"
+    )
+    assert "Primary Request and Intent." in output, (
+        f"Expected the compaction body to be preserved. Got:\n{output}"
+    )

@@ -422,6 +422,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - User-side local command protocol payloads stay hidden by default across adapters, including Claude `<command-*>...</command-*>` inputs and `<local-command-stdout>...</local-command-stdout>` outputs
    - Claude `isMeta=true` user messages also stay hidden by default and become visible only with `-t, --tools`
    - Claude background-task notifications (string content wrapped in `<task-notification>...</task-notification>`, emitted when a background `Agent` task finishes) classify as a synthetic `TaskNotification` tool: hidden by default, shown with `-t`, name-filterable (`-t TaskNotification`). The `tool_use_id` (linking back to the originating `Agent` dispatch), `status`, and `summary` render as `<tool-input>` attributes and the task result as the body; double quotes in attribute values are downgraded to single quotes
+   - Claude post-compaction summaries (`isCompactSummary: true`, injected when a conversation is continued past its context limit) render as a visible `<compaction>` block — shown by default like `<recap>`, with its own hue and a "Compaction" badge in colored output, rather than as a regular user message
    - Common fields: `cwd`, `sessionId`, `version`, `gitBranch`, `uuid`, `parentUuid`, `timestamp`
 
 2. **Assistant messages** (`type: "assistant"`)
