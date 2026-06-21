@@ -5,6 +5,7 @@ import os
 import re
 import textwrap
 import uuid
+from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -690,12 +691,16 @@ def _parse_default_jsonl_entries(
     entries: list[dict], flags: ConversationFlags
 ) -> list[Message]:
     """Parse Claude-style JSONL entries into the shared Message model."""
+    branch_of = _resolve_branch_map(entries)
     messages = []
     index = 1
 
     for entry in entries:
-        entry_type = entry.get("type")
+        branch_id = branch_of.get(entry.get("uuid"))
+        if branch_id is not None and not flags.show_branches:
+            continue  # abandoned rewind branch, hidden unless -b/--branches
 
+        entry_type = entry.get("type")
         if entry_type == "user":
             msg = _parse_user_entry(entry, index, flags)
         elif entry_type == "assistant":
@@ -706,6 +711,7 @@ def _parse_default_jsonl_entries(
             msg = None
 
         if msg and msg.has_content():
+            msg.branch_id = branch_id
             messages.append(msg)
             index += 1
 
@@ -742,6 +748,115 @@ def _suppress_claude_agent_dispatch(messages: list[Message]) -> None:
                 and tool.get("tool_use_id") in dispatch_ids
             )
         ]
+
+
+def _collect_subtree(root: str, children: dict[str | None, list[str]]) -> set[str]:
+    """Return every uuid reachable from `root` (iterative; safe on deep threads)."""
+    seen: set[str] = set()
+    stack = [root]
+    while stack:
+        node_uuid = stack.pop()
+        if node_uuid in seen:
+            continue
+        seen.add(node_uuid)
+        stack.extend(children.get(node_uuid, []))
+    return seen
+
+
+def _subtree_depths(
+    roots: list[str], children: dict[str | None, list[str]]
+) -> dict[str, int]:
+    """Longest downward chain length per node (iterative reverse-preorder memo)."""
+    depth: dict[str, int] = {}
+    for root in roots:
+        order: list[str] = []
+        stack = [root]
+        while stack:
+            node_uuid = stack.pop()
+            order.append(node_uuid)
+            stack.extend(children.get(node_uuid, []))
+        for node_uuid in reversed(order):
+            kids = children.get(node_uuid, [])
+            depth[node_uuid] = 1 + max((depth[kid] for kid in kids), default=0)
+    return depth
+
+
+def _deepest_descendant(
+    root: str, children: dict[str | None, list[str]], depth: dict[str, int]
+) -> str:
+    """Follow the deepest child from `root` to its leaf (the longest continuation)."""
+    cursor = root
+    while children.get(cursor):
+        cursor = max(children[cursor], key=lambda child: depth[child])
+    return cursor
+
+
+def _resolve_branch_map(entries: list[dict]) -> dict[str, str]:
+    """Map each off-main-branch node uuid to a stable branch id.
+
+    A Claude transcript is a forest: each `parentUuid: null` entry starts an era (a
+    session start or a `/compact` boundary). Within each era the main thread is the
+    path from the active leaf — the latest `last-prompt` `leafUuid` landing in that
+    era — up to the era root; with no recorded leaf, the longest continuation wins.
+    A node off every era's main path belongs to an abandoned rewind branch, identified
+    by its *head*: the first node that diverged from the main thread. Every message on
+    one detour shares a head, hence one id; ids are numbered by first appearance.
+    """
+    nodes = {entry["uuid"]: entry for entry in entries if "uuid" in entry}
+    if not nodes:
+        return {}
+
+    children: dict[str | None, list[str]] = defaultdict(list)
+    parent: dict[str, str | None] = {}
+    for node_uuid, node in nodes.items():
+        parent_uuid = node.get("parentUuid")
+        children[parent_uuid].append(node_uuid)
+        parent[node_uuid] = parent_uuid
+
+    # A root starts a tree/era: parentUuid is null (session start, compaction) or
+    # points outside this file (a transcript snippet whose head was truncated).
+    roots = [
+        node_uuid
+        for node_uuid, node in nodes.items()
+        if node.get("parentUuid") is None or node.get("parentUuid") not in nodes
+    ]
+    leaves = [
+        entry["leafUuid"]
+        for entry in entries
+        if entry.get("type") == "last-prompt" and entry.get("leafUuid") in nodes
+    ]
+    depth = _subtree_depths(roots, children)
+
+    main: set[str] = set()
+    for root in roots:
+        members = _collect_subtree(root, children)
+        active_leaf = next(
+            (leaf for leaf in reversed(leaves) if leaf in members),
+            _deepest_descendant(root, children, depth),
+        )
+        cursor = active_leaf
+        while cursor in nodes:
+            main.add(cursor)
+            cursor = parent.get(cursor)
+
+    def branch_head(node_uuid: str) -> str:
+        cursor = node_uuid
+        while True:
+            ancestor = parent.get(cursor)
+            if ancestor is None or ancestor in main:
+                return cursor
+            cursor = ancestor
+
+    head_ids: dict[str, str] = {}
+    branch_of: dict[str, str] = {}
+    for entry in entries:  # file order → stable, human-friendly numbering
+        node_uuid = entry.get("uuid")
+        if node_uuid is None or node_uuid not in nodes or node_uuid in main:
+            continue
+        branch_of[node_uuid] = head_ids.setdefault(
+            branch_head(node_uuid), str(len(head_ids) + 1)
+        )
+    return branch_of
 
 
 def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message]:

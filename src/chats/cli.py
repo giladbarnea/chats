@@ -189,6 +189,7 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         show_thinking=show_thinking,
         show_tools=_resolve_show_tools(args.tools, args.all),
         show_agents=args.agents or args.all,
+        show_branches=args.branches or args.all,
         show_plans=args.plans or args.all,
         allow_empty_output=message_selection != MessageSelection.ALL,
         shorten=shorten_width is not None,
@@ -413,6 +414,12 @@ def main():
             "-a", "--agents", action="store_true", help="Include agent messages"
         )
         parser.add_argument(
+            "-b",
+            "--branches",
+            action="store_true",
+            help="Include messages from abandoned (rewound) branches",
+        )
+        parser.add_argument(
             "-A",
             "--all",
             action="store_true",
@@ -483,6 +490,7 @@ def main():
             show_thinking=show_thinking,
             show_tools=_resolve_show_tools(args.tools, args.all),
             show_agents=args.agents or args.all,
+            show_branches=args.branches or args.all,
             show_plans=args.plans or args.all,
             shorten=shorten_width is not None,
             shorten_width=shorten_width or 500,
@@ -712,6 +720,12 @@ Commands:
         )
         parser.add_argument(
             "-a", "--agents", action="store_true", help="Include agent messages"
+        )
+        parser.add_argument(
+            "-b",
+            "--branches",
+            action="store_true",
+            help="Include messages from abandoned (rewound) branches",
         )
         parser.add_argument(
             "-A",

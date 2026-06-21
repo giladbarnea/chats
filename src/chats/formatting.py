@@ -317,6 +317,8 @@ def _message_header_badge(msg: Message, *, conversation_tag: str | None = None) 
     header = msg.get_header()
     header_text = re.sub(r"^#+\s*", "", header) if header else msg.role.title()
     badge = Text()
+    if msg.branch_id:
+        badge.append(f" ⑂{msg.branch_id} ", style="bold white on #475569")
     badge.append(
         f" {header_text} ",
         style=f"bold white on {_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE)}",

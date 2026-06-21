@@ -110,6 +110,7 @@ Automatically detects input format by examining **first non-empty line only** (d
                      #   Order-free: -t i:Bash == -t Bash:i
                      #   Long form: -t input, -t output, -t short, -t error
 -a, --agents         # Include subagent messages
+-b, --branches       # Include abandoned (rewound) branch messages, tagged branch="N"
 -A, --all            # Show everything (thinking, tools, agents, plans)
 --plans              # Show plan content (ExitPlanMode)
 -s, --short [WIDTH]  # Shorten string values in output (default width=500; explicit WIDTH must be >7)
@@ -232,7 +233,7 @@ Once an operator is present, every multi-word or regex-shaped term must be quote
 - `-ma, --mafter DATE`: Only conversations modified after DATE
 - `-ca, --cafter DATE`: Only conversations created after DATE
 - `--no-metadata`: Disable outputting metadata frontmatter
-- Reuses standard display flags (`-T`, `-t`, `-a`, `-A`, `--plans`) to control both what counts as a match and what gets rendered
+- Reuses standard display flags (`-T`, `-t`, `-a`, `-b`, `-A`, `--plans`) to control both what counts as a match and what gets rendered
 
 **Date formats:** ISO dates (`2024-12-15`, `24-12-15`), with time (`2024-12-15T14:30`, `2024-12-15 14:30:45`), or relative (`1h`, `2d`, `3w`, `4m`, `5y`).
 
@@ -468,6 +469,15 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - `USER_INPUT.content` renders only the `<USER_REQUEST>...</USER_REQUEST>` body by default, hiding Antigravity metadata wrappers
    - `PLANNER_RESPONSE.content` renders as assistant text; `thinking` and `tool_calls` are opt-in through the standard `--thinking` and `--tools` flags
    - Tool result records such as `RUN_COMMAND`, `VIEW_FILE`, and `CODE_ACTION` are paired positionally with preceding Antigravity tool calls
+
+**Non-linear structure (Claude):**
+
+A Claude transcript is a tree, not a line — file order is not conversation order. Three mechanisms break linearity (others likely exist):
+- **Rewind:** returning to an earlier point and re-prompting forks the tree — the rewind target gains an extra child, so one node has multiple children sharing the same non-null `parentUuid`. The surviving thread is the longest continuation; the shorter sibling subtrees are abandoned branches.
+- **Compaction** (`/compact`): does *not* fork, it cuts. Each compaction ends the current tree and starts a fresh `parentUuid: null` root — a `system/compact_boundary` node whose sole child is the `isCompactSummary` summary — so a compacted file is a *forest* of disjoint trees, one per context-window era. Cross-era continuity lives out-of-band in the boundary's `compactMetadata.preservedSegment`, not in `parentUuid`; file order keeps the eras in sequence.
+- **`/fork`** (user-initiated background agent): the parent session stores only the `/fork` command message and the returning `<task-notification>` — no `Task` tool_use, `agentId`, or `isSidechain` anchor in the main thread. The fork's transcript lives in a separate `subagents/agent-{slug}-{taskId}.jsonl` (plus a `.meta.json` with `isFork: true`) whose leading `fork-context-ref` links *back* to the parent (`parentLastUuid` = the forked-from node) while nothing links forward — unlike classic agent-initiated subagents, which anchor in-thread via a `Task` tool_use / `agentId`.
+
+In `ch` output, messages on an abandoned **rewind** branch are hidden by default and included only with `-b, --branches`, each tagged `branch="N"` (and a `⑂N` chip in colored output). Resolution runs per era, so compaction seams and prior eras are never mistaken for abandoned branches; within each era the main thread is the path to the latest `last-prompt` `leafUuid`.
 
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)

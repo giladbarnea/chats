@@ -107,6 +107,7 @@ class ConversationFlags:
     show_thinking: bool
     show_tools: bool | list[ToolFilter]
     show_agents: bool
+    show_branches: bool
     show_plans: bool
     allow_empty_output: bool
     shorten: bool
@@ -122,6 +123,7 @@ class ConversationFlags:
         show_thinking: bool = False,
         show_tools: bool | list[ToolFilter] = False,
         show_agents: bool = False,
+        show_branches: bool = False,
         show_plans: bool = False,
         allow_empty_output: bool = False,
         shorten: bool = False,
@@ -134,6 +136,7 @@ class ConversationFlags:
         self.show_thinking = show_thinking
         self.show_tools = show_tools
         self.show_agents = show_agents
+        self.show_branches = show_branches
         self.show_plans = show_plans
         self.allow_empty_output = allow_empty_output
         self.shorten = shorten
@@ -165,6 +168,7 @@ class ConversationFlags:
             self.show_thinking
             and self.show_tools
             and self.show_agents
+            and self.show_branches
             and self.show_plans
         )
 
@@ -175,6 +179,7 @@ class ConversationFlags:
             f"show_assistant_messages={self.show_assistant_messages}, "
             f"show_thinking={self.show_thinking}, "
             f"show_tools={self.show_tools}, show_agents={self.show_agents}, "
+            f"show_branches={self.show_branches}, "
             f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
             f"shorten={self.shorten}, shorten_width={self.shorten_width}, "
             f"shorten_thinking={self.shorten_thinking}, "
@@ -201,6 +206,12 @@ class Message:
     is_meta: bool = False
     source_tool_user_id: str | None = None
     wrapper_type: ContentBlockType | None = None
+    branch_id: str | None = None  # abandoned rewind-branch id; None on the main thread
+
+    @property
+    def off_main_branch(self) -> bool:
+        """True when this message sits on an abandoned rewind branch."""
+        return self.branch_id is not None
 
     def iter_visible_parts(
         self, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
@@ -324,6 +335,9 @@ class Message:
             "original_index": self.index,
             "content": content,
         }
+
+        if self.branch_id:
+            payload["branch"] = self.branch_id
 
         if self.role == "user":
             if self.is_meta:
@@ -462,6 +476,8 @@ class Message:
     def get_wrapper_attrs(self) -> str:
         """Build XML attributes string for this message's wrapper tag."""
         attrs = [f'i="{self.index}"']
+        if self.branch_id:
+            attrs.append(f'branch="{self.branch_id}"')
         if self.role == "user":
             if self.is_meta:
                 attrs.append('isMeta="true"')

@@ -3,6 +3,19 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-21] Detect and gate off-main-branch (rewound) Claude messages
+
+### Added
+
+- A Claude transcript is a tree, not a line: rewinding to an earlier point and re-prompting forks it, leaving the abandoned attempt interleaved in file order as if it were linear history. `ch` now detects these abandoned branches and omits them by default, so a printed conversation follows only the main thread. The new `-b, --branches` flag includes them, each tagged with a `branch="N"` attribute (`-f json`: a `branch` key) and a `⑂N` chip in colored output. It is its own flag, deliberately independent of `-t, --tools`.
+- The branch id groups a detour by its *head* — the first message that left the main line — so all messages from one rewind share an id while separate rewinds from the same fork point stay distinct.
+- The main thread is resolved per compaction era: a `/compact` boundary starts a fresh `parentUuid: null` root, making a compacted file a forest, and each era's main thread runs from its active `last-prompt` `leafUuid` up to the era root (longest continuation as the fallback when no leaf is recorded). The leaf is chosen over subtree depth because the active branch can be shorter than an abandoned one. Compaction seams are never treated as branches, and resolution is iterative to stay safe on very deep threads. Claude only; the logic lives in `chats.parsing._resolve_branch_map`.
+
+### Fixed
+
+- A transcript snippet whose head is truncated has no `parentUuid: null` root; the resolver now treats a parent absent from the file as an era root, so partial logs are not wholly mislabeled as off-branch.
+
+---
 ## [2026-06-21] Render Claude compaction summaries as Compaction blocks
 
 ### Added
