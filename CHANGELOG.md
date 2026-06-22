@@ -7,11 +7,13 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- `ch info <session> -f json` (alongside the default `-f text`) prints the same statistics as a flat, snake-cased JSON document for piping into `jq`. Root keys: `name`, `file`, `id`, `total_duration_api`, `total_duration_wall` (humanized strings, or `null` when absent), `usage_by_model` (per model → a token CostStats), `messages` (`user`, `assistant`, `tool_calls`, `tool_results`, `total`), `tokens` (a CostStats), and a single scalar `cost`. A CostStats is `{input, output, cache_read, cache_write, total}` token counts.
+- `ch info <session> -f json` (alongside the default `-f text`) prints the same statistics as a flat, snake-cased JSON document for piping into `jq`. Root keys: `name`, `file`, `id`, `total_duration_api`, `total_duration_wall` (humanized strings, or `null` when absent), `model`, `usage_by_model` (per model → a CostStats), `messages` (`user`, `assistant`, `tool_calls`, `tool_results`, `total`), and `tokens` (a CostStats). A CostStats is `{input, output, cache_read, cache_write, total, cost}`, so the session total cost is `tokens.cost` and each model's cost is its own entry's `cost`.
+- A `model` field reports the dominant model by total token usage. The text report adds a humanized `Model:` line between the wall duration and the usage breakdown (`claude-opus-4-8` → `Claude Opus 4.8`), dropping any provider prefix and date/`@` stamp.
+- The text and JSON reports now derive from one shared `session_info_as_dict` representation rather than each reaching into the aggregated `SessionInfo` independently.
 
 ### Changed
 
-- The text report's cost is now a single `Cost: <total>` line instead of a `Cost` header over a redundant `Total:` sub-line — cost has only one value.
+- The text report's cost moved into the `Tokens` block as a single `Cost: <total>` line (under `Total:`), replacing the standalone `Cost` section with its redundant `Total:` sub-line. In JSON the total cost is `tokens.cost`; there is no separate root `cost` key.
 
 ---
 ## [2026-06-21] Add `info` command for per-session statistics (Claude and PI)

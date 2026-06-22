@@ -431,6 +431,7 @@ Session Info
  ID: 8f0a0094-9a14-4103-82ac-8db2ba8a46e0
  Total duration (API):  11s
  Total duration (wall): 31m 03s
+ Model: Claude Opus 4.8
  Usage by model:
     claude-opus-4-8:  5.8k input, 37.8k output, 4.5m cache read, 346.3k cache write ($5.41)
 
@@ -447,8 +448,7 @@ Tokens
  Cache Read: 4,546,764
  Cache Write: 346,253
  Total: 4,936,621
-
-Cost: 5.4113
+ Cost: 5.4113
 ```
 
 Pass `-f, --format json` for a flat, snake-cased JSON document instead — handy for piping into `jq`:
@@ -464,14 +464,16 @@ ch info <session> --format json
   "id": "8f0a0094-9a14-4103-82ac-8db2ba8a46e0",
   "total_duration_api": "11s",
   "total_duration_wall": "31m 03s",
+  "model": "claude-opus-4-8",
   "usage_by_model": {
-    "claude-opus-4-8": {"input": 5811, "output": 37793, "cache_read": 4546764, "cache_write": 346253, "total": 4936621}
+    "claude-opus-4-8": {"input": 5811, "output": 37793, "cache_read": 4546764, "cache_write": 346253, "total": 4936621, "cost": 5.4113}
   },
   "messages": {"user": 2, "assistant": 22, "tool_calls": 40, "tool_results": 39, "total": 63},
-  "tokens": {"input": 5811, "output": 37793, "cache_read": 4546764, "cache_write": 346253, "total": 4936621},
-  "cost": 5.4113
+  "tokens": {"input": 5811, "output": 37793, "cache_read": 4546764, "cache_write": 346253, "total": 4936621, "cost": 5.4113}
 }
 ```
+
+`model` is the dominant model by total token usage; the text report humanizes it (`claude-opus-4-8` → `Claude Opus 4.8`). Every per-model entry and the aggregate `tokens` share one `CostStats` shape — `{input, output, cache_read, cache_write, total, cost}` — so the session's total cost is `tokens.cost`.
 
 **Scope:** Claude and PI only. A Codex or Antigravity session is rejected with a clear error.
 

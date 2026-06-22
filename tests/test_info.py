@@ -453,8 +453,8 @@ def test_cmd_info_preserves_bracketed_session_name(tmp_path, capsys):
 
 
 def test_render_cost_is_flat_single_line(tmp_path):
-    """Cost has a single value, so it renders as one `Cost: X` line, not a
-    `Cost` header with a redundant `Total:` sub-line."""
+    """Cost has a single value, so it renders as one `Cost: X` line within the
+    Tokens block, not a standalone `Cost` header over a redundant `Total:`."""
     path = tmp_path / "claude-session.jsonl"
     _write_session(path, _claude_entries())
     info = build_session_info(path)
@@ -491,6 +491,7 @@ def test_json_format_is_flat_with_snake_case_keys(tmp_path, monkeypatch):
         "cache_read": 10240,
         "cache_write": 0,
         "total": 10990,
+        "cost": pytest.approx(0.0066725),
     }, f"Per-model CostStats wrong: {model_stats}"
 
     assert payload["messages"] == {
@@ -504,8 +505,85 @@ def test_json_format_is_flat_with_snake_case_keys(tmp_path, monkeypatch):
     assert payload["tokens"]["total"] == info.total_tokens, (
         f"tokens.total should mirror reported total; got {payload['tokens']['total']}"
     )
-    assert payload["cost"] == pytest.approx(0.0066725), (
-        f"cost must be a scalar total, got {payload['cost']!r}"
+    assert payload["tokens"]["cost"] == pytest.approx(0.0066725), (
+        f"total cost now lives in tokens.cost, got {payload['tokens'].get('cost')!r}"
+    )
+    assert "cost" not in payload, (
+        "The redundant root-level `cost` key must be gone (it equals tokens.cost)"
+    )
+
+
+def test_json_per_model_carries_its_dollar_cost(tmp_path):
+    """Each per-model entry includes the dollar `cost` the text report shows as
+    `($X)`, so the JSON and text reports stay symmetric."""
+    path = tmp_path / "claude-session.jsonl"
+    _write_session(path, _claude_entries())
+
+    info = build_session_info(path)
+    payload = json.loads(render_session_info_json(info))
+
+    expected = (100 * 5 + 50 * 25 + 1000 * 0.5 + 200 * 6.25) / 1_000_000
+    model_cost = payload["usage_by_model"]["claude-opus-4-8"]["cost"]
+    assert model_cost == pytest.approx(expected), (
+        f"Per-model entry must carry its computed cost; got {model_cost!r}"
+    )
+
+
+def test_root_model_is_reported_and_pretty_humanizes_it(tmp_path):
+    """A root-level `model` (raw id) appears in JSON; the text report shows it as
+    a humanized `Model:` line between the wall duration and the usage breakdown."""
+    path = tmp_path / "claude-session.jsonl"
+    _write_session(path, _claude_entries())
+    info = build_session_info(path)
+
+    payload = json.loads(render_session_info_json(info))
+    assert payload["model"] == "claude-opus-4-8", f"Got model {payload.get('model')!r}"
+
+    rendered = render_session_info(info)
+    assert " Model: Claude Opus 4.8" in rendered, (
+        f"Pretty report should carry a humanized Model line; report was:\n{rendered}"
+    )
+    wall_index = rendered.index("Total duration (wall)")
+    model_index = rendered.index(" Model: Claude Opus 4.8")
+    usage_index = rendered.index("Usage by model")
+    assert wall_index < model_index < usage_index, (
+        "Model line must sit between the wall duration and the usage breakdown"
+    )
+
+
+def test_root_model_picks_the_highest_usage_model(tmp_path):
+    """When a session spans models, the dominant one (most tokens) is reported."""
+    path = tmp_path / "claude-multi.jsonl"
+    _write_session(
+        path,
+        [
+            {
+                "type": "assistant",
+                "timestamp": "2026-06-21T18:45:31.000Z",
+                "message": {
+                    "id": "a",
+                    "model": "claude-haiku-4-5",
+                    "usage": {"input_tokens": 5, "output_tokens": 5},
+                    "content": [{"type": "text", "text": "x"}],
+                },
+            },
+            {
+                "type": "assistant",
+                "timestamp": "2026-06-21T18:45:32.000Z",
+                "message": {
+                    "id": "b",
+                    "model": "claude-opus-4-8",
+                    "usage": {"input_tokens": 1000, "output_tokens": 1000},
+                    "content": [{"type": "text", "text": "y"}],
+                },
+            },
+        ],
+    )
+
+    payload = json.loads(render_session_info_json(build_session_info(path)))
+
+    assert payload["model"] == "claude-opus-4-8", (
+        f"Dominant model by token usage should be reported; got {payload['model']!r}"
     )
 
 
@@ -524,8 +602,8 @@ def test_cmd_info_json_format_emits_parseable_json(tmp_path, capsys):
     assert payload["usage_by_model"]["claude-opus-4-8"]["input"] == 100, (
         f"Computed Claude usage missing from JSON: {payload['usage_by_model']}"
     )
-    assert isinstance(payload["cost"], (int, float)), (
-        f"cost must be a scalar number, got {payload['cost']!r}"
+    assert isinstance(payload["tokens"]["cost"], (int, float)), (
+        f"tokens.cost must be a scalar number, got {payload['tokens'].get('cost')!r}"
     )
 
 

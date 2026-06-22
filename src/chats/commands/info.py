@@ -105,6 +105,16 @@ class SessionInfo:
         return combined
 
     @property
+    def primary_model(self) -> str | None:
+        """The dominant model by total token usage; None when no usage exists."""
+        if not self.usage_by_model:
+            return None
+        return max(
+            self.usage_by_model,
+            key=lambda model: self.usage_by_model[model].total_tokens,
+        )
+
+    @property
     def total_tokens(self) -> int:
         if self.reported_total_tokens is not None:
             return self.reported_total_tokens
@@ -409,77 +419,104 @@ def _humanize_duration(duration: timedelta) -> str:
     return f"{seconds}s"
 
 
-def _model_usage_line(model: str, usage: ModelUsage) -> str:
-    """Render one `Usage by model` line for a model."""
+def _humanize_model(model: str) -> str:
+    """Render a model id as a display name, dropping provider prefix and date stamp.
+
+    >>> _humanize_model("claude-opus-4-8")
+    'Claude Opus 4.8'
+    >>> _humanize_model("claude-haiku-4-5-20251001")
+    'Claude Haiku 4.5'
+    >>> _humanize_model("anthropic/claude-sonnet-4.6")
+    'Claude Sonnet 4.6'
+    """
+    name = model.rsplit("/", 1)[-1].split("@", 1)[0]
+    tokens = name.split("-")
+    words = [token.capitalize() for token in tokens if not token[:1].isdigit()]
+    version = [
+        token
+        for token in tokens
+        if token[:1].isdigit() and len(token.replace(".", "")) <= 4
+    ]
+    rendered = " ".join(words)
+    return f"{rendered} {'.'.join(version)}" if version else rendered
+
+
+def _model_usage_line(model: str, stats: dict[str, int | float]) -> str:
+    """Render one `Usage by model` line from a model's CostStats."""
     return (
         f"    {model}:  "
-        f"{_humanize_tokens(usage.input_tokens)} input, "
-        f"{_humanize_tokens(usage.output_tokens)} output, "
-        f"{_humanize_tokens(usage.cache_read_tokens)} cache read, "
-        f"{_humanize_tokens(usage.cache_write_tokens)} cache write "
-        f"(${usage.cost:.2f})"
+        f"{_humanize_tokens(stats['input'])} input, "
+        f"{_humanize_tokens(stats['output'])} output, "
+        f"{_humanize_tokens(stats['cache_read'])} cache read, "
+        f"{_humanize_tokens(stats['cache_write'])} cache write "
+        f"(${stats['cost']:.2f})"
     )
 
 
 def render_session_info(info: SessionInfo) -> str:
-    """Render a SessionInfo as the plain-text report block."""
-    totals = info.totals
+    """Render the plain-text report from the JSON representation it shares."""
+    data = session_info_as_dict(info)
     lines = [
         "Session Info",
         "",
-        f" Name: {info.name or '(untitled)'}",
-        f" File: {info.path}",
-        f" ID: {info.session_id}",
+        f" Name: {data['name'] or '(untitled)'}",
+        f" File: {data['file']}",
+        f" ID: {data['id']}",
     ]
-    if info.api_duration is not None:
-        lines.append(f" Total duration (API):  {_humanize_duration(info.api_duration)}")
-    if info.wall_duration is not None:
-        lines.append(f" Total duration (wall): {_humanize_duration(info.wall_duration)}")
+    if data["total_duration_api"] is not None:
+        lines.append(f" Total duration (API):  {data['total_duration_api']}")
+    if data["total_duration_wall"] is not None:
+        lines.append(f" Total duration (wall): {data['total_duration_wall']}")
+    if data["model"] is not None:
+        lines.append(f" Model: {_humanize_model(data['model'])}")
 
     lines.append(" Usage by model:")
-    for model in sorted(info.usage_by_model):
-        lines.append(_model_usage_line(model, info.usage_by_model[model]))
+    for model in sorted(data["usage_by_model"]):
+        lines.append(_model_usage_line(model, data["usage_by_model"][model]))
 
+    messages = data["messages"]
+    tokens = data["tokens"]
     lines += [
         "",
         "Messages",
-        f" User: {info.user_messages}",
-        f" Assistant: {info.assistant_messages}",
-        f" Tool Calls: {info.tool_calls}",
-        f" Tool Results: {info.tool_results}",
-        f" Total: {info.total_messages}",
+        f" User: {messages['user']}",
+        f" Assistant: {messages['assistant']}",
+        f" Tool Calls: {messages['tool_calls']}",
+        f" Tool Results: {messages['tool_results']}",
+        f" Total: {messages['total']}",
         "",
         "Tokens",
-        f" Input: {totals.input_tokens:,}",
-        f" Output: {totals.output_tokens:,}",
-        f" Cache Read: {totals.cache_read_tokens:,}",
-        f" Cache Write: {totals.cache_write_tokens:,}",
-        f" Total: {info.total_tokens:,}",
-        "",
-        f"Cost: {totals.cost:.4f}",
+        f" Input: {tokens['input']:,}",
+        f" Output: {tokens['output']:,}",
+        f" Cache Read: {tokens['cache_read']:,}",
+        f" Cache Write: {tokens['cache_write']:,}",
+        f" Total: {tokens['total']:,}",
+        f" Cost: {tokens['cost']:.4f}",
     ]
     return "\n".join(lines)
 
 
-def _cost_stats(usage: ModelUsage) -> dict[str, int]:
-    """Render a ModelUsage as the flat token `CostStats` mapping used in JSON."""
+def _cost_stats(usage: ModelUsage) -> dict[str, int | float]:
+    """Render a ModelUsage as a flat `CostStats`: the four token counts, their
+    total, and the dollar `cost`."""
     return {
         "input": usage.input_tokens,
         "output": usage.output_tokens,
         "cache_read": usage.cache_read_tokens,
         "cache_write": usage.cache_write_tokens,
         "total": usage.total_tokens,
+        "cost": usage.cost,
     }
 
 
 def session_info_as_dict(info: SessionInfo) -> dict[str, object]:
     """Render a SessionInfo as the flat, snake-cased JSON shape.
 
-    Durations mirror the report's humanized strings (None when absent); per-model
-    usage and the aggregate `tokens` are token-only CostStats, and `cost` is the
-    single total dollar figure rather than a nested `{total: ...}`.
+    Durations mirror the report's humanized strings (None when absent). Per-model
+    usage and the aggregate `tokens` are both `CostStats`, so the session total
+    cost is `tokens.cost` rather than a separate redundant root key. `model` is
+    the dominant model's raw id.
     """
-    totals = info.totals
     return {
         "name": info.name,
         "file": str(info.path),
@@ -490,6 +527,7 @@ def session_info_as_dict(info: SessionInfo) -> dict[str, object]:
         "total_duration_wall": (
             _humanize_duration(info.wall_duration) if info.wall_duration is not None else None
         ),
+        "model": info.primary_model,
         "usage_by_model": {
             model: _cost_stats(usage) for model, usage in info.usage_by_model.items()
         },
@@ -500,8 +538,7 @@ def session_info_as_dict(info: SessionInfo) -> dict[str, object]:
             "tool_results": info.tool_results,
             "total": info.total_messages,
         },
-        "tokens": {**_cost_stats(totals), "total": info.total_tokens},
-        "cost": totals.cost,
+        "tokens": {**_cost_stats(info.totals), "total": info.total_tokens},
     }
 
 
