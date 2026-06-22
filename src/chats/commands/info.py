@@ -420,7 +420,11 @@ def _humanize_duration(duration: timedelta) -> str:
 
 
 def _humanize_model(model: str) -> str:
-    """Render a model id as a display name, dropping provider prefix and date stamp.
+    """Render a model id as a display name, preserving token order.
+
+    Drops a provider prefix and an `@`/date stamp, title-cases name words, and
+    dot-joins each run of consecutive version numbers in place so interleaved
+    ids keep their order.
 
     >>> _humanize_model("claude-opus-4-8")
     'Claude Opus 4.8'
@@ -428,17 +432,28 @@ def _humanize_model(model: str) -> str:
     'Claude Haiku 4.5'
     >>> _humanize_model("anthropic/claude-sonnet-4.6")
     'Claude Sonnet 4.6'
+    >>> _humanize_model("claude-3-5-sonnet-20241022")
+    'Claude 3.5 Sonnet'
+    >>> _humanize_model("gemini-2.5-pro")
+    'Gemini 2.5 Pro'
     """
     name = model.rsplit("/", 1)[-1].split("@", 1)[0]
-    tokens = name.split("-")
-    words = [token.capitalize() for token in tokens if not token[:1].isdigit()]
-    version = [
-        token
-        for token in tokens
-        if token[:1].isdigit() and len(token.replace(".", "")) <= 4
-    ]
-    rendered = " ".join(words)
-    return f"{rendered} {'.'.join(version)}" if version else rendered
+    parts: list[str] = []
+    version: list[str] = []
+    for token in name.split("-"):
+        is_date_stamp = token[:1].isdigit() and len(token.replace(".", "")) > 4
+        if is_date_stamp:
+            continue
+        if token[:1].isdigit():
+            version.append(token)
+            continue
+        if version:
+            parts.append(".".join(version))
+            version = []
+        parts.append(token.capitalize())
+    if version:
+        parts.append(".".join(version))
+    return " ".join(parts)
 
 
 def _model_usage_line(model: str, stats: dict[str, int | float]) -> str:
@@ -538,6 +553,9 @@ def session_info_as_dict(info: SessionInfo) -> dict[str, object]:
             "tool_results": info.tool_results,
             "total": info.total_messages,
         },
+        # `total` is overridden because PI states a per-message total that is
+        # trusted over the recomputed sum (`info.total_tokens`); for Claude the
+        # two are equal.
         "tokens": {**_cost_stats(info.totals), "total": info.total_tokens},
     }
 

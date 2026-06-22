@@ -551,6 +551,27 @@ def test_root_model_is_reported_and_pretty_humanizes_it(tmp_path):
     )
 
 
+@pytest.mark.parametrize(
+    "model_id, expected",
+    [
+        ("claude-opus-4-8", "Claude Opus 4.8"),
+        ("claude-haiku-4-5-20251001", "Claude Haiku 4.5"),
+        ("anthropic/claude-sonnet-4.6", "Claude Sonnet 4.6"),
+        ("claude-opus-4-8@20251101", "Claude Opus 4.8"),
+        ("claude-3-5-sonnet-20241022", "Claude 3.5 Sonnet"),
+        ("gemini-2.5-pro", "Gemini 2.5 Pro"),
+    ],
+)
+def test_humanize_model_preserves_token_order(model_id, expected):
+    """The display name must keep an id's token order, so a name that follows a
+    version number (claude-3-5-sonnet) is not reordered before it."""
+    from chats.commands.info import _humanize_model
+
+    assert _humanize_model(model_id) == expected, (
+        f"{model_id!r} should humanize to {expected!r}, got {_humanize_model(model_id)!r}"
+    )
+
+
 def test_root_model_picks_the_highest_usage_model(tmp_path):
     """When a session spans models, the dominant one (most tokens) is reported."""
     path = tmp_path / "claude-multi.jsonl"
