@@ -483,6 +483,9 @@ def test_json_format_is_flat_with_snake_case_keys(tmp_path, monkeypatch):
     assert payload["id"] == info.session_id, f"Got id {payload.get('id')!r}"
     assert payload["file"] == str(info.path), f"Got file {payload.get('file')!r}"
     assert payload["name"] == "fill rate report", f"Got name {payload.get('name')!r}"
+    assert payload["total_duration_wall"] == pytest.approx(300.99, abs=0.01), (
+        f"JSON wall duration is numeric seconds, got {payload['total_duration_wall']!r}"
+    )
 
     model_stats = payload["usage_by_model"]["anthropic/claude-sonnet-4.6"]
     assert model_stats == {
@@ -616,8 +619,8 @@ def test_cmd_info_json_format_emits_parseable_json(tmp_path, capsys):
     cmd_info(str(path), output_format="json")
 
     payload = json.loads(capsys.readouterr().out)
-    assert payload["total_duration_api"] == "5s", (
-        f"Claude turn_duration should render as a humanized string, got "
+    assert payload["total_duration_api"] == pytest.approx(5.0), (
+        f"JSON durations are numeric seconds (the lower-level form), got "
         f"{payload['total_duration_api']!r}"
     )
     assert payload["usage_by_model"]["claude-opus-4-8"]["input"] == 100, (

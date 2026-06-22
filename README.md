@@ -462,8 +462,8 @@ ch info <session> --format json
   "name": "[06-21] session status info",
   "file": "/Users/.../8f0a0094-9a14-4103-82ac-8db2ba8a46e0.jsonl",
   "id": "8f0a0094-9a14-4103-82ac-8db2ba8a46e0",
-  "total_duration_api": "11s",
-  "total_duration_wall": "31m 03s",
+  "total_duration_api": 11,
+  "total_duration_wall": 1863,
   "model": "claude-opus-4-8",
   "usage_by_model": {
     "claude-opus-4-8": {"input": 5811, "output": 37793, "cache_read": 4546764, "cache_write": 346253, "total": 4936621, "cost": 5.4113}
@@ -473,7 +473,7 @@ ch info <session> --format json
 }
 ```
 
-`model` is the dominant model by total token usage; the text report humanizes it (`claude-opus-4-8` → `Claude Opus 4.8`). Every per-model entry and the aggregate `tokens` share one `CostStats` shape — `{input, output, cache_read, cache_write, total, cost}` — so the session's total cost is `tokens.cost`.
+The JSON is the lower-level form the text report derives from: durations are numeric seconds (`null` when absent) that the report humanizes, and `model` is the dominant model id (by total token usage) that the report renders as `Claude Opus 4.8`. Every per-model entry and the aggregate `tokens` share one `CostStats` shape — `{input, output, cache_read, cache_write, total, cost}` — so the session's total cost is `tokens.cost`.
 
 **Scope:** Claude and PI only. A Codex or Antigravity session is rejected with a clear error.
 

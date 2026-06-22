@@ -456,57 +456,55 @@ def _humanize_model(model: str) -> str:
     return " ".join(parts)
 
 
-def _model_usage_line(model: str, stats: dict[str, int | float]) -> str:
-    """Render one `Usage by model` line from a model's CostStats."""
+def _model_usage_line(model: str, usage: ModelUsage) -> str:
+    """Render one `Usage by model` line for a model."""
     return (
         f"    {model}:  "
-        f"{_humanize_tokens(stats['input'])} input, "
-        f"{_humanize_tokens(stats['output'])} output, "
-        f"{_humanize_tokens(stats['cache_read'])} cache read, "
-        f"{_humanize_tokens(stats['cache_write'])} cache write "
-        f"(${stats['cost']:.2f})"
+        f"{_humanize_tokens(usage.input_tokens)} input, "
+        f"{_humanize_tokens(usage.output_tokens)} output, "
+        f"{_humanize_tokens(usage.cache_read_tokens)} cache read, "
+        f"{_humanize_tokens(usage.cache_write_tokens)} cache write "
+        f"(${usage.cost:.2f})"
     )
 
 
 def render_session_info(info: SessionInfo) -> str:
-    """Render the plain-text report from the JSON representation it shares."""
-    data = session_info_as_dict(info)
+    """Render the humanized plain-text report from the typed SessionInfo."""
+    totals = info.totals
     lines = [
         "Session Info",
         "",
-        f" Name: {data['name'] or '(untitled)'}",
-        f" File: {data['file']}",
-        f" ID: {data['id']}",
+        f" Name: {info.name or '(untitled)'}",
+        f" File: {info.path}",
+        f" ID: {info.session_id}",
     ]
-    if data["total_duration_api"] is not None:
-        lines.append(f" Total duration (API):  {data['total_duration_api']}")
-    if data["total_duration_wall"] is not None:
-        lines.append(f" Total duration (wall): {data['total_duration_wall']}")
-    if data["model"] is not None:
-        lines.append(f" Model: {_humanize_model(data['model'])}")
+    if info.api_duration is not None:
+        lines.append(f" Total duration (API):  {_humanize_duration(info.api_duration)}")
+    if info.wall_duration is not None:
+        lines.append(f" Total duration (wall): {_humanize_duration(info.wall_duration)}")
+    if info.primary_model is not None:
+        lines.append(f" Model: {_humanize_model(info.primary_model)}")
 
     lines.append(" Usage by model:")
-    for model in sorted(data["usage_by_model"]):
-        lines.append(_model_usage_line(model, data["usage_by_model"][model]))
+    for model in sorted(info.usage_by_model):
+        lines.append(_model_usage_line(model, info.usage_by_model[model]))
 
-    messages = data["messages"]
-    tokens = data["tokens"]
     lines += [
         "",
         "Messages",
-        f" User: {messages['user']}",
-        f" Assistant: {messages['assistant']}",
-        f" Tool Calls: {messages['tool_calls']}",
-        f" Tool Results: {messages['tool_results']}",
-        f" Total: {messages['total']}",
+        f" User: {info.user_messages}",
+        f" Assistant: {info.assistant_messages}",
+        f" Tool Calls: {info.tool_calls}",
+        f" Tool Results: {info.tool_results}",
+        f" Total: {info.total_messages}",
         "",
         "Tokens",
-        f" Input: {tokens['input']:,}",
-        f" Output: {tokens['output']:,}",
-        f" Cache Read: {tokens['cache_read']:,}",
-        f" Cache Write: {tokens['cache_write']:,}",
-        f" Total: {tokens['total']:,}",
-        f" Cost: {tokens['cost']:.4f}",
+        f" Input: {totals.input_tokens:,}",
+        f" Output: {totals.output_tokens:,}",
+        f" Cache Read: {totals.cache_read_tokens:,}",
+        f" Cache Write: {totals.cache_write_tokens:,}",
+        f" Total: {info.total_tokens:,}",
+        f" Cost: {totals.cost:.4f}",
     ]
     return "\n".join(lines)
 
@@ -525,22 +523,23 @@ def _cost_stats(usage: ModelUsage) -> dict[str, int | float]:
 
 
 def session_info_as_dict(info: SessionInfo) -> dict[str, object]:
-    """Render a SessionInfo as the flat, snake-cased JSON shape.
+    """Project a SessionInfo down to the flat, snake-cased JSON shape.
 
-    Durations mirror the report's humanized strings (None when absent). Per-model
-    usage and the aggregate `tokens` are both `CostStats`, so the session total
-    cost is `tokens.cost` rather than a separate redundant root key. `model` is
-    the dominant model's raw id.
+    This is the one serialization boundary: durations become numeric seconds
+    (None when absent), so the JSON is the lower-level form the humanized text
+    report derives from. Per-model usage and the aggregate `tokens` are both
+    `CostStats`, so the session total cost is `tokens.cost` rather than a
+    separate redundant root key. `model` is the dominant model's raw id.
     """
     return {
         "name": info.name,
         "file": str(info.path),
         "id": info.session_id,
         "total_duration_api": (
-            _humanize_duration(info.api_duration) if info.api_duration is not None else None
+            info.api_duration.total_seconds() if info.api_duration is not None else None
         ),
         "total_duration_wall": (
-            _humanize_duration(info.wall_duration) if info.wall_duration is not None else None
+            info.wall_duration.total_seconds() if info.wall_duration is not None else None
         ),
         "model": info.primary_model,
         "usage_by_model": {
