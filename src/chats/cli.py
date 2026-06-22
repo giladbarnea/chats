@@ -637,8 +637,15 @@ def main():
             "session",
             help="Conversation/session ID, name, recent negative index, or file path",
         )
+        parser.add_argument(
+            "-f",
+            "--format",
+            choices=["text", "json"],
+            default="text",
+            help="Output format: text or json (default: text)",
+        )
         args = parser.parse_args(sys.argv[2:])
-        cmd_info(args.session)
+        cmd_info(args.session, output_format=args.format)
     else:
         # Default parse behavior
         parser = argparse.ArgumentParser(

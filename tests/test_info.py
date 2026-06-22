@@ -8,7 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from chats.commands import build_session_info, cmd_info, render_session_info
+from chats.commands import (
+    build_session_info,
+    cmd_info,
+    render_session_info,
+    render_session_info_json,
+)
 
 
 def _write_session(path: Path, entries: list[dict]) -> None:
@@ -444,6 +449,83 @@ def test_cmd_info_preserves_bracketed_session_name(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "[06-21][avidor-run] dormant-insole 00" in out, (
         f"Bracketed name must print verbatim, not be consumed as markup; got:\n{out}"
+    )
+
+
+def test_render_cost_is_flat_single_line(tmp_path):
+    """Cost has a single value, so it renders as one `Cost: X` line, not a
+    `Cost` header with a redundant `Total:` sub-line."""
+    path = tmp_path / "claude-session.jsonl"
+    _write_session(path, _claude_entries())
+    info = build_session_info(path)
+
+    rendered = render_session_info(info)
+
+    assert f"Cost: {info.totals.cost:.4f}" in rendered, (
+        f"Cost should be a single flat line; report was:\n{rendered}"
+    )
+    assert "Cost\n Total:" not in rendered, (
+        f"Redundant Cost/Total nesting must be gone; report was:\n{rendered}"
+    )
+
+
+def test_json_format_is_flat_with_snake_case_keys(tmp_path, monkeypatch):
+    """`--format json` yields a flat, snake_cased shape: per-model token CostStats,
+    a messages block, a tokens CostStats, and a single scalar `cost`."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = _pi_session_path(home)
+    _write_session(path, _pi_entries())
+
+    info = build_session_info(path)
+    payload = json.loads(render_session_info_json(info))
+
+    assert payload["id"] == info.session_id, f"Got id {payload.get('id')!r}"
+    assert payload["file"] == str(info.path), f"Got file {payload.get('file')!r}"
+    assert payload["name"] == "fill rate report", f"Got name {payload.get('name')!r}"
+
+    model_stats = payload["usage_by_model"]["anthropic/claude-sonnet-4.6"]
+    assert model_stats == {
+        "input": 571,
+        "output": 179,
+        "cache_read": 10240,
+        "cache_write": 0,
+        "total": 10990,
+    }, f"Per-model CostStats wrong: {model_stats}"
+
+    assert payload["messages"] == {
+        "user": 1,
+        "assistant": 1,
+        "tool_calls": 1,
+        "tool_results": 1,
+        "total": 3,
+    }, f"messages block wrong: {payload['messages']}"
+
+    assert payload["tokens"]["total"] == info.total_tokens, (
+        f"tokens.total should mirror reported total; got {payload['tokens']['total']}"
+    )
+    assert payload["cost"] == pytest.approx(0.0066725), (
+        f"cost must be a scalar total, got {payload['cost']!r}"
+    )
+
+
+def test_cmd_info_json_format_emits_parseable_json(tmp_path, capsys):
+    """`cmd_info(..., output_format="json")` writes a single parseable JSON object."""
+    path = tmp_path / "claude-session.jsonl"
+    _write_session(path, _claude_entries())
+
+    cmd_info(str(path), output_format="json")
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["total_duration_api"] == "5s", (
+        f"Claude turn_duration should render as a humanized string, got "
+        f"{payload['total_duration_api']!r}"
+    )
+    assert payload["usage_by_model"]["claude-opus-4-8"]["input"] == 100, (
+        f"Computed Claude usage missing from JSON: {payload['usage_by_model']}"
+    )
+    assert isinstance(payload["cost"], (int, float)), (
+        f"cost must be a scalar number, got {payload['cost']!r}"
     )
 
 

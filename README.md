@@ -448,8 +448,29 @@ Tokens
  Cache Write: 346,253
  Total: 4,936,621
 
-Cost
- Total: 5.4113
+Cost: 5.4113
+```
+
+Pass `-f, --format json` for a flat, snake-cased JSON document instead — handy for piping into `jq`:
+
+```bash
+ch info <session> --format json
+```
+
+```json
+{
+  "name": "[06-21] session status info",
+  "file": "/Users/.../8f0a0094-9a14-4103-82ac-8db2ba8a46e0.jsonl",
+  "id": "8f0a0094-9a14-4103-82ac-8db2ba8a46e0",
+  "total_duration_api": "11s",
+  "total_duration_wall": "31m 03s",
+  "usage_by_model": {
+    "claude-opus-4-8": {"input": 5811, "output": 37793, "cache_read": 4546764, "cache_write": 346253, "total": 4936621}
+  },
+  "messages": {"user": 2, "assistant": 22, "tool_calls": 40, "tool_results": 39, "total": 63},
+  "tokens": {"input": 5811, "output": 37793, "cache_read": 4546764, "cache_write": 346253, "total": 4936621},
+  "cost": 5.4113
+}
 ```
 
 **Scope:** Claude and PI only. A Codex or Antigravity session is rejected with a clear error.

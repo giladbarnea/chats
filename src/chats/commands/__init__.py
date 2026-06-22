@@ -39,6 +39,12 @@ from .info import (
 from .info import (
     render_session_info as render_session_info,
 )
+from .info import (
+    render_session_info_json as render_session_info_json,
+)
+from .info import (
+    session_info_as_dict as session_info_as_dict,
+)
 from .parse import (
     _apply_slice_selectors as _apply_slice_selectors,
 )

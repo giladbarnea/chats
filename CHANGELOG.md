@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-22] `ch info --format json`
+
+### Added
+
+- `ch info <session> -f json` (alongside the default `-f text`) prints the same statistics as a flat, snake-cased JSON document for piping into `jq`. Root keys: `name`, `file`, `id`, `total_duration_api`, `total_duration_wall` (humanized strings, or `null` when absent), `usage_by_model` (per model → a token CostStats), `messages` (`user`, `assistant`, `tool_calls`, `tool_results`, `total`), `tokens` (a CostStats), and a single scalar `cost`. A CostStats is `{input, output, cache_read, cache_write, total}` token counts.
+
+### Changed
+
+- The text report's cost is now a single `Cost: <total>` line instead of a `Cost` header over a redundant `Total:` sub-line — cost has only one value.
+
+---
 ## [2026-06-21] Add `info` command for per-session statistics (Claude and PI)
 
 ### Added

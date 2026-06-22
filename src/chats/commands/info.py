@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import sys
 from dataclasses import dataclass, field
@@ -455,13 +456,61 @@ def render_session_info(info: SessionInfo) -> str:
         f" Cache Write: {totals.cache_write_tokens:,}",
         f" Total: {info.total_tokens:,}",
         "",
-        "Cost",
-        f" Total: {totals.cost:.4f}",
+        f"Cost: {totals.cost:.4f}",
     ]
     return "\n".join(lines)
 
 
-def cmd_info(session: str) -> None:
+def _cost_stats(usage: ModelUsage) -> dict[str, int]:
+    """Render a ModelUsage as the flat token `CostStats` mapping used in JSON."""
+    return {
+        "input": usage.input_tokens,
+        "output": usage.output_tokens,
+        "cache_read": usage.cache_read_tokens,
+        "cache_write": usage.cache_write_tokens,
+        "total": usage.total_tokens,
+    }
+
+
+def session_info_as_dict(info: SessionInfo) -> dict[str, object]:
+    """Render a SessionInfo as the flat, snake-cased JSON shape.
+
+    Durations mirror the report's humanized strings (None when absent); per-model
+    usage and the aggregate `tokens` are token-only CostStats, and `cost` is the
+    single total dollar figure rather than a nested `{total: ...}`.
+    """
+    totals = info.totals
+    return {
+        "name": info.name,
+        "file": str(info.path),
+        "id": info.session_id,
+        "total_duration_api": (
+            _humanize_duration(info.api_duration) if info.api_duration is not None else None
+        ),
+        "total_duration_wall": (
+            _humanize_duration(info.wall_duration) if info.wall_duration is not None else None
+        ),
+        "usage_by_model": {
+            model: _cost_stats(usage) for model, usage in info.usage_by_model.items()
+        },
+        "messages": {
+            "user": info.user_messages,
+            "assistant": info.assistant_messages,
+            "tool_calls": info.tool_calls,
+            "tool_results": info.tool_results,
+            "total": info.total_messages,
+        },
+        "tokens": {**_cost_stats(totals), "total": info.total_tokens},
+        "cost": totals.cost,
+    }
+
+
+def render_session_info_json(info: SessionInfo) -> str:
+    """Render a SessionInfo as an indented JSON document."""
+    return json.dumps(session_info_as_dict(info), indent=2, ensure_ascii=False)
+
+
+def cmd_info(session: str, output_format: str = "text") -> None:
     """Resolve a session identifier and print its aggregated statistics."""
     path = resolve.resolve_conversation_file(session)
     try:
@@ -469,6 +518,11 @@ def cmd_info(session: str) -> None:
     except ValueError as error:
         print_error(str(error))
         sys.exit(1)
+    rendered = (
+        render_session_info_json(info)
+        if output_format == "json"
+        else render_session_info(info)
+    )
     # markup=False so a name like "[06-21][avidor-run] ..." is not parsed as Rich
     # console markup (which would silently drop the bracketed segments).
-    get_console().print(render_session_info(info), soft_wrap=True, markup=False)
+    get_console().print(rendered, soft_wrap=True, markup=False)
