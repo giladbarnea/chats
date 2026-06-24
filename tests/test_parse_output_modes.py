@@ -488,3 +488,45 @@ def test_cmd_parse_only_metadata_rejects_raw_content(capsys) -> None:
         "Expected metadata-only mode to avoid writing stdout on this error path. "
         f"Got stdout:\n{captured.out}"
     )
+
+
+def test_cmd_parse_only_id_empty_stdin_reports_empty_input(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Empty stdin to `--only-id` must report empty input, not resolve the pool.
+
+    With the id-only fast path ahead of the empty-input guard, empty stdin becomes
+    a query that substring-matches every title/summary, printing an ambiguous-match
+    wall after a full pool scan instead of a clean "Input is empty." error.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    projects = home / ".claude" / "projects" / "demo"
+    _write_claude_session(projects / "11111111-1111-1111-1111-111111111111.jsonl")
+    _write_claude_session(projects / "22222222-2222-2222-2222-222222222222.jsonl")
+    monkeypatch.setattr(resolve_commands.sys, "stdin", io.StringIO(""))
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_parse(
+            ConversationFlags(color="never", paging=False),
+            None,
+            slice_str=None,
+            output_file=None,
+            output_format="xml",
+            emit_metadata=True,
+            output_mode=ParseOutputMode.ONLY_ID,
+        )
+
+    captured = capsys.readouterr()
+    combined = captured.out + captured.err
+    assert exc_info.value.code == 1, (
+        f"Expected exit 1 for empty input. Got: {exc_info.value.code!r}"
+    )
+    assert "Input is empty." in combined, (
+        "Empty stdin must report empty input. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "Ambiguous" not in combined, (
+        "Empty input must not fall into pool resolution and print an ambiguous wall. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )

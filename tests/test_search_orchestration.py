@@ -188,13 +188,10 @@ def test_dot_only_id_projection_outputs_ids_without_full_scan_or_metadata(
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
-    claude_path = home / ".claude" / "projects" / "proj" / "claude-visible.jsonl"
     pi_path = home / ".pi" / "agent" / "sessions" / "proj" / "pi-visible.jsonl"
     codex_path = home / ".codex" / "sessions" / "2026" / "01" / "01" / "codex-visible.jsonl"
-    _write_session(claude_path, "visible claude")
     _write_pi_visible_session(pi_path, "pi-visible-id", "visible pi")
     _write_codex_visible_session(codex_path, "codex-visible-id", "visible codex")
-    os.utime(claude_path, (1_700_000_000, 1_700_000_000))
     os.utime(pi_path, (1_700_000_001, 1_700_000_001))
     os.utime(codex_path, (1_700_000_002, 1_700_000_002))
 
@@ -227,7 +224,6 @@ def test_dot_only_id_projection_outputs_ids_without_full_scan_or_metadata(
     assert captured.out.splitlines() == [
         "codex-visible-id",
         "pi-visible-id",
-        "claude-visible",
     ], (
         "Expected projection to preserve newest-first id output across providers. "
         f"Got stdout:\n{captured.out}"
@@ -1038,4 +1034,225 @@ def test_cmd_search_skips_last_timestamp_probe_when_only_cafter_is_active(
     assert stale_path not in last_ts_calls, (
         "Expected cafter-only filtering to skip last-timestamp probing for files "
         f"outside the date window. Got last-timestamp probes for: {last_ts_calls!r}"
+    )
+
+
+# U+212A KELVIN SIGN: casefolds to 'k' but is not ASCII 'k'. Written as an escape
+# so an editor normalizing the glyph cannot silently turn this into ASCII and hide
+# the bug under test.
+_KELVIN_SIGN = "\u212a"
+
+
+def _write_unicode_session(path: Path, text: str) -> None:
+    """Write a Claude session storing raw UTF-8 (like real sessions), not \\uXXXX escapes."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join([
+            json.dumps(
+                {"type": "summary", "summary": text, "leafUuid": f"{path.stem}-leaf"},
+                ensure_ascii=False,
+            ),
+            json.dumps(
+                {
+                    "type": "user",
+                    "timestamp": "2025-01-01T00:00:00Z",
+                    "cwd": "/tmp/search-orchestration",
+                    "message": {"role": "user", "content": text},
+                },
+                ensure_ascii=False,
+            ),
+        ])
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_compact_meta_session(path: Path) -> None:
+    """Write a Claude entry the projection counts visible but the parser drops.
+
+    `isCompactSummary` + `isMeta`: the real parser yields no visible message (meta
+    suppresses the user text), so default `search .` must not list it. The current
+    projection shortcuts on `isCompactSummary` and wrongly lists it.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({
+            "type": "user",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "cwd": "/tmp/search-orchestration",
+            "isCompactSummary": True,
+            "isMeta": True,
+            "message": {"role": "user", "content": "compaction recap text"},
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_ascii_literal_search_finds_unicode_casefold_match(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """An ASCII literal must match content that equals it only under Unicode case folding.
+
+    The byte candidate gate folds ASCII only; the content gate and the real
+    `re.IGNORECASE` confirmation fold Unicode (U+212A KELVIN SIGN -> 'k'). The gate
+    must defer to them, not reject the file before `read_text`.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "kelvin.jsonl"
+    _write_unicode_session(path, f"the {_KELVIN_SIGN}town status report")
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "ktown",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "ASCII query 'ktown' must match U+212A content via case folding (content "
+        f"gate and real regex do). Got exit {exc_info.value.code}, "
+        f"stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == path.stem, (
+        "Expected the Unicode-folding session id to be reported. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+def test_byte_prefilter_never_rejects_a_content_gate_candidate(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Falsifying guardrail: the byte prefilter must be a superset of the content gate.
+
+    If the prefilter rejects a file the decode-based content gate accepts, a real
+    hit is silently dropped before `read_text`. U+212A case folding is the
+    falsifying input.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "kelvin.jsonl"
+    _write_unicode_session(path, f"the {_KELVIN_SIGN}town status report")
+
+    query = search_commands.parse_search_query("ktown")
+    flags = ConversationFlags(color="never", paging=False)
+    content = path.read_text(encoding="utf-8")
+    content_gate = search_commands._search_candidate_matches(content, query, flags)
+    byte_prefilter = search_commands._search_path_candidate_matches(path, query, flags)
+
+    assert not (content_gate and not byte_prefilter), (
+        "Byte prefilter rejected a file the content gate accepts — a real hit is "
+        f"dropped before read_text. content_gate={content_gate}, "
+        f"byte_prefilter={byte_prefilter}"
+    )
+
+
+def test_dot_only_id_claude_files_route_through_fallback(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Claude transcripts must defer to the full search path, never the projection.
+
+    Claude default visibility depends on branch resolution the projection cannot
+    cheaply replicate, so every Claude file (marker or not) must fall back to
+    `_search_hit_for_file`.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    claude_path = home / ".claude" / "projects" / "proj" / "claude-visible.jsonl"
+    _write_session(claude_path, "visible claude")  # no "last-prompt" marker
+
+    fallback_paths: list[Path] = []
+    real_search_hit_for_file = search_commands._search_hit_for_file
+
+    def tracked_search_hit_for_file(conv_file, query, flags, pool_filter):
+        fallback_paths.append(conv_file)
+        return real_search_hit_for_file(conv_file, query, flags, pool_filter)
+
+    monkeypatch.setattr(
+        search_commands, "_search_hit_for_file", tracked_search_hit_for_file
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            ".",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        f"Expected the visible Claude session to be found. Got exit "
+        f"{exc_info.value.code}, stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert fallback_paths == [claude_path], (
+        "Claude files must route through the full search path, not the projection. "
+        f"Got fallback paths: {fallback_paths!r}"
+    )
+
+
+def test_projection_never_decides_claude_files(tmp_path: Path) -> None:
+    """Falsifying guardrail: the projection must not return a verdict for Claude files.
+
+    A non-UNKNOWN result means the projection judged a Claude transcript's
+    visibility itself instead of deferring — the duplication this refactor removes.
+    """
+    path = tmp_path / "proj" / "claude-visible.jsonl"
+    _write_session(path, "visible claude")  # no "last-prompt" marker
+
+    result = search_commands._project_default_dot_match(path)
+    assert result is search_commands._ProjectionResult.UNKNOWN, (
+        "Projection produced a verdict for a Claude file instead of deferring to "
+        f"the full search path. Got: {result!r}"
+    )
+
+
+def test_dot_only_id_projection_ids_match_full_scan_ids(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Falsifying guardrail: `search . -ll` projection must equal the full search path.
+
+    The corpus includes an `isCompactSummary`+`isMeta` Claude entry the parser
+    drops but the current projection lists — a live divergence the equivalence
+    guard must catch.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    _write_session(
+        home / ".claude" / "projects" / "proj" / "claude-visible.jsonl", "visible claude"
+    )
+    _write_compact_meta_session(
+        home / ".claude" / "projects" / "proj" / "compact-meta.jsonl"
+    )
+    _write_pi_visible_session(
+        home / ".pi" / "agent" / "sessions" / "proj" / "pi.jsonl", "pi-id", "visible pi"
+    )
+    _write_codex_visible_session(
+        home / ".codex" / "sessions" / "2026" / "01" / "01" / "codex.jsonl",
+        "codex-id",
+        "visible codex",
+    )
+
+    def dot_search_ids() -> list[str]:
+        with pytest.raises(SystemExit):
+            commands.cmd_search(
+                ".",
+                ConversationFlags(color="never", paging=False),
+                output_mode=SearchOutputMode.ONLY_ID,
+                emit_metadata=False,
+            )
+        return capsys.readouterr().out.splitlines()
+
+    projected_ids = dot_search_ids()
+    monkeypatch.setattr(
+        search_commands, "_can_project_dot_only_id", lambda *args, **kwargs: False
+    )
+    full_scan_ids = dot_search_ids()
+
+    assert projected_ids == full_scan_ids, (
+        "`search . -ll` projection must return exactly the full-scan ids. "
+        f"projection={projected_ids!r} full_scan={full_scan_ids!r}"
     )
