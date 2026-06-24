@@ -26,6 +26,7 @@ from chats import (
     resolve_conversation_file,
 )
 import chats.commands.resolve as resolve_commands
+import chats.parsing as parsing
 
 # =============================================================================
 # Fixtures (reuse rename_fixtures structure)
@@ -348,6 +349,111 @@ class TestExactIdentifierResolution:
         assert resolver.call_count == 1, (
             "Expected parse mode to resolve the identifier once and reuse that path "
             "for metadata/output instead of re-running the full resolver."
+        )
+
+    def test_uuid_like_missing_identifier_skips_title_summary_scan(
+        self,
+        temp_claude_home,
+    ):
+        """A canonical UUID miss should fail before scanning every file's title/summary facets."""
+
+        def fail_on_facet_scan(_session_file: Path):
+            raise AssertionError(
+                "Expected canonical UUID-like misses to skip title/summary facet scans."
+            )
+
+        with patch.object(
+            resolve_commands,
+            "extract_resolution_facets_from_jsonl",
+            fail_on_facet_scan,
+        ):
+            path, ambiguous = _try_resolve_conversation_file(
+                "00000000-0000-4000-8000-000000000000"
+            )
+
+        assert path is None, f"Expected unresolved UUID-like id to miss. Got: {path!r}"
+        assert ambiguous == [], (
+            "Expected unresolved UUID-like id to be a clean miss, not ambiguity. "
+            f"Got: {ambiguous!r}"
+        )
+
+    def test_resolution_facet_scan_parses_only_marker_lines(
+        self,
+        tmp_path: Path,
+        monkeypatch,
+    ):
+        """Facet extraction should not JSON-parse ordinary message lines."""
+        session_path = tmp_path / "facets.jsonl"
+        entries = [
+            {
+                "type": "user",
+                "message": {"role": "user", "content": "ordinary prompt"},
+                "uuid": "user-1",
+            },
+            {
+                "type": "summary",
+                "summary": "marker summary token",
+                "leafUuid": "leaf-1",
+            },
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "ordinary response"}],
+                },
+                "uuid": "assistant-1",
+            },
+            {"type": "custom-title", "customTitle": "old title token"},
+            {"type": "session_info", "name": "pi title token"},
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "thread_name_updated",
+                    "thread_name": "codex current title token",
+                },
+            },
+        ]
+        session_path.write_text(
+            "".join(json.dumps(entry) + "\n" for entry in entries),
+            encoding="utf-8",
+        )
+
+        real_json_loads = json.loads
+        parsed_lines: list[str] = []
+
+        def tracked_json_loads(raw_line: str):
+            parsed_lines.append(raw_line)
+            return real_json_loads(raw_line)
+
+        monkeypatch.setattr(parsing.json, "loads", tracked_json_loads)
+
+        current_title, summaries = parsing.extract_resolution_facets_from_jsonl(
+            session_path
+        )
+
+        assert current_title == "codex current title token", (
+            "Expected latest-title extraction to keep working while skipping non-facet lines. "
+            f"Got: {current_title!r}"
+        )
+        assert summaries == ["marker summary token"], (
+            "Expected summary extraction to keep working while skipping non-facet lines. "
+            f"Got: {summaries!r}"
+        )
+        assert parsed_lines, "Expected the test fixture to exercise JSON parsing."
+        assert all(
+            any(
+                marker in raw_line
+                for marker in (
+                    '"summary"',
+                    '"custom-title"',
+                    '"session_info"',
+                    '"thread_name_updated"',
+                )
+            )
+            for raw_line in parsed_lines
+        ), (
+            "Expected resolution facet extraction to JSON-parse only lines that can "
+            f"carry title/summary facets. Parsed lines: {parsed_lines!r}"
         )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections.abc import Iterable, Sequence
 from pathlib import Path
@@ -20,6 +21,15 @@ from ..parsing import (
 )
 from ..pool_filter import PoolFilter
 from ..session_pool import SessionPool
+
+_CANONICAL_UUID_PATTERN = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def _is_canonical_uuid_identifier(identifier: str) -> bool:
+    """Return True for canonical UUID strings used as exact session ids."""
+    return bool(_CANONICAL_UUID_PATTERN.fullmatch(identifier))
 
 
 def find_all_conversations(projects_dir: Path) -> Iterable[Path]:
@@ -183,6 +193,9 @@ def _try_resolve_conversation_file(
     if exact_match is not None:
         return exact_match, []
 
+    if _is_canonical_uuid_identifier(stripped):
+        return None, []
+
     query_lower = stripped.lower()
     title_matches: list[tuple[Path, str]] = []
     summary_matches: list[tuple[Path, str]] = []
@@ -202,9 +215,6 @@ def _try_resolve_conversation_file(
         return title_matches[0][0], []
     if len(title_matches) > 1:
         return None, title_matches
-
-    if len(stripped) >= 32 and "-" in stripped:
-        return None, []
 
     if len(summary_matches) == 1:
         return summary_matches[0][0], []
@@ -252,22 +262,87 @@ def resolve_conversation_file(conversation_id: str) -> Path:
     sys.exit(1)
 
 
+def _input_arg_or_stdin(input_arg: str | None) -> str:
+    """Read the parse input argument or stdin content without resolving it."""
+    if input_arg:
+        return input_arg
+    if sys.stdin.isatty():
+        print(
+            "Error: No input provided. Provide a file path, raw content, or pipe to stdin.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return sys.stdin.read()
+
+
+def _first_non_empty_line(content: str) -> str | None:
+    """Return the first non-empty line of a possible raw content string."""
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return None
+
+
+def _is_jsonl_content_line(line: str) -> bool:
+    """Return True when a line is a JSONL entry rather than an identifier."""
+    try:
+        entry = json.loads(line)
+    except json.JSONDecodeError:
+        return False
+    return isinstance(entry, dict) and "type" in entry
+
+
+def _looks_like_explicit_content(content: str) -> bool:
+    """Detect clear pasted/stdin content that should not trigger session lookup.
+
+    A trailing newline after one identifier is still one logical line and must keep
+    resolving, while multiline content, JSONL entries, and raw transcript markers
+    are unambiguously content.
+    """
+    first_line = _first_non_empty_line(content)
+    if first_line is None:
+        return False
+    if _is_jsonl_content_line(first_line):
+        return True
+    if first_line.startswith(("> ", "\u23fa ")):
+        return True
+    return sum(1 for line in content.splitlines() if line.strip()) > 1
+
+
+def _resolve_input_path(
+    input_arg: str | None,
+    *,
+    pool_filter: PoolFilter | None = None,
+) -> Path | None:
+    """Resolve parse input to a backing session path without reading its content."""
+    content_or_path = _input_arg_or_stdin(input_arg)
+    if _looks_like_explicit_content(content_or_path):
+        return None
+
+    resolved_path, ambiguous_matches = _try_resolve_conversation_file(
+        content_or_path.strip(),
+        pool_filter=pool_filter,
+    )
+    if resolved_path is not None:
+        return resolved_path
+
+    if ambiguous_matches:
+        _print_ambiguous_error(content_or_path.strip(), ambiguous_matches)
+        sys.exit(1)
+
+    return None
+
+
 def _resolve_input_content(
     input_arg: str | None,
     *,
     pool_filter: PoolFilter | None = None,
 ) -> tuple[str, Path | None]:
     """Resolve CLI input to raw content and its backing session path, if any."""
-    if input_arg:
-        content_or_path = input_arg
-    elif sys.stdin.isatty():
-        print(
-            "Error: No input provided. Provide a file path, raw content, or pipe to stdin.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    else:
-        content_or_path = sys.stdin.read()
+    content_or_path = _input_arg_or_stdin(input_arg)
+    if _looks_like_explicit_content(content_or_path):
+        return content_or_path, None
 
     resolved_path, ambiguous_matches = _try_resolve_conversation_file(
         content_or_path.strip(),

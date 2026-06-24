@@ -3,6 +3,16 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-24] Worst-case performance fast paths
+
+### Changed
+
+- `ch` now avoids global session resolution for explicit JSONL/raw stdin or pasted content, while preserving one-line piped session-id resolution. `ch <session> -ll` resolves and prints the display id without reading/parsing the session body.
+- Canonical UUID misses now stop after exact-id lookup instead of scanning title/summary facets across the pool. Title/summary fallback resolution now JSON-parses only raw lines that can carry summaries or current-title records.
+- Plain ASCII literal searches use a chunked byte candidate gate before full text reads; non-ASCII, regex-shaped, and render-dependent searches still fall back. Survivors always pass the existing semantic confirmation path, so raw-byte hits do not bypass visibility rules.
+- `ch search . -ll` has a narrow projection fast path for default visibility only. It streams ids without metadata loading or `SessionScan` on eligible files, falls back for branchable/uncertain files, and mirrors hidden protocol/tool/thinking/task-notification behavior. On the local ~2.3k-file pool this reduced `search . -ll` from ~7.5–8s to ~3.5s; literal no-hit search is ~1.35s, UUID miss ~0.63s, and 35MB stdin parse ~0.48s.
+
+---
 ## [2026-06-22] `ch info --format json`
 
 ### Added

@@ -119,6 +119,22 @@ def cmd_parse(
     output_mode: ParseOutputMode = ParseOutputMode.FULL,
 ) -> None:
     """Handle the parse command."""
+    if output_mode == ParseOutputMode.ONLY_ID:
+        try:
+            input_file_path = resolve._resolve_input_path(
+                input_arg,
+                pool_filter=pool_filter,
+            )
+        except Exception as error:
+            print_error(f"Error reading input: {error}.")
+            sys.exit(1)
+        resolved_path = resolve._require_file_backed_input(
+            input_file_path,
+            "`--only-id`",
+        )
+        resolve._write_parse_output(get_display_session_id(resolved_path), output_file)
+        return
+
     try:
         content, input_file_path = resolve._resolve_input_content(
             input_arg,
@@ -131,14 +147,6 @@ def cmd_parse(
     if not content.strip():
         print_error("Input is empty.")
         sys.exit(1)
-
-    if output_mode == ParseOutputMode.ONLY_ID:
-        resolved_path = resolve._require_file_backed_input(
-            input_file_path,
-            "`--only-id`",
-        )
-        resolve._write_parse_output(get_display_session_id(resolved_path), output_file)
-        return
 
     if output_mode == ParseOutputMode.ONLY_METADATA and input_file_path is None:
         resolve._require_file_backed_input(input_file_path, "`--only-metadata`")

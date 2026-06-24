@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import functools
+import json
 import re
 import sys
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
 from pathlib import Path
 
@@ -26,8 +28,20 @@ from ..model import (
     ConversationFlags,
     ConversationMetadata,
     Message,
+    MessageSelection,
     Provider,
     SearchOutputMode,
+)
+from ..parsing import (
+    _extract_antigravity_user_text,
+    _extract_codex_text_blocks,
+    _extract_custom_title_from_entry,
+    _extract_text_blocks,
+    _filter_hidden_user_text_blocks,
+    _is_codex_preamble_text,
+    _is_hidden_user_command_text,
+    _parse_task_notification_tool,
+    get_jsonl_session_adapter,
 )
 from ..pool_filter import PoolFilter
 from ..search_query import SearchQuery, SearchQueryError, SearchTerm, parse_search_query
@@ -72,6 +86,15 @@ class SearchHit:
 
 
 _RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
+_ASCII_SCAN_CHUNK_SIZE = 1024 * 1024
+_BRANCH_UNCERTAINTY_MARKER = b'"last-prompt"'
+
+
+class _ProjectionResult(Enum):
+    MATCH = "match"
+    NO_MATCH = "no-match"
+    UNKNOWN = "unknown"
+
 
 # Border hues cycled per conversation in the colored full/matches view, so the
 # persistent left edge of each Panel changes color at every conversation
@@ -446,6 +469,9 @@ def cmd_search(
         if session_file in candidate_file_set
     ]
 
+    if _can_project_dot_only_id(query, flags, pool_filter, output_mode, output_format):
+        _stream_dot_only_id_projection(search_files, query, flags, pool_filter)
+
     def iter_hits() -> Iterable[SearchHit]:
         for conv_file in search_files:
             try:
@@ -482,6 +508,212 @@ def cmd_search(
         pool_filter=pool_filter,
         highlight_regex=_build_highlight_regex(query),
     )
+
+
+def _can_project_dot_only_id(
+    query: SearchQuery,
+    flags: ConversationFlags,
+    pool_filter: PoolFilter,
+    output_mode: SearchOutputMode,
+    output_format: str,
+) -> bool:
+    """Whether the narrow `search . -ll` projection may replace full scanning."""
+    return (
+        output_mode == SearchOutputMode.ONLY_ID
+        and output_format != "raw"
+        and isinstance(query, SearchTerm)
+        and query.pattern == "."
+        and flags.message_selection == MessageSelection.ALL
+        and not flags.show_thinking
+        and not flags.show_tools
+        and not flags.show_agents
+        and not flags.show_branches
+        and not flags.show_plans
+        and not flags.shorten
+        and not flags.shorten_thinking
+        and not pool_filter.has_date_filters()
+        and not pool_filter.needs_content_for_dir()
+    )
+
+
+def _stream_dot_only_id_projection(
+    search_files: list[Path],
+    query: SearchQuery,
+    flags: ConversationFlags,
+    pool_filter: PoolFilter,
+) -> None:
+    """Stream ids for the narrow default-visibility `search . -ll` fast path."""
+    found = False
+    for session_file in search_files:
+        result = _project_default_dot_match(session_file)
+        if result == _ProjectionResult.MATCH:
+            print(resolve.get_display_session_id(session_file))
+            found = True
+            continue
+        if result == _ProjectionResult.NO_MATCH:
+            continue
+
+        try:
+            hit = _search_hit_for_file(session_file, query, flags, pool_filter)
+        except Exception as error:
+            print_error(f"Error processing conversation file {session_file}: {error}")
+            continue
+        if hit is None:
+            continue
+        print(resolve.get_display_session_id(hit.metadata.path))
+        found = True
+
+    sys.exit(0 if found else 1)
+
+
+def _project_default_dot_match(session_file: Path) -> _ProjectionResult:
+    """Project whether default search for `.` would find any visible facet/content."""
+    adapter = get_jsonl_session_adapter(session_file)
+    if adapter.name == "claude" and _file_contains_bytes(
+        session_file, _BRANCH_UNCERTAINTY_MARKER
+    ):
+        return _ProjectionResult.UNKNOWN
+
+    try:
+        with open(session_file, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped or not stripped.startswith("{"):
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                if _entry_has_default_visible_search_facet(entry, adapter.name):
+                    return _ProjectionResult.MATCH
+    except OSError:
+        return _ProjectionResult.UNKNOWN
+
+    return _ProjectionResult.NO_MATCH
+
+
+def _file_contains_bytes(path: Path, needle: bytes) -> bool:
+    """Return True if raw bytes contain a small marker."""
+    try:
+        with open(path, "rb") as handle:
+            while chunk := handle.read(_ASCII_SCAN_CHUNK_SIZE):
+                if needle in chunk:
+                    return True
+    except OSError:
+        return True
+    return False
+
+
+def _entry_has_default_visible_search_facet(entry: dict, provider: Provider) -> bool:
+    """Return True when an entry contributes to default visible search for `.`."""
+    if entry.get("type") == "summary":
+        summary = entry.get("summary")
+        return isinstance(summary, str) and bool(summary.strip())
+    if _extract_custom_title_from_entry(entry):
+        return True
+    if provider == "pi":
+        return _pi_entry_has_default_visible_text(entry)
+    if provider == "codex":
+        return _codex_entry_has_default_visible_text(entry)
+    if provider == "antigravitycli":
+        return _antigravity_entry_has_default_visible_text(entry)
+    return _claude_entry_has_default_visible_text(entry)
+
+
+def _claude_entry_has_default_visible_text(entry: dict) -> bool:
+    entry_type = entry.get("type")
+    if entry_type == "user":
+        message_data = entry.get("message", {})
+        if message_data.get("role") != "user":
+            return False
+        content = message_data.get("content")
+        if entry.get("isCompactSummary") is True:
+            return bool(_visible_text_from_content(content))
+        if entry.get("isMeta") is True:
+            return False
+        if isinstance(content, str):
+            return bool(content.strip()) and not (
+                _is_hidden_user_command_text(content)
+                or _parse_task_notification_tool(content)
+            )
+        text_blocks = _filter_hidden_user_text_blocks(_extract_text_blocks(content))
+        return any(text.strip() for text in text_blocks)
+
+    if entry_type == "assistant":
+        if entry.get("agentId"):
+            return False
+        message_data = entry.get("message", {})
+        if message_data.get("role") != "assistant":
+            return False
+        content_items = message_data.get("content", [])
+        if not isinstance(content_items, list):
+            return False
+        return any(
+            isinstance(item, dict)
+            and item.get("type") == "text"
+            and bool(str(item.get("text", "")).strip())
+            for item in content_items
+        )
+
+    if entry_type == "system" and entry.get("subtype") == "away_summary":
+        content = entry.get("content")
+        return isinstance(content, str) and bool(
+            content.removesuffix(" (disable recaps in /config)").strip()
+        )
+
+    return False
+
+
+def _visible_text_from_content(content: object) -> str:
+    if isinstance(content, str):
+        return content.strip()
+    return "\n".join(_extract_text_blocks(content)).strip()
+
+
+def _pi_entry_has_default_visible_text(entry: dict) -> bool:
+    if entry.get("type") != "message":
+        return False
+    message = entry.get("message", {})
+    role = message.get("role")
+    if role not in {"user", "assistant"}:
+        return False
+    text_blocks = _extract_text_blocks(message.get("content", []))
+    if role == "user":
+        text_blocks = _filter_hidden_user_text_blocks(text_blocks)
+    return any(text.strip() for text in text_blocks)
+
+
+def _codex_entry_has_default_visible_text(entry: dict) -> bool:
+    if entry.get("type") != "response_item":
+        return False
+    payload = entry.get("payload", {})
+    if payload.get("type") != "message":
+        return False
+    role = payload.get("role")
+    if role == "user":
+        return any(
+            text.strip() and not _is_codex_preamble_text(text)
+            for text in _filter_hidden_user_text_blocks(
+                _extract_codex_text_blocks(payload.get("content"))
+            )
+        )
+    if role == "assistant":
+        return any(
+            text.strip() for text in _extract_codex_text_blocks(payload.get("content"))
+        )
+    return False
+
+
+def _antigravity_entry_has_default_visible_text(entry: dict) -> bool:
+    entry_type = entry.get("type")
+    if entry_type == "USER_INPUT":
+        return bool(_extract_antigravity_user_text(entry.get("content")).strip())
+    if entry_type == "PLANNER_RESPONSE":
+        content = entry.get("content")
+        return isinstance(content, str) and bool(content.strip())
+    return False
 
 
 def _emit_no_results(
@@ -614,6 +846,8 @@ def _search_hit_for_file(
         conv_file
     ):
         return None
+    if not _search_path_candidate_matches(conv_file, query, flags):
+        return None
 
     content = conv_file.read_text(encoding="utf-8")
     if not _search_candidate_matches(content, query, flags):
@@ -645,6 +879,56 @@ def _search_hit_for_file(
     )
 
 
+def _search_path_candidate_matches(
+    path: Path,
+    query: SearchQuery,
+    flags: ConversationFlags,
+) -> bool:
+    """Return True when a file's bytes could plausibly satisfy the query."""
+    return query.evaluate(lambda term: _term_path_candidate_matches(path, term, flags))
+
+
+def _term_path_candidate_matches(
+    path: Path,
+    term: SearchTerm,
+    flags: ConversationFlags,
+) -> bool:
+    """Conservatively reject ASCII literal terms absent from raw file bytes."""
+    if _term_can_match_generated_marker(term, flags):
+        return True
+    needle = _ascii_literal_needle(term)
+    if needle is None:
+        return True
+    return _file_contains_ascii_case_insensitive(path, needle)
+
+
+def _ascii_literal_needle(term: SearchTerm) -> bytes | None:
+    """Return an ASCII byte-search needle for safely probeable literal terms."""
+    if any(token in term.pattern for token in _RENDER_DEPENDENT_SEARCH_TOKENS):
+        return None
+    if term.literal_candidate is None:
+        return None
+    if not term.pattern.isascii():
+        return None
+    return term.literal_candidate.encode("ascii")
+
+
+def _file_contains_ascii_case_insensitive(path: Path, needle: bytes) -> bool:
+    """Search a file for an ASCII literal using chunked byte reads."""
+    if not needle:
+        return True
+
+    overlap_width = len(needle) - 1
+    previous = b""
+    with open(path, "rb") as handle:
+        while chunk := handle.read(_ASCII_SCAN_CHUNK_SIZE):
+            haystack = previous + chunk
+            if needle in haystack.lower():
+                return True
+            previous = haystack[-overlap_width:] if overlap_width else b""
+    return False
+
+
 def _search_candidate_matches(
     content: str,
     query: SearchQuery,
@@ -667,8 +951,17 @@ def _term_candidate_matches(
         return True
     if term.literal_candidate is None:
         return True
+    if not term.pattern.isascii():
+        return True
     if term.literal_candidate in content_casefolded():
         return True
+    return _term_can_match_generated_marker(term, flags)
+
+
+def _term_can_match_generated_marker(term: SearchTerm, flags: ConversationFlags) -> bool:
+    """Return True when a literal could match renderer-generated marker text."""
+    if term.literal_candidate is None:
+        return False
 
     markers: list[str] = []
     if flags.show_thinking:

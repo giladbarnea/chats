@@ -444,6 +444,19 @@ def extract_latest_custom_title_from_jsonl(file_path: Path) -> str | None:
     return latest_custom_title
 
 
+_RESOLUTION_FACET_MARKERS = (
+    '"summary"',
+    '"custom-title"',
+    '"session_info"',
+    '"thread_name_updated"',
+)
+
+
+def _could_contain_resolution_facet(line: str) -> bool:
+    """Return True when a JSONL line may carry a title/summary resolution facet."""
+    return any(marker in line for marker in _RESOLUTION_FACET_MARKERS)
+
+
 def extract_resolution_facets_from_jsonl(file_path: Path) -> tuple[str | None, list[str]]:
     """Extract the current title and summaries needed for identifier fallback resolution."""
     latest_custom_title: str | None = None
@@ -454,6 +467,8 @@ def extract_resolution_facets_from_jsonl(file_path: Path) -> tuple[str | None, l
             for line in handle:
                 stripped = line.strip()
                 if not stripped or not stripped.startswith("{"):
+                    continue
+                if not _could_contain_resolution_facet(stripped):
                     continue
                 try:
                     entry = json.loads(stripped)

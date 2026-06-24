@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 
@@ -11,11 +12,11 @@ import pytest
 from chats import cli
 from chats.commands import cmd_parse
 from chats.model import ConversationFlags, ParseOutputMode
+import chats.commands.resolve as resolve_commands
 
 
-def _write_claude_session(path: Path) -> None:
-    """Write a minimal Claude-format session fixture."""
-    path.parent.mkdir(parents=True, exist_ok=True)
+def _claude_session_content(session_id: str) -> str:
+    """Return a minimal Claude-format JSONL session fixture."""
     entries = [
         {
             "type": "summary",
@@ -24,7 +25,7 @@ def _write_claude_session(path: Path) -> None:
         },
         {
             "type": "user",
-            "sessionId": path.stem,
+            "sessionId": session_id,
             "cwd": "/tmp/parse-output-modes",
             "timestamp": "2026-04-23T09:00:00.000Z",
             "message": {"role": "user", "content": "first prompt"},
@@ -32,7 +33,7 @@ def _write_claude_session(path: Path) -> None:
         },
         {
             "type": "assistant",
-            "sessionId": path.stem,
+            "sessionId": session_id,
             "cwd": "/tmp/parse-output-modes",
             "timestamp": "2026-04-23T09:00:01.000Z",
             "message": {
@@ -43,16 +44,200 @@ def _write_claude_session(path: Path) -> None:
         },
         {
             "type": "user",
-            "sessionId": path.stem,
+            "sessionId": session_id,
             "cwd": "/tmp/parse-output-modes",
             "timestamp": "2026-04-23T09:00:02.000Z",
             "message": {"role": "user", "content": "last prompt"},
             "uuid": "fixture-user-2",
         },
     ]
-    path.write_text(
-        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
-        encoding="utf-8",
+    return "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries)
+
+
+def _write_claude_session(path: Path) -> None:
+    """Write a minimal Claude-format session fixture."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_claude_session_content(path.stem), encoding="utf-8")
+
+
+def test_cmd_parse_stdin_jsonl_content_skips_global_session_resolution(
+    monkeypatch,
+    capsys,
+) -> None:
+    """Clearly-JSONL stdin should parse directly instead of scanning the session pool."""
+    content = _claude_session_content("stdin-content-session")
+    monkeypatch.setattr(resolve_commands.sys, "stdin", io.StringIO(content))
+
+    def fail_discover(*_args, **_kwargs):
+        raise AssertionError(
+            "Expected stdin JSONL content to bypass global SessionPool discovery."
+        )
+
+    monkeypatch.setattr(resolve_commands.SessionPool, "discover", fail_discover)
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        None,
+        slice_str="1",
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "first prompt" in captured.out, (
+        "Expected stdin JSONL content to be parsed through the real parse path. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_explicit_multiline_jsonl_content_skips_identifier_resolution(
+    monkeypatch,
+    capsys,
+) -> None:
+    """Explicit multiline JSONL content should not be treated as a session identifier."""
+    content = _claude_session_content("explicit-content-session")
+
+    def fail_resolution(*_args, **_kwargs):
+        raise AssertionError(
+            "Expected explicit multiline JSONL content to bypass identifier resolution."
+        )
+
+    monkeypatch.setattr(
+        resolve_commands,
+        "_try_resolve_conversation_file",
+        fail_resolution,
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        content,
+        slice_str="2",
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "first response" in captured.out, (
+        "Expected explicit multiline JSONL content to be parsed through the real parse path. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_explicit_one_line_jsonl_content_skips_identifier_resolution(
+    monkeypatch,
+    capsys,
+) -> None:
+    """An explicit one-line JSONL entry should parse as content, not an identifier."""
+    content = json.dumps({
+        "type": "user",
+        "message": {"role": "user", "content": "one-line prompt"},
+        "uuid": "one-line-user",
+    })
+
+    def fail_resolution(*_args, **_kwargs):
+        raise AssertionError(
+            "Expected explicit one-line JSONL content to bypass identifier resolution."
+        )
+
+    monkeypatch.setattr(
+        resolve_commands,
+        "_try_resolve_conversation_file",
+        fail_resolution,
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        content,
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "one-line prompt" in captured.out, (
+        "Expected explicit one-line JSONL content to be parsed through the real parse path. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_stdin_single_line_identifier_still_resolves(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A piped one-line session id should keep the existing identifier-resolution behavior."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    session = (
+        home
+        / ".claude"
+        / "projects"
+        / "demo-project"
+        / "dddddddd-dddd-dddd-dddd-dddddddddddd.jsonl"
+    )
+    _write_claude_session(session)
+    monkeypatch.setattr(resolve_commands.sys, "stdin", io.StringIO(session.stem + "\n"))
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        None,
+        slice_str="1",
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "first prompt" in captured.out, (
+        "Expected piped one-line identifiers to keep resolving as sessions. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_only_id_does_not_read_resolved_session_body(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Id-only parse should resolve identity without reading the session body."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    session = (
+        home
+        / ".claude"
+        / "projects"
+        / "demo-project"
+        / "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee.jsonl"
+    )
+    _write_claude_session(session)
+    real_read_text = Path.read_text
+
+    def fail_if_session_body_read(path: Path, *args, **kwargs):
+        if path == session:
+            raise AssertionError(
+                "Expected parse --only-id to avoid reading resolved session content."
+            )
+        return real_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", fail_if_session_body_read)
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=True,
+        output_mode=ParseOutputMode.ONLY_ID,
+    )
+
+    captured = capsys.readouterr()
+    assert captured.out.strip() == session.stem, (
+        "Expected parse id-only mode to print only the resolved session id. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 
 

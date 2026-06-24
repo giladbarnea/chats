@@ -4,12 +4,19 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from chats import ConversationFlags, PoolFilter, SearchOutputMode, commands
+from chats import (
+    ConversationFlags,
+    MessageSelection,
+    PoolFilter,
+    SearchOutputMode,
+    commands,
+)
 import chats.commands.resolve as resolve_commands
 import chats.commands.search as search_commands
 import chats.parsing as parsing
@@ -38,6 +45,417 @@ def _write_session(
         ])
         + "\n",
         encoding="utf-8",
+    )
+
+
+def _write_hidden_thinking_session(path: Path, hidden_text: str) -> None:
+    """Write a session whose only needle is hidden thinking content."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({
+            "type": "assistant",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "cwd": "/tmp/search-orchestration",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "thinking", "thinking": hidden_text},
+                    {"type": "text", "text": "visible answer"},
+                ],
+            },
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_hidden_only_thinking_session(path: Path) -> None:
+    """Write a session with no default-visible searchable content."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({
+            "type": "assistant",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "cwd": "/tmp/search-orchestration",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "thinking", "thinking": "hidden only"}],
+            },
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_pi_visible_session(path: Path, session_id: str, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(
+            json.dumps(entry, separators=(",", ":")) + "\n"
+            for entry in [
+                {"type": "session", "id": session_id, "cwd": "/tmp/pi"},
+                {
+                    "type": "message",
+                    "message": {
+                        "role": "user",
+                        "content": [{"type": "text", "text": text}],
+                    },
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_codex_visible_session(path: Path, session_id: str, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(
+            json.dumps(entry, separators=(",", ":")) + "\n"
+            for entry in [
+                {"type": "session_meta", "payload": {"id": session_id, "cwd": "/tmp/codex"}},
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": text}],
+                    },
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_title_only_session(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({"type": "custom-title", "customTitle": "title only"}) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_tool_only_session(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({
+            "type": "assistant",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "cwd": "/tmp/search-orchestration",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "tool_use", "id": "toolu_1", "name": "Bash", "input": {"command": "pwd"}}
+                ],
+            },
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_task_notification_only_session(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({
+            "type": "user",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "cwd": "/tmp/search-orchestration",
+            "message": {
+                "role": "user",
+                "content": (
+                    "<task-notification>"
+                    "<tool-use-id>toolu_projection</tool-use-id>"
+                    "<status>completed</status>"
+                    "<summary>projection task finished</summary>"
+                    "<result>projection task body</result>"
+                    "</task-notification>"
+                ),
+            },
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_dot_only_id_projection_outputs_ids_without_full_scan_or_metadata(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Eligible `search . -ll` should stream ids from projection, not full SessionScan."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    claude_path = home / ".claude" / "projects" / "proj" / "claude-visible.jsonl"
+    pi_path = home / ".pi" / "agent" / "sessions" / "proj" / "pi-visible.jsonl"
+    codex_path = home / ".codex" / "sessions" / "2026" / "01" / "01" / "codex-visible.jsonl"
+    _write_session(claude_path, "visible claude")
+    _write_pi_visible_session(pi_path, "pi-visible-id", "visible pi")
+    _write_codex_visible_session(codex_path, "codex-visible-id", "visible codex")
+    os.utime(claude_path, (1_700_000_000, 1_700_000_000))
+    os.utime(pi_path, (1_700_000_001, 1_700_000_001))
+    os.utime(codex_path, (1_700_000_002, 1_700_000_002))
+
+    def fail_session_scan(*_args, **_kwargs):
+        raise AssertionError("Expected eligible dot/id search to skip SessionScan.")
+
+    def fail_metadata_load(*_args, **_kwargs):
+        raise AssertionError("Expected dot/id projection to avoid metadata loading.")
+
+    monkeypatch.setattr(search_commands.SessionScan, "from_content", fail_session_scan)
+    monkeypatch.setattr(
+        resolve_commands,
+        "_load_conversation_metadata",
+        fail_metadata_load,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            ".",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected dot/id search to find all visible sessions through projection. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.splitlines() == [
+        "codex-visible-id",
+        "pi-visible-id",
+        "claude-visible",
+    ], (
+        "Expected projection to preserve newest-first id output across providers. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+def test_dot_only_id_projection_does_not_match_hidden_or_protocol_only_sessions(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Projection for `.` should not treat hidden-only raw content as visible content."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    hidden_path = home / ".claude" / "projects" / "proj" / "hidden-only.jsonl"
+    protocol_path = home / ".claude" / "projects" / "proj" / "protocol-only.jsonl"
+    tool_path = home / ".claude" / "projects" / "proj" / "tool-only.jsonl"
+    task_notification_path = home / ".claude" / "projects" / "proj" / "task-notification-only.jsonl"
+    _write_hidden_only_thinking_session(hidden_path)
+    _write_tool_only_session(tool_path)
+    _write_task_notification_only_session(task_notification_path)
+    protocol_path.parent.mkdir(parents=True, exist_ok=True)
+    protocol_path.write_text(
+        json.dumps({
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": "<command-name>/status</command-name>",
+            },
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            ".",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1, (
+        "Expected hidden/protocol-only sessions not to match default dot search. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out == "", (
+        "Expected no ids for hidden/protocol-only sessions. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+def test_dot_only_id_projection_matches_summary_and_title_only_sessions(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Summary/title facets remain searchable even when no messages are visible."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    summary_path = home / ".claude" / "projects" / "proj" / "summary-only.jsonl"
+    title_path = home / ".claude" / "projects" / "proj" / "title-only.jsonl"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(
+        json.dumps({"type": "summary", "summary": "summary only"}) + "\n",
+        encoding="utf-8",
+    )
+    _write_title_only_session(title_path)
+    os.utime(summary_path, (1_700_000_000, 1_700_000_000))
+    os.utime(title_path, (1_700_000_001, 1_700_000_001))
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            ".",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected summary/title facets to match dot search. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.splitlines() == ["title-only", "summary-only"], (
+        "Expected title-only and summary-only sessions to be projected as matches. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+def test_dot_only_id_ineligible_flags_fall_back_to_current_search_path(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Projection v1 is disabled for extra visibility flags such as thinking."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    hidden_path = home / ".claude" / "projects" / "proj" / "hidden-thinking.jsonl"
+    _write_hidden_only_thinking_session(hidden_path)
+
+    fallback_paths: list[Path] = []
+    real_search_hit_for_file = search_commands._search_hit_for_file
+
+    def tracked_search_hit_for_file(conv_file, query, flags, pool_filter):
+        fallback_paths.append(conv_file)
+        return real_search_hit_for_file(conv_file, query, flags, pool_filter)
+
+    monkeypatch.setattr(
+        search_commands,
+        "_search_hit_for_file",
+        tracked_search_hit_for_file,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            ".",
+            ConversationFlags(color="never", paging=False, show_thinking=True),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected fallback path with --thinking to find hidden thinking content. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert fallback_paths == [hidden_path], (
+        "Expected ineligible flags to use the existing per-file search path. "
+        f"Got fallback paths: {fallback_paths!r}"
+    )
+
+
+def test_dot_only_id_role_filters_fall_back_to_current_search_path(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Projection v1 is disabled for role-filtered dot searches."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    user_path = home / ".claude" / "projects" / "proj" / "user-visible.jsonl"
+    _write_session(user_path, "visible user text")
+
+    fallback_paths: list[Path] = []
+    real_search_hit_for_file = search_commands._search_hit_for_file
+
+    def tracked_search_hit_for_file(conv_file, query, flags, pool_filter):
+        fallback_paths.append(conv_file)
+        return real_search_hit_for_file(conv_file, query, flags, pool_filter)
+
+    monkeypatch.setattr(
+        search_commands,
+        "_search_hit_for_file",
+        tracked_search_hit_for_file,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            ".",
+            ConversationFlags(
+                color="never",
+                paging=False,
+                message_selection=MessageSelection.ONLY_USER,
+            ),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected fallback path with --only-user semantics to find visible user content. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert fallback_paths == [user_path], (
+        "Expected role-filtered dot search to use the existing per-file search path. "
+        f"Got fallback paths: {fallback_paths!r}"
+    )
+
+
+def test_dot_only_id_branchable_claude_files_fall_back(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Branchable Claude transcripts should fall back rather than guessing branch visibility."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    branch_path = home / ".claude" / "projects" / "proj" / "branch.jsonl"
+    branch_path.parent.mkdir(parents=True, exist_ok=True)
+    fixture = Path(__file__).parent / "data" / "claude-branch-root-rewind.jsonl"
+    branch_path.write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+
+    fallback_paths: list[Path] = []
+    real_search_hit_for_file = search_commands._search_hit_for_file
+
+    def tracked_search_hit_for_file(conv_file, query, flags, pool_filter):
+        fallback_paths.append(conv_file)
+        return real_search_hit_for_file(conv_file, query, flags, pool_filter)
+
+    monkeypatch.setattr(
+        search_commands,
+        "_search_hit_for_file",
+        tracked_search_hit_for_file,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            ".",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected branchable file fallback to preserve current dot search behavior. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert fallback_paths == [branch_path], (
+        "Expected branchable Claude file to use the existing per-file search path. "
+        f"Got fallback paths: {fallback_paths!r}"
     )
 
 
@@ -141,6 +559,272 @@ def test_cmd_search_does_not_render_noncandidate_sessions(
     assert "slice-4-render-skip-noncandidate" not in rendered_texts, (
         "Expected cmd_search not to XML-render messages from files whose raw "
         f"content cannot match the query. Got rendered texts: {rendered_texts!r}"
+    )
+
+
+def test_ascii_literal_no_hit_prefilter_skips_text_reads_and_confirmation(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """ASCII literal no-hit searches should reject files before text reads/parsing."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    first_path = home / ".claude" / "projects" / "proj" / "first.jsonl"
+    second_path = home / ".claude" / "projects" / "proj" / "second.jsonl"
+    _write_session(first_path, "ordinary first text")
+    _write_session(second_path, "ordinary second text")
+
+    session_paths = {first_path, second_path}
+    real_read_text = Path.read_text
+
+    def fail_if_session_text_read(path: Path, *args, **kwargs):
+        if path in session_paths:
+            raise AssertionError(
+                "Expected ASCII literal no-hit prefilter to skip session text reads."
+            )
+        return real_read_text(path, *args, **kwargs)
+
+    def fail_if_confirmed(*_args, **_kwargs):
+        raise AssertionError(
+            "Expected ASCII literal no-hit prefilter to skip semantic confirmation."
+        )
+
+    monkeypatch.setattr(Path, "read_text", fail_if_session_text_read)
+    monkeypatch.setattr(
+        search_commands,
+        "_search_conversation_content",
+        fail_if_confirmed,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "absent-ascii-byte-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1, (
+        "Expected no-hit search to exit 1 after cleanly rejecting every file. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "Error processing conversation file" not in captured.err, (
+        "Expected prefilter misses to be clean skips, not caught read errors. "
+        f"Got stderr:\n{captured.err}"
+    )
+
+
+def test_ascii_literal_prefilter_skips_text_read_for_noncandidate_files(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """ASCII literal noncandidates should be rejected before full text reads/parsing."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    matching_path = home / ".claude" / "projects" / "proj" / "match.jsonl"
+    noncandidate_path = home / ".claude" / "projects" / "proj" / "other.jsonl"
+    _write_session(matching_path, "ascii-byte-prefilter-needle")
+    _write_session(noncandidate_path, "unrelated ascii text")
+
+    real_read_text = Path.read_text
+
+    def fail_if_noncandidate_text_read(path: Path, *args, **kwargs):
+        if path == noncandidate_path:
+            raise AssertionError(
+                "Expected ASCII literal prefilter to skip text reads for noncandidate files."
+            )
+        return real_read_text(path, *args, **kwargs)
+
+    real_search_conversation_content = search_commands._search_conversation_content
+    confirmed_paths: list[Path] = []
+
+    def tracked_search_conversation_content(
+        conv_file: Path,
+        content: str,
+        query,
+        flags: ConversationFlags,
+        pool_filter: PoolFilter,
+    ):
+        confirmed_paths.append(conv_file)
+        return real_search_conversation_content(
+            conv_file, content, query, flags, pool_filter
+        )
+
+    monkeypatch.setattr(Path, "read_text", fail_if_noncandidate_text_read)
+    monkeypatch.setattr(
+        search_commands,
+        "_search_conversation_content",
+        tracked_search_conversation_content,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "ascii-byte-prefilter-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected the matching file to still be reported after prefiltering. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "match" in captured.out, (
+        "Expected the matching session to remain visible. "
+        f"Got stdout:\n{captured.out}"
+    )
+    assert "Error processing conversation file" not in captured.err, (
+        "Expected noncandidate rejection to be a clean skip, not a caught read error. "
+        f"Got stderr:\n{captured.err}"
+    )
+    assert confirmed_paths == [matching_path], (
+        "Expected semantic confirmation only for byte-prefilter survivors. "
+        f"Got confirmed paths: {confirmed_paths!r}"
+    )
+
+
+def test_ascii_literal_prefilter_survivor_still_requires_visible_confirmation(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A raw byte candidate must not become a hit when the term is hidden by flags."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".claude" / "projects" / "proj" / "hidden.jsonl"
+    _write_hidden_thinking_session(session_path, "hidden-ascii-byte-needle")
+
+    confirmed_paths: list[Path] = []
+    real_search_conversation_content = search_commands._search_conversation_content
+
+    def tracked_search_conversation_content(
+        conv_file: Path,
+        content: str,
+        query,
+        flags: ConversationFlags,
+        pool_filter: PoolFilter,
+    ):
+        confirmed_paths.append(conv_file)
+        return real_search_conversation_content(
+            conv_file, content, query, flags, pool_filter
+        )
+
+    monkeypatch.setattr(
+        search_commands,
+        "_search_conversation_content",
+        tracked_search_conversation_content,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "hidden-ascii-byte-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1, (
+        "Expected a term present only in hidden thinking to remain hidden by default. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert confirmed_paths == [session_path], (
+        "Expected byte candidates to continue through semantic visibility confirmation. "
+        f"Got confirmed paths: {confirmed_paths!r}"
+    )
+    assert captured.out == "", (
+        "Expected no id output for a hidden-only match. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+def test_non_ascii_literal_search_falls_back_and_remains_case_insensitive(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Non-ASCII literals should not use the ASCII byte gate and must keep regex semantics."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".claude" / "projects" / "proj" / "accent.jsonl"
+    _write_session(session_path, "CAFÉ-token")
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "café-token",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected non-ASCII literal search to preserve case-insensitive matching. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "accent" in captured.out, (
+        "Expected the session containing CAFÉ-token to match query café-token. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+def test_regex_search_falls_back_to_full_confirmation(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Regex searches are not optimized by the ASCII byte literal gate in this slice."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".claude" / "projects" / "proj" / "regex.jsonl"
+    _write_session(session_path, "regex-token-42")
+
+    confirmed_paths: list[Path] = []
+    real_search_conversation_content = search_commands._search_conversation_content
+
+    def tracked_search_conversation_content(
+        conv_file: Path,
+        content: str,
+        query,
+        flags: ConversationFlags,
+        pool_filter: PoolFilter,
+    ):
+        confirmed_paths.append(conv_file)
+        return real_search_conversation_content(
+            conv_file, content, query, flags, pool_filter
+        )
+
+    monkeypatch.setattr(
+        search_commands,
+        "_search_conversation_content",
+        tracked_search_conversation_content,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            r"regex-token-\d+",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.LIST,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected regex search to keep matching through the full confirmation path. "
+        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert confirmed_paths == [session_path], (
+        "Expected regex search to fall back to semantic confirmation. "
+        f"Got confirmed paths: {confirmed_paths!r}"
     )
 
 
