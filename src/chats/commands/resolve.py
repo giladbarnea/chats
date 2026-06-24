@@ -272,7 +272,11 @@ def _input_arg_or_stdin(input_arg: str | None) -> str:
             file=sys.stderr,
         )
         sys.exit(1)
-    return sys.stdin.read()
+    content = sys.stdin.read()
+    if not content.strip():
+        print_error("Input is empty.")
+        sys.exit(1)
+    return content
 
 
 def _first_non_empty_line(content: str) -> str | None:

@@ -39,8 +39,6 @@ from ..parsing import (
     _extract_text_blocks,
     _filter_hidden_user_text_blocks,
     _is_codex_preamble_text,
-    _is_hidden_user_command_text,
-    _parse_task_notification_tool,
     get_jsonl_session_adapter,
 )
 from ..pool_filter import PoolFilter
@@ -87,7 +85,6 @@ class SearchHit:
 
 _RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
 _ASCII_SCAN_CHUNK_SIZE = 1024 * 1024
-_BRANCH_UNCERTAINTY_MARKER = b'"last-prompt"'
 
 
 class _ProjectionResult(Enum):
@@ -567,11 +564,13 @@ def _stream_dot_only_id_projection(
 
 
 def _project_default_dot_match(session_file: Path) -> _ProjectionResult:
-    """Project whether default search for `.` would find any visible facet/content."""
+    """Project whether default search for `.` would find any visible facet/content.
+
+    Claude default visibility depends on branch resolution this projection does not
+    replicate, so Claude files always defer to the full search path.
+    """
     adapter = get_jsonl_session_adapter(session_file)
-    if adapter.name == "claude" and _file_contains_bytes(
-        session_file, _BRANCH_UNCERTAINTY_MARKER
-    ):
+    if adapter.name == "claude":
         return _ProjectionResult.UNKNOWN
 
     try:
@@ -594,18 +593,6 @@ def _project_default_dot_match(session_file: Path) -> _ProjectionResult:
     return _ProjectionResult.NO_MATCH
 
 
-def _file_contains_bytes(path: Path, needle: bytes) -> bool:
-    """Return True if raw bytes contain a small marker."""
-    try:
-        with open(path, "rb") as handle:
-            while chunk := handle.read(_ASCII_SCAN_CHUNK_SIZE):
-                if needle in chunk:
-                    return True
-    except OSError:
-        return True
-    return False
-
-
 def _entry_has_default_visible_search_facet(entry: dict, provider: Provider) -> bool:
     """Return True when an entry contributes to default visible search for `.`."""
     if entry.get("type") == "summary":
@@ -619,57 +606,7 @@ def _entry_has_default_visible_search_facet(entry: dict, provider: Provider) -> 
         return _codex_entry_has_default_visible_text(entry)
     if provider == "antigravitycli":
         return _antigravity_entry_has_default_visible_text(entry)
-    return _claude_entry_has_default_visible_text(entry)
-
-
-def _claude_entry_has_default_visible_text(entry: dict) -> bool:
-    entry_type = entry.get("type")
-    if entry_type == "user":
-        message_data = entry.get("message", {})
-        if message_data.get("role") != "user":
-            return False
-        content = message_data.get("content")
-        if entry.get("isCompactSummary") is True:
-            return bool(_visible_text_from_content(content))
-        if entry.get("isMeta") is True:
-            return False
-        if isinstance(content, str):
-            return bool(content.strip()) and not (
-                _is_hidden_user_command_text(content)
-                or _parse_task_notification_tool(content)
-            )
-        text_blocks = _filter_hidden_user_text_blocks(_extract_text_blocks(content))
-        return any(text.strip() for text in text_blocks)
-
-    if entry_type == "assistant":
-        if entry.get("agentId"):
-            return False
-        message_data = entry.get("message", {})
-        if message_data.get("role") != "assistant":
-            return False
-        content_items = message_data.get("content", [])
-        if not isinstance(content_items, list):
-            return False
-        return any(
-            isinstance(item, dict)
-            and item.get("type") == "text"
-            and bool(str(item.get("text", "")).strip())
-            for item in content_items
-        )
-
-    if entry_type == "system" and entry.get("subtype") == "away_summary":
-        content = entry.get("content")
-        return isinstance(content, str) and bool(
-            content.removesuffix(" (disable recaps in /config)").strip()
-        )
-
     return False
-
-
-def _visible_text_from_content(content: object) -> str:
-    if isinstance(content, str):
-        return content.strip()
-    return "\n".join(_extract_text_blocks(content)).strip()
 
 
 def _pi_entry_has_default_visible_text(entry: dict) -> bool:
@@ -914,7 +851,13 @@ def _ascii_literal_needle(term: SearchTerm) -> bytes | None:
 
 
 def _file_contains_ascii_case_insensitive(path: Path, needle: bytes) -> bool:
-    """Search a file for an ASCII literal using chunked byte reads."""
+    """Search a file for an ASCII literal using chunked byte reads.
+
+    Sound only over ASCII bytes: a non-ASCII source character can case-fold to the
+    ASCII needle (U+212A KELVIN SIGN -> 'k'), which `bytes.lower()` would not catch.
+    Any non-ASCII byte therefore makes this gate defer to the decode-based content
+    gate rather than risk rejecting a real hit.
+    """
     if not needle:
         return True
 
@@ -922,6 +865,8 @@ def _file_contains_ascii_case_insensitive(path: Path, needle: bytes) -> bool:
     previous = b""
     with open(path, "rb") as handle:
         while chunk := handle.read(_ASCII_SCAN_CHUNK_SIZE):
+            if not chunk.isascii():
+                return True
             haystack = previous + chunk
             if needle in haystack.lower():
                 return True
