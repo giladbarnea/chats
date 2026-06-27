@@ -111,9 +111,9 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        │   ├── is_single_negative_index()
 │      │                        │   │   └── _resolve_recent_conversation_file()
 │      │                        │   │       ├── Applies provider filter if supplied
-│      │                        │   │       ├── Walks newest-first by stat mtime
+│      │                        │   │       ├── Walks newest-first by JSONL last timestamp
 │      │                        │   │       ├── pool_filter.passes_path_for_index() (cwd)
-│      │                        │   │       ├── pool_filter.passes_path_for_date() (mtime/ctime)
+│      │                        │   │       ├── mafter/cafter timestamp probes
 │      │                        │   │       └── short-circuits at the Nth match
 │      │                        │   ├── pool.resolve_exact_identifier()
 │      │                        │   ├── UUID-like miss short-circuit
@@ -381,11 +381,11 @@ Session UUID / filename ────► │ SessionPool           │
                               │  • native-id fallback │
                               └──────────┬────────────┘
                               ┌──────────▼────────────┐
-Negative index (e.g. -1) ───► │ Metadata order path   │
-                              │  • _build_conversation│
-                              │    _metadata()        │
-                              │  • resolve_negative_  │
-                              │    index()            │
+Negative index (e.g. -1) ───► │ JSONL recency path    │
+                              │  • get_jsonl_last_    │
+                              │    timestamp()        │
+                              │  • resolve recent     │
+                              │    index              │
                               └──────────┬────────────┘
                               ┌──────────▼────────────┐
 Summary prefix ─────────────► │ extract_summaries_    │
@@ -450,7 +450,7 @@ Summary prefix ─────────────► │ extract_summaries_
                                │
                         ┌──────▼──────────┐  yes
                         │ Is negative     │──────► provider scope (optional)
-                        │ index (-N)?     │        → walk newest-first by stat mtime
+                        │ index (-N)?     │        → walk newest-first by JSONL mtime
                         │                 │        → cheap predicates (cwd, date)
                         └──────┬──────────┘        → RESOLVED (Path) or NOT_FOUND
                                │ no
@@ -715,7 +715,7 @@ cli.py
 
 1. **Adapter Selection Is Path-Based**: `parse_jsonl_entries()` chooses the provider adapter from `source_path`, not by probing payload shape. Raw stdin JSONL with no source path falls through to the default adapter.
 2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
-3. **Recent Negative Indices Use Stat Mtime With Cheap Predicates**: `_resolve_recent_conversation_file()` walks candidates newest-first by `stat().st_mtime` and applies `PoolFilter.passes_path_for_index` (cwd) and `passes_path_for_date` (mtime/ctime) per candidate, short-circuiting at the Nth match. This unifies the dir-only fast path and the older metadata-eager slow path. The trade-off is that "newest" is always filesystem mtime, never in-band semantic mtime.
+3. **Recent Negative Indices Use JSONL Mtime With Cheap Predicates**: `_resolve_recent_conversation_file()` excludes sidechains, applies the cwd probe before timestamp sorting, then orders survivors newest-first by `get_jsonl_last_timestamp()`. Date filters reuse that modified-time value for `mafter` and probe first timestamp only when `cafter` is active. This keeps recent-index resolution tied to transcript content while still avoiding full metadata construction for the pool; sessions without a readable in-band timestamp use the existing filesystem-mtime fallback.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.
 5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the rendered XML of visible message content. If tools, thinking, agents, or plans are hidden by flags, they do not count as matches.
 6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled; it discovers more files by including Claude sidechain sessions in the `SessionPool`.
@@ -733,7 +733,7 @@ cli.py
 18. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex/Antigravity sessions currently resolve to deleting the single JSONL file.
 19. **Antigravity Full Transcript Preference**: Antigravity session discovery treats `{session_id}/.system_generated/logs/transcript_full.jsonl` as canonical when present and falls back to `transcript.jsonl` only for sessions without the full variant. The brain directory name is the native session id.
 20. **Boolean Search Is Session-Scoped**: `parse_search_query` interprets bare lowercase `and`/`or` word tokens as a boolean query tree (with parens; `and` binds tighter). Each term is satisfied by a match anywhere in the session's facets (summaries, current title, rendered messages), so `and` terms may match in different messages; displayed matches are the union over all terms. Patterns without such tokens — including regex parens, uppercase `AND`, and unterminated quotes — keep verbatim single-regex semantics. Malformed boolean queries exit 2. The literal candidate prefilter evaluates the same tree over per-term raw-content plausibility.
-21. **Search Displays As It Scans**: `cmd_search` streams each `SearchHit` the instant `iter_hits()` confirms it, in scan order (newest first by filesystem mtime), instead of buffering, re-sorting by in-band mtime, then paging. `_stream_search_results` renders each hit via `get_console().capture()` and feeds the ANSI to a `StreamingPager` (a long-lived `less -r`) that flushes per hit; quitting `less` early sets `pager.closed`, which stops the scan. Display order is therefore filesystem mtime, not semantic mtime — the same trade-off already accepted for recent-index resolution (note 3), and the enabler for sub-second first results. Two consequences for the colored `-l` view, whose aggregates can't be known mid-stream: the `N sessions · newest first` line is a trailing summary, and per-row provider labels key off whether the candidate pool spans providers rather than the final hit set. `-r/--raw` opts out (collect-all, single buffered emit) because its single-visible-message rule needs the whole set.
+21. **Search Displays As It Scans**: `cmd_search` streams each `SearchHit` the instant `iter_hits()` confirms it, in scan order (newest first by filesystem mtime), instead of buffering, re-sorting by in-band mtime, then paging. `_stream_search_results` renders each hit via `get_console().capture()` and feeds the ANSI to a `StreamingPager` (a long-lived `less -r`) that flushes per hit; quitting `less` early sets `pager.closed`, which stops the scan. Display order therefore remains filesystem mtime, not semantic mtime, because streaming search optimizes for sub-second first results; recent-index resolution is separate and now uses JSONL recency (note 3). Two consequences for the colored `-l` view, whose aggregates can't be known mid-stream: the `N sessions · newest first` line is a trailing summary, and per-row provider labels key off whether the candidate pool spans providers rather than the final hit set. `-r/--raw` opts out (collect-all, single buffered emit) because its single-visible-message rule needs the whole set.
 22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL/raw transcript content as content, not a possible identifier, so stdin and pasted transcripts do not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
 23. **Search Has a Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`; non-ASCII literals, regex-shaped terms, render-generated markers, and any uncertain case fall through. This gate is only a raw plausibility filter: every survivor must still pass `_search_conversation_content()` and its rendered-message visibility semantics.
 24. **`search . -ll` Projection Is Deliberately Narrow**: `_can_project_dot_only_id()` is the eligibility boundary for the only projection fast path: exact dot query, `ONLY_ID`, default visibility, no role/extras, no dir/date filters, and non-raw output. `_project_default_dot_match()` is tri-state; branchable Claude transcripts, read errors, or uncertain cases fall back to `SessionScan`. The projection mirrors default-hidden protocol/tool/thinking/task-notification behavior and should not be broadened without equivalence tests against the full search path.

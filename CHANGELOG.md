@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-27] Negative recent indices use transcript recency
+
+### Changed
+
+- Recent negative selectors (`ch -1`, `ch -2`, and filtered variants such as `ch -d DIR -1`) now order candidates by the last timestamp inside each JSONL transcript instead of filesystem mtime. Files without a readable in-band timestamp keep the existing filesystem-mtime fallback, and provider/dir/date filters still use the cheap probe path rather than full metadata loading.
+
+---
 ## [2026-06-24] Worst-case performance fast paths
 
 ### Changed

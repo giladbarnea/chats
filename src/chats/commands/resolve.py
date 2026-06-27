@@ -4,6 +4,7 @@ import json
 import re
 import sys
 from collections.abc import Iterable, Sequence
+from datetime import datetime
 from pathlib import Path
 
 from ..console import get_console, print_error
@@ -135,18 +136,31 @@ def _resolve_recent_conversation_file(
     """Resolve a negative index like '-1' against globally recent supported sessions."""
     pool_filter = pool_filter or PoolFilter()
     remaining_matches = abs(int(identifier))
+    selectable_paths = [
+        path
+        for path in conversation_files
+        if not is_sidechain_session_file(path) and pool_filter.passes_path_for_index(path)
+    ]
+    timestamped_paths: list[tuple[Path, datetime]] = []
+    for path in selectable_paths:
+        modified_at = get_jsonl_last_timestamp(path) or datetime.min
+        if pool_filter.mafter_dt and modified_at < pool_filter.mafter_dt:
+            continue
+
+        created_at = get_jsonl_first_timestamp(path) if pool_filter.cafter_dt else None
+        if pool_filter.cafter_dt and (
+            created_at is None or created_at < pool_filter.cafter_dt
+        ):
+            continue
+
+        timestamped_paths.append((path, modified_at))
+
     newest_first_paths = sorted(
-        conversation_files,
-        key=lambda candidate: candidate.stat().st_mtime,
+        timestamped_paths,
+        key=lambda timestamped_path: timestamped_path[1],
         reverse=True,
     )
-    for path in newest_first_paths:
-        if is_sidechain_session_file(path):
-            continue
-        if not pool_filter.passes_path_for_index(path):
-            continue
-        if not pool_filter.passes_path_for_date(path):
-            continue
+    for path, _modified_at in newest_first_paths:
         remaining_matches -= 1
         if remaining_matches == 0:
             return path
