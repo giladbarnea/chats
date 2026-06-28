@@ -371,7 +371,7 @@ class Message:
         no representation can be left untruncated.
         """
         for tool in self.tools:
-            show, filter_short = self._should_show_tool(tool, flags.show_tools, id_map)
+            show, filter_short = resolve_tool_visibility(tool, flags.show_tools, id_map)
             if not show:
                 continue
             if flags.shorten or filter_short:
@@ -416,15 +416,6 @@ class Message:
             if tool.get("type") == "tool_use" and "id" in tool:
                 id_map[tool["id"]] = tool.get("name", "Unknown")
         return id_map
-
-    def _should_show_tool(
-        self,
-        tool: dict,
-        filter_value: bool | list[ToolFilter],
-        id_map: dict[str, str],
-    ) -> tuple[bool, bool]:
-        """Determine if a tool should be shown and whether to shorten it."""
-        return resolve_tool_visibility(tool, filter_value, id_map)
 
     def has_content(self) -> bool:
         """Check if message has any displayable content."""
