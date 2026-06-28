@@ -313,7 +313,7 @@ class TestFilterIntegration:
 
 
 def _fenced_inner(content: str) -> str:
-    """The payload inside a ```-fenced tool body — the part the width budget covers.
+    """The payload inside a ```-fenced tool body — the part the max-chars budget covers.
 
     Shortening is applied to the raw tool payload at the source, so the fence
     scaffolding sits outside the budget (matching how thinking/text are shortened).
@@ -419,8 +419,8 @@ class TestPerToolShortening:
             f"Expected shortened tool-output content to preserve the end. Got: {result_content[-260:]!r}"
         )
 
-    def test_global_short_uses_custom_width(self):
-        """Global shortening should honor a custom width instead of always using 500."""
+    def test_global_short_uses_custom_max_chars(self):
+        """Global shortening should honor a custom max-chars instead of always using 500."""
         long_content = "BASH_START-" + ("B" * 1000) + "-BASH_END"
         msg = make_message(
             {
@@ -432,7 +432,7 @@ class TestPerToolShortening:
             {"type": "tool_result", "tool_use_id": "toolu_01", "content": long_content},
         )
 
-        flags = ConversationFlags(show_tools=True, shorten=True, shorten_width=120)
+        flags = ConversationFlags(show_tools=True, shorten=True, shorten_max_chars=120)
         parts = tool_parts_from(msg, flags, ID_MAP)
 
         input_content = parts[0].data.content
@@ -440,18 +440,18 @@ class TestPerToolShortening:
         assert input_content is not None, "Expected shortened tool-input content."
         assert result_content is not None, "Expected shortened tool-output content."
         assert len(_fenced_inner(input_content)) == 120, (
-            "Expected global shortening to honor width=120 for the tool-input payload "
+            "Expected global shortening to honor max_chars=120 for the tool-input payload "
             f"(fence excluded). Got: {len(_fenced_inner(input_content))}"
         )
         assert len(_fenced_inner(result_content)) == 120, (
-            "Expected global shortening to honor width=120 for the tool-output payload "
+            "Expected global shortening to honor max_chars=120 for the tool-output payload "
             f"(fence excluded). Got: {len(_fenced_inner(result_content))}"
         )
         assert "BASH_START-" in input_content[:80], (
-            f"Expected custom-width shortening to preserve the start. Got: {input_content[:80]!r}"
+            f"Expected custom max-chars shortening to preserve the start. Got: {input_content[:80]!r}"
         )
         assert "BASH_END" in result_content[-80:], (
-            f"Expected custom-width shortening to preserve the end. Got: {result_content[-80:]!r}"
+            f"Expected custom max-chars shortening to preserve the end. Got: {result_content[-80:]!r}"
         )
 
 

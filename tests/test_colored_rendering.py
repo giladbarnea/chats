@@ -346,7 +346,7 @@ def _compact(text: str) -> str:
 
 
 def _long_marked(head: str, middle: str, tail: str) -> str:
-    """A >4k string whose center marker is guaranteed cut by a width-500 shorten."""
+    """A >4k string whose center marker is guaranteed cut by a 500-char shorten."""
     return f"{head}_" + ("A" * 2000) + f"_{middle}_" + ("Z" * 2000) + f"_{tail}"
 
 

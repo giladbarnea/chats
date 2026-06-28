@@ -112,7 +112,7 @@ class ConversationFlags:
     show_plans: bool
     allow_empty_output: bool
     shorten: bool
-    shorten_width: int
+    shorten_max_chars: int
     shorten_thinking: bool
     color: bool
     paging: bool
@@ -128,7 +128,7 @@ class ConversationFlags:
         show_plans: bool = False,
         allow_empty_output: bool = False,
         shorten: bool = False,
-        shorten_width: int = 500,
+        shorten_max_chars: int = 500,
         shorten_thinking: bool = False,
         color: bool = False,
         paging: bool | None = None,
@@ -141,7 +141,7 @@ class ConversationFlags:
         self.show_plans = show_plans
         self.allow_empty_output = allow_empty_output
         self.shorten = shorten
-        self.shorten_width = shorten_width
+        self.shorten_max_chars = shorten_max_chars
         self.shorten_thinking = shorten_thinking
         self.color = (color == "always") or (color == "auto" and sys.stdout.isatty())
         # Paging defaults to color value unless explicitly set
@@ -182,7 +182,7 @@ class ConversationFlags:
             f"show_tools={self.show_tools}, show_agents={self.show_agents}, "
             f"show_branches={self.show_branches}, "
             f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
-            f"shorten={self.shorten}, shorten_width={self.shorten_width}, "
+            f"shorten={self.shorten}, shorten_max_chars={self.shorten_max_chars}, "
             f"shorten_thinking={self.shorten_thinking}, "
             f"color={self.color}, paging={self.paging})"
         )
@@ -236,7 +236,7 @@ class Message:
         # Text content
         if self.text:
             text = (
-                shorten_data(self.text, width=flags.shorten_width)
+                shorten_data(self.text, max_chars=flags.shorten_max_chars)
                 if flags.shorten
                 else self.text
             )
@@ -246,7 +246,7 @@ class Message:
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking, max_len=flags.shorten_width)
+                truncate_middle(self.thinking, max_len=flags.shorten_max_chars)
                 if should_shorten_thinking
                 else self.thinking
             )
@@ -259,7 +259,7 @@ class Message:
         # Plan (as tool-like part with name="ExitPlanMode")
         if flags.show_plans and self.plan:
             plan_content = (
-                shorten_data(self.plan, width=flags.shorten_width)
+                shorten_data(self.plan, max_chars=flags.shorten_max_chars)
                 if flags.shorten
                 else self.plan
             )
@@ -286,7 +286,7 @@ class Message:
 
         if self.text:
             text = (
-                shorten_data(self.text, width=flags.shorten_width)
+                shorten_data(self.text, max_chars=flags.shorten_max_chars)
                 if flags.shorten
                 else self.text
             )
@@ -295,7 +295,7 @@ class Message:
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking, max_len=flags.shorten_width)
+                truncate_middle(self.thinking, max_len=flags.shorten_max_chars)
                 if should_shorten_thinking
                 else self.thinking
             )
@@ -309,7 +309,7 @@ class Message:
 
         if flags.show_plans and self.plan:
             plan_content = (
-                shorten_data(self.plan, width=flags.shorten_width)
+                shorten_data(self.plan, max_chars=flags.shorten_max_chars)
                 if flags.shorten
                 else self.plan
             )
@@ -375,7 +375,7 @@ class Message:
             if not show:
                 continue
             if flags.shorten or filter_short:
-                tool = shorten_data(tool, width=flags.shorten_width)
+                tool = shorten_data(tool, max_chars=flags.shorten_max_chars)
             yield tool
 
     def _append_tool_parts(

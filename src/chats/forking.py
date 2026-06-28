@@ -169,7 +169,7 @@ def _shorten_tool_payload(
     tool: dict,
     should_shorten: bool,
     *,
-    width: int = 500,
+    max_chars: int = 500,
 ) -> dict:
     if not should_shorten:
         return copy.deepcopy(tool)
@@ -178,12 +178,12 @@ def _shorten_tool_payload(
     if shortened_tool.get("type") == "tool_use" and "input" in shortened_tool:
         shortened_tool["input"] = shorten_data(
             shortened_tool.get("input"),
-            width=width,
+            max_chars=max_chars,
         )
     elif shortened_tool.get("type") == "tool_result" and "content" in shortened_tool:
         shortened_tool["content"] = shorten_data(
             shortened_tool.get("content"),
-            width=width,
+            max_chars=max_chars,
         )
     return shortened_tool
 
@@ -216,7 +216,7 @@ def _filter_claude_assistant_content(
             if flags.shorten or flags.shorten_thinking:
                 kept_item["thinking"] = truncate_middle(
                     kept_item.get("thinking", ""),
-                    max_len=flags.shorten_width,
+                    max_len=flags.shorten_max_chars,
                 )
             kept_items.append(kept_item)
             continue
@@ -248,7 +248,7 @@ def _filter_claude_assistant_content(
         kept_tool = _shorten_tool_payload(
             tool_payload,
             should_shorten,
-            width=flags.shorten_width,
+            max_chars=flags.shorten_max_chars,
         )
         kept_items.append({
             **copy.deepcopy(item),
@@ -304,7 +304,7 @@ def _filter_claude_user_content(
         kept_tool = _shorten_tool_payload(
             tool_payload,
             should_shorten,
-            width=flags.shorten_width,
+            max_chars=flags.shorten_max_chars,
         )
         kept_item = copy.deepcopy(item)
         kept_item["content"] = kept_tool.get("content", "")
@@ -369,7 +369,7 @@ def _rewrite_claude_entries(
                 if should_shorten:
                     entry["toolUseResult"] = shorten_data(
                         tool_use_result,
-                        width=flags.shorten_width,
+                        max_chars=flags.shorten_max_chars,
                     )
                 if agent_id_map and tool_use_result.get("agentId") in agent_id_map:
                     entry["toolUseResult"]["agentId"] = agent_id_map[
@@ -493,7 +493,7 @@ def _filter_pi_assistant_content(
             if flags.shorten or flags.shorten_thinking:
                 kept_item["thinking"] = truncate_middle(
                     kept_item.get("thinking", ""),
-                    max_len=flags.shorten_width,
+                    max_len=flags.shorten_max_chars,
                 )
             kept_items.append(kept_item)
             continue
@@ -517,7 +517,7 @@ def _filter_pi_assistant_content(
         if should_shorten:
             kept_item["arguments"] = shorten_data(
                 kept_item.get("arguments", {}),
-                width=flags.shorten_width,
+                max_chars=flags.shorten_max_chars,
             )
         kept_items.append(kept_item)
 
@@ -595,7 +595,7 @@ def _rewrite_pi_entries(
         if should_shorten:
             entry["message"]["content"] = shorten_data(
                 message.get("content", []),
-                width=flags.shorten_width,
+                max_chars=flags.shorten_max_chars,
             )
         rewritten_entries.append(entry)
 
@@ -621,18 +621,18 @@ def _fork_pi_session(source_path: Path, flags: ConversationFlags) -> Path:
     return target_path
 
 
-def _shorten_codex_serialized_value(value: object, *, width: int = 500) -> object:
+def _shorten_codex_serialized_value(value: object, *, max_chars: int = 500) -> object:
     if isinstance(value, dict | list):
-        return shorten_data(value, width=width)
+        return shorten_data(value, max_chars=max_chars)
     if isinstance(value, str):
         stripped = value.strip()
         if stripped.startswith(("{", "[")):
             try:
                 parsed = json.loads(stripped)
             except json.JSONDecodeError:
-                return truncate_middle(value, max_len=width)
-            return json.dumps(shorten_data(parsed, width=width), separators=(",", ":"))
-        return truncate_middle(value, max_len=width)
+                return truncate_middle(value, max_len=max_chars)
+            return json.dumps(shorten_data(parsed, max_chars=max_chars), separators=(",", ":"))
+        return truncate_middle(value, max_len=max_chars)
     return value
 
 
@@ -748,7 +748,7 @@ def _rewrite_codex_entries(
                 if flags.shorten or flags.shorten_thinking:
                     kept_item["text"] = truncate_middle(
                         text,
-                        max_len=flags.shorten_width,
+                        max_len=flags.shorten_max_chars,
                     )
                 filtered_summary.append(kept_item)
             if not filtered_summary:
@@ -777,7 +777,7 @@ def _rewrite_codex_entries(
                 field_name = "arguments" if payload_type == "function_call" else "input"
                 payload[field_name] = _shorten_codex_serialized_value(
                     payload.get(field_name),
-                    width=flags.shorten_width,
+                    max_chars=flags.shorten_max_chars,
                 )
             rewritten_entries.append(entry)
             continue
@@ -797,7 +797,7 @@ def _rewrite_codex_entries(
             if should_shorten:
                 payload["output"] = _shorten_codex_serialized_value(
                     payload.get("output"),
-                    width=flags.shorten_width,
+                    max_chars=flags.shorten_max_chars,
                 )
             rewritten_entries.append(entry)
 

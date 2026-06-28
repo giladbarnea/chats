@@ -24,14 +24,19 @@ def truncate_middle(s: str, max_len: int = 500) -> str:
     return s[:first_half] + placeholder + s[-second_half:]
 
 
-def shorten_data(data: Any, width: int = 500) -> Any:
-    """Recursively traverse data and shorten string values via middle truncation."""
+def shorten_data(data: Any, max_chars: int = 500) -> Any:
+    """Recursively shorten every string leaf in ``data`` to ``max_chars`` characters.
+
+    The limit is per string, applied to each leaf as the structure is traversed; it
+    does not bound the total size of the object (an object with many keys can still
+    exceed ``max_chars`` many times over).
+    """
     if isinstance(data, dict):
-        return {k: shorten_data(v, width) for k, v in data.items()}
+        return {k: shorten_data(v, max_chars) for k, v in data.items()}
     if isinstance(data, list):
-        return [shorten_data(item, width) for item in data]
+        return [shorten_data(item, max_chars) for item in data]
     if isinstance(data, str):
-        return truncate_middle(data, max_len=width)
+        return truncate_middle(data, max_len=max_chars)
     return data
 
 

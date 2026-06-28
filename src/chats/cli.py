@@ -61,8 +61,8 @@ def _looks_like_positive_integer(candidate: str) -> bool:
     return candidate.isdigit() and int(candidate) > 0
 
 
-def _is_valid_short_width_token(candidate: str) -> bool:
-    """Return True when the candidate is a valid explicit `--short` width."""
+def _is_valid_short_max_chars_token(candidate: str) -> bool:
+    """Return True when the candidate is a valid explicit `--short` character limit."""
     return candidate.isdigit() and int(candidate) > 7
 
 
@@ -71,23 +71,23 @@ def _short_uses_attached_value(argv_tokens: list[str]) -> bool:
     return any(token.startswith(("--short=", "-s=")) for token in argv_tokens)
 
 
-def _resolve_short_width(
+def _resolve_short_max_chars(
     raw_short: bool | str | None,
     *,
     attached_value: bool = False,
 ) -> int | None:
-    """Return the shortening width requested by `--short`, or None when disabled."""
+    """Return the shortening character limit requested by `--short`, or None when disabled."""
     if raw_short is None:
         return None
     if raw_short is True:
         return 500
     if attached_value and isinstance(raw_short, str):
-        if _is_valid_short_width_token(raw_short):
+        if _is_valid_short_max_chars_token(raw_short):
             return int(raw_short)
         raise ValueError(
             f"Invalid --short value: {raw_short!r}. Expected digits > 7."
         )
-    if isinstance(raw_short, str) and _is_valid_short_width_token(raw_short):
+    if isinstance(raw_short, str) and _is_valid_short_max_chars_token(raw_short):
         return int(raw_short)
     return 500
 
@@ -180,7 +180,7 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
     """Convert normalized parse-mode args into ConversationFlags."""
     show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
     message_selection = _resolve_message_selection(args)
-    shorten_width = _resolve_short_width(
+    shorten_max_chars = _resolve_short_max_chars(
         args.short,
         attached_value=getattr(args, "_short_uses_attached_value", False),
     )
@@ -192,8 +192,8 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         show_branches=args.branches or args.all,
         show_plans=args.plans or args.all,
         allow_empty_output=message_selection != MessageSelection.ALL,
-        shorten=shorten_width is not None,
-        shorten_width=shorten_width or 500,
+        shorten=shorten_max_chars is not None,
+        shorten_max_chars=shorten_max_chars or 500,
         shorten_thinking=shorten_thinking,
         color=args.color,
         paging=args.paging,
@@ -323,7 +323,7 @@ def _repair_short_option_positionals(
         return
     if getattr(args, "_short_uses_attached_value", False):
         return
-    if _is_valid_short_width_token(args.short):
+    if _is_valid_short_max_chars_token(args.short):
         return
 
     input_value = getattr(args, input_attr)
@@ -436,7 +436,7 @@ def main():
             nargs="?",
             const=True,
             default=None,
-            help="Shorten strings in output (optional: width)",
+            help="Shorten strings in output (optional: max characters)",
         )
         parser.add_argument(
             "--color",
@@ -480,7 +480,7 @@ def main():
             show_thinking, shorten_thinking = _resolve_thinking_mode(
                 args.thinking, args.all
             )
-            shorten_width = _resolve_short_width(
+            shorten_max_chars = _resolve_short_max_chars(
                 args.short,
                 attached_value=getattr(args, "_short_uses_attached_value", False),
             )
@@ -492,8 +492,8 @@ def main():
             show_agents=args.agents or args.all,
             show_branches=args.branches or args.all,
             show_plans=args.plans or args.all,
-            shorten=shorten_width is not None,
-            shorten_width=shorten_width or 500,
+            shorten=shorten_max_chars is not None,
+            shorten_max_chars=shorten_max_chars or 500,
             shorten_thinking=shorten_thinking,
             color=args.color,
             paging=args.paging,
@@ -763,7 +763,7 @@ Commands:
             nargs="?",
             const=True,
             default=None,
-            help="Shorten strings in output (optional: width)",
+            help="Shorten strings in output (optional: max characters)",
         )
         parser.add_argument(
             "--color",

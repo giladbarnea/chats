@@ -114,7 +114,7 @@ Automatically detects input format by examining **first non-empty line only** (d
 -b, --branches       # Include abandoned (rewound) branch messages, tagged branch="N"
 -A, --all            # Show everything (thinking, tools, agents, plans)
 --plans              # Show plan content (ExitPlanMode)
--s, --short [WIDTH]  # Shorten string values in output (default width=500; explicit WIDTH must be >7)
+-s, --short [MAX_CHARS]  # Shorten string values in output (default max chars=500; explicit MAX_CHARS must be >7)
 
 -o FILE          # Save output to file
 
@@ -125,7 +125,7 @@ Automatically detects input format by examining **first non-empty line only** (d
 
 `--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, `--plans`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
 
-`--short` is greedy only for the token immediately following it: a detached width is consumed only when that token is all digits and `> 7`; otherwise `--short` is treated as bare and parsing continues normally. The attached form is strict: `--short=<value>` must satisfy the same validation or the CLI errors.
+`--short` is greedy only for the token immediately following it: a detached max-chars value is consumed only when that token is all digits and `> 7`; otherwise `--short` is treated as bare and parsing continues normally. The attached form is strict: `--short=<value>` must satisfy the same validation or the CLI errors.
 
 `--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ch --no-user --tools ...` still shows tool outputs from user turns, and `ch --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI seam tests for `--short` width parsing and ambiguity handling."""
+"""CLI seam tests for `--short` character-limit parsing and ambiguity handling."""
 
 from __future__ import annotations
 
@@ -77,24 +77,24 @@ def test_parse_bare_short_keeps_following_input_positional(monkeypatch) -> None:
         f"Got: {captured.get('input')!r}"
     )
     assert captured["flags"].shorten is True
-    assert captured["flags"].shorten_width == 500
+    assert captured["flags"].shorten_max_chars == 500
 
 
-def test_parse_short_accepts_attached_numeric_width(monkeypatch) -> None:
-    """`--short=NUMBER` should propagate the custom width into ConversationFlags."""
+def test_parse_short_accepts_attached_numeric_max_chars(monkeypatch) -> None:
+    """`--short=NUMBER` should propagate the custom max-chars into ConversationFlags."""
     exit_code, captured = _run_parse_cli(monkeypatch, "--short=120", "session.jsonl")
 
     assert exit_code == 0
     assert captured["input"] == "session.jsonl"
     assert captured["flags"].shorten is True
-    assert captured["flags"].shorten_width == 120, (
-        "Expected `--short=120` to propagate width 120. "
-        f"Got: {captured['flags'].shorten_width!r}"
+    assert captured["flags"].shorten_max_chars == 120, (
+        "Expected `--short=120` to propagate max-chars 120. "
+        f"Got: {captured['flags'].shorten_max_chars!r}"
     )
 
 
 @pytest.mark.parametrize(
-    ("argv", "expected_input", "expected_slices", "expected_width"),
+    ("argv", "expected_input", "expected_slices", "expected_max_chars"),
     [
         (("-1", "-1", "-s", "10"), "-1", ["-1"], 10),
         (("-1", "-1", "-s"), "-1", ["-1"], 500),
@@ -114,9 +114,9 @@ def test_parse_short_resolves_ambiguous_numeric_neighbors(
     argv: tuple[str, ...],
     expected_input: str,
     expected_slices: list[str],
-    expected_width: int,
+    expected_max_chars: int,
 ) -> None:
-    """Detached numeric values after `--short` become width only when they are digits > 7."""
+    """Detached numeric values after `--short` become the max-chars only when they are digits > 7."""
     exit_code, captured = _run_parse_cli(monkeypatch, *argv)
 
     assert exit_code == 0, (
@@ -129,26 +129,26 @@ def test_parse_short_resolves_ambiguous_numeric_neighbors(
         f"Expected slices {expected_slices!r} for argv={argv!r}. Got: {captured.get('slice_str')!r}"
     )
     assert captured["flags"].shorten is True
-    assert captured["flags"].shorten_width == expected_width, (
-        f"Expected shorten width {expected_width} for argv={argv!r}. "
-        f"Got: {captured['flags'].shorten_width!r}"
+    assert captured["flags"].shorten_max_chars == expected_max_chars, (
+        f"Expected shorten max-chars {expected_max_chars} for argv={argv!r}. "
+        f"Got: {captured['flags'].shorten_max_chars!r}"
     )
 
 
 def test_parse_short_can_snatch_the_only_numeric_token(monkeypatch) -> None:
-    """`-s 10` should consume 10 as width and leave no positional input behind."""
+    """`-s 10` should consume 10 as the max-chars and leave no positional input behind."""
     exit_code, captured = _run_parse_cli(monkeypatch, "-s", "10")
 
     assert exit_code == 0, (
-        "Expected the CLI seam to reach cmd_parse after consuming 10 as width. "
+        "Expected the CLI seam to reach cmd_parse after consuming 10 as the max-chars. "
         f"Got exit_code={exit_code} captured={captured!r}"
     )
     assert captured["input"] is None, (
-        "Expected `-s 10` to leave no positional input after consuming 10 as width. "
+        "Expected `-s 10` to leave no positional input after consuming 10 as the max-chars. "
         f"Got: {captured.get('input')!r}"
     )
     assert captured["slice_str"] == []
-    assert captured["flags"].shorten_width == 10
+    assert captured["flags"].shorten_max_chars == 10
 
 
 def test_search_bare_short_keeps_following_pattern_positional(monkeypatch) -> None:
@@ -158,17 +158,17 @@ def test_search_bare_short_keeps_following_pattern_positional(monkeypatch) -> No
     assert exit_code == 0
     assert captured["pattern"] == "needle"
     assert captured["flags"].shorten is True
-    assert captured["flags"].shorten_width == 500
+    assert captured["flags"].shorten_max_chars == 500
 
 
-def test_search_short_accepts_detached_numeric_width(monkeypatch) -> None:
-    """`search --short 120 needle` should propagate width 120 and keep needle as the pattern."""
+def test_search_short_accepts_detached_numeric_max_chars(monkeypatch) -> None:
+    """`search --short 120 needle` should propagate max-chars 120 and keep needle as the pattern."""
     exit_code, captured = _run_search_cli(monkeypatch, "--short", "120", "needle")
 
     assert exit_code == 0
     assert captured["pattern"] == "needle"
     assert captured["flags"].shorten is True
-    assert captured["flags"].shorten_width == 120
+    assert captured["flags"].shorten_max_chars == 120
 
 
 @pytest.mark.parametrize("invalid_value", ["7", "-1", "1:3"])
