@@ -167,7 +167,7 @@ class TestGenerateAutoName:
         mock_result.stdout = "implement auto-rename\n"
         with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
             name = _generate_auto_name(session_file, session_file.read_text())
-        assert name == f"{expected_date_prefix(session_file)} project implement auto-rename"
+        assert name == f"[{expected_date_prefix(session_file)}][project] implement auto-rename"
 
     def test_raises_on_pi_not_found(self, session_file):
         with patch(
@@ -225,7 +225,7 @@ class TestCmdRenameAuto:
 
         last = get_last_line_json(session_file, -2)
         assert last["type"] == "agent-name"
-        assert last["agentName"] == f"{date_prefix} project implement auto-rename"
+        assert last["agentName"] == f"[{date_prefix}][project] implement auto-rename"
 
     def test_auto_dry_run_prints_generated_name_without_mutating_session(
         self,
@@ -240,7 +240,7 @@ class TestCmdRenameAuto:
         with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
             cmd_rename(str(session_file), None, auto=True, dry_run=True)
 
-        assert capsys.readouterr().out == f"{expected_date_prefix(session_file)} project preview rename\n", (
+        assert capsys.readouterr().out == f"[{expected_date_prefix(session_file)}][project] preview rename\n", (
             "Expected rename --auto --dry-run to print only the generated name to stdout."
         )
         assert session_file.read_text() == original_content, (

@@ -99,7 +99,9 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
             [
                 "pi",
                 "--model",
-                "google/gemini-3-flash-preview",
+                "openai-codex/gpt-5.4-mini",
+                "--effort",
+                "high",
                 "--no-skills",
                 "--no-session",
                 "--offline",
@@ -126,7 +128,7 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
     first_timestamp = get_jsonl_first_timestamp(conv_file)
     if first_timestamp is None:
         raise ValueError(f"could not determine first timestamp of {conv_file}")
-    return f"{first_timestamp:%m-%d} {cwd_name} {generated_name}"
+    return f"[{first_timestamp:%m-%d}][{cwd_name}] {generated_name}"
 
 
 def cmd_rename(
