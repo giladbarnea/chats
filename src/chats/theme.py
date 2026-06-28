@@ -2,6 +2,21 @@ from __future__ import annotations
 
 from rich.theme import Theme
 
+# One Atom Dark palette, borrowed from ~/.pi/agent/themes/one-atom-dark-full.json.
+# The single source of hues for message role colors (see formatting._ROLE_HUE) and
+# message-body styling, so colors stay coherent and well-separated rather than
+# drifting into ad-hoc near-duplicates. These are light pastels on a dark terminal;
+# chips drawn over them use INK (dark text) for contrast.
+BLUE = "#71b9f4"
+CYAN = "#62bac6"
+GREEN = "#98c379"
+YELLOW = "#eac786"
+RED = "#e27881"
+MAGENTA = "#c88bda"
+BRIGHT_CYAN = "#78c4ce"
+GRAY = "#c9ccd3"
+INK = "#1d1f23"
+
 
 APP_THEME = Theme(
     {
@@ -27,12 +42,12 @@ APP_THEME = Theme(
         "search.match": "bold #14181d on #e6b450",
         # Tool blocks: ⏺ call / ⎿ result markers + the left rail marking each
         # block's extent. Call bright, result dim, error red.
-        "tool.call": "bold #7fb4c4",
+        "tool.call": f"bold {BRIGHT_CYAN}",
         "tool.result": "#5f7e86",
-        "tool.error": "bold #e06c75",
+        "tool.error": f"bold {RED}",
         # Edit-tool diff bodies.
-        "diff.add": "#98c379",
-        "diff.remove": "#e06c75",
+        "diff.add": GREEN,
+        "diff.remove": RED,
         "search.age.now": "#a9aeb4",
         "search.age.week": "#878c92",
         "search.age.month": "#6b7076",

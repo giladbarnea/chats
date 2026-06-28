@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-28] Message role colors get a coherent palette
+
+### Changed
+
+- The per-message role hues are now drawn from one named palette in `theme.py` (borrowed from the One Atom Dark theme) instead of eight ad-hoc hexes that crowded the blue–purple range. Each role group gets a well-separated hue: user blue, assistant magenta, agent cyan, recap green, compaction amber, session-rename red. The three `user-*` tags still share blue, since they are one actor.
+- Role badge chips switched from white to dark ink text so they stay legible on the lighter pastel backgrounds.
+- The message-body styles (`tool.call`, `tool.error`, `diff.add`, `diff.remove`) now reference the same palette, folding two near-identical reds (`#e06c75` and `#e27881`) into one.
+
+---
 ## [2026-06-27] Negative recent indices use transcript recency
 
 ### Changed
