@@ -1,3 +1,5 @@
+"""2026-06-28: aligned behavior with /Users/giladbarnea/.claude/hooks/auto-session-name.py and /Users/giladbarnea/.pi/agent/extensions/auto-session-name.ts. Keep them aligned when changing."""
+
 from __future__ import annotations
 
 import json
