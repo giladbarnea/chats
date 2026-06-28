@@ -5,19 +5,19 @@ from pathlib import Path
 from typing import Any
 
 
-def truncate_middle(s: str, max_len: int = 500) -> str:
+def truncate_middle(s: str, max_chars: int = 500) -> str:
     """Shorten a string by replacing its middle with an ellipsis block."""
     placeholder = "\n...\n"
-    if max_len < len(placeholder):
-        placeholder = "..."[:max_len]
+    if max_chars < len(placeholder):
+        placeholder = "..."[:max_chars]
 
-    if len(s) <= max_len - len(placeholder):
+    if len(s) <= max_chars - len(placeholder):
         return s
 
-    if max_len <= len(placeholder):
-        return placeholder[:max_len]
+    if max_chars <= len(placeholder):
+        return placeholder[:max_chars]
 
-    remaining = max_len - len(placeholder)
+    remaining = max_chars - len(placeholder)
     first_half = remaining // 2 + (remaining % 2)
     second_half = remaining // 2
 
@@ -36,7 +36,7 @@ def shorten_data(data: Any, max_chars: int = 500) -> Any:
     if isinstance(data, list):
         return [shorten_data(item, max_chars) for item in data]
     if isinstance(data, str):
-        return truncate_middle(data, max_len=max_chars)
+        return truncate_middle(data, max_chars=max_chars)
     return data
 
 

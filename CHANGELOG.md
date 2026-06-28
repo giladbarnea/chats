@@ -7,7 +7,7 @@ All notable changes to the `conversations` skill.
 
 ### Changed
 
-- The `--short` limit is a maximum character count, not a display column width and not a total-object budget, so the misleading `width` name is gone. `shorten_data`'s parameter is now `max_chars`, `ConversationFlags.shorten_width` is now `shorten_max_chars`, and the CLI helpers (`_resolve_short_max_chars`, `_is_valid_short_max_chars_token`) follow suit. The `--short` help text now reads "optional: max characters". Genuine display widths (`elide_to_width`, console/panel widths) are untouched. `shorten_data`'s docstring now states the limit is applied per string leaf and does not bound the object's total size.
+- The `--short` limit is a maximum character count, not a display column width and not a total-object budget, so the misleading `width` name is gone. The shortening primitives now share one parameter name `max_chars` (`shorten_data` and `truncate_middle`), `ConversationFlags.shorten_width` is now `shorten_max_chars`, and the CLI helpers (`_resolve_short_max_chars`, `_is_valid_short_max_chars_token`) follow suit. The `--short` help text now reads "optional: max characters". Genuine display widths (`elide_to_width`, console/panel widths) are untouched. `shorten_data`'s docstring now states the limit is applied per string leaf and does not bound the object's total size.
 
 ---
 ## [2026-06-28] Shorten tools at the source, like every other payload

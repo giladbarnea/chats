@@ -461,17 +461,17 @@ class TestPerToolShortening:
 
 
 class TestTruncateMiddle:
-    """truncate_middle truncates exactly to max_len, replacing the middle with a placeholder."""
+    """truncate_middle truncates exactly to max_chars, replacing the middle with a placeholder."""
 
     def test_short_string_unchanged(self):
-        assert truncate_middle("hello", max_len=100) == "hello"
+        assert truncate_middle("hello", max_chars=100) == "hello"
 
     def test_length_at_threshold_unchanged(self):
         s = "a" * 115
-        assert truncate_middle(s, max_len=120) == s
+        assert truncate_middle(s, max_chars=120) == s
 
-    def test_length_above_threshold_truncates_to_exact_max_len(self):
-        result = truncate_middle("a" * 116, max_len=120)
+    def test_length_above_threshold_truncates_to_exact_max_chars(self):
+        result = truncate_middle("a" * 116, max_chars=120)
         assert len(result) == 120, f"Expected 120 chars exactly, got {len(result)}"
         assert "\n...\n" in result, (
             f"Expected the line-broken ellipsis placeholder in truncated output. Got: {result!r}"
@@ -479,7 +479,7 @@ class TestTruncateMiddle:
 
     def test_long_string_keeps_start_and_end(self):
         s = "A" * 40 + "B" * 40 + "C" * 40 + "D" * 40  # 160 chars
-        result = truncate_middle(s, max_len=100)
+        result = truncate_middle(s, max_chars=100)
         assert result.startswith("A" * 40), (
             f"Should start with first quarter. Got: {result[:50]}"
         )
@@ -498,7 +498,7 @@ class TestTruncateMiddle:
         )
 
     def test_placeholder_is_ellipsis_not_bracket(self):
-        result = truncate_middle("x" * 200, max_len=100)
+        result = truncate_middle("x" * 200, max_chars=100)
         assert "..." in result
         assert "[...]" not in result
 

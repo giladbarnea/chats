@@ -246,7 +246,7 @@ class Message:
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking, max_len=flags.shorten_max_chars)
+                truncate_middle(self.thinking, max_chars=flags.shorten_max_chars)
                 if should_shorten_thinking
                 else self.thinking
             )
@@ -295,7 +295,7 @@ class Message:
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking, max_len=flags.shorten_max_chars)
+                truncate_middle(self.thinking, max_chars=flags.shorten_max_chars)
                 if should_shorten_thinking
                 else self.thinking
             )

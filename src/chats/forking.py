@@ -216,7 +216,7 @@ def _filter_claude_assistant_content(
             if flags.shorten or flags.shorten_thinking:
                 kept_item["thinking"] = truncate_middle(
                     kept_item.get("thinking", ""),
-                    max_len=flags.shorten_max_chars,
+                    max_chars=flags.shorten_max_chars,
                 )
             kept_items.append(kept_item)
             continue
@@ -493,7 +493,7 @@ def _filter_pi_assistant_content(
             if flags.shorten or flags.shorten_thinking:
                 kept_item["thinking"] = truncate_middle(
                     kept_item.get("thinking", ""),
-                    max_len=flags.shorten_max_chars,
+                    max_chars=flags.shorten_max_chars,
                 )
             kept_items.append(kept_item)
             continue
@@ -630,9 +630,9 @@ def _shorten_codex_serialized_value(value: object, *, max_chars: int = 500) -> o
             try:
                 parsed = json.loads(stripped)
             except json.JSONDecodeError:
-                return truncate_middle(value, max_len=max_chars)
+                return truncate_middle(value, max_chars=max_chars)
             return json.dumps(shorten_data(parsed, max_chars=max_chars), separators=(",", ":"))
-        return truncate_middle(value, max_len=max_chars)
+        return truncate_middle(value, max_chars=max_chars)
     return value
 
 
@@ -748,7 +748,7 @@ def _rewrite_codex_entries(
                 if flags.shorten or flags.shorten_thinking:
                     kept_item["text"] = truncate_middle(
                         text,
-                        max_len=flags.shorten_max_chars,
+                        max_chars=flags.shorten_max_chars,
                     )
                 filtered_summary.append(kept_item)
             if not filtered_summary:
