@@ -102,7 +102,7 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
                 "pi",
                 "--model",
                 "openai-codex/gpt-5.4-mini",
-                "--effort",
+                "--thinking",
                 "high",
                 "--no-skills",
                 "--no-session",
