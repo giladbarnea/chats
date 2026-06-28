@@ -102,6 +102,111 @@ def test_colored_parse_panel_title_includes_message_date(tmp_path, monkeypatch):
     assert "June 21st" in out, f"Expected the human message date in the title. Got:\n{out}"
 
 
+def test_colored_parse_leads_with_session_title(tmp_path, monkeypatch):
+    """The colored parse view opens with a white session title, not dim YAML.
+
+    The title precedes the first message panel and carries the session name (when
+    one exists), the session id, and the created/modified dates — replacing the
+    YAML frontmatter the plain (piping) path still emits.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    session_id = "44444444-aaaa-bbbb-cccc-000000000001"
+    _write_claude_session(
+        home, session_id,
+        [
+            {"type": "custom-title", "customTitle": "My Parsed Title",
+             "sessionId": session_id},
+            _assistant(text="Body.", ts="2026-06-21T09:00:00Z"),
+        ],
+    )
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False), session_id, None, None,
+        output_format="xml", emit_metadata=True, width=120,
+    )
+
+    assert "My Parsed Title" in out, f"Expected the session name in the title. Got:\n{out}"
+    assert session_id in out, f"Expected the session id in the title. Got:\n{out}"
+    assert "created" in out and "modified" in out, (
+        f"Expected the created/modified dates in the title. Got:\n{out}"
+    )
+    assert out.index("My Parsed Title") < out.index("Assistant"), (
+        f"Expected the title to precede the first message panel. Got:\n{out}"
+    )
+    assert "history_path" not in out and "provider:" not in out, (
+        f"Expected the rich view to drop the YAML frontmatter. Got:\n{out}"
+    )
+
+
+def test_colored_parse_title_without_custom_title_leads_with_id(tmp_path, monkeypatch):
+    """With no session name, the title headlines the session id."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    session_id = "55555555-aaaa-bbbb-cccc-000000000001"
+    _write_claude_session(
+        home, session_id,
+        [_assistant(text="Body.", ts="2026-06-21T09:00:00Z")],
+    )
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False), session_id, None, None,
+        output_format="xml", emit_metadata=True, width=120,
+    )
+
+    assert session_id in out, f"Expected the session id in the title. Got:\n{out}"
+    assert out.index(session_id) < out.index("Assistant"), (
+        f"Expected the id title to precede the first message panel. Got:\n{out}"
+    )
+
+
+def test_colored_parse_title_rides_inside_pager(tmp_path, monkeypatch):
+    """With paging on (the interactive default), the title shares the pager buffer.
+
+    Paging defaults to the color value, so `ch parse <id>` in a terminal pages
+    through `less`, which takes the alternate screen. A title printed before the
+    pager would flash on the main screen and vanish; it must be rendered inside
+    the same paged buffer as the panels to actually sit above the conversation.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    session_id = "66666666-aaaa-bbbb-cccc-000000000001"
+    _write_claude_session(
+        home, session_id,
+        [
+            {"type": "custom-title", "customTitle": "Paged Title",
+             "sessionId": session_id},
+            _assistant(text="Body.", ts="2026-06-21T09:00:00Z"),
+        ],
+    )
+
+    paged: list[str] = []
+    monkeypatch.setattr(
+        console_mod.UnicodeSafePager, "show",
+        lambda self, content: paged.append(content),
+    )
+    recorder = Console(theme=APP_THEME, width=120, force_terminal=True,
+                       color_system="truecolor")
+    monkeypatch.setattr(console_mod, "_console", recorder)
+
+    cmd_parse(
+        ConversationFlags(color="always", paging=True), session_id, None, None,
+        output_format="xml", emit_metadata=True,
+    )
+
+    assert paged, "Expected the colored view to be paged when paging is on."
+    content = "".join(paged)
+    assert "Paged Title" in content, (
+        "The title must be inside the paged buffer (visible above the panels), not "
+        f"printed before the pager takes the alternate screen. Paged content:\n{content}"
+    )
+    assert "Assistant" in content, (
+        f"The message panels should also be in the paged buffer. Got:\n{content}"
+    )
+
+
 def test_plain_parse_keeps_xml_tags(tmp_path, monkeypatch, capsys):
     """The plain (--color never) parse view keeps tags: the form meant for piping."""
     home = tmp_path / "home"

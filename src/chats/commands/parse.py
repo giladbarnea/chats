@@ -9,6 +9,7 @@ from pathlib import Path
 from ..console import UnicodeSafePager, get_console, print_error
 from ..formatting import (
     build_metadata_text,
+    build_session_title,
     format_to_json,
     format_to_raw,
     format_to_xml,
@@ -207,23 +208,32 @@ def cmd_parse(
         resolve._write_parse_output(metadata_text, output_file)
         return
 
+    session_title = None
     if (
         emit_metadata
         and input_file_path is not None
         and output_file is None
         and output_format not in {"json", "raw"}
     ):
-        print_metadata(
-            input_file_path,
-            cwd,
-            len(messages),
-            provider=metadata.provider,
-            forked_from=metadata.forked_from,
-            last_custom_title=current_custom_title,
-            created_at=metadata.ctime,
-            modified_at=metadata.mtime,
-            color=flags.color,
-        )
+        if flags.color:
+            session_title = build_session_title(
+                input_file_path,
+                custom_title=current_custom_title,
+                created_at=metadata.ctime,
+                modified_at=metadata.mtime,
+            )
+        else:
+            print_metadata(
+                input_file_path,
+                cwd,
+                len(messages),
+                provider=metadata.provider,
+                forked_from=metadata.forked_from,
+                last_custom_title=current_custom_title,
+                created_at=metadata.ctime,
+                modified_at=metadata.mtime,
+                color=flags.color,
+            )
 
     if output_format == "json":
         formatted = format_to_json(messages, flags, tool_id_map)
@@ -245,6 +255,9 @@ def cmd_parse(
         else nullcontext()
     )
     with pager_ctx:
+        if session_title is not None:
+            get_console().print(session_title)
+            get_console().print()
         render_message_panels(messages, flags, tool_id_map)
 
 

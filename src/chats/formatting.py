@@ -585,6 +585,34 @@ def print_metadata(
             print("---")
 
 
+def build_session_title(
+    file_path: Path,
+    *,
+    custom_title: str | None = None,
+    created_at: datetime | None = None,
+    modified_at: datetime | None = None,
+) -> Text:
+    """The rich parse view's header: a left-aligned white title carrying the
+    session's name (when one exists), id, and created/modified dates.
+
+    Distinct from the YAML frontmatter (``build_metadata_text``): a title, not a
+    block — white so it reads as a heading above the role-colored message panels.
+    """
+    title = Text()
+    if custom_title:
+        title.append(custom_title, style="bold white")
+        title.append("  ·  ", style="message.meta")
+        title.append(get_display_session_id(file_path), style="white")
+    else:
+        title.append(get_display_session_id(file_path), style="bold white")
+
+    for label, value in (("created", created_at), ("modified", modified_at)):
+        if value is not None:
+            title.append("  ·  ", style="message.meta")
+            title.append(f"{label} {value:%Y-%m-%d %H:%M}", style="message.meta")
+    return title
+
+
 def build_messages_group(
     messages: list[Message],
     flags: ConversationFlags,

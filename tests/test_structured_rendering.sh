@@ -73,10 +73,13 @@ if echo "$output" | grep -qF "━"; then
 fi
 echo "  ✓ Rich headings use badge style (no box chars)"
 
-# Test 6: Rich output contains separators
-echo "Testing Rich output contains separators..."
+# Test 6: Rich output leads with a session title (id + created/modified), not YAML
+echo "Testing Rich output leads with a session title..."
 output=$($CC_CMD "$DATA_FILE_SYNTHETIC" --color=always 2>&1 | strip_ansi)
-assert_contains "$output" "---"
-echo "  ✓ Rich output contains separators"
+assert_contains "$output" "synthetic_flags"
+assert_contains "$output" "created"
+assert_contains "$output" "modified"
+assert_not_contains "$output" "history_path"
+echo "  ✓ Rich output leads with a session title"
 
 echo "✅ Structured rendering tests passed"
