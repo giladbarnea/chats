@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -221,7 +222,8 @@ class Message:
         This is the single source of truth for:
         - What content is visible (flag-based filtering)
         - Content ordering (text, thinking, tools, plan)
-        - Shortening (text/thinking/plan via shorten_data; tool bodies via truncate_middle)
+        - Shortening: every payload (text, thinking, plan, tool input/output) is
+          shortened at the source before rendering, so scaffolding stays out of the budget
 
         Plans are represented as TOOL parts with name="ExitPlanMode".
         """
@@ -355,6 +357,27 @@ class Message:
 
         return payload
 
+    def _iter_visible_tools(
+        self,
+        flags: ConversationFlags,
+        id_map: dict[str, str],
+    ) -> Iterator[dict]:
+        """Yield each visible tool dict, shortened at the source when asked.
+
+        Shortening once here — on the raw tool dict via shorten_data — is the single
+        shortening point for tools, mirroring how text, thinking and plans are
+        shortened at the source. tool_to_parts/tool_to_json then build their views
+        (XML content, the colored diff/highlight, JSON) from already-short data, so
+        no representation can be left untruncated.
+        """
+        for tool in self.tools:
+            show, filter_short = self._should_show_tool(tool, flags.show_tools, id_map)
+            if not show:
+                continue
+            if flags.shorten or filter_short:
+                tool = shorten_data(tool, width=flags.shorten_width)
+            yield tool
+
     def _append_tool_parts(
         self,
         parts: list[MessagePart],
@@ -363,25 +386,8 @@ class Message:
     ) -> None:
         """Append visible tool parts based on filters."""
         id_map = self._tool_name_id_map(flags.show_tools, tool_id_map)
-
-        for tool in self.tools:
-            show, filter_short = self._should_show_tool(tool, flags.show_tools, id_map)
-            if not show:
-                continue
-
-            tool_parts = tool_to_parts(tool, id_map)
-            should_shorten = flags.shorten or filter_short
-            if should_shorten and tool_parts.content:
-                width = flags.shorten_width
-                tool_parts = tool_parts._replace(
-                    content=truncate_middle(tool_parts.content, max_len=width),
-                    output_text=truncate_middle(tool_parts.output_text, max_len=width)
-                    if tool_parts.output_text
-                    else None,
-                    input_data=shorten_data(tool_parts.input_data, width=width),
-                )
-
-            parts.append(MessagePart(MessagePartKind.TOOL, tool_parts))
+        for tool in self._iter_visible_tools(flags, id_map):
+            parts.append(MessagePart(MessagePartKind.TOOL, tool_to_parts(tool, id_map)))
 
     def _visible_tool_json_content(
         self,
@@ -390,19 +396,7 @@ class Message:
     ) -> list[dict[str, object]]:
         """Return visible tools in structured JSON form."""
         id_map = self._tool_name_id_map(flags.show_tools, tool_id_map)
-        tools: list[dict[str, object]] = []
-
-        for tool in self.tools:
-            show, filter_short = self._should_show_tool(tool, flags.show_tools, id_map)
-            if not show:
-                continue
-
-            tool_json = tool_to_json(tool, id_map)
-            if flags.shorten or filter_short:
-                tool_json = shorten_data(tool_json, width=flags.shorten_width)
-            tools.append(tool_json)
-
-        return tools
+        return [tool_to_json(tool, id_map) for tool in self._iter_visible_tools(flags, id_map)]
 
     def _tool_name_id_map(
         self,

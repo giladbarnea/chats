@@ -312,6 +312,19 @@ class TestFilterIntegration:
         assert dict(parts[0].data.attrs).get("is_error") == "true"
 
 
+def _fenced_inner(content: str) -> str:
+    """The payload inside a ```-fenced tool body — the part the width budget covers.
+
+    Shortening is applied to the raw tool payload at the source, so the fence
+    scaffolding sits outside the budget (matching how thinking/text are shortened).
+    """
+    lines = content.split("\n")
+    assert lines[0].startswith("```") and lines[-1] == "```", (
+        f"Expected a fenced tool body. Got:\n{content}"
+    )
+    return "\n".join(lines[1:-1])
+
+
 class TestPerToolShortening:
     """The :s modifier shortens only matching tools, not others."""
 
@@ -346,8 +359,9 @@ class TestPerToolShortening:
         assert full_result is not None, (
             "Expected full tool output content to be present."
         )
-        assert len(short_result) == 500, (
-            f"Expected :s to truncate the rendered tool body to 500 chars. Got {len(short_result)}."
+        assert len(_fenced_inner(short_result)) == 500, (
+            f"Expected :s to truncate the tool payload to 500 chars (fence excluded). "
+            f"Got {len(_fenced_inner(short_result))}."
         )
         assert len(full_result) > len(short_result), (
             f"Expected shortened content to be smaller than full content. "
@@ -390,11 +404,13 @@ class TestPerToolShortening:
         assert result_content is not None, (
             "Expected Bash tool-output content to be present."
         )
-        assert len(input_content) == 500, (
-            f"Expected global --short to truncate tool-input content to 500 chars. Got {len(input_content)}."
+        assert len(_fenced_inner(input_content)) == 500, (
+            f"Expected global --short to truncate the tool-input payload to 500 chars "
+            f"(fence excluded). Got {len(_fenced_inner(input_content))}."
         )
-        assert len(result_content) == 500, (
-            f"Expected global --short to truncate tool-output content to 500 chars. Got {len(result_content)}."
+        assert len(_fenced_inner(result_content)) == 500, (
+            f"Expected global --short to truncate the tool-output payload to 500 chars "
+            f"(fence excluded). Got {len(_fenced_inner(result_content))}."
         )
         assert "BASH_START-" in input_content[:260], (
             f"Expected shortened tool-input content to preserve the start. Got: {input_content[:260]!r}"
@@ -423,13 +439,13 @@ class TestPerToolShortening:
         result_content = parts[1].data.content
         assert input_content is not None, "Expected shortened tool-input content."
         assert result_content is not None, "Expected shortened tool-output content."
-        assert len(input_content) == 120, (
-            "Expected global shortening to honor width=120 for tool input. "
-            f"Got: {len(input_content)}"
+        assert len(_fenced_inner(input_content)) == 120, (
+            "Expected global shortening to honor width=120 for the tool-input payload "
+            f"(fence excluded). Got: {len(_fenced_inner(input_content))}"
         )
-        assert len(result_content) == 120, (
-            "Expected global shortening to honor width=120 for tool output. "
-            f"Got: {len(result_content)}"
+        assert len(_fenced_inner(result_content)) == 120, (
+            "Expected global shortening to honor width=120 for the tool-output payload "
+            f"(fence excluded). Got: {len(_fenced_inner(result_content))}"
         )
         assert "BASH_START-" in input_content[:80], (
             f"Expected custom-width shortening to preserve the start. Got: {input_content[:80]!r}"

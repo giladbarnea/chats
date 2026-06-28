@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-28] Shorten tools at the source, like every other payload
+
+### Changed
+
+- `--short`/`:s` now shortens a tool by truncating its raw dict once (via `shorten_data` in the new `Message._iter_visible_tools`), before `tool_to_parts`/`tool_to_json` build any view from it. Previously the parts path shortened three already-built representations separately — the fenced `content` string plus the raw `output_text` and `input_data` that the colored renderer reads — which is the duplication that let a recent regression leak full Read/Edit payloads in `--color=always` (only `content` was being truncated). With one shortening point at the source, no representation can drift out of sync, and the two tool paths (`_append_tool_parts`, `_visible_tool_json_content`) now share one visibility-and-shorten loop.
+- Observable shift, by design: a shortened tool body now budgets the *payload* to the width and lets the code-fence scaffolding sit outside it, so a 500-width Bash body is `` ``` `` + 500 chars + `` ``` `` rather than 500 chars total. This drops the old "fence counts toward the budget" behavior, which was an artifact of truncating the already-wrapped string. Tools now match how `text`, `thinking`, and `plan` were already shortened — the payload to width, wrappers outside it — so there is a single shortening rule across the whole renderer. `test_short_modifier.py` and `test_tool_filter.py` were updated to assert the payload length inside the fence; the unshortened golden XML reference is unchanged.
+
+---
 ## [2026-06-28] Message role colors get a coherent palette
 
 ### Changed

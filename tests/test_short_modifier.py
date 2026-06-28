@@ -40,17 +40,24 @@ def _extract_thinking_body(output: str) -> str:
 
 
 def _assert_shortened_tool_body(body: str, start_marker: str, end_marker: str) -> None:
-    assert len(body) == 500, (
-        f"Expected shortened tool body to be exactly 500 chars. Got {len(body)}.\nBody:\n{body}"
+    lines = body.split("\n")
+    assert lines[0].startswith("```") and lines[-1] == "```", (
+        f"Expected the tool body to be a fenced code block. Got:\n{body}"
     )
-    assert body.count("\n...\n") == 1, (
-        f"Expected exactly one line-broken ellipsis placeholder. Got body:\n{body}"
+    inner = "\n".join(lines[1:-1])
+    assert len(inner) == 500, (
+        f"Expected the shortened payload (inside the fence) to be exactly 500 chars; "
+        f"the budget covers the payload, not the fence scaffolding. Got {len(inner)}.\n"
+        f"Inner:\n{inner}"
     )
-    assert start_marker in body[:260], (
-        f"Expected the preserved prefix to contain {start_marker!r}. Got:\n{body[:260]}"
+    assert inner.count("\n...\n") == 1, (
+        f"Expected exactly one line-broken ellipsis placeholder. Got inner:\n{inner}"
     )
-    assert end_marker in body[-260:], (
-        f"Expected the preserved suffix to contain {end_marker!r}. Got:\n{body[-260:]}"
+    assert start_marker in inner[:260], (
+        f"Expected the preserved prefix to contain {start_marker!r}. Got:\n{inner[:260]}"
+    )
+    assert end_marker in inner[-260:], (
+        f"Expected the preserved suffix to contain {end_marker!r}. Got:\n{inner[-260:]}"
     )
 
 
