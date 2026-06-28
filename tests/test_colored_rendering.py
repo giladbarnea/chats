@@ -299,8 +299,8 @@ def test_edit_renders_as_diff_not_old_new_blocks(tmp_path, monkeypatch):
     )
     assert "-margin-left: 1em;" in plain, f"Expected removed line. Got:\n{plain}"
     assert "+margin-right: 1em;" in plain, f"Expected added line. Got:\n{plain}"
-    # diff.remove (#e06c75) and diff.add (#98c379) reach the output.
-    assert "38;2;224;108;117" in styled, f"Expected red removed-line color. Got:\n{styled}"
+    # diff.remove (#e27881) and diff.add (#98c379) reach the output.
+    assert "38;2;226;120;129" in styled, f"Expected red removed-line color. Got:\n{styled}"
     assert "38;2;152;195;121" in styled, f"Expected green added-line color. Got:\n{styled}"
 
 
@@ -387,7 +387,7 @@ def test_colored_text_preserves_attributed_xml_tags(tmp_path, monkeypatch):
 
 
 def test_role_colors_are_preserved(tmp_path, monkeypatch):
-    """Each message type keeps its hue: assistant violet, user blue."""
+    """Each message type keeps its hue: assistant magenta, user blue."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
     sid = _write_claude_session(
@@ -401,16 +401,16 @@ def test_role_colors_are_preserved(tmp_path, monkeypatch):
         sid, None, None, output_format="xml", emit_metadata=False, styles=True,
     )
 
-    assert "38;2;124;58;237" in styled, (
-        f"Expected assistant violet (#7c3aed) on its panel. Got:\n{styled}"
+    assert "38;2;200;139;218" in styled, (
+        f"Expected assistant magenta (#c88bda) on its panel. Got:\n{styled}"
     )
-    assert "38;2;59;130;246" in styled, (
-        f"Expected user blue (#3b82f6) on its panel. Got:\n{styled}"
+    assert "38;2;113;185;244" in styled, (
+        f"Expected user blue (#71b9f4) on its panel. Got:\n{styled}"
     )
 
 
 def test_compaction_message_has_its_own_badge_and_hue(tmp_path, monkeypatch):
-    """A compaction summary renders a 'Compaction' badge in its own fuchsia hue."""
+    """A compaction summary renders a 'Compaction' badge in its own amber hue."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
     sid = _write_claude_session(
@@ -432,8 +432,8 @@ def test_compaction_message_has_its_own_badge_and_hue(tmp_path, monkeypatch):
     assert "User" not in styled, (
         f"A compaction message must not be labeled 'User'. Got:\n{styled}"
     )
-    assert "38;2;162;28;175" in styled, (
-        f"Expected the compaction fuchsia hue (#a21caf) on its panel. Got:\n{styled}"
+    assert "38;2;234;199;134" in styled, (
+        f"Expected the compaction amber hue (#eac786) on its panel. Got:\n{styled}"
     )
 
 

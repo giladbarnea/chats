@@ -16,6 +16,7 @@ from rich.style import Style
 from rich.syntax import Syntax
 from rich.text import Text
 
+from . import theme
 from .console import get_console
 from .model import ConversationFlags, Message, Provider
 from .parsing import get_display_session_id
@@ -321,7 +322,7 @@ def _message_header_badge(msg: Message, *, conversation_tag: str | None = None) 
         badge.append(f" ⑂{msg.branch_id} ", style="bold white on #475569")
     badge.append(
         f" {header_text} ",
-        style=f"bold white on {_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE)}",
+        style=f"bold {theme.INK} on {_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE)}",
     )
     meta = _compact_header_meta(msg, conversation_tag)
     if meta:
@@ -334,17 +335,21 @@ def _message_border_style(tag: str) -> Style:
     return Style(color=_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE))
 
 
-_DEFAULT_ROLE_HUE = "blue"
+_DEFAULT_ROLE_HUE = theme.GRAY
 
+# One distinct palette hue per role, well-separated around the color wheel: the
+# human is blue, the AI magenta, a subagent cyan; the system events (recap,
+# compaction, rename) take the remaining green/yellow/red. The three user-* tags
+# share blue on purpose — they are one actor.
 _ROLE_HUE: dict[str, str] = {
-    "user-message": "#3b82f6",
-    "user-command-input": "#3b82f6",
-    "user-command-output": "#3b82f6",
-    "recap": "#1d4ed8",
-    "compaction": "#a21caf",
-    "assistant-response": "#7c3aed",
-    "agent": "#0f766e",
-    "session-rename": "#d97706",
+    "user-message": theme.BLUE,
+    "user-command-input": theme.BLUE,
+    "user-command-output": theme.BLUE,
+    "recap": theme.GREEN,
+    "compaction": theme.YELLOW,
+    "assistant-response": theme.MAGENTA,
+    "agent": theme.CYAN,
+    "session-rename": theme.RED,
 }
 
 
