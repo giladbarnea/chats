@@ -219,6 +219,7 @@ def cmd_parse(
             session_title = build_session_title(
                 input_file_path,
                 custom_title=current_custom_title,
+                cwd=cwd,
                 created_at=metadata.ctime,
                 modified_at=metadata.mtime,
             )

@@ -129,6 +129,7 @@ def test_colored_parse_leads_with_session_title(tmp_path, monkeypatch):
 
     assert "My Parsed Title" in out, f"Expected the session name in the title. Got:\n{out}"
     assert session_id in out, f"Expected the session id in the title. Got:\n{out}"
+    assert "/tmp/proj" in out, f"Expected the session cwd in the title. Got:\n{out}"
     assert "created" in out and "modified" in out, (
         f"Expected the created/modified dates in the title. Got:\n{out}"
     )

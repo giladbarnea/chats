@@ -594,11 +594,13 @@ def build_session_title(
     file_path: Path,
     *,
     custom_title: str | None = None,
+    cwd: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
 ) -> Text:
     """The rich parse view's header: a left-aligned white title carrying the
-    session's name (when one exists), id, and created/modified dates.
+    session's name (when one exists), id, working directory, and created/modified
+    dates.
 
     Distinct from the YAML frontmatter (``build_metadata_text``): a title, not a
     block — white so it reads as a heading above the role-colored message panels.
@@ -610,6 +612,10 @@ def build_session_title(
         title.append(get_display_session_id(file_path), style="white")
     else:
         title.append(get_display_session_id(file_path), style="bold white")
+
+    if cwd:
+        title.append("  ·  ", style="message.meta")
+        title.append(collapse_home(cwd), style="message.meta")
 
     for label, value in (("created", created_at), ("modified", modified_at)):
         if value is not None:
