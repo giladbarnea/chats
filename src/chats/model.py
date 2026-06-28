@@ -372,11 +372,13 @@ class Message:
             tool_parts = tool_to_parts(tool, id_map)
             should_shorten = flags.shorten or filter_short
             if should_shorten and tool_parts.content:
+                width = flags.shorten_width
                 tool_parts = tool_parts._replace(
-                    content=truncate_middle(
-                        tool_parts.content,
-                        max_len=flags.shorten_width,
-                    )
+                    content=truncate_middle(tool_parts.content, max_len=width),
+                    output_text=truncate_middle(tool_parts.output_text, max_len=width)
+                    if tool_parts.output_text
+                    else None,
+                    input_data=shorten_data(tool_parts.input_data, width=width),
                 )
 
             parts.append(MessagePart(MessagePartKind.TOOL, tool_parts))

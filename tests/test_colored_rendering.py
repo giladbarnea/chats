@@ -13,6 +13,7 @@ from __future__ import annotations
 import doctest
 import importlib
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,7 @@ from chats.commands.parse import cmd_parse
 from chats.commands.search import cmd_search
 from chats.model import ConversationFlags, SearchOutputMode
 from chats.theme import APP_THEME
+from chats.tool_filter import ToolFilter
 
 
 def _write_claude_session(home: Path, session_id: str, entries: list[dict]) -> str:
@@ -335,6 +337,182 @@ def test_read_output_highlighted_with_preserved_line_numbers(tmp_path, monkeypat
     )
     assert "\t" not in out, (
         f"Expected the cat -n tab gutter to be stripped before highlighting. Got:\n{out}"
+    )
+
+
+def _compact(text: str) -> str:
+    """Drop all whitespace so word-wrap/line-folding can't split a marker token."""
+    return re.sub(r"\s+", "", text)
+
+
+def _long_marked(head: str, middle: str, tail: str) -> str:
+    """A >4k string whose center marker is guaranteed cut by a width-500 shorten."""
+    return f"{head}_" + ("A" * 2000) + f"_{middle}_" + ("Z" * 2000) + f"_{tail}"
+
+
+def test_colored_read_output_is_shortened_with_tool_short(tmp_path, monkeypatch):
+    """`-t:s` must shorten a Read result body in the colored view, not just plain.
+
+    Regression: the colored renderer highlights a Read result from the raw
+    `output_text` field, which was left un-shortened while only the fenced
+    `content` string got truncated — so `--color=always` leaked the full file.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    read_output = _long_marked("READHEAD", "READMIDDLE", "READTAIL")
+    sid = _write_claude_session(
+        home, "bbbbbbbb-aaaa-bbbb-cccc-000000000001",
+        [
+            _assistant(content=[
+                {"type": "tool_use", "id": "toolu_0r", "name": "Read",
+                 "input": {"file_path": "/tmp/snippet.py"}},
+            ]),
+            _user([{"type": "tool_result", "tool_use_id": "toolu_0r",
+                    "content": read_output}]),
+        ],
+    )
+
+    out = _compact(_render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False,
+                          show_tools=[ToolFilter(short=True)]),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    ))
+
+    assert "READHEAD" in out, f"Expected the preserved prefix marker. Got:\n{out}"
+    assert "READTAIL" in out, f"Expected the preserved suffix marker. Got:\n{out}"
+    assert "READMIDDLE" not in out, (
+        "The colored Read output must be shortened (middle cut) under -t:s, "
+        f"just like --color=never. Got:\n{out}"
+    )
+
+
+def test_colored_read_output_is_shortened_with_standalone_short(tmp_path, monkeypatch):
+    """Standalone `--short` (with tools shown) shortens a Read result in color too."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    read_output = _long_marked("SREADHEAD", "SREADMIDDLE", "SREADTAIL")
+    sid = _write_claude_session(
+        home, "bbbbbbbb-aaaa-bbbb-cccc-000000000002",
+        [
+            _assistant(content=[
+                {"type": "tool_use", "id": "toolu_0r", "name": "Read",
+                 "input": {"file_path": "/tmp/snippet.py"}},
+            ]),
+            _user([{"type": "tool_result", "tool_use_id": "toolu_0r",
+                    "content": read_output}]),
+        ],
+    )
+
+    out = _compact(_render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False,
+                          show_tools=True, shorten=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    ))
+
+    assert "SREADHEAD" in out and "SREADTAIL" in out, (
+        f"Expected the preserved prefix/suffix markers. Got:\n{out}"
+    )
+    assert "SREADMIDDLE" not in out, (
+        f"Standalone --short must shorten the colored Read output. Got:\n{out}"
+    )
+
+
+def test_colored_read_output_is_shortened_with_scoped_spec(tmp_path, monkeypatch):
+    """A scoped `-t Read:o:s` shortens the colored Read result it targets."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    read_output = _long_marked("XREADHEAD", "XREADMIDDLE", "XREADTAIL")
+    sid = _write_claude_session(
+        home, "bbbbbbbb-aaaa-bbbb-cccc-000000000003",
+        [
+            _assistant(content=[
+                {"type": "tool_use", "id": "toolu_0r", "name": "Read",
+                 "input": {"file_path": "/tmp/snippet.py"}},
+            ]),
+            _user([{"type": "tool_result", "tool_use_id": "toolu_0r",
+                    "content": read_output}]),
+        ],
+    )
+
+    out = _compact(_render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(
+            color="always", paging=False,
+            show_tools=[ToolFilter(name="Read", direction="output", short=True)],
+        ),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    ))
+
+    assert "XREADHEAD" in out and "XREADTAIL" in out, (
+        f"Expected the preserved prefix/suffix markers. Got:\n{out}"
+    )
+    assert "XREADMIDDLE" not in out, (
+        f"`-t Read:o:s` must shorten the colored Read output. Got:\n{out}"
+    )
+
+
+def test_colored_edit_diff_is_shortened_with_tool_short(tmp_path, monkeypatch):
+    """`-t:s` must shorten an Edit's diff in the colored view.
+
+    The colored Edit renderer builds its diff from the raw `input_data`
+    (old_string/new_string), which was left un-shortened alongside `content`.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    old_string = _long_marked("OLDHEAD", "OLDMIDDLE", "OLDTAIL")
+    new_string = _long_marked("NEWHEAD", "NEWMIDDLE", "NEWTAIL")
+    sid = _write_claude_session(
+        home, "bbbbbbbb-aaaa-bbbb-cccc-000000000004",
+        [_assistant(content=[
+            {"type": "tool_use", "id": "toolu_0e", "name": "Edit",
+             "input": {"file_path": "/tmp/a.py",
+                       "old_string": old_string, "new_string": new_string}},
+        ])],
+    )
+
+    out = _compact(_render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False,
+                          show_tools=[ToolFilter(short=True)]),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    ))
+
+    assert "OLDHEAD" in out and "NEWHEAD" in out, (
+        f"Expected the preserved diff prefixes. Got:\n{out}"
+    )
+    assert "OLDMIDDLE" not in out and "NEWMIDDLE" not in out, (
+        "The colored Edit diff must be shortened (old/new middles cut) under -t:s. "
+        f"Got:\n{out}"
+    )
+
+
+def test_colored_bash_body_stays_shortened(tmp_path, monkeypatch):
+    """Control: Bash (generic content path) was and stays shortened in color."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    command = _long_marked("BASHHEAD", "BASHMIDDLE", "BASHTAIL")
+    sid = _write_claude_session(
+        home, "bbbbbbbb-aaaa-bbbb-cccc-000000000005",
+        [_assistant(content=[
+            {"type": "tool_use", "id": "toolu_0b", "name": "Bash",
+             "input": {"command": command}},
+        ])],
+    )
+
+    out = _compact(_render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False,
+                          show_tools=[ToolFilter(short=True)]),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    ))
+
+    assert "BASHHEAD" in out and "BASHTAIL" in out, (
+        f"Expected the preserved Bash markers. Got:\n{out}"
+    )
+    assert "BASHMIDDLE" not in out, (
+        f"Bash content was already shortened in color and must stay so. Got:\n{out}"
     )
 
 
