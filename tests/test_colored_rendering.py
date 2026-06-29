@@ -617,7 +617,7 @@ def test_compaction_message_has_its_own_badge_and_hue(tmp_path, monkeypatch):
 
 
 def test_colored_search_banner_leads_with_title(tmp_path, monkeypatch):
-    """A colored search hit is framed by a banner showing the custom title + short id."""
+    """A colored search hit is framed by a banner showing the custom title + full id."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
     session_id = "88888888-aaaa-bbbb-cccc-000000000001"
@@ -639,7 +639,10 @@ def test_colored_search_banner_leads_with_title(tmp_path, monkeypatch):
     assert "My Special Title" in out, (
         f"Expected the banner to lead with the custom title, not the UUID. Got:\n{out}"
     )
-    assert "88888888" in out, f"Expected the short id restated. Got:\n{out}"
+    first_line = out.splitlines()[0]
+    assert session_id in first_line, (
+        f"Expected the search banner to restate the full session id. Got:\n{out}"
+    )
 
 
 def test_colored_search_highlights_matched_term(tmp_path, monkeypatch):
