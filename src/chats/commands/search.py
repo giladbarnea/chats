@@ -234,20 +234,24 @@ def _display_list_summary(count: int) -> None:
 
 
 def _panel_title(hit: SearchHit, *, width: int, now: datetime) -> Text:
-    """Build the conversation Panel's border title: tick, headline, short id, age."""
+    """Build the conversation Panel's border title: tick, headline, full id, age."""
     session_id = resolve.get_display_session_id(hit.metadata.path)
     headline, is_fallback = _headline(hit)
     age_label = humanize_age(hit.metadata.mtime, now) if hit.metadata.mtime else "?"
+    metadata_suffix_width = len(f"  ·  {session_id}  ·  {age_label}")
 
     title = Text(no_wrap=True, overflow="ellipsis")
     title.append("▎ ", style="search.tick")
     title.append(
-        elide_to_width(headline, max(8, width - 24)),
+        elide_to_width(headline, max(8, width - 2 - metadata_suffix_width)),
         style="search.title.fallback" if is_fallback else "search.title",
     )
-    title.append(f"  ·  {session_id[:8]}", style="search.id.head")
+    title.append("  ·  ", style="search.sep")
+    title.append(session_id[:8], style="search.id.head")
+    title.append(session_id[8:], style="search.id.tail")
+    title.append("  ·  ", style="search.sep")
     title.append(
-        f"  ·  {age_label}",
+        age_label,
         style=age_style(hit.metadata.mtime, now) if hit.metadata.mtime else "search.age.old",
     )
     return title
