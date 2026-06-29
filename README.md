@@ -234,7 +234,11 @@ Once an operator is present, every multi-word or regex-shaped term must be quote
 - `-ma, --mafter DATE`: Only conversations modified after DATE
 - `-ca, --cafter DATE`: Only conversations created after DATE
 - `--no-metadata`: Disable outputting metadata frontmatter
+- `--only-user`: Search/render only regular user-message body matches
+- `--only-assistant`: Search/render only regular assistant-message body matches
 - Reuses standard display flags (`-T`, `-t`, `-a`, `-b`, `-A`, `--plans`) to control both what counts as a match and what gets rendered
+
+`--only-user` and `--only-assistant` narrow regular message matches. Session summaries and the latest current title remain searchable facets, so a title/summary hit can still return a session even when role filtering leaves no matching message body. As in parse mode, these `--only-*` flags override `--thinking`, `--tools`, `--agents`, `--plans`, and `--all` with a warning.
 
 **Date formats:** ISO dates (`2024-12-15`, `24-12-15`), with time (`2024-12-15T14:30`, `2024-12-15 14:30:45`), or relative (`1h`, `2d`, `3w`, `4m`, `5y`).
 
@@ -261,7 +265,7 @@ ch search -p antigravitycli "TODO"     # Search only Antigravity CLI sessions
 - Case-insensitive regex (multiline, DOTALL)
 - Searches visible rendered message content, conversation summaries, and the latest current custom title
 - By default renders only matching messages; `-f, --full` renders every visible message from each matching conversation
-- Visibility flags affect search semantics: hidden thinking/tools/agents/plans do not count as matches
+- Visibility flags affect search semantics: hidden thinking/tools/agents/plans and non-selected regular-message roles do not count as message matches
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)
 - Plain-literal queries get a cheap candidate prefilter before the normal rendered-content confirmation pass

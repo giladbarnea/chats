@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-06-29] Add search role-only filters
+
+### Added
+
+- `ch search --only-user` and `ch search --only-assistant` now expose the existing role-selection pipeline on the CLI. They narrow regular message matches and rendered matching messages, while session summaries and the latest current title remain searchable facets. Like parse mode, these `--only-*` flags override contradictory extras (`--thinking`, `--tools`, `--agents`, `--plans`, `--all`) with a warning.
+
+---
 ## [2026-06-28] Rename the shortening limit from "width" to "max_chars"
 
 ### Changed

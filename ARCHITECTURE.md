@@ -96,7 +96,7 @@ TIME   ACTOR                    ACTION                                         T
 │                               disambiguation, provider-scoped
 │                               recent indices, nargs='?' fixups
 │
-├───►  main()                   _normalize_parse_visibility_args(args)     ──► Resolves --only-user,
+├───►  main()                   _normalize_role_visibility_args(args)      ──► Resolves --only-user,
 │                               Warns on contradictions                        --only-assistant, --no-*
 │
 ├───►  main()                   _build_parse_flags(args)                   ──► ConversationFlags
@@ -170,7 +170,8 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  main()                   Detects sys.argv[1] == "search"            ──► argparse (search parser)
 │      argparse                 Parses: pattern, -l, -ll, -d, -ma,        ──► args namespace
-│                               -ca, -f, -T, -t, -a, -A, -s, --color, etc.
+│                               -ca, -f, --only-user/assistant, -T, -t,
+│                               -a, -A, -s, --color, etc.
 │
 ├───►  main()                   Builds ConversationFlags + PoolFilter      ──► flags, pool_filter
 │      main()                   cmd_search(pattern, flags, pool_filter, ...) ──► commands/
@@ -717,7 +718,7 @@ cli.py
 2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
 3. **Recent Negative Indices Use JSONL Mtime With Cheap Predicates**: `_resolve_recent_conversation_file()` excludes sidechains, applies the cwd probe before timestamp sorting, then orders survivors newest-first by `get_jsonl_last_timestamp()`. Date filters reuse that modified-time value for `mafter` and probe first timestamp only when `cafter` is active. This keeps recent-index resolution tied to transcript content while still avoiding full metadata construction for the pool; sessions without a readable in-band timestamp use the existing filesystem-mtime fallback.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.
-5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the rendered XML of visible message content. If tools, thinking, agents, or plans are hidden by flags, they do not count as matches.
+5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the rendered XML of visible message content. If tools, thinking, agents, plans, or regular user/assistant roles are hidden by flags, they do not count as message matches. Summary and current-title facets intentionally stay outside role selection.
 6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled; it discovers more files by including Claude sidechain sessions in the `SessionPool`.
 7. **Candidate Pass Is an Optimization, Not New Semantics**: plain-literal queries first go through `_search_candidate_matches()`, but every surviving file still gets the normal rendered-content confirmation pass. Render-dependent patterns bypass the candidate shortcut entirely.
 8. **Search Metadata Is Lazy**: `_load_conversation_metadata()` is paid only after a file has a content hit. Date filters still apply, but only to candidate hits rather than the entire search universe up front.

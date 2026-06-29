@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from chats import SearchOutputMode, cli
+from chats import MessageSelection, SearchOutputMode, cli
 
 
 def test_search_only_id_forces_plain_output(monkeypatch) -> None:
@@ -41,6 +41,97 @@ def test_search_only_id_forces_plain_output(monkeypatch) -> None:
     )
     assert flags.paging is False, (
         "Expected --only-id to force paging off even if --paging was also passed."
+    )
+
+
+def test_search_only_user_flag_reaches_cmd_search_as_message_selection(monkeypatch) -> None:
+    """`search --only-user` should narrow matching/rendering to regular user message bodies."""
+    captured: dict[str, object] = {}
+
+    def fake_cmd_search(
+        pattern_arg: str,
+        flags,
+        pool_filter=None,
+        *,
+        output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
+        emit_metadata: bool = True,
+    ) -> None:
+        captured["pattern"] = pattern_arg
+        captured["flags"] = flags
+
+    monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
+    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", "--only-user", "needle"])
+
+    cli.main()
+
+    assert captured["pattern"] == "needle"
+    assert captured["flags"].message_selection == MessageSelection.ONLY_USER, (
+        "Expected `search --only-user` to pass ONLY_USER message selection into "
+        f"the search pipeline. Got: {captured['flags']!r}"
+    )
+
+
+def test_search_only_assistant_overrides_extra_visibility(monkeypatch, capsys) -> None:
+    """`search --only-assistant` should normalize contradictory extra visibility like parse."""
+    captured: dict[str, object] = {}
+
+    def fake_cmd_search(
+        pattern_arg: str,
+        flags,
+        pool_filter=None,
+        *,
+        output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
+        output_format: str = "xml",
+        emit_metadata: bool = True,
+    ) -> None:
+        captured["pattern"] = pattern_arg
+        captured["flags"] = flags
+
+    monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
+    monkeypatch.setattr(
+        cli.sys,
+        "argv",
+        [
+            "ch",
+            "search",
+            "--only-assistant",
+            "--thinking",
+            "--tools",
+            "--agents",
+            "--plans",
+            "needle",
+        ],
+    )
+
+    cli.main()
+
+    stderr = capsys.readouterr().err
+    flags = captured["flags"]
+    assert captured["pattern"] == "needle"
+    assert "warning" in stderr.lower(), (
+        "Expected a warning when search `--only-assistant` overrides extras. "
+        f"Got stderr:\n{stderr}"
+    )
+    assert flags.message_selection == MessageSelection.ONLY_ASSISTANT, (
+        "Expected `search --only-assistant` to pass ONLY_ASSISTANT message selection. "
+        f"Got: {flags!r}"
+    )
+    assert flags.show_thinking is False, (
+        "Expected contradictory thinking visibility to be disabled. "
+        f"Got: {flags!r}"
+    )
+    assert flags.show_tools is False, (
+        "Expected contradictory tool visibility to be disabled. "
+        f"Got: {flags!r}"
+    )
+    assert flags.show_agents is False, (
+        "Expected contradictory agent visibility to be disabled. "
+        f"Got: {flags!r}"
+    )
+    assert flags.show_plans is False, (
+        "Expected contradictory plan visibility to be disabled. "
+        f"Got: {flags!r}"
     )
 
 
@@ -175,7 +266,6 @@ def test_search_plans_flag_reaches_cmd_search(monkeypatch) -> None:
     assert captured["flags"].show_plans is True, (
         "Expected `search --plans` to enable plan visibility in ConversationFlags."
     )
-
 
 
 def test_search_all_includes_plans(monkeypatch) -> None:

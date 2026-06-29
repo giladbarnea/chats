@@ -98,8 +98,8 @@ def _warn_only_override(only_flag: str, disabled_flags: list[str]) -> None:
     print_warning(f"Warning: {only_flag} overrides {joined}; disabling those options.")
 
 
-def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
-    """Normalize contradictory parse-mode visibility flags before building ConversationFlags."""
+def _normalize_role_visibility_args(args: argparse.Namespace) -> None:
+    """Normalize contradictory role visibility flags before building ConversationFlags."""
     only_assistant_disabled = []
     if args.all:
         only_assistant_disabled.append("`--all`")
@@ -156,7 +156,7 @@ def _normalize_parse_visibility_args(args: argparse.Namespace) -> None:
 
 
 def _resolve_message_selection(args: argparse.Namespace) -> MessageSelection:
-    """Resolve contradictory parse role-selection flags into one explicit mode."""
+    """Resolve contradictory role-selection flags into one explicit mode."""
     if args.only_user and args.only_assistant:
         return MessageSelection.NONE
     if args.only_user and args.no_user:
@@ -402,6 +402,16 @@ def main():
             help="Show thinking tokens (optional: short)",
         )
         parser.add_argument(
+            "--only-user",
+            action="store_true",
+            help="Search only regular user message bodies",
+        )
+        parser.add_argument(
+            "--only-assistant",
+            action="store_true",
+            help="Search only regular assistant message bodies",
+        )
+        parser.add_argument(
             "-t",
             "--tools",
             action="append",
@@ -476,6 +486,9 @@ def main():
             args.paging = False
             args.color = "never"
 
+        args.no_user = False
+        args.no_assistant = False
+        _normalize_role_visibility_args(args)
         try:
             show_thinking, shorten_thinking = _resolve_thinking_mode(
                 args.thinking, args.all
@@ -486,7 +499,9 @@ def main():
             )
         except ValueError as exc:
             parser.error(str(exc))
+        message_selection = _resolve_message_selection(args)
         flags = ConversationFlags(
+            message_selection=message_selection,
             show_thinking=show_thinking,
             show_tools=_resolve_show_tools(args.tools, args.all),
             show_agents=args.agents or args.all,
@@ -850,7 +865,7 @@ Commands:
             )
             pool_filter = PoolFilter()
 
-        _normalize_parse_visibility_args(args)
+        _normalize_role_visibility_args(args)
         try:
             flags = _build_parse_flags(args)
         except ValueError as exc:
