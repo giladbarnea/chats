@@ -27,9 +27,9 @@ from .common import _build_tool_id_map
 
 _AUTO_NAME_MAX_LENGTH = 150
 _AUTO_NAME_PROMPT = (
-    "Name this session. The format is [verb] <One phrase expressing the purpose "
-    "of the session in its entirety — the end state the user wants to achieve>.\n"
-    "Clarification about `[verb]`: a single lowercase word pinning down the "
+    "Name this session. The format is `<verb> <one lowercase phrase expressing the purpose "
+    "of the session in its entirety — the end state the user wants to achieve>`.\n"
+    "Clarification about <verb>: a single lowercase word pinning down the "
     "type of the session’s task."
 )
 
