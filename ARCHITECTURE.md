@@ -37,7 +37,7 @@ last_updated: 2026/06/19 14:46
 │                                         │                                   │
 │  ┌──────────────────────────────────────▼────────────────────────────────┐  │
 │  │                  COMMAND ORCHESTRATION (commands/)                    │  │
-│  │   cmd_parse  cmd_search  cmd_fork  cmd_rename  cmd_rm  cmd_catalog   │  │
+│  │   cmd_parse  cmd_search  cmd_fork  cmd_name  cmd_rm  cmd_catalog     │  │
 │  └──────────────┬───────────────────────────────┬────────────────────────┘  │
 │                 │                               │                           │
 │  ┌──────────────▼─────────────┐   ┌─────────────▼────────────────────────┐  │
@@ -227,44 +227,44 @@ TIME   ACTOR                    ACTION                                         T
 └───►  cmd_search               sys.exit(0 if found_any else 1)
 ```
 
-### Feature 3: Rename (`ch rename <id> <name>`)
+### Feature 3: Name (`ch name <id> <name>`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch rename <id> <new_name>`          ──► cli.py:main()
-│                               or `ch rename <id> --auto [-n]`
+├───►  User                     Runs `ch name <id> <new_name>`            ──► cli.py:main()
+│                               or `ch name <id> --auto [-n]`
 │
-├───►  main()                   Detects sys.argv[1] == "rename"            ──► argparse (rename parser)
+├───►  main()                   Detects sys.argv[1] == "name"              ──► argparse (name parser)
 │
-├───►  main()                   cmd_rename(conversation_id, new_name,      ──► commands/
+├───►  main()                   cmd_name(conversation_id, new_name,        ──► commands/
 │                               auto=..., dry_run=...)
 │
-├───►  cmd_rename               resolve_conversation_file(conv_id)         ──► Path (or exit)
+├───►  cmd_name                 resolve_conversation_file(conv_id)         ──► Path (or exit)
 │      │                        └── _try_resolve_conversation_file()
 │
-├───►  cmd_rename               get_native_session_id(conv_file)           ──► session_id string
-│      cmd_rename               get_jsonl_session_adapter(conv_file)       ──► provider adapter
+├───►  cmd_name                 get_native_session_id(conv_file)           ──► session_id string
+│      cmd_name                 get_jsonl_session_adapter(conv_file)       ──► provider adapter
 │
-├───►  cmd_rename               extract_cwd_from_jsonl(content)            ──► project path | None
-│      cmd_rename               decode_jsonl_entries(content)              ──► parsed entries
+├───►  cmd_name                 extract_cwd_from_jsonl(content)            ──► project path | None
+│      cmd_name                 decode_jsonl_entries(content)              ──► parsed entries
 │
-├───►  cmd_rename               [if --auto] _generate_auto_name(...)       ──► pi CLI subprocess
+├───►  cmd_name                 [if --auto] _generate_auto_name(...)       ──► pi CLI subprocess
 │
-├───►  cmd_rename               [if --dry-run] print resolved/generated    ──► stdout
+├───►  cmd_name                 [if --dry-run] print resolved/generated    ──► stdout
 │      │                        name and exit without writes
 │
-├───►  cmd_rename               adapter.build_rename_entries(...)          ──► provider-native rename records
+├───►  cmd_name                 adapter.build_name_entries(...)            ──► provider-native rename records
 │      │                        ├── Claude: custom-title + agent-name
 │      │                        ├── Codex: event_msg(thread_name_updated)
 │      │                        └── PI: session_info(name)
 │
-├───►  cmd_rename               Append provider-native entries to conv_file ─► .jsonl file
+├───►  cmd_name                 Append provider-native entries to conv_file ─► .jsonl file
 │
-├───►  cmd_rename               [Claude only] append /rename ... to        ──► ~/.claude/history.jsonl
+├───►  cmd_name                 [Claude only] append /rename ... to        ──► ~/.claude/history.jsonl
 │      │                        history.jsonl
 │
-└───►  cmd_rename               Print confirmation                         ──► console
+└───►  cmd_name                 Print confirmation                         ──► console
 ```
 
 ### Feature 4: Remove (`ch rm <session>`)
@@ -421,7 +421,7 @@ Summary prefix ─────────────► │ extract_summaries_
                                          │             ├── lazy metadata load
                                          │             └── SearchHit display
                                          │
-                          rename path ───┼────► append provider-native rename entry/entries
+                          name path ─────┼────► append provider-native rename entry/entries
                                          │
                           rm path ───────┼────► collect artifacts + delete
                                          │
@@ -631,7 +631,7 @@ cli.py:main()
 ├── [subcommand dispatch]
 │   ├── "search" → argparse → cmd_search()
 │   ├── "fork"   → argparse → cmd_fork()
-│   ├── "rename" → argparse → cmd_rename()
+│   ├── "name"   → argparse → cmd_name()
 │   ├── "rm"     → argparse → cmd_rm()
 │   ├── "catalog"→ cmd_catalog(argv[2:])
 │   └── default  → argparse → cmd_parse()
@@ -663,10 +663,10 @@ cli.py:main()
 │   └── cmd_fork(session_id, flags)
 │       resolve → fork_session() → write provider-native fork
 │
-├── [rename mode]
-│   └── cmd_rename(session_id, name, auto=?, dry_run=?)
+├── [name mode]
+│   └── cmd_name(session_id, name, auto=?, dry_run=?)
 │       resolve → optional auto-name generation → optional dry-run print
-│       → adapter.build_rename_entries() → append to file
+│       → adapter.build_name_entries() → append to file
 │
 ├── [rm mode]
 │   └── cmd_rm(session_id, dry_run)
@@ -688,7 +688,7 @@ cli.py
 ├── commands/
 │   ├── parse.py      → model, parsing, formatting, console, ordering, utils
 │   ├── search.py     → model, parsing, formatting, session_scan, search_query, console
-│   ├── rename.py     → model, parsing, formatting, console
+│   ├── name.py       → model, parsing, formatting, console
 │   ├── resolve.py    → model, parsing, session_pool, ordering, utils
 │   ├── rm.py         → model, parsing, console, utils
 │   └── common.py     → model

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Unit tests for the rename command.
+Unit tests for the name command.
 
-Tests behavior (what rename does), not implementation (how it does it).
+Tests behavior (what the name command does), not implementation (how it does it).
 
 For Claude sessions, the rename command appends three entries to the end of the session file:
 1. {"type":"custom-title","customTitle":"<name>","sessionId":"<session_id>"}
@@ -27,7 +27,7 @@ from pathlib import Path
 
 import pytest
 
-from chats import cmd_rename, resolve_conversation_file
+from chats import cmd_name, resolve_conversation_file
 
 # =============================================================================
 # Fixtures
@@ -179,7 +179,7 @@ class TestResolveConversationFile:
 
 
 # =============================================================================
-# cmd_rename() tests - Custom title entry
+# cmd_name() tests - Custom title entry
 # =============================================================================
 
 
@@ -188,7 +188,7 @@ class TestRenameAppendsCustomTitle:
 
     def test_appends_custom_title_entry(self, session_with_summary):
         """Rename appends a custom-title entry as the second-to-last line."""
-        cmd_rename(str(session_with_summary), "New Name Here")
+        cmd_name(str(session_with_summary), "New Name Here")
 
         custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["type"] == "custom-title"
@@ -196,7 +196,7 @@ class TestRenameAppendsCustomTitle:
 
     def test_session_id_from_filename(self, session_with_summary):
         """Session ID is extracted from the filename stem."""
-        cmd_rename(str(session_with_summary), "Test Name")
+        cmd_name(str(session_with_summary), "Test Name")
 
         custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["sessionId"] == "aaaa1111-with-summary"
@@ -205,7 +205,7 @@ class TestRenameAppendsCustomTitle:
         """Rename adds exactly three lines to the session file (custom-title + agent-name + system command)."""
         original_count = count_lines(session_with_summary)
 
-        cmd_rename(str(session_with_summary), "Another Name")
+        cmd_name(str(session_with_summary), "Another Name")
 
         new_count = count_lines(session_with_summary)
         assert new_count == original_count + 3, (
@@ -217,7 +217,7 @@ class TestRenameAppendsCustomTitle:
         with open(session_with_summary, "r") as f:
             original_lines = f.readlines()
 
-        cmd_rename(str(session_with_summary), "Changed Name")
+        cmd_name(str(session_with_summary), "Changed Name")
 
         with open(session_with_summary, "r") as f:
             new_lines = f.readlines()
@@ -229,7 +229,7 @@ class TestRenameAppendsCustomTitle:
         """Rename works on files without an existing summary."""
         original_count = count_lines(session_without_summary)
 
-        cmd_rename(str(session_without_summary), "Brand New Title")
+        cmd_name(str(session_without_summary), "Brand New Title")
 
         custom_title = get_last_line_json(session_without_summary, -3)
         assert custom_title["type"] == "custom-title"
@@ -239,7 +239,7 @@ class TestRenameAppendsCustomTitle:
 
 
 # =============================================================================
-# cmd_rename() tests - Agent name entry
+# cmd_name() tests - Agent name entry
 # =============================================================================
 
 
@@ -248,7 +248,7 @@ class TestRenameAppendsAgentName:
 
     def test_appends_agent_name_entry(self, session_with_summary):
         """Rename appends an agent-name entry as the second-to-last line."""
-        cmd_rename(str(session_with_summary), "My Agent Name")
+        cmd_name(str(session_with_summary), "My Agent Name")
 
         last_line = get_last_line_json(session_with_summary, -2)
         assert last_line["type"] == "agent-name"
@@ -256,14 +256,14 @@ class TestRenameAppendsAgentName:
 
     def test_agent_name_session_id(self, session_with_summary):
         """Agent-name entry has the correct sessionId."""
-        cmd_rename(str(session_with_summary), "Test Name")
+        cmd_name(str(session_with_summary), "Test Name")
 
         last_line = get_last_line_json(session_with_summary, -2)
         assert last_line["sessionId"] == "aaaa1111-with-summary"
 
     def test_agent_name_follows_custom_title(self, session_with_summary):
         """Agent-name entry immediately follows custom-title entry."""
-        cmd_rename(str(session_with_summary), "Ordered Test")
+        cmd_name(str(session_with_summary), "Ordered Test")
 
         custom_title = get_last_line_json(session_with_summary, -3)
         agent_name = get_last_line_json(session_with_summary, -2)
@@ -274,7 +274,7 @@ class TestRenameAppendsAgentName:
 
 
 # =============================================================================
-# cmd_rename() tests - System command entry
+# cmd_name() tests - System command entry
 # =============================================================================
 
 
@@ -283,7 +283,7 @@ class TestRenameAppendsSystemCommand:
 
     def test_appends_system_command_entry(self, session_with_summary):
         """Rename appends a system local_command entry as the last line."""
-        cmd_rename(str(session_with_summary), "System Test")
+        cmd_name(str(session_with_summary), "System Test")
 
         entry = get_last_line_json(session_with_summary)
         assert entry["type"] == "system"
@@ -292,7 +292,7 @@ class TestRenameAppendsSystemCommand:
 
     def test_system_command_content(self, session_with_summary):
         """System command entry contains the rename command XML."""
-        cmd_rename(str(session_with_summary), "Content Test")
+        cmd_name(str(session_with_summary), "Content Test")
 
         entry = get_last_line_json(session_with_summary)
         assert "/rename" in entry["content"]
@@ -300,21 +300,21 @@ class TestRenameAppendsSystemCommand:
 
     def test_system_command_has_parent_uuid(self, session_with_summary):
         """System command entry references the previous entry's uuid."""
-        cmd_rename(str(session_with_summary), "Parent Test")
+        cmd_name(str(session_with_summary), "Parent Test")
 
         entry = get_last_line_json(session_with_summary)
         assert entry["parentUuid"] == "msg-1"
 
     def test_system_command_has_cwd(self, session_with_summary):
         """System command entry carries the session cwd."""
-        cmd_rename(str(session_with_summary), "Cwd Test")
+        cmd_name(str(session_with_summary), "Cwd Test")
 
         entry = get_last_line_json(session_with_summary)
         assert entry["cwd"] == "/test/project"
 
     def test_system_command_has_uuid(self, session_with_summary):
         """System command entry has its own generated uuid."""
-        cmd_rename(str(session_with_summary), "Uuid Test")
+        cmd_name(str(session_with_summary), "Uuid Test")
 
         entry = get_last_line_json(session_with_summary)
         assert "uuid" in entry
@@ -322,7 +322,7 @@ class TestRenameAppendsSystemCommand:
 
     def test_system_command_is_not_meta(self, session_with_summary):
         """System command entry is not marked as meta."""
-        cmd_rename(str(session_with_summary), "Meta Test")
+        cmd_name(str(session_with_summary), "Meta Test")
 
         entry = get_last_line_json(session_with_summary)
         assert entry["isMeta"] is False
@@ -330,7 +330,7 @@ class TestRenameAppendsSystemCommand:
 
 
 # =============================================================================
-# cmd_rename() tests - History entry
+# cmd_name() tests - History entry
 # =============================================================================
 
 
@@ -344,13 +344,13 @@ class TestRenameUpdatesHistory:
         history_file = temp_claude_home / ".claude" / "history.jsonl"
         assert not history_file.exists()
 
-        cmd_rename(str(session_with_summary), "Create History")
+        cmd_name(str(session_with_summary), "Create History")
 
         assert history_file.exists()
 
     def test_appends_history_entry(self, temp_claude_home, session_with_summary):
         """Rename appends a /rename entry to history.jsonl."""
-        cmd_rename(str(session_with_summary), "History Test")
+        cmd_name(str(session_with_summary), "History Test")
 
         history_file = temp_claude_home / ".claude" / "history.jsonl"
         last_line = get_last_line_json(history_file)
@@ -359,7 +359,7 @@ class TestRenameUpdatesHistory:
 
     def test_history_entry_has_timestamp(self, temp_claude_home, session_with_summary):
         """History entry has a positive integer timestamp (milliseconds)."""
-        cmd_rename(str(session_with_summary), "Timestamp Test")
+        cmd_name(str(session_with_summary), "Timestamp Test")
 
         history_file = temp_claude_home / ".claude" / "history.jsonl"
         last_line = get_last_line_json(history_file)
@@ -370,7 +370,7 @@ class TestRenameUpdatesHistory:
 
     def test_history_entry_has_project(self, temp_claude_home, session_with_summary):
         """History entry has the project path from the session's cwd."""
-        cmd_rename(str(session_with_summary), "Project Test")
+        cmd_name(str(session_with_summary), "Project Test")
 
         history_file = temp_claude_home / ".claude" / "history.jsonl"
         last_line = get_last_line_json(history_file)
@@ -380,7 +380,7 @@ class TestRenameUpdatesHistory:
         self, temp_claude_home, session_with_summary
     ):
         """History entry has an empty pastedContents dict."""
-        cmd_rename(str(session_with_summary), "Pasted Test")
+        cmd_name(str(session_with_summary), "Pasted Test")
 
         history_file = temp_claude_home / ".claude" / "history.jsonl"
         last_line = get_last_line_json(history_file)
@@ -394,7 +394,7 @@ class TestRenameUpdatesHistory:
         )
         history_file.write_text(existing_entry)
 
-        cmd_rename(str(session_with_summary), "Append Test")
+        cmd_name(str(session_with_summary), "Append Test")
 
         with open(history_file, "r") as f:
             lines = f.readlines()
@@ -406,7 +406,7 @@ class TestRenameUpdatesHistory:
 
 
 # =============================================================================
-# cmd_rename() error cases
+# cmd_name() error cases
 # =============================================================================
 
 
@@ -416,20 +416,20 @@ class TestRenameErrors:
     def test_empty_name_exits(self, session_with_summary):
         """Empty name exits with error."""
         with pytest.raises(SystemExit) as exc_info:
-            cmd_rename(str(session_with_summary), "")
+            cmd_name(str(session_with_summary), "")
         assert exc_info.value.code == 1
 
     def test_whitespace_only_name_exits(self, session_with_summary):
         """Whitespace-only name exits with error."""
         with pytest.raises(SystemExit) as exc_info:
-            cmd_rename(str(session_with_summary), "   ")
+            cmd_name(str(session_with_summary), "   ")
         assert exc_info.value.code == 1
 
     def test_nonexistent_file_exits(self, temp_claude_home):
         """Non-existent file path exits with error."""
         fake_path = temp_claude_home / "nonexistent.jsonl"
         with pytest.raises(SystemExit) as exc_info:
-            cmd_rename(str(fake_path), "Some Name")
+            cmd_name(str(fake_path), "Some Name")
         assert exc_info.value.code == 1
 
     def test_empty_name_does_not_modify_file(self, session_with_summary):
@@ -438,7 +438,7 @@ class TestRenameErrors:
             original_content = f.read()
 
         with pytest.raises(SystemExit):
-            cmd_rename(str(session_with_summary), "")
+            cmd_name(str(session_with_summary), "")
 
         with open(session_with_summary, "r") as f:
             new_content = f.read()
@@ -458,7 +458,7 @@ class TestRenameEdgeCases:
         """Special characters in name are preserved correctly."""
         special_name = 'Test with "quotes", émojis: 🎉, and\nnewlines'
 
-        cmd_rename(str(session_with_summary), special_name)
+        cmd_name(str(session_with_summary), special_name)
 
         custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["customTitle"] == special_name
@@ -469,7 +469,7 @@ class TestRenameEdgeCases:
         """Very long names are handled correctly."""
         long_name = "A" * 1000
 
-        cmd_rename(str(session_with_summary), long_name)
+        cmd_name(str(session_with_summary), long_name)
 
         custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["customTitle"] == long_name
@@ -478,7 +478,7 @@ class TestRenameEdgeCases:
         """Unicode characters are preserved."""
         unicode_name = "日本語テスト 中文测试 한국어테스트"
 
-        cmd_rename(str(session_with_summary), unicode_name)
+        cmd_name(str(session_with_summary), unicode_name)
 
         custom_title = get_last_line_json(session_with_summary, -3)
         assert custom_title["customTitle"] == unicode_name
@@ -487,7 +487,7 @@ class TestRenameEdgeCases:
         """JSON special characters are properly escaped."""
         tricky_name = '{"type":"malicious","customTitle":"injected"}'
 
-        cmd_rename(str(session_with_summary), tricky_name)
+        cmd_name(str(session_with_summary), tricky_name)
 
         custom_title = get_last_line_json(session_with_summary, -3)
         # The name should be stored as a string value, not parsed as JSON
@@ -498,9 +498,9 @@ class TestRenameEdgeCases:
         """Multiple renames append multiple entry pairs."""
         original_count = count_lines(session_with_summary)
 
-        cmd_rename(str(session_with_summary), "First rename")
-        cmd_rename(str(session_with_summary), "Second rename")
-        cmd_rename(str(session_with_summary), "Third rename")
+        cmd_name(str(session_with_summary), "First rename")
+        cmd_name(str(session_with_summary), "Second rename")
+        cmd_name(str(session_with_summary), "Third rename")
 
         assert count_lines(session_with_summary) == original_count + 9, (
             f"Expected {original_count + 9} lines (original {original_count} + 3 renames * 3 entries each)"

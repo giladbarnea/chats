@@ -1,12 +1,12 @@
 #!/usr/bin/env zsh
 #
-# Minimal CLI seam tests for rename command.
+# Minimal CLI seam tests for name command.
 # Verifies shell->Python interface works.
-# Logic tests are in test_rename.py
+# Logic tests are in test_name.py
 #
 source tests/lib.sh
 
-echo "Running rename CLI seam tests..."
+echo "Running name CLI seam tests..."
 
 # Setup: Create temp directory structure mimicking ~/.claude/
 TEMP_HOME=$(mktemp -d)
@@ -27,11 +27,11 @@ setup_fixture() {
 }
 
 # =============================================================================
-# Test 1: Basic invocation (rename subcommand works)
+# Test 1: Basic invocation (name subcommand works)
 # =============================================================================
-echo "Test 1: Basic rename invocation..."
+echo "Test 1: Basic name invocation..."
 FIXTURE=$(setup_fixture "$DATA_WITH_SUMMARY" "test1.jsonl")
-HOME="$TEMP_HOME" $CC_CMD rename "$FIXTURE" "Test Name" 2>&1
+HOME="$TEMP_HOME" $CC_CMD name "$FIXTURE" "Test Name" 2>&1
 assert_success
 echo "  ✓ Test 1 passed"
 
@@ -40,7 +40,7 @@ echo "  ✓ Test 1 passed"
 # =============================================================================
 echo "Test 2: Exit code on error..."
 FIXTURE=$(setup_fixture "$DATA_WITH_SUMMARY" "test2.jsonl")
-HOME="$TEMP_HOME" $CC_CMD rename "$FIXTURE" "" 2>/dev/null
+HOME="$TEMP_HOME" $CC_CMD name "$FIXTURE" "" 2>/dev/null
 if [[ $? -eq 0 ]]; then
   echo "❌ Expected non-zero exit for empty name"
   exit 1
@@ -52,7 +52,7 @@ echo "  ✓ Test 2 passed"
 # =============================================================================
 echo "Test 3: Output contains new name..."
 FIXTURE=$(setup_fixture "$DATA_WITH_SUMMARY" "test3.jsonl")
-OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD rename "$FIXTURE" "Confirmed Name" 2>&1)
+OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD name "$FIXTURE" "Confirmed Name" 2>&1)
 assert_success
 assert_contains "$OUTPUT" "Confirmed Name"
 echo "  ✓ Test 3 passed"
@@ -63,7 +63,7 @@ echo "  ✓ Test 3 passed"
 echo "Test 4: Dry run prints name without modifying file..."
 FIXTURE=$(setup_fixture "$DATA_WITH_SUMMARY" "test4.jsonl")
 ORIGINAL_CONTENT=$(cat "$FIXTURE")
-OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD rename -n "$FIXTURE" "Preview Name" 2>&1)
+OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD name -n "$FIXTURE" "Preview Name" 2>&1)
 assert_success
 if [[ "$OUTPUT" != $'Preview Name' && "$OUTPUT" != $'Preview Name\n' ]]; then
   echo "❌ Dry run should print only the preview name"
@@ -78,4 +78,4 @@ fi
 assert_not_contains "$OUTPUT" "Renamed"
 echo "  ✓ Test 4 passed"
 
-echo "✅ Rename CLI seam tests passed"
+echo "✅ Name CLI seam tests passed"

@@ -16,7 +16,7 @@ from chats import (
     SearchOutputMode,
     SessionPool,
     cmd_parse,
-    cmd_rename,
+    cmd_name,
     cmd_search,
 )
 
@@ -379,7 +379,7 @@ def test_cmd_parse_resolves_latest_title_substring_across_ecosystems(
     monkeypatch.setattr(Path, "home", lambda: temp_home)
     paths = _build_supported_session_space(temp_home)
 
-    cmd_rename(str(paths["codex"]), "cross-ecosystem-current-title-token")
+    cmd_name(str(paths["codex"]), "cross-ecosystem-current-title-token")
     capsys.readouterr()
 
     cmd_parse(
@@ -415,8 +415,8 @@ def test_cmd_search_matches_only_latest_custom_title_across_ecosystems(
     monkeypatch.setattr(Path, "home", lambda: temp_home)
     paths = _build_supported_session_space(temp_home)
 
-    cmd_rename(str(paths["pi"]), "historic-title-token")
-    cmd_rename(str(paths["pi"]), "xyzzy-current-title-token")
+    cmd_name(str(paths["pi"]), "historic-title-token")
+    cmd_name(str(paths["pi"]), "xyzzy-current-title-token")
 
     with pytest.raises(SystemExit) as old_exc_info:
         cmd_search(

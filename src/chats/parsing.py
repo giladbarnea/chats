@@ -19,7 +19,7 @@ from .registry import (
 )
 from .utils import shorten_tool_use_id
 
-RenameEntryBuilder = Callable[[list[dict], str, str], list[dict]]
+NameEntryBuilder = Callable[[list[dict], str, str], list[dict]]
 
 
 @dataclass(frozen=True)
@@ -29,7 +29,7 @@ class JsonlSessionAdapter:
     name: Provider
     matches: Callable[[Path | None], bool]
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
-    build_rename_entries: RenameEntryBuilder
+    build_name_entries: NameEntryBuilder
     writes_claude_history: bool = False
     find_session_files: Callable[[], list[Path]] | None = None
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
@@ -1408,7 +1408,7 @@ def _require_last_entry_id(entries: list[dict], provider_name: str) -> str:
     )
 
 
-def _build_claude_rename_entries(
+def _build_claude_name_entries(
     entries: list[dict],
     session_id: str,
     new_name: str,
@@ -1456,7 +1456,7 @@ def _build_claude_rename_entries(
     ]
 
 
-def _build_pi_rename_entries(
+def _build_pi_name_entries(
     entries: list[dict],
     _session_id: str,
     new_name: str,
@@ -1473,7 +1473,7 @@ def _build_pi_rename_entries(
     ]
 
 
-def _build_codex_rename_entries(
+def _build_codex_name_entries(
     _entries: list[dict],
     session_id: str,
     new_name: str,
@@ -1637,7 +1637,7 @@ def _parse_antigravity_jsonl(content: str, flags: ConversationFlags) -> list[Mes
     return _parse_antigravity_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
-def _build_antigravity_rename_entries(
+def _build_antigravity_name_entries(
     _entries: list[dict],
     _session_id: str,
     _new_name: str,
@@ -1651,7 +1651,7 @@ JSONL_SESSION_ADAPTERS = [
         name="pi",
         matches=_is_pi_jsonl_path,
         parse_messages=_parse_pi_jsonl,
-        build_rename_entries=_build_pi_rename_entries,
+        build_name_entries=_build_pi_name_entries,
         find_session_files=_find_pi_session_files,
         find_session_matches=_find_pi_session_matches,
         extract_session_id=_extract_pi_session_id,
@@ -1660,7 +1660,7 @@ JSONL_SESSION_ADAPTERS = [
         name="codex",
         matches=_is_codex_jsonl_path,
         parse_messages=_parse_codex_jsonl,
-        build_rename_entries=_build_codex_rename_entries,
+        build_name_entries=_build_codex_name_entries,
         find_session_files=_find_codex_session_files,
         find_session_matches=_find_codex_session_matches,
         extract_session_id=_extract_codex_session_id,
@@ -1670,7 +1670,7 @@ JSONL_SESSION_ADAPTERS = [
         name="antigravitycli",
         matches=_is_antigravity_jsonl_path,
         parse_messages=_parse_antigravity_jsonl,
-        build_rename_entries=_build_antigravity_rename_entries,
+        build_name_entries=_build_antigravity_name_entries,
         find_session_files=_find_antigravity_session_files,
         find_session_matches=_find_antigravity_session_matches,
         extract_session_id=_extract_antigravity_session_id,
@@ -1679,7 +1679,7 @@ JSONL_SESSION_ADAPTERS = [
         name="claude",
         matches=lambda _source_path: True,
         parse_messages=_parse_default_jsonl,
-        build_rename_entries=_build_claude_rename_entries,
+        build_name_entries=_build_claude_name_entries,
         writes_claude_history=True,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),
         extract_session_id=lambda path: path.stem,

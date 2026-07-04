@@ -672,7 +672,7 @@ def test_colored_search_highlights_matched_term(tmp_path, monkeypatch):
     "chats.search_query",
     "chats.parsing",
     "chats.murmurs",
-    "chats.commands.rename",
+    "chats.commands.name",
     "chats.commands.resolve",
 ])
 def test_module_doctests(module_name):

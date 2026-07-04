@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from . import commands as commands_module
-from .commands import cmd_catalog, cmd_info, cmd_parse, cmd_rename, cmd_rm, cmd_search
+from .commands import cmd_catalog, cmd_info, cmd_name, cmd_parse, cmd_rm, cmd_search
 from .console import init_module_console, print_warning
 from .model import (
     ConversationFlags,
@@ -521,10 +521,10 @@ def main():
             output_format="raw" if args.raw else "xml",
             emit_metadata=not (args.no_metadata or args.raw),
         )
-    elif len(sys.argv) > 1 and sys.argv[1] == "rename":
-        # Parse rename arguments
+    elif len(sys.argv) > 1 and sys.argv[1] == "name":
+        # Parse name arguments
         parser = argparse.ArgumentParser(
-            prog="ch rename",
+            prog="ch name",
             description="Rename a conversation by updating its display name",
         )
         parser.add_argument(
@@ -556,7 +556,7 @@ def main():
         if args.new_name and args.auto:
             parser.error("Cannot specify both a new name and --auto.")
 
-        cmd_rename(
+        cmd_name(
             args.conversation_id,
             args.new_name,
             auto=args.auto,
@@ -670,7 +670,7 @@ def main():
             epilog="""\
 Commands:
   search   Search conversations with regex patterns
-  rename   Assign a custom display name to a conversation
+  name     Assign a custom display name to a conversation
   fork     Duplicate a session into a thinner resumable copy
   rm       Remove a conversation session and all associated files
   catalog  AI-powered session cataloging

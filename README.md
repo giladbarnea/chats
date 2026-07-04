@@ -12,7 +12,7 @@ Format and search supported AI CLI conversation history files. The `ch` CLI conv
 - **Search**: Find conversations using regex patterns with rich display
 - **Format**: Convert between JSONL and raw transcript formats
 - **Remove**: Safely delete conversation sessions and all associated files
-- **Rename**: Assign custom titles to conversations for easier discovery
+- **Name**: Assign custom titles to conversations for easier discovery
 - **Catalog**: AI-powered session cataloging to sessions.yaml files
 - **Info**: Aggregate per-session statistics (tokens, cost, durations, message counts) for Claude and PI
 
@@ -355,14 +355,14 @@ ch rm -n session-uuid
 - Defensive existence checks - missing files don't cause errors
 - Clear summary of removed items after execution
 
-### Rename Mode
+### Name Mode
 
 Rename a conversation by appending a custom title entry.
 
 ```bash
-ch rename <session> "New Title"
-ch rename <session> --auto
-ch rename -n <session> --auto
+ch name <session> "New Title"
+ch name <session> --auto
+ch name -n <session> --auto
 ```
 
 This mutates the conversation file by appending the provider-native session-title entry shape:

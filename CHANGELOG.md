@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-02] Rename the `rename` command to `name`
+
+### Changed
+
+- The `rename` command is now `name`: invoke it as `ch name <session> "New Title"` or `ch name <session> --auto`. The command function `cmd_rename` is now `cmd_name`, its module `commands/rename.py` is now `commands/name.py`, and the provider write-path builders (`build_rename_entries` and the per-provider `_build_*_rename_entries`) are now `build_name_entries` / `_build_*_name_entries`. The rendered `<session-rename>` block and the Claude-native `/rename` history record are intentionally unchanged: the former names the rename event in parsed output, and the latter mirrors Claude Code's own `/rename` slash command so Claude still recognizes the retitle.
+
+---
 ## [2026-06-29] Add search role-only filters
 
 ### Added

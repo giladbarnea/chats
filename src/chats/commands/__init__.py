@@ -26,7 +26,7 @@ from ..model import (
 )
 from . import info as info
 from . import parse as parse
-from . import rename as rename
+from . import name as name
 from . import resolve as resolve
 from . import rm as rm
 from . import search as search
@@ -66,17 +66,17 @@ from .parse import (
 from .parse import (
     parse_slice_notation as parse_slice_notation,
 )
-from .rename import (
+from .name import (
     _clean_line as _clean_line,
 )
-from .rename import (
+from .name import (
     _generate_auto_name as _generate_auto_name,
 )
-from .rename import (
+from .name import (
     _parse_auto_session_name as _parse_auto_session_name,
 )
-from .rename import (
-    cmd_rename as cmd_rename,
+from .name import (
+    cmd_name as cmd_name,
 )
 from .resolve import (
     _load_conversation_metadata as _load_conversation_metadata,

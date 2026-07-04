@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from chats import ConversationFlags, cmd_parse, cmd_rename
+from chats import ConversationFlags, cmd_parse, cmd_name
 
 
 def _write_pi_session(path: Path, entries: list[dict]) -> None:
@@ -598,7 +598,7 @@ def test_cmd_parse_emits_metadata_for_pi_session_path(
     )
 
 
-def test_cmd_rename_keeps_title_out_of_default_pi_parse_output(
+def test_cmd_name_keeps_title_out_of_default_pi_parse_output(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -653,7 +653,7 @@ def test_cmd_rename_keeps_title_out_of_default_pi_parse_output(
         ],
     )
 
-    cmd_rename(str(session_path), "My PI Title")
+    cmd_name(str(session_path), "My PI Title")
     capsys.readouterr()
 
     cmd_parse(
@@ -667,7 +667,7 @@ def test_cmd_rename_keeps_title_out_of_default_pi_parse_output(
 
     captured = capsys.readouterr()
     assert "My PI Title" not in captured.out, (
-        "Expected the custom title written by cmd_rename to stay out of default PI parse output. "
+        "Expected the custom title written by cmd_name to stay out of default PI parse output. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "<session-rename" not in captured.out, (
@@ -676,7 +676,7 @@ def test_cmd_rename_keeps_title_out_of_default_pi_parse_output(
     )
 
 
-def test_cmd_rename_appends_native_pi_session_info_entry(
+def test_cmd_name_appends_native_pi_session_info_entry(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -719,7 +719,7 @@ def test_cmd_rename_appends_native_pi_session_info_entry(
         ],
     )
 
-    cmd_rename(str(session_path), "Native PI Title")
+    cmd_name(str(session_path), "Native PI Title")
 
     entries = [
         json.loads(line)

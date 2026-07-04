@@ -133,7 +133,7 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
     return f"[{first_timestamp:%m-%d}][{cwd_name}] {generated_name}"
 
 
-def cmd_rename(
+def cmd_name(
     conversation_id: str,
     new_name: str | None,
     *,
@@ -178,7 +178,7 @@ def cmd_rename(
         return
 
     try:
-        rename_entries = adapter.build_rename_entries(entries, session_id, new_name)
+        name_entries = adapter.build_name_entries(entries, session_id, new_name)
     except ValueError as error:
         print_error(str(error))
         sys.exit(1)
@@ -186,8 +186,8 @@ def cmd_rename(
     try:
         with open(conv_file, "a", encoding="utf-8") as handle:
             handle.writelines(
-                json.dumps(rename_entry, separators=(",", ":")) + "\n"
-                for rename_entry in rename_entries
+                json.dumps(name_entry, separators=(",", ":")) + "\n"
+                for name_entry in name_entries
             )
     except Exception as error:
         print_error(f"Error writing file: {error}")

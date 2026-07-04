@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests for the --auto flag on the rename command.
+Tests for the --auto flag on the name command.
 
 The auto-naming flow:
 1. Read the session content as readable text
@@ -13,7 +13,7 @@ Tested units:
 - _clean_line()               pure function, no mocking
 - _parse_auto_session_name()  pure function, no mocking
 - _generate_auto_name()       mocks subprocess.run + cmd_parse capture
-- cmd_rename(..., auto=True)  integration: fixture + subprocess mock
+- cmd_name(..., auto=True)  integration: fixture + subprocess mock
 """
 
 import json
@@ -24,7 +24,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from chats import cmd_rename
+from chats import cmd_name
 from chats.commands import (
     _clean_line,
     _generate_auto_name,
@@ -165,13 +165,13 @@ class TestGenerateAutoName:
     def test_returns_parsed_name_on_success(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "implement auto-rename\n"
-        with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
+        with patch("chats.commands.name.subprocess.run", return_value=mock_result):
             name = _generate_auto_name(session_file, session_file.read_text())
         assert name == f"[{expected_date_prefix(session_file)}][project] implement auto-rename"
 
     def test_raises_on_pi_not_found(self, session_file):
         with patch(
-            "chats.commands.rename.subprocess.run",
+            "chats.commands.name.subprocess.run",
             side_effect=FileNotFoundError,
         ):
             with pytest.raises(RuntimeError, match="not found"):
@@ -179,7 +179,7 @@ class TestGenerateAutoName:
 
     def test_raises_on_pi_nonzero_exit(self, session_file):
         with patch(
-            "chats.commands.rename.subprocess.run",
+            "chats.commands.name.subprocess.run",
             side_effect=subprocess.CalledProcessError(1, "pi"),
         ):
             with pytest.raises(RuntimeError, match="failed"):
@@ -188,14 +188,14 @@ class TestGenerateAutoName:
     def test_raises_on_unparseable_output(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "line one\nline two\nline three\n"
-        with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
+        with patch("chats.commands.name.subprocess.run", return_value=mock_result):
             with pytest.raises(ValueError, match="could not pick"):
                 _generate_auto_name(session_file, session_file.read_text())
 
     def test_calls_pi_with_print_flag(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "fix thing\n"
-        with patch("chats.commands.rename.subprocess.run", return_value=mock_result) as mock_run:
+        with patch("chats.commands.name.subprocess.run", return_value=mock_result) as mock_run:
             _generate_auto_name(session_file, session_file.read_text())
         args = mock_run.call_args[0][0]
         assert args[0] == "pi"
@@ -204,24 +204,24 @@ class TestGenerateAutoName:
     def test_uses_capture_output(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "fix thing\n"
-        with patch("chats.commands.rename.subprocess.run", return_value=mock_result) as mock_run:
+        with patch("chats.commands.name.subprocess.run", return_value=mock_result) as mock_run:
             _generate_auto_name(session_file, session_file.read_text())
         kwargs = mock_run.call_args[1]
         assert kwargs.get("capture_output") is True
 
 
 # =============================================================================
-# cmd_rename with auto=True
+# cmd_name with auto=True
 # =============================================================================
 
 
-class TestCmdRenameAuto:
+class TestCmdNameAuto:
     def test_auto_renames_session(self, session_file):
         date_prefix = expected_date_prefix(session_file)
         mock_result = MagicMock()
         mock_result.stdout = "implement auto-rename\n"
-        with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
-            cmd_rename(str(session_file), None, auto=True)
+        with patch("chats.commands.name.subprocess.run", return_value=mock_result):
+            cmd_name(str(session_file), None, auto=True)
 
         last = get_last_line_json(session_file, -2)
         assert last["type"] == "agent-name"
@@ -237,8 +237,8 @@ class TestCmdRenameAuto:
         mock_result = MagicMock()
         mock_result.stdout = "preview rename\n"
 
-        with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
-            cmd_rename(str(session_file), None, auto=True, dry_run=True)
+        with patch("chats.commands.name.subprocess.run", return_value=mock_result):
+            cmd_name(str(session_file), None, auto=True, dry_run=True)
 
         assert capsys.readouterr().out == f"[{expected_date_prefix(session_file)}][project] preview rename\n", (
             "Expected rename --auto --dry-run to print only the generated name to stdout."
@@ -252,29 +252,29 @@ class TestCmdRenameAuto:
 
     def test_auto_and_name_raises(self, session_file):
         with pytest.raises(SystemExit) as exc_info:
-            cmd_rename(str(session_file), "Explicit Name", auto=True)
+            cmd_name(str(session_file), "Explicit Name", auto=True)
         assert exc_info.value.code == 1
 
     def test_no_name_no_auto_raises(self, session_file):
         with pytest.raises(SystemExit) as exc_info:
-            cmd_rename(str(session_file), None, auto=False)
+            cmd_name(str(session_file), None, auto=False)
         assert exc_info.value.code == 1
 
     def test_auto_pi_not_found_exits(self, session_file):
         with patch(
-            "chats.commands.rename.subprocess.run",
+            "chats.commands.name.subprocess.run",
             side_effect=FileNotFoundError,
         ):
             with pytest.raises(SystemExit) as exc_info:
-                cmd_rename(str(session_file), None, auto=True)
+                cmd_name(str(session_file), None, auto=True)
         assert exc_info.value.code == 1
 
     def test_auto_bad_output_exits(self, session_file):
         mock_result = MagicMock()
         mock_result.stdout = "line one\nline two\nline three\n"
-        with patch("chats.commands.rename.subprocess.run", return_value=mock_result):
+        with patch("chats.commands.name.subprocess.run", return_value=mock_result):
             with pytest.raises(SystemExit) as exc_info:
-                cmd_rename(str(session_file), None, auto=True)
+                cmd_name(str(session_file), None, auto=True)
         assert exc_info.value.code == 1
 
 

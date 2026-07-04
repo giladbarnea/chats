@@ -7,7 +7,7 @@ Tests specific failure modes discovered in code review:
 - Bug #3: Single-word prefix match fails (generator exhaustion)
 - Bug #4: Ambiguous input treated as raw content in parse mode
 
-Uses same fixture pattern as test_rename.py - reuses rename_fixtures.
+Uses same fixture pattern as test_name.py - reuses rename_fixtures.
 """
 
 import json

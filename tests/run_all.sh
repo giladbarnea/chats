@@ -7,7 +7,7 @@ chmod +x tests/test_flags.sh
 chmod +x tests/test_colors.sh
 chmod +x tests/test_format.sh
 chmod +x tests/test_cli_seam.sh
-chmod +x tests/test_rename.sh
+chmod +x tests/test_name.sh
 chmod +x tests/test_search_date.sh
 chmod +x tests/test_raw_and_metadata.sh
 chmod +x tests/test_rm.sh
@@ -30,7 +30,7 @@ echo ""
 ./tests/test_tool_filter.sh
 ./tests/test_format.sh
 ./tests/test_raw_and_metadata.sh
-./tests/test_rename.sh
+./tests/test_name.sh
 ./tests/test_rm.sh
 ./tests/test_search_date.sh
 ./tests/test_search_only_id.sh

@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from chats import ConversationFlags, ToolFilter, cmd_parse, cmd_rename
+from chats import ConversationFlags, ToolFilter, cmd_parse, cmd_name
 
 
 def _write_codex_session(path: Path, entries: list[dict]) -> None:
@@ -808,7 +808,7 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
     )
 
 
-def test_cmd_rename_appends_native_codex_thread_name_updated_event(
+def test_cmd_name_appends_native_codex_thread_name_updated_event(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -856,7 +856,7 @@ def test_cmd_rename_appends_native_codex_thread_name_updated_event(
         ],
     )
 
-    cmd_rename(str(session_path), "Canonical Codex Title")
+    cmd_name(str(session_path), "Canonical Codex Title")
 
     entries = [
         json.loads(line)
@@ -986,7 +986,7 @@ def test_codex_skill_payloads_hidden_by_default(
     )
 
 
-def test_cmd_rename_keeps_title_out_of_default_codex_parse_output(
+def test_cmd_name_keeps_title_out_of_default_codex_parse_output(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -1045,7 +1045,7 @@ def test_cmd_rename_keeps_title_out_of_default_codex_parse_output(
         ],
     )
 
-    cmd_rename(str(session_path), "My Codex Title")
+    cmd_name(str(session_path), "My Codex Title")
     capsys.readouterr()
 
     cmd_parse(
@@ -1059,7 +1059,7 @@ def test_cmd_rename_keeps_title_out_of_default_codex_parse_output(
 
     captured = capsys.readouterr()
     assert "My Codex Title" not in captured.out, (
-        "Expected the custom title written by cmd_rename to stay out of default Codex parse output. "
+        "Expected the custom title written by cmd_name to stay out of default Codex parse output. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert "<session-rename" not in captured.out, (
