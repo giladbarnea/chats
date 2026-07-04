@@ -167,23 +167,21 @@ def _build_codex_tool_name_map(entries: list[dict]) -> dict[str, str]:
 
 def _shorten_tool_payload(
     tool: dict,
-    should_shorten: bool,
-    *,
-    max_chars: int = 500,
+    local_short_max_chars: int | None,
 ) -> dict:
-    if not should_shorten:
+    if local_short_max_chars is None:
         return copy.deepcopy(tool)
 
     shortened_tool = copy.deepcopy(tool)
     if shortened_tool.get("type") == "tool_use" and "input" in shortened_tool:
         shortened_tool["input"] = shorten_data(
             shortened_tool.get("input"),
-            max_chars=max_chars,
+            max_chars=local_short_max_chars,
         )
     elif shortened_tool.get("type") == "tool_result" and "content" in shortened_tool:
         shortened_tool["content"] = shorten_data(
             shortened_tool.get("content"),
-            max_chars=max_chars,
+            max_chars=local_short_max_chars,
         )
     return shortened_tool
 
@@ -239,17 +237,16 @@ def _filter_claude_assistant_content(
             "name": item.get("name"),
             "input": item.get("input", {}),
         }
-        show_tool, should_shorten = resolve_tool_visibility(
-            tool_payload, flags.show_tools, id_map
+        show_tool, local_short_max_chars = resolve_tool_visibility(
+            tool_payload,
+            flags.show_tools,
+            id_map,
+            default_short_max_chars=flags.shorten_max_chars,
         )
         if not show_tool:
             continue
 
-        kept_tool = _shorten_tool_payload(
-            tool_payload,
-            should_shorten,
-            max_chars=flags.shorten_max_chars,
-        )
+        kept_tool = _shorten_tool_payload(tool_payload, local_short_max_chars)
         kept_items.append({
             **copy.deepcopy(item),
             "input": kept_tool.get("input", {}),
@@ -262,7 +259,7 @@ def _filter_claude_user_content(
     content: object,
     flags: ConversationFlags,
     id_map: dict[str, str],
-) -> tuple[list[object], list[tuple[dict, bool]]]:
+) -> tuple[list[object], list[tuple[dict, int | None]]]:
     if isinstance(content, str):
         return ([content] if flags.show_user_messages and content else []), []
 
@@ -270,7 +267,7 @@ def _filter_claude_user_content(
         return [], []
 
     kept_items: list[object] = []
-    kept_tool_results: list[tuple[dict, bool]] = []
+    kept_tool_results: list[tuple[dict, int | None]] = []
     for item in content:
         if not isinstance(item, dict):
             if flags.show_user_messages:
@@ -292,24 +289,23 @@ def _filter_claude_user_content(
         if flags.show_agents and id_map.get(item.get("tool_use_id")) == "Task":
             kept_item = copy.deepcopy(item)
             kept_items.append(kept_item)
-            kept_tool_results.append((kept_item, False))
+            kept_tool_results.append((kept_item, None))
             continue
 
-        show_tool, should_shorten = resolve_tool_visibility(
-            tool_payload, flags.show_tools, id_map
+        show_tool, local_short_max_chars = resolve_tool_visibility(
+            tool_payload,
+            flags.show_tools,
+            id_map,
+            default_short_max_chars=flags.shorten_max_chars,
         )
         if not show_tool:
             continue
 
-        kept_tool = _shorten_tool_payload(
-            tool_payload,
-            should_shorten,
-            max_chars=flags.shorten_max_chars,
-        )
+        kept_tool = _shorten_tool_payload(tool_payload, local_short_max_chars)
         kept_item = copy.deepcopy(item)
         kept_item["content"] = kept_tool.get("content", "")
         kept_items.append(kept_item)
-        kept_tool_results.append((kept_item, should_shorten))
+        kept_tool_results.append((kept_item, local_short_max_chars))
 
     return kept_items, kept_tool_results
 
@@ -365,11 +361,11 @@ def _rewrite_claude_entries(
             if not kept_tool_results:
                 entry.pop("toolUseResult", None)
             elif isinstance(tool_use_result, dict):
-                should_shorten = kept_tool_results[0][1]
-                if should_shorten:
+                local_short_max_chars = kept_tool_results[0][1]
+                if local_short_max_chars is not None:
                     entry["toolUseResult"] = shorten_data(
                         tool_use_result,
-                        max_chars=flags.shorten_max_chars,
+                        max_chars=local_short_max_chars,
                     )
                 if agent_id_map and tool_use_result.get("agentId") in agent_id_map:
                     entry["toolUseResult"]["agentId"] = agent_id_map[
@@ -507,17 +503,20 @@ def _filter_pi_assistant_content(
             "name": _normalize_pi_tool_name(item.get("name")),
             "input": item.get("arguments", {}),
         }
-        show_tool, should_shorten = resolve_tool_visibility(
-            tool_payload, flags.show_tools, id_map
+        show_tool, local_short_max_chars = resolve_tool_visibility(
+            tool_payload,
+            flags.show_tools,
+            id_map,
+            default_short_max_chars=flags.shorten_max_chars,
         )
         if not show_tool:
             continue
 
         kept_item = copy.deepcopy(item)
-        if should_shorten:
+        if local_short_max_chars is not None:
             kept_item["arguments"] = shorten_data(
                 kept_item.get("arguments", {}),
-                max_chars=flags.shorten_max_chars,
+                max_chars=local_short_max_chars,
             )
         kept_items.append(kept_item)
 
@@ -587,15 +586,18 @@ def _rewrite_pi_entries(
             "content": message.get("content", []),
             "is_error": message.get("isError", False),
         }
-        show_tool, should_shorten = resolve_tool_visibility(
-            tool_payload, flags.show_tools, id_map
+        show_tool, local_short_max_chars = resolve_tool_visibility(
+            tool_payload,
+            flags.show_tools,
+            id_map,
+            default_short_max_chars=flags.shorten_max_chars,
         )
         if not show_tool:
             continue
-        if should_shorten:
+        if local_short_max_chars is not None:
             entry["message"]["content"] = shorten_data(
                 message.get("content", []),
-                max_chars=flags.shorten_max_chars,
+                max_chars=local_short_max_chars,
             )
         rewritten_entries.append(entry)
 
@@ -768,16 +770,19 @@ def _rewrite_codex_entries(
                 if payload_type == "function_call"
                 else payload.get("input"),
             }
-            show_tool, should_shorten = resolve_tool_visibility(
-                tool_payload, flags.show_tools, id_map
+            show_tool, local_short_max_chars = resolve_tool_visibility(
+                tool_payload,
+                flags.show_tools,
+                id_map,
+                default_short_max_chars=flags.shorten_max_chars,
             )
             if not show_tool:
                 continue
-            if should_shorten:
+            if local_short_max_chars is not None:
                 field_name = "arguments" if payload_type == "function_call" else "input"
                 payload[field_name] = _shorten_codex_serialized_value(
                     payload.get(field_name),
-                    max_chars=flags.shorten_max_chars,
+                    max_chars=local_short_max_chars,
                 )
             rewritten_entries.append(entry)
             continue
@@ -789,15 +794,18 @@ def _rewrite_codex_entries(
                 "content": payload.get("output", ""),
                 "is_error": False,
             }
-            show_tool, should_shorten = resolve_tool_visibility(
-                tool_payload, flags.show_tools, id_map
+            show_tool, local_short_max_chars = resolve_tool_visibility(
+                tool_payload,
+                flags.show_tools,
+                id_map,
+                default_short_max_chars=flags.shorten_max_chars,
             )
             if not show_tool:
                 continue
-            if should_shorten:
+            if local_short_max_chars is not None:
                 payload["output"] = _shorten_codex_serialized_value(
                     payload.get("output"),
-                    max_chars=flags.shorten_max_chars,
+                    max_chars=local_short_max_chars,
                 )
             rewritten_entries.append(entry)
 

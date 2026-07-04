@@ -106,7 +106,7 @@ Automatically detects input format by examining **first non-empty line only** (d
                      #   Name:    -t Bash, -t Read, -t !Bash (exclude)
                      #   Direction: -t i (inputs), -t o (outputs), -t Bash:i
                      #   Error:   -t e (errors only), -t Bash:e
-                     #   Short:   -t s (shorten), -t Read:o:s
+                     #   Short:   -t s (shorten), -t s=120, -t Read:o:s=80
                      #   Combine: -t "Read:o:s Bash:i" or -t Read:o:s -t Bash:i
                      #   Order-free: -t i:Bash == -t Bash:i
                      #   Long form: -t input, -t output, -t short, -t error
@@ -126,6 +126,8 @@ Automatically detects input format by examining **first non-empty line only** (d
 `--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, `--plans`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
 
 `--short` is greedy only for the token immediately following it: a detached max-chars value is consumed only when that token is all digits and `> 7`; otherwise `--short` is treated as bare and parsing continues normally. The attached form is strict: `--short=<value>` must satisfy the same validation or the CLI errors.
+
+Tool-local short modifiers accept the same numeric limit as an attached value: `-t Bash:s=10` or `-t Read:o:short=80`. A bare local `:s` uses the current global short default, so `--short=20 -t:s` is equivalent to `--short=20 -t`; an explicit local value is more specific and overrides it. Matching tool specs behave like CSS specificity for the short value: `--short=20 -t:s=10 -t:Bash:s=30` means regular text is shortened to 20, tools to 10, and Bash tools to 30.
 
 `--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ch --no-user --tools ...` still shows tool outputs from user turns, and `ch --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
 

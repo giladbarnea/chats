@@ -497,13 +497,14 @@ def main():
                 args.short,
                 attached_value=getattr(args, "_short_uses_attached_value", False),
             )
+            show_tools = _resolve_show_tools(args.tools, args.all)
         except ValueError as exc:
             parser.error(str(exc))
         message_selection = _resolve_message_selection(args)
         flags = ConversationFlags(
             message_selection=message_selection,
             show_thinking=show_thinking,
-            show_tools=_resolve_show_tools(args.tools, args.all),
+            show_tools=show_tools,
             show_agents=args.agents or args.all,
             show_branches=args.branches or args.all,
             show_plans=args.plans or args.all,

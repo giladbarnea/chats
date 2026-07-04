@@ -45,7 +45,8 @@ And:
 * `NAME := exact tool name`
 * `DIRECTION := i | input | o | output`
 * `ERROR := e | error`
-* `SHORT := s | short`
+* `SHORT := s [=MAX_CHARS] | short [=MAX_CHARS]`
+* `MAX_CHARS := decimal integer > 7`
 
 ## Distinct-slot rule
 
@@ -150,7 +151,9 @@ Invalid next tokens:
 * `o:Read`
 * `Read:o`
 * `Read:o:s`
+* `Read:o:s=80`
 * `s:o:Read`
+* `s=10`
 * `!Read:o:e`
 
 ## Invalid examples
@@ -164,6 +167,26 @@ Invalid next tokens:
 * `o:i`
 * `s:short`
 * `Read:o:output`
+* `s=7`
+* `s=abc`
+
+## Short limits and precedence
+
+A bare `SHORT` fills the short slot without setting its own numeric limit. It uses the current global short default. With no global override, that default is 500; with `--short=N`, that default is `N`.
+
+An explicit `SHORT=MAX_CHARS` fills the short slot and sets a tool-local limit. That limit is more specific than the global default.
+
+When several visible positive specs match the same tool and more than one declares `SHORT`, the short value is chosen by specificity:
+
+* `name`, `direction`, and `error` each add specificity
+* the most specific matching short spec wins
+* if specificity ties, the later matching short spec wins
+
+Examples:
+
+* `--short=10 -t:s` shortens regular messages and tools to 10
+* `--short -t:s=10` shortens regular messages to 500 and tools to 10
+* `--short=20 -t:s=10 -t:Bash:s=30` shortens regular messages to 20, non-Bash tools to 10, and Bash tools to 30
 
 ## Practical scope
 

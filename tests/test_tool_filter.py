@@ -454,6 +454,205 @@ class TestPerToolShortening:
             f"Expected custom max-chars shortening to preserve the end. Got: {result_content[-80:]!r}"
         )
 
+    def test_local_short_max_chars_applies_only_to_matching_tool_spec(self):
+        """A `:s=N` limit is local to the matching tool spec; bare `:s` keeps the default."""
+        long_bash = "BASH_START-" + ("B" * 1000) + "-BASH_END"
+        long_read = "READ_START-" + ("R" * 1000) + "-READ_END"
+        msg = make_message(
+            {
+                "type": "tool_use",
+                "name": "Bash",
+                "id": "toolu_01",
+                "input": {"command": "echo " + long_bash},
+            },
+            {"type": "tool_result", "tool_use_id": "toolu_01", "content": long_bash},
+            {
+                "type": "tool_use",
+                "name": "Read",
+                "id": "toolu_02",
+                "input": {"file_path": "f.txt"},
+            },
+            {"type": "tool_result", "tool_use_id": "toolu_02", "content": long_read},
+        )
+
+        flags = ConversationFlags(
+            show_tools=[parse_tool_spec("Bash:s=10"), parse_tool_spec("Read:o:s")]
+        )
+        parts = tool_parts_from(msg, flags, ID_MAP)
+
+        bash_input = parts[0].data.content
+        bash_result = parts[1].data.content
+        read_result = parts[2].data.content
+        assert bash_input is not None, "Expected Bash input content to be visible."
+        assert bash_result is not None, "Expected Bash result content to be visible."
+        assert read_result is not None, "Expected Read result content to be visible."
+        assert len(_fenced_inner(bash_input)) == 10, (
+            "Expected `Bash:s=10` to shorten only the Bash input payload to 10 chars. "
+            f"Got: {len(_fenced_inner(bash_input))}"
+        )
+        assert len(_fenced_inner(bash_result)) == 10, (
+            "Expected `Bash:s=10` to shorten only the Bash output payload to 10 chars. "
+            f"Got: {len(_fenced_inner(bash_result))}"
+        )
+        assert len(_fenced_inner(read_result)) == 500, (
+            "Expected bare `Read:o:s` to keep the default 500-char local short limit. "
+            f"Got: {len(_fenced_inner(read_result))}"
+        )
+
+    def test_global_short_sets_the_default_limit_for_bare_tool_short(self):
+        """`--short=10 -t:s` is redundant with `--short=10 -t`: all visible content uses 10."""
+        long_text = "TEXT_START-" + ("T" * 1000) + "-TEXT_END"
+        long_bash = "BASH_START-" + ("B" * 1000) + "-BASH_END"
+        msg = Message(
+            role="assistant",
+            text=long_text,
+            tools=[
+                {
+                    "type": "tool_use",
+                    "name": "Bash",
+                    "id": "toolu_01",
+                    "input": {"command": "echo " + long_bash},
+                },
+                {"type": "tool_result", "tool_use_id": "toolu_01", "content": long_bash},
+            ],
+        )
+
+        flags = ConversationFlags(
+            show_tools=[parse_tool_spec("s")],
+            shorten=True,
+            shorten_max_chars=10,
+        )
+        parts = msg.iter_visible_parts(flags, ID_MAP)
+
+        text_parts = [part for part in parts if part.kind == MessagePartKind.TEXT]
+        tool_parts = [part for part in parts if part.kind == MessagePartKind.TOOL]
+        assert len(text_parts) == 1, f"Expected one text part. Got: {text_parts!r}"
+        assert len(tool_parts) == 2, f"Expected two tool parts. Got: {tool_parts!r}"
+
+        bash_input = tool_parts[0].data.content
+        bash_result = tool_parts[1].data.content
+        assert bash_input is not None, "Expected Bash input content to be visible."
+        assert bash_result is not None, "Expected Bash result content to be visible."
+        assert len(text_parts[0].data) == 10, (
+            "Expected `--short=10` to shorten regular message text to 10 chars. "
+            f"Got: {len(text_parts[0].data)}"
+        )
+        assert len(_fenced_inner(bash_input)) == 10, (
+            "Expected bare `-t:s` to inherit the global --short=10 limit for Bash input. "
+            f"Got: {len(_fenced_inner(bash_input))}"
+        )
+        assert len(_fenced_inner(bash_result)) == 10, (
+            "Expected bare `-t:s` to inherit the global --short=10 limit for Bash output. "
+            f"Got: {len(_fenced_inner(bash_result))}"
+        )
+
+    def test_all_tools_short_value_overrides_global_default(self):
+        """`--short -t:s=10` means regular text uses 500, but tools use 10."""
+        long_text = "TEXT_START-" + ("T" * 1000) + "-TEXT_END"
+        long_bash = "BASH_START-" + ("B" * 1000) + "-BASH_END"
+        msg = Message(
+            role="assistant",
+            text=long_text,
+            tools=[
+                {
+                    "type": "tool_use",
+                    "name": "Bash",
+                    "id": "toolu_01",
+                    "input": {"command": "echo " + long_bash},
+                },
+                {"type": "tool_result", "tool_use_id": "toolu_01", "content": long_bash},
+            ],
+        )
+
+        flags = ConversationFlags(
+            show_tools=[parse_tool_spec("s=10")],
+            shorten=True,
+        )
+        parts = msg.iter_visible_parts(flags, ID_MAP)
+
+        text_parts = [part for part in parts if part.kind == MessagePartKind.TEXT]
+        tool_parts = [part for part in parts if part.kind == MessagePartKind.TOOL]
+        assert len(text_parts) == 1, f"Expected one text part. Got: {text_parts!r}"
+        assert len(tool_parts) == 2, f"Expected two tool parts. Got: {tool_parts!r}"
+
+        bash_input = tool_parts[0].data.content
+        bash_result = tool_parts[1].data.content
+        assert bash_input is not None, "Expected Bash input content to be visible."
+        assert bash_result is not None, "Expected Bash result content to be visible."
+        assert len(text_parts[0].data) == 500, (
+            "Expected bare `--short` to keep the default 500-char limit for text. "
+            f"Got: {len(text_parts[0].data)}"
+        )
+        assert len(_fenced_inner(bash_input)) == 10, (
+            "Expected `-t:s=10` to override the global default for Bash input. "
+            f"Got: {len(_fenced_inner(bash_input))}"
+        )
+        assert len(_fenced_inner(bash_result)) == 10, (
+            "Expected `-t:s=10` to override the global default for Bash output. "
+            f"Got: {len(_fenced_inner(bash_result))}"
+        )
+
+    def test_specific_tool_short_value_overrides_broader_tool_short_and_global_default(self):
+        """`--short=20 -t:s=10 -t:Bash:s=30` uses 20 globally, 10 for tools, 30 for Bash."""
+        long_text = "TEXT_START-" + ("T" * 1000) + "-TEXT_END"
+        long_bash = "BASH_START-" + ("B" * 1000) + "-BASH_END"
+        long_read = "READ_START-" + ("R" * 1000) + "-READ_END"
+        msg = Message(
+            role="assistant",
+            text=long_text,
+            tools=[
+                {
+                    "type": "tool_use",
+                    "name": "Bash",
+                    "id": "toolu_01",
+                    "input": {"command": "echo " + long_bash},
+                },
+                {"type": "tool_result", "tool_use_id": "toolu_01", "content": long_bash},
+                {
+                    "type": "tool_use",
+                    "name": "Read",
+                    "id": "toolu_02",
+                    "input": {"file_path": "f.txt"},
+                },
+                {"type": "tool_result", "tool_use_id": "toolu_02", "content": long_read},
+            ],
+        )
+
+        flags = ConversationFlags(
+            show_tools=[parse_tool_spec("s=10"), parse_tool_spec("Bash:s=30")],
+            shorten=True,
+            shorten_max_chars=20,
+        )
+        parts = msg.iter_visible_parts(flags, ID_MAP)
+
+        text_parts = [part for part in parts if part.kind == MessagePartKind.TEXT]
+        tool_parts = [part for part in parts if part.kind == MessagePartKind.TOOL]
+        assert len(text_parts) == 1, f"Expected one text part. Got: {text_parts!r}"
+        assert len(tool_parts) == 4, f"Expected four tool parts. Got: {tool_parts!r}"
+
+        bash_input = tool_parts[0].data.content
+        bash_result = tool_parts[1].data.content
+        read_result = tool_parts[3].data.content
+        assert bash_input is not None, "Expected Bash input content to be visible."
+        assert bash_result is not None, "Expected Bash result content to be visible."
+        assert read_result is not None, "Expected Read result content to be visible."
+        assert len(text_parts[0].data) == 20, (
+            "Expected `--short=20` to shorten regular message text to 20 chars. "
+            f"Got: {len(text_parts[0].data)}"
+        )
+        assert len(_fenced_inner(bash_input)) == 30, (
+            "Expected more-specific `Bash:s=30` to override broad `s=10` for Bash input. "
+            f"Got: {len(_fenced_inner(bash_input))}"
+        )
+        assert len(_fenced_inner(bash_result)) == 30, (
+            "Expected more-specific `Bash:s=30` to override broad `s=10` for Bash output. "
+            f"Got: {len(_fenced_inner(bash_result))}"
+        )
+        assert len(_fenced_inner(read_result)) == 10, (
+            "Expected broad `s=10` to apply to non-Bash tools. "
+            f"Got: {len(_fenced_inner(read_result))}"
+        )
+
 
 # =============================================================================
 # truncate_middle: unit tests

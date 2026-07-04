@@ -151,6 +151,33 @@ def test_parse_short_can_snatch_the_only_numeric_token(monkeypatch) -> None:
     assert captured["flags"].shorten_max_chars == 10
 
 
+def test_parse_tool_short_accepts_local_attached_max_chars(monkeypatch) -> None:
+    """`-t Bash:s=10` should keep its max-chars limit local to that tool spec."""
+    exit_code, captured = _run_parse_cli(
+        monkeypatch,
+        "-t",
+        "Bash:s=10",
+        "session.jsonl",
+    )
+
+    assert exit_code == 0, f"Expected success. Got exit_code={exit_code}."
+    assert captured["input"] == "session.jsonl"
+    tool_filters = captured["flags"].show_tools
+    assert isinstance(tool_filters, list), (
+        f"Expected filtered tool specs to reach flags as a list. Got: {tool_filters!r}"
+    )
+    assert tool_filters[0].name == "Bash", (
+        f"Expected `Bash:s=10` to keep name='Bash'. Got: {tool_filters[0]!r}"
+    )
+    assert tool_filters[0].short is True, (
+        f"Expected `Bash:s=10` to enable local shortening. Got: {tool_filters[0]!r}"
+    )
+    assert tool_filters[0].short_max_chars == 10, (
+        "Expected `Bash:s=10` to store local max-chars 10. "
+        f"Got: {tool_filters[0].short_max_chars!r}"
+    )
+
+
 def test_search_bare_short_keeps_following_pattern_positional(monkeypatch) -> None:
     """Bare `search --short` should keep the following token as the search pattern."""
     exit_code, captured = _run_search_cli(monkeypatch, "--short", "needle")

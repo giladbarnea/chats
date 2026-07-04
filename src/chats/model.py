@@ -188,6 +188,20 @@ class ConversationFlags:
         )
 
 
+def _shorten_tool_payload(tool: dict, max_chars: int) -> dict:
+    """Shorten only user-authored tool payload fields, preserving tool metadata.
+
+    >>> _shorten_tool_payload({"type": "tool_use", "name": "Bash", "input": {"command": "abcdefghi"}}, 8)["type"]
+    'tool_use'
+    """
+    shortened_tool = dict(tool)
+    if shortened_tool.get("type") == "tool_use" and "input" in shortened_tool:
+        shortened_tool["input"] = shorten_data(shortened_tool.get("input"), max_chars)
+    if shortened_tool.get("type") == "tool_result" and "content" in shortened_tool:
+        shortened_tool["content"] = shorten_data(shortened_tool.get("content"), max_chars)
+    return shortened_tool
+
+
 @dataclass
 class Message:
     """Represents a single message in a conversation."""
@@ -364,18 +378,25 @@ class Message:
     ) -> Iterator[dict]:
         """Yield each visible tool dict, shortened at the source when asked.
 
-        Shortening once here — on the raw tool dict via shorten_data — is the single
-        shortening point for tools, mirroring how text, thinking and plans are
-        shortened at the source. tool_to_parts/tool_to_json then build their views
-        (XML content, the colored diff/highlight, JSON) from already-short data, so
-        no representation can be left untruncated.
+        Shortening once here — on the raw tool payload — is the single shortening
+        point for tools, mirroring how text, thinking and plans are shortened at
+        the source. tool_to_parts/tool_to_json then build their views (XML content,
+        the colored diff/highlight, JSON) from already-short data, so no
+        representation can be left untruncated.
         """
         for tool in self.tools:
-            show, filter_short = resolve_tool_visibility(tool, flags.show_tools, id_map)
+            show, local_short_max_chars = resolve_tool_visibility(
+                tool,
+                flags.show_tools,
+                id_map,
+                default_short_max_chars=flags.shorten_max_chars,
+            )
             if not show:
                 continue
-            if flags.shorten or filter_short:
-                tool = shorten_data(tool, max_chars=flags.shorten_max_chars)
+            if local_short_max_chars is not None:
+                tool = _shorten_tool_payload(tool, max_chars=local_short_max_chars)
+            elif flags.shorten:
+                tool = _shorten_tool_payload(tool, max_chars=flags.shorten_max_chars)
             yield tool
 
     def _append_tool_parts(

@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-04] Add explicit short limits to tool specs
+
+### Added
+
+- Tool short modifiers now accept attached numeric limits, such as `-t Bash:s=10`, `-t s=80`, and `-t Read:o:short=120`. Bare `:s` uses the current global short default, while explicit tool-local values override it by specificity: for example, `--short=20 -t:s=10 -t:Bash:s=30` shortens regular text to 20, non-Bash tools to 10, and Bash tools to 30.
+
+---
 ## [2026-07-02] Rename the `rename` command to `name`
 
 ### Changed
