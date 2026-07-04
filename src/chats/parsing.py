@@ -1749,6 +1749,23 @@ def resolve_session_identifier_via_adapters(
     return None, []
 
 
+def _append_meta_source_tool_result(
+    msg: Message,
+    source_tool_use_id: str | None,
+    text_blocks: list[str],
+    flags: ConversationFlags,
+) -> bool:
+    """Classify isMeta payload text linked to a tool call as that tool's output."""
+    if not (flags.show_tools and msg.is_meta and source_tool_use_id and text_blocks):
+        return False
+    msg.tools.append({
+        "type": "tool_result",
+        "tool_use_id": source_tool_use_id,
+        "content": "\n\n".join(text_blocks),
+    })
+    return True
+
+
 def _parse_user_entry(
     entry: dict, index: int, flags: ConversationFlags
 ) -> Message | None:
@@ -1778,8 +1795,11 @@ def _parse_user_entry(
 
     show_user_text = flags.show_user_messages and (not msg.is_meta or flags.show_tools)
 
-    if isinstance(content_data, str) and show_user_text:
-        msg.text, msg.wrapper_type = _parse_user_string_content(content_data)
+    if isinstance(content_data, str):
+        if _append_meta_source_tool_result(msg, source_tool_use_id, [content_data], flags):
+            return msg
+        if show_user_text:
+            msg.text, msg.wrapper_type = _parse_user_string_content(content_data)
     elif isinstance(content_data, list):
         text_blocks = _filter_hidden_user_text_blocks(_extract_text_blocks(content_data))
         for item in content_data:
@@ -1790,6 +1810,8 @@ def _parse_user_entry(
             ):
                 msg.tools.append(item)
 
+        if _append_meta_source_tool_result(msg, source_tool_use_id, text_blocks, flags):
+            return msg
         if text_blocks and show_user_text:
             msg.text = "\n\n".join(text_blocks)
 

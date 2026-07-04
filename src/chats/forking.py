@@ -15,7 +15,7 @@ from .parsing import (
     get_native_session_id,
 )
 from .tool_filter import resolve_tool_visibility
-from .utils import shorten_data, truncate_middle
+from .utils import extract_text_from_content, shorten_data, truncate_middle
 
 
 def fork_session(source_path: Path, flags: ConversationFlags) -> Path:
@@ -255,11 +255,61 @@ def _filter_claude_assistant_content(
     return kept_items
 
 
+def _filter_claude_source_tool_text(
+    content: object,
+    source_tool_use_id: str | None,
+    flags: ConversationFlags,
+    id_map: dict[str, str],
+) -> tuple[list[object], list[tuple[dict, int | None]]] | None:
+    """Return linked meta text as a tool result when present.
+
+    >>> _filter_claude_source_tool_text([{"type": "text", "text": "payload"}], "toolu_01", ConversationFlags(show_tools=True), {"toolu_01": "Skill"})[0]
+    [{'type': 'tool_result', 'tool_use_id': 'toolu_01', 'content': 'payload', 'is_error': False}]
+    """
+    if not source_tool_use_id:
+        return None
+
+    text_blocks = extract_text_from_content(content, strip=True)
+    if not text_blocks:
+        return None
+
+    tool_payload = {
+        "type": "tool_result",
+        "tool_use_id": source_tool_use_id,
+        "content": "\n\n".join(text_blocks),
+        "is_error": False,
+    }
+    show_tool, local_short_max_chars = resolve_tool_visibility(
+        tool_payload,
+        flags.show_tools,
+        id_map,
+        default_short_max_chars=flags.shorten_max_chars,
+    )
+    if not show_tool:
+        return [], []
+
+    kept_item = _shorten_tool_payload(tool_payload, local_short_max_chars)
+    return [kept_item], [(kept_item, local_short_max_chars)]
+
+
 def _filter_claude_user_content(
     content: object,
     flags: ConversationFlags,
     id_map: dict[str, str],
+    *,
+    is_meta: bool = False,
+    source_tool_use_id: str | None = None,
 ) -> tuple[list[object], list[tuple[dict, int | None]]]:
+    if is_meta:
+        linked_tool_result = _filter_claude_source_tool_text(
+            content,
+            source_tool_use_id,
+            flags,
+            id_map,
+        )
+        if linked_tool_result is not None:
+            return linked_tool_result
+
     if isinstance(content, str):
         return ([content] if flags.show_user_messages and content else []), []
 
@@ -342,16 +392,27 @@ def _rewrite_claude_entries(
 
         elif entry_type == "user":
             content = entry.get("message", {}).get("content", [])
+            source_tool_use_id = (
+                entry.get("sourceToolUseID")
+                or entry.get("sourceToolUseId")
+                or entry.get("sourceToolUserId")
+            )
             filtered_content, kept_tool_results = _filter_claude_user_content(
-                content, flags, id_map
+                content,
+                flags,
+                id_map,
+                is_meta=entry.get("isMeta") is True,
+                source_tool_use_id=source_tool_use_id,
             )
             if isinstance(content, str):
-                if flags.show_user_messages and content:
-                    entry["message"]["content"] = content
-                elif kept_tool_results:
+                if kept_tool_results:
                     entry["message"]["content"] = [
                         tool_result for tool_result, _short in kept_tool_results
                     ]
+                elif entry.get("isMeta") is True and source_tool_use_id:
+                    continue
+                elif flags.show_user_messages and content:
+                    entry["message"]["content"] = content
                 else:
                     continue
             else:

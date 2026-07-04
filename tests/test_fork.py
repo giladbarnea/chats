@@ -159,6 +159,146 @@ def test_cmd_fork_claude_default_creates_thin_main_session_and_updates_history(
     )
 
 
+def test_cmd_fork_claude_skill_payload_obeys_tool_output_filters(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    project_dir = temp_home / ".claude" / "projects" / "demo-project"
+    history_file = temp_home / ".claude" / "history.jsonl"
+    history_file.parent.mkdir(parents=True, exist_ok=True)
+    history_file.write_text("", encoding="utf-8")
+
+    skill_tool_id = "toolu_018FPXcYEL6XtjceAPCLAfd7"
+    session_path = project_dir / "skill-payload-source.jsonl"
+    _write_jsonl(
+        session_path,
+        [
+            {
+                "type": "assistant",
+                "sessionId": "skill-payload-source",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": skill_tool_id,
+                            "name": "Skill",
+                            "input": {"skill": "instruct-another-ai"},
+                        }
+                    ],
+                },
+            },
+            {
+                "type": "user",
+                "sessionId": "skill-payload-source",
+                "message": {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": skill_tool_id,
+                            "content": "Launching skill: instruct-another-ai",
+                        }
+                    ],
+                },
+            },
+            {
+                "type": "user",
+                "isMeta": True,
+                "sourceToolUseID": skill_tool_id,
+                "sessionId": "skill-payload-source",
+                "message": {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Base directory for this skill\n\nSkill body content.",
+                        }
+                    ],
+                },
+            },
+            {
+                "type": "user",
+                "isMeta": True,
+                "sourceToolUseID": skill_tool_id,
+                "sessionId": "skill-payload-source",
+                "message": {
+                    "role": "user",
+                    "content": "String-form skill body content.",
+                },
+            },
+        ],
+    )
+
+    generated_session_ids = iter([
+        "skill-payload-input-fork",
+        "skill-payload-output-fork",
+    ])
+    monkeypatch.setattr(
+        forking_module,
+        "_generate_claude_session_id",
+        lambda: next(generated_session_ids),
+    )
+
+    commands_module.cmd_fork(
+        str(session_path),
+        ConversationFlags(
+            show_tools=[ToolFilter(direction="input")],
+            color=False,
+            paging=False,
+        ),
+    )
+    input_fork = _read_jsonl(project_dir / "skill-payload-input-fork.jsonl")
+    input_fork_json = json.dumps(input_fork)
+    assert "Base directory for this skill" not in input_fork_json, (
+        "Expected input-only fork filtering to drop the linked skill payload because it is a tool output. "
+        f"Got: {input_fork!r}"
+    )
+    assert "String-form skill body content" not in input_fork_json, (
+        "Expected input-only fork filtering to drop string-form linked skill payloads as tool outputs. "
+        f"Got: {input_fork!r}"
+    )
+
+    commands_module.cmd_fork(
+        str(session_path),
+        ConversationFlags(
+            show_tools=[ToolFilter(direction="output")],
+            color=False,
+            paging=False,
+        ),
+    )
+    output_fork = _read_jsonl(project_dir / "skill-payload-output-fork.jsonl")
+    skill_payload_contents = [
+        entry["message"]["content"]
+        for entry in output_fork
+        if "skill body content" in json.dumps(entry).lower()
+    ]
+    assert skill_payload_contents == [
+        [
+            {
+                "type": "tool_result",
+                "tool_use_id": skill_tool_id,
+                "content": "Base directory for this skill\n\nSkill body content.",
+                "is_error": False,
+            }
+        ],
+        [
+            {
+                "type": "tool_result",
+                "tool_use_id": skill_tool_id,
+                "content": "String-form skill body content.",
+                "is_error": False,
+            }
+        ],
+    ], (
+        "Expected output-only fork filtering to preserve linked skill payloads as tool_results. "
+        f"Got: {skill_payload_contents!r}"
+    )
+
+
 def test_cmd_fork_claude_agents_rewrites_sidechain_linkage(
     tmp_path: Path,
     monkeypatch,

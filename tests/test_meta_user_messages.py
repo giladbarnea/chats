@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Tests for meta user messages linked to tool input/output chains."""
 
-from chats import ConversationFlags, cmd_parse, parse_jsonl
+import json
+
+from chats import ConversationFlags, ToolFilter, cmd_parse, parse_jsonl
 from chats.formatting import format_to_xml
 
 
@@ -54,6 +56,82 @@ def test_meta_user_message_hidden_by_default_without_tools():
     )
     assert '>\n## User\n\nmeta\n</user-message>' not in output, (
         "Expected isMeta user text to stay hidden without `--tools`."
+    )
+
+
+def test_skill_payload_meta_user_message_counts_as_tool_output():
+    """Claude skill payloads linked to Skill calls should obey output tool filters."""
+    skill_tool_id = "toolu_018FPXcYEL6XtjceAPCLAfd7"
+    entries = [
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": skill_tool_id,
+                        "name": "Skill",
+                        "input": {"skill": "instruct-another-ai"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": skill_tool_id,
+                        "content": "Launching skill: instruct-another-ai",
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "isMeta": True,
+            "sourceToolUseID": skill_tool_id,
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Base directory for this skill: /Users/giladbarnea/.claude/skills/instruct-another-ai\n\nSkill body content.",
+                    }
+                ],
+            },
+        },
+    ]
+    content = "\n".join(json.dumps(entry) for entry in entries)
+    input_flags = ConversationFlags(
+        show_tools=[ToolFilter(direction="input")],
+        color="never",
+    )
+    messages = parse_jsonl(content, input_flags)
+    tool_id_map = _build_tool_id_map(messages)
+    input_output = format_to_xml(messages, input_flags, tool_id_map)
+
+    assert '<tool-input name="Skill" id="018F">' in input_output, (
+        f"Expected the Skill invocation to remain visible under input-only tool filtering. Got:\n{input_output}"
+    )
+    assert "Base directory for this skill" not in input_output, (
+        "Expected the skill payload to be hidden by `-t:i` because it is a tool output. "
+        f"Got:\n{input_output}"
+    )
+
+    output_flags = ConversationFlags(
+        show_tools=[ToolFilter(direction="output")],
+        color="never",
+    )
+    output_output = format_to_xml(messages, output_flags, tool_id_map)
+    assert '<tool-output name="Skill" id="018F">' in output_output, (
+        f"Expected the skill payload to render as a Skill tool output. Got:\n{output_output}"
+    )
+    assert "Base directory for this skill" in output_output, (
+        f"Expected the skill payload body to be present under output tool filtering. Got:\n{output_output}"
     )
 
 

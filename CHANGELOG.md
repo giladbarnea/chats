@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-04] Classify Claude skill payloads as tool outputs
+
+### Fixed
+
+- Claude `isMeta=true` text payloads linked to a source tool via `sourceToolUseID` now classify as tool outputs for that source tool instead of regular user text, including in `ch fork` filtering. Skill payloads therefore obey tool direction/name filters: `-t:i` hides the loaded skill body, while `-t:o` or `-t Skill:o` shows it as `<tool-output name="Skill" ...>` / a native `tool_result`.
+
+---
 ## [2026-07-04] Add explicit short limits to tool specs
 
 ### Added
