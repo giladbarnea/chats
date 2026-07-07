@@ -112,6 +112,75 @@ def test_cmd_parse_supports_basic_text_from_pi_session_path(
     )
 
 
+def test_cmd_parse_renders_pi_compaction_entries_as_compaction_blocks(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A native PI compaction entry should render as the shared compaction block."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-07-07T11-19-51-210Z_session-compaction.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-compaction",
+                "timestamp": "2026-07-07T11:19:51.210Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "compaction",
+                "id": "0d16eb25",
+                "parentId": "87ec96ee",
+                "timestamp": "2026-07-07T11:51:02.552Z",
+                "summary": "Summary of the prior PI conversation.",
+                "tokensBefore": 446281,
+                "firstKeptEntryId": "87ec96ee",
+                "fromHook": False,
+                "details": {"modifiedFiles": [], "readFiles": []},
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert '<compaction i="1" date="2026-07-07">' in captured.out, (
+        "Expected a native PI compaction entry to render through the shared "
+        f"compaction XML wrapper. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "## Compaction" in captured.out, (
+        "Expected the PI compaction block to use the Compaction header, not User. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "Summary of the prior PI conversation." in captured.out, (
+        "Expected the native PI compaction summary text to be preserved. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "<user-message" not in captured.out, (
+        "Expected a native PI compaction entry not to render as a user message. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
 def test_cmd_parse_supports_pi_session_id_after_claude_lookup_is_exhausted(
     tmp_path: Path,
     monkeypatch,

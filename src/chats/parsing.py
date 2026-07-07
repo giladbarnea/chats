@@ -920,6 +920,8 @@ def _parse_pi_jsonl_entries(
 
         if entry_type == "message":
             msg = _parse_pi_message_entry(entry, index, flags)
+        elif entry_type == "compaction":
+            msg = _parse_pi_compaction_entry(entry, index, flags)
         else:
             msg = None
 
@@ -1907,6 +1909,28 @@ def _parse_system_entry(
 def _normalize_pi_tool_name(name: str | None) -> str:
     """Map PI tool names to the canonical names used by the shared renderer."""
     return normalize_tool_name("pi", name)
+
+def _parse_pi_compaction_entry(
+    entry: dict,
+    index: int,
+    flags: ConversationFlags,
+) -> Message | None:
+    """Parse a PI `type=compaction` entry as the shared compaction block."""
+    summary = entry.get("summary")
+    if (
+        not flags.show_user_messages
+        or not isinstance(summary, str)
+        or not summary.strip()
+    ):
+        return None
+
+    return Message(
+        role="user",
+        index=index,
+        text=summary,
+        timestamp=entry.get("timestamp"),
+        wrapper_type=ContentBlockType.COMPACTION,
+    )
 
 
 def _normalize_codex_tool_name(name: str | None) -> str:
