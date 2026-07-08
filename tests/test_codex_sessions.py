@@ -4,9 +4,17 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from chats import ConversationFlags, ToolFilter, cmd_parse, cmd_name
+
+
+def _utc_to_local_display(utc_iso: str) -> str:
+    """Convert a UTC ISO timestamp to the local-time display string used in date attrs."""
+    dt = datetime.fromisoformat(utc_iso.replace("Z", "+00:00"))
+    local = dt.astimezone().replace(tzinfo=None)
+    return local.strftime("%Y-%m-%d %H:%M")
 
 
 def _write_codex_session(path: Path, entries: list[dict]) -> None:
@@ -144,7 +152,8 @@ def test_cmd_parse_supports_basic_text_from_codex_session_path(
     )
 
     captured = capsys.readouterr()
-    assert '<user-message i="1" date="2026-04-10">' in captured.out, (
+    user_date = _utc_to_local_display("2026-04-10T06:15:01.000Z")
+    assert f'<user-message i="1" date="{user_date}">' in captured.out, (
         "Expected the first visible Codex turn to render as a standard user message. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

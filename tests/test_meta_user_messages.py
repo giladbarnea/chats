@@ -2,9 +2,17 @@
 """Tests for meta user messages linked to tool input/output chains."""
 
 import json
+from datetime import datetime
 
 from chats import ConversationFlags, ToolFilter, cmd_parse, parse_jsonl
 from chats.formatting import format_to_xml
+
+
+def _utc_to_local_display(utc_iso: str) -> str:
+    """Convert a UTC ISO timestamp to the local-time display string used in date attrs."""
+    dt = datetime.fromisoformat(utc_iso.replace("Z", "+00:00"))
+    local = dt.astimezone().replace(tzinfo=None)
+    return local.strftime("%Y-%m-%d %H:%M")
 
 
 def _build_tool_id_map(messages):
@@ -182,12 +190,14 @@ def test_message_wrappers_include_date_attribute_from_timestamp():
     messages = parse_jsonl(content, flags)
     output = format_to_xml(messages, flags)
 
-    assert '<user-message i="1" date="2026-06-21">' in output, (
+    user_date = _utc_to_local_display("2026-06-21T09:30:00Z")
+    assistant_date = _utc_to_local_display("2026-06-21T09:31:00Z")
+    assert f'<user-message i="1" date="{user_date}">' in output, (
         f"Expected user wrapper to include date attr. Got:\n{output}"
     )
-    assert '<assistant-response i="2" model="opus-4-8" date="2026-06-21">' in output, (
-        f"Expected assistant wrapper to include model then date attrs. Got:\n{output}"
-    )
+    assert (
+        f'<assistant-response i="2" model="opus-4-8" date="{assistant_date}">' in output
+    ), f"Expected assistant wrapper to include model then date attrs. Got:\n{output}"
 
 
 def test_cmd_parse_slice_preserves_tool_name_on_tool_output(tmp_path, capsys):

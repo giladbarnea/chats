@@ -477,17 +477,17 @@ class Message:
         return header
 
     def get_date_attribute(self) -> str | None:
-        """Return the message date for XML attributes."""
+        """Return the message date and time for XML attributes, semi-machine-friendly."""
         if timestamp := _message_timestamp_datetime(self.timestamp):
-            return timestamp.date().isoformat()
+            return f"{timestamp:%Y-%m-%d %H:%M}"
         return None
 
     def get_display_date(self) -> str | None:
-        """Return the message date for Rich panel titles."""
+        """Return the human-friendly message date and time for Rich panel titles."""
         timestamp = _message_timestamp_datetime(self.timestamp)
         if timestamp is None:
             return None
-        return f"{timestamp:%B} {_ordinal_day(timestamp.day)}"
+        return f"{timestamp:%B} {_ordinal_day(timestamp.day)}, {timestamp:%H:%M}"
 
     def get_wrapper_attrs(self) -> str:
         """Build XML attributes string for this message's wrapper tag."""

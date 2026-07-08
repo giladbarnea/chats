@@ -4,11 +4,19 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
 from chats import ConversationFlags, cmd_parse, cmd_name
+
+
+def _utc_to_local_display(utc_iso: str) -> str:
+    """Convert a UTC ISO timestamp to the local-time display string used in date attrs."""
+    dt = datetime.fromisoformat(utc_iso.replace("Z", "+00:00"))
+    local = dt.astimezone().replace(tzinfo=None)
+    return local.strftime("%Y-%m-%d %H:%M")
 
 
 def _write_pi_session(path: Path, entries: list[dict]) -> None:
@@ -94,7 +102,8 @@ def test_cmd_parse_supports_basic_text_from_pi_session_path(
     )
 
     captured = capsys.readouterr()
-    assert '<user-message i="1" date="2026-04-04">' in captured.out, (
+    user_date = _utc_to_local_display("2026-04-04T12:25:47.187Z")
+    assert f'<user-message i="1" date="{user_date}">' in captured.out, (
         "Expected a PI user message to render through the standard XML wrapper. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
@@ -163,7 +172,8 @@ def test_cmd_parse_renders_pi_compaction_entries_as_compaction_blocks(
     )
 
     captured = capsys.readouterr()
-    assert '<compaction i="1" date="2026-07-07">' in captured.out, (
+    compaction_date = _utc_to_local_display("2026-07-07T11:51:02.552Z")
+    assert f'<compaction i="1" date="{compaction_date}">' in captured.out, (
         "Expected a native PI compaction entry to render through the shared "
         f"compaction XML wrapper. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
