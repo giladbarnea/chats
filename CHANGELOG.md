@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-09] Represent hook additional-context as a tool
+
+### Added
+
+- Claude hook additional-context (top-level `type: "attachment"` entries with `attachment.type == "hook_additional_context"`, injected by `UserPromptSubmit`, `SessionStart`, `Pre`/`PostToolUse`, ... hooks) now classifies as a synthetic `AdditionalContext` tool: hidden by default, shown with `-t`, and name-filterable (`-t AdditionalContext`, `-t !AdditionalContext`). The `hookName` renders as a `<tool-input name="AdditionalContext" hook_name="...">` attribute and the injected text as the body. It obeys the shared tool policy across parse, JSON, search, and `ch fork` filtering (a thin fork drops it; `-t`/`-t:s` keeps and shortens it).
+
+---
 ## [2026-07-04] Classify Claude skill payloads as tool outputs
 
 ### Fixed

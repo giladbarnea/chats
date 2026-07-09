@@ -919,6 +919,9 @@ def _term_can_match_generated_marker(term: SearchTerm, flags: ConversationFlags)
         markers.append("tool-input")
     if flags.show_tools:
         markers.append("tool-output")
+        # AdditionalContext is a rendered tool name absent from the raw JSONL
+        # (synthesized from hook attachments), so it needs the same escape hatch.
+        markers.append("AdditionalContext")
     if flags.show_plans:
         markers.append("ExitPlanMode")
 

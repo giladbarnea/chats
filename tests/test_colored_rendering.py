@@ -272,6 +272,46 @@ def test_tool_call_and_result_markers(tmp_path, monkeypatch):
     )
 
 
+def test_additional_context_tool_has_dedicated_color(tmp_path, monkeypatch):
+    """AdditionalContext renders in its own color, distinct from ordinary tools."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_claude_session(
+        home, "22222222-aaaa-bbbb-cccc-000000000002",
+        [
+            {"type": "user", "uuid": "u1", "timestamp": "2026-06-16T11:00:00Z",
+             "cwd": "/tmp/proj", "message": {"role": "user", "content": "go"}},
+            {"type": "attachment", "uuid": "att1", "parentUuid": "u1",
+             "timestamp": "2026-06-16T11:00:01Z", "cwd": "/tmp/proj",
+             "attachment": {"type": "hook_additional_context",
+                            "content": ["injected context body"],
+                            "hookName": "UserPromptSubmit",
+                            "toolUseID": "hook-123",
+                            "hookEvent": "UserPromptSubmit"}},
+            _assistant(content=[
+                {"type": "tool_use", "id": "toolu_0a", "name": "Bash",
+                 "input": {"command": "echo hi"}},
+            ]),
+        ],
+    )
+
+    styled = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False, styles=True,
+    )
+
+    assert "AdditionalContext" in styled, (
+        f"Expected the synthetic AdditionalContext tool to render. Got:\n{styled}"
+    )
+    assert "38;2;252;152;103" in styled, (
+        f"Expected AdditionalContext to use Monokai orange (#fc9867). Got:\n{styled}"
+    )
+    assert "38;2;120;196;206" in styled, (
+        f"Expected ordinary Bash tool calls to keep the existing cyan. Got:\n{styled}"
+    )
+
+
 def test_edit_renders_as_diff_not_old_new_blocks(tmp_path, monkeypatch):
     """Edit renders a colored diff, not labeled old_string:/new_string: blocks."""
     home = tmp_path / "home"

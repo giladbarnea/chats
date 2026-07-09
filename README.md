@@ -540,7 +540,13 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Only the latest such entry is acknowledged for resolution, search, and metadata
    - Searchable in search mode and emitted as `custom_title:` in metadata frontmatter
 
-7. **Antigravity CLI transcript entries**
+7. **Hook additional-context attachments** (`type: "attachment"`, Claude)
+   - `attachment.type: "hook_additional_context"` is the text a hook injects into the transcript (from `UserPromptSubmit`, `SessionStart`, `PreToolUse:*`, `PostToolUse:*`, ...)
+   - Classifies as a synthetic `AdditionalContext` tool: hidden by default, shown with `-t`, name-filterable (`-t AdditionalContext`, `-t !AdditionalContext`)
+   - `attachment.hookName` renders as the `hook_name` attribute and the joined `attachment.content` list as the body: `<tool-input name="AdditionalContext" hook_name="UserPromptSubmit">`
+   - Obeys the shared tool policy across parse, JSON, search, and `ch fork` filtering (a thin fork drops it; `-t`/`-t:s` keeps and shortens it). Other `attachment.type`s are skipped
+
+8. **Antigravity CLI transcript entries**
    - Stored under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`
    - `transcript_full.jsonl` is preferred when present; `transcript.jsonl` is used only when the full variant is missing
    - Session identity comes from the `{session_id}` brain directory, not from in-record fields

@@ -722,6 +722,8 @@ def _parse_default_jsonl_entries(
             msg = _parse_assistant_entry(entry, index, flags)
         elif entry_type == "system":
             msg = _parse_system_entry(entry, index, flags)
+        elif entry_type == "attachment":
+            msg = _parse_hook_additional_context_entry(entry, index, flags)
         else:
             msg = None
 
@@ -1904,6 +1906,38 @@ def _parse_system_entry(
         timestamp=entry.get("timestamp"),
         wrapper_type=ContentBlockType.RECAP,
     )
+
+
+def _parse_hook_additional_context_entry(
+    entry: dict, index: int, flags: ConversationFlags
+) -> Message | None:
+    """Represent a Claude hook's injected additional-context as an `AdditionalContext` tool.
+
+    Hooks (UserPromptSubmit, SessionStart, Pre/PostToolUse, ...) can inject text
+    into the transcript as a top-level `attachment` entry. Treating it as a
+    synthetic tool_use lets it obey the shared `-t/--tools` visibility policy.
+    """
+    if not flags.show_tools:
+        return None
+
+    attachment = entry.get("attachment", {})
+    if attachment.get("type") != "hook_additional_context":
+        return None
+
+    content = attachment.get("content")
+    if not isinstance(content, list):
+        return None
+    text = "\n\n".join(block for block in content if isinstance(block, str) and block.strip())
+    if not text:
+        return None
+
+    msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
+    msg.tools.append({
+        "type": "tool_use",
+        "name": "AdditionalContext",
+        "input": {"hook_name": attachment.get("hookName", ""), "content": text},
+    })
+    return msg
 
 
 def _normalize_pi_tool_name(name: str | None) -> str:

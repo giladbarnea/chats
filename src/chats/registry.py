@@ -66,6 +66,7 @@ TOOL_SCHEMAS: dict[str, ToolSchema] = {
         "result",
         None,
     ),
+    "AdditionalContext": ToolSchema(["hook_name"], "content", None),
 }
 
 

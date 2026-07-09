@@ -360,6 +360,44 @@ def _filter_claude_user_content(
     return kept_items, kept_tool_results
 
 
+def _keep_claude_hook_attachment(
+    entry: dict,
+    flags: ConversationFlags,
+    id_map: dict[str, str],
+) -> bool:
+    """Apply the shared tool-visibility policy to a hook additional-context attachment.
+
+    Non-hook attachments are kept verbatim. A hook additional-context attachment is
+    kept only when its synthetic `AdditionalContext` tool passes the `--tools`
+    filters, shortening its injected content in place to honor `-t:s`.
+    """
+    attachment = entry.get("attachment", {})
+    if attachment.get("type") != "hook_additional_context":
+        return True
+
+    tool_payload = {
+        "type": "tool_use",
+        "name": "AdditionalContext",
+        "input": {
+            "hook_name": attachment.get("hookName", ""),
+            "content": attachment.get("content"),
+        },
+    }
+    show_tool, local_short_max_chars = resolve_tool_visibility(
+        tool_payload,
+        flags.show_tools,
+        id_map,
+        default_short_max_chars=flags.shorten_max_chars,
+    )
+    if not show_tool:
+        return False
+    if local_short_max_chars is not None:
+        attachment["content"] = shorten_data(
+            attachment.get("content"), max_chars=local_short_max_chars
+        )
+    return True
+
+
 def _rewrite_claude_entries(
     entries: list[dict],
     source_session_id: str,
@@ -432,6 +470,10 @@ def _rewrite_claude_entries(
                     entry["toolUseResult"]["agentId"] = agent_id_map[
                         tool_use_result["agentId"]
                     ]
+
+        elif entry_type == "attachment":
+            if not _keep_claude_hook_attachment(entry, flags, id_map):
+                continue
 
         if agent_id_map and entry.get("agentId") in agent_id_map:
             entry["agentId"] = agent_id_map[entry["agentId"]]

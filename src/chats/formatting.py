@@ -184,6 +184,9 @@ def _read_output_renderable(
     return LeftRail(syntax, accent)
 
 
+_TOOL_INPUT_ACCENT_BY_NAME = {"AdditionalContext": "tool.additional_context"}
+
+
 def render_tool_rich(
     parts: ToolParts, input_by_id: dict[str, dict] | None = None
 ) -> list:
@@ -199,7 +202,13 @@ def render_tool_rich(
         (value for key, value in parts.attrs if key == "name"), "Tool"
     )
 
-    accent = "tool.error" if is_error else "tool.result" if is_result else "tool.call"
+    accent = (
+        "tool.error"
+        if is_error
+        else "tool.result"
+        if is_result
+        else _TOOL_INPUT_ACCENT_BY_NAME.get(name, "tool.call")
+    )
     header = Text()
     header.append(f"{'⎿' if is_result else '⏺'} ", style=accent)
     header.append(name, style=accent)
@@ -209,7 +218,9 @@ def render_tool_rich(
         header.append(f"  ·  {key_arg}", style="message.meta")
 
     out: list = [header]
-    out.append(_tool_body_renderable(parts, name, is_error, is_result, accent, input_by_id))
+    out.append(
+        _tool_body_renderable(parts, name, is_error, is_result, accent, input_by_id)
+    )
     return [item for item in out if item is not None]
 
 
