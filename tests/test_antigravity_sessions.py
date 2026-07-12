@@ -75,11 +75,11 @@ def test_cmd_parse_renders_antigravity_user_request_and_assistant_response(
     )
 
     captured = capsys.readouterr()
-    assert "provider: antigravitycli" in captured.out, (
-        f"Expected Antigravity provider metadata. stdout:\n{captured.out}"
+    assert "provider: antigravitycli" in captured.err, (
+        f"Expected Antigravity provider metadata. stderr:\n{captured.err}"
     )
-    assert f"session_id: {session_id}" in captured.out, (
-        f"Expected brain-directory session id in metadata. stdout:\n{captured.out}"
+    assert f"session_id: {session_id}" in captured.err, (
+        f"Expected brain-directory session id in metadata. stderr:\n{captured.err}"
     )
     assert "Build the Antigravity adapter." in captured.out, (
         f"Expected USER_REQUEST content to render. stdout:\n{captured.out}"
@@ -203,11 +203,11 @@ def test_cmd_parse_metadata_uses_antigravity_created_at_timestamps(
     captured = capsys.readouterr()
     expected_created = _utc_to_local_display("2026-06-01T10:00:00Z")
     expected_modified = _utc_to_local_display("2026-06-01T11:30:00Z")
-    assert f'created: "{expected_created}"' in captured.out, (
-        f"Expected first Antigravity created_at to drive local-time metadata. stdout:\n{captured.out}"
+    assert f'created: "{expected_created}"' in captured.err, (
+        f"Expected first Antigravity created_at to drive local-time metadata. stderr:\n{captured.err}"
     )
-    assert f'modified: "{expected_modified}"' in captured.out, (
-        f"Expected last Antigravity created_at to drive local-time metadata. stdout:\n{captured.out}"
+    assert f'modified: "{expected_modified}"' in captured.err, (
+        f"Expected last Antigravity created_at to drive local-time metadata. stderr:\n{captured.err}"
     )
 
 
@@ -258,8 +258,8 @@ def test_cmd_parse_resolves_antigravity_session_id_to_full_transcript(
     assert "short transcript loser" not in captured.out, (
         f"Expected compact transcript to be ignored when _full exists. stdout:\n{captured.out}"
     )
-    assert "transcript_full.jsonl" in captured.out, (
-        f"Expected metadata to show selected full transcript path. stdout:\n{captured.out}"
+    assert "transcript_full.jsonl" in captured.err, (
+        f"Expected metadata to show selected full transcript path. stderr:\n{captured.err}"
     )
 
 

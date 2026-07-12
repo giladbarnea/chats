@@ -3,6 +3,7 @@ from __future__ import annotations
 import difflib
 import json
 import re
+import sys
 import textwrap
 from datetime import datetime
 from pathlib import Path
@@ -573,10 +574,11 @@ def print_metadata(
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
     color: bool = False,
+    to_stderr: bool = False,
     dedupe_frontmatter_separators: bool = False,
     include_frontmatter_separator: bool = True,
 ) -> None:
-    """Print conversation metadata to stdout in YAML format."""
+    """Print conversation metadata in YAML format."""
     content = build_metadata_text(
         file_path,
         cwd,
@@ -592,13 +594,16 @@ def print_metadata(
     )
 
     if color:
-        get_console().print(Text(content, style="dim"))
+        console = Console(stderr=True, theme=theme.APP_THEME) if to_stderr else get_console()
+        console.print(Text(content, style="dim"))
         if include_frontmatter_separator and not dedupe_frontmatter_separators:
-            get_console().print(Text("---", style="dim"))
-    else:
-        print(content)
-        if include_frontmatter_separator and not dedupe_frontmatter_separators:
-            print("---")
+            console.print(Text("---", style="dim"))
+        return
+
+    output = sys.stderr if to_stderr else sys.stdout
+    print(content, file=output)
+    if include_frontmatter_separator and not dedupe_frontmatter_separators:
+        print("---", file=output)
 
 
 def build_session_title(

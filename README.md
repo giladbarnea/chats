@@ -137,7 +137,7 @@ Metadata frontmatter emits `forked_from:` only when the raw session exposes a fo
 
 **XML Format (default):**
 
-Metadata frontmatter (optional), XML to stdout, separated by `---`:
+Plain XML sends optional metadata frontmatter to stderr and the conversation body to stdout. Colored terminal output uses a session title instead. XML messages are separated by `---`:
 
 ```xml
 <user-message i="1">

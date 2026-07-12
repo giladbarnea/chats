@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-12] Keep piped parse output content-only
+
+### Changed
+
+- Plain XML parse output now sends optional session metadata frontmatter to stderr, leaving stdout as conversation content only. Automatic no-color output while piping renders that metadata dimly on an interactive stderr; explicit `--color=never` stays ANSI-free. `--only-metadata` remains a metadata-only stdout mode.
+
+---
 ## [2026-07-09] Represent hook additional-context as a tool
 
 ### Added

@@ -796,24 +796,24 @@ def test_cmd_parse_emits_metadata_for_codex_session_path(
     )
 
     captured = capsys.readouterr()
-    assert "session_id: 01961abc-def0-7123-89ab-codexsession0004" in captured.out, (
+    assert "session_id: 01961abc-def0-7123-89ab-codexsession0004" in captured.err, (
         "Expected Codex metadata to include the canonical Codex session id from session_meta.payload.id. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
-    assert "directory: /tmp/codex-project" in captured.out, (
+    assert "directory: /tmp/codex-project" in captured.err, (
         "Expected Codex metadata to use session_meta.cwd for the directory field. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
     assert (
         "history_path: ~/.codex/sessions/2026/04/10/"
         "rollout-2026-04-10T09-27-00-01961abc-def0-7123-89ab-codexsession0004.jsonl"
-    ) in captured.out, (
+    ) in captured.err, (
         "Expected Codex metadata to include the direct ~/.codex history path. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
-    assert "messages: 1" in captured.out, (
+    assert "messages: 1" in captured.err, (
         "Expected Codex metadata to report the normalized message count. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
 
 
@@ -1159,11 +1159,11 @@ def test_cmd_parse_treats_native_codex_thread_name_as_custom_title(
     )
 
     captured = capsys.readouterr()
-    assert f'custom_title: "{native_title}"' in captured.out, (
+    assert f'custom_title: "{native_title}"' in captured.err, (
         "Expected native Codex thread names to populate the shared metadata custom_title field. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
-    assert captured.out.count(native_title) == 1, (
+    assert captured.err.count(native_title) == 1, (
         "Expected the native Codex thread name to appear only in metadata, not as rendered message content. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

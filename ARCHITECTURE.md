@@ -145,7 +145,7 @@ TIME   ACTOR                    ACTION                                         T
 ├───►  cmd_parse                [if --only-metadata] emit frontmatter +    ──► stdout / file
 │                               exit
 │
-├───►  cmd_parse                print_metadata() [if xml + not file out]   ──► stdout (YAML frontmatter)
+├───►  cmd_parse                print_metadata() [if plain xml + not file out] ──► stderr (YAML frontmatter)
 │
 ├───►  cmd_parse                Format output:                             ──► formatted string
 │      │                        ├── format_to_xml(messages, flags, map)

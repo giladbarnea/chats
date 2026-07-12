@@ -292,10 +292,10 @@ def test_cmd_parse_recent_negative_index_uses_all_supported_sessions(
     assert (
         "history_path: ~/.codex/sessions/2026/04/11/"
         "rollout-2026-04-11T10-11-09-019d7b61-53d7-7891-9033-ad646f9d2ce7.jsonl"
-    ) in captured.out, (
+    ) in captured.err, (
         "Expected `-1` to resolve within the unified supported-session search space, "
         "so the newest Codex session should win over newer-than-PI Claude sessions. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
     assert "codex assistant response" in captured.out, (
         "Expected the last message from the newest supported session to be rendered. "
@@ -326,10 +326,10 @@ def test_cmd_parse_provider_filter_limits_recent_negative_index_resolution(
     captured = capsys.readouterr()
     assert (
         "history_path: ~/.claude/projects/demo-project/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jsonl"
-        in captured.out
+        in captured.err
     ), (
         "Expected provider='claude' filter to make parse resolve '-1' against "
-        f"only Claude sessions. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"only Claude sessions. Got stderr:\n{captured.err}"
     )
     assert "claude assistant response" in captured.out, (
         "Expected the newest Claude session's last message to render after filtering. "
@@ -395,13 +395,13 @@ def test_cmd_parse_resolves_latest_title_substring_across_ecosystems(
     assert (
         "history_path: ~/.codex/sessions/2026/04/11/"
         "rollout-2026-04-11T10-11-09-019d7b61-53d7-7891-9033-ad646f9d2ce7.jsonl"
-    ) in captured.out, (
+    ) in captured.err, (
         "Expected latest-title substring resolution to work for Codex native thread names too. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
-    assert "cross-ecosystem-current-title-token" in captured.out, (
+    assert "cross-ecosystem-current-title-token" in captured.err, (
         "Expected metadata to surface the current resolved title after name-based resolution. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
 
 

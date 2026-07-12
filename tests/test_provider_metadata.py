@@ -126,8 +126,8 @@ def test_cmd_parse_emits_provider_claude(tmp_path, capsys, monkeypatch):
         emit_metadata=True,
     )
     captured = capsys.readouterr()
-    assert "provider: claude" in captured.out, (
-        f"Expected 'provider: claude' in metadata frontmatter.\nstdout:\n{captured.out}"
+    assert "provider: claude" in captured.err, (
+        f"Expected 'provider: claude' in metadata stderr.\nstderr:\n{captured.err}"
     )
 
 
@@ -156,8 +156,8 @@ def test_cmd_parse_emits_provider_pi(tmp_path, capsys, monkeypatch):
         emit_metadata=True,
     )
     captured = capsys.readouterr()
-    assert "provider: pi" in captured.out, (
-        f"Expected 'provider: pi' in metadata frontmatter.\nstdout:\n{captured.out}"
+    assert "provider: pi" in captured.err, (
+        f"Expected 'provider: pi' in metadata stderr.\nstderr:\n{captured.err}"
     )
 
 
@@ -190,12 +190,12 @@ def test_cmd_parse_emits_provider_codex(tmp_path, capsys, monkeypatch):
         emit_metadata=True,
     )
     captured = capsys.readouterr()
-    assert "provider: codex" in captured.out, (
-        f"Expected 'provider: codex' in metadata frontmatter.\nstdout:\n{captured.out}"
+    assert "provider: codex" in captured.err, (
+        f"Expected 'provider: codex' in metadata stderr.\nstderr:\n{captured.err}"
     )
-    assert "forked_from:" not in captured.out, (
+    assert "forked_from:" not in captured.err, (
         "Expected forked_from metadata to be omitted when the raw session has no fork parent. "
-        f"stdout:\n{captured.out}"
+        f"stderr:\n{captured.err}"
     )
 
 
@@ -238,9 +238,9 @@ def test_cmd_parse_emits_codex_forked_from_when_present(tmp_path, capsys, monkey
     )
 
     captured = capsys.readouterr()
-    assert f"forked_from: {forked_from_id}" in captured.out, (
-        "Expected Codex fork parent id to appear as forked_from metadata. "
-        f"stdout:\n{captured.out}"
+    assert f"forked_from: {forked_from_id}" in captured.err, (
+        "Expected Codex fork parent id to appear as stderr metadata. "
+        f"stderr:\n{captured.err}"
     )
 
 

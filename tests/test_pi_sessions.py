@@ -295,9 +295,9 @@ def test_cmd_parse_supports_pi_session_id_after_claude_lookup_is_exhausted(
     assert (
         "history_path: ~/.pi/agent/sessions/--tmp-project--/"
         f"2026-04-04T12-24-33-963Z_{session_id}.jsonl"
-    ) in captured.out, (
+    ) in captured.err, (
         "Expected metadata to prove the session id resolved to the PI session file. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
 
 
@@ -393,9 +393,9 @@ def test_cmd_parse_prefers_claude_session_before_pi_fallback_for_same_identifier
     )
     assert (
         f"history_path: ~/.claude/projects/demo-project/{session_id}.jsonl"
-    ) in captured.out, (
+    ) in captured.err, (
         "Expected metadata to prove the identifier resolved to the Claude session file. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
 
 
@@ -656,24 +656,24 @@ def test_cmd_parse_emits_metadata_for_pi_session_path(
     )
 
     captured = capsys.readouterr()
-    assert "session_id: session-789" in captured.out, (
+    assert "session_id: session-789" in captured.err, (
         "Expected PI session metadata to include the native PI session id, not the timestamp-prefixed filename stem. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
-    assert "directory: /tmp/project" in captured.out, (
+    assert "directory: /tmp/project" in captured.err, (
         "Expected PI session metadata to use the session cwd for the directory field. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
     assert (
         "history_path: ~/.pi/agent/sessions/--tmp-project--/"
         "2026-04-04T12-24-33-963Z_session-metadata.jsonl"
-    ) in captured.out, (
+    ) in captured.err, (
         "Expected PI session metadata to include the direct ~/.pi history path. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
-    assert "messages: 1" in captured.out, (
+    assert "messages: 1" in captured.err, (
         "Expected PI session metadata to report the normalized message count. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
 
 
@@ -914,11 +914,11 @@ def test_cmd_parse_treats_native_pi_session_name_as_custom_title(
     )
 
     captured = capsys.readouterr()
-    assert f'custom_title: "{native_title}"' in captured.out, (
+    assert f'custom_title: "{native_title}"' in captured.err, (
         "Expected native PI session names to populate the shared metadata custom_title field. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+        f"Got stderr:\n{captured.err}"
     )
-    assert captured.out.count(native_title) == 1, (
+    assert captured.err.count(native_title) == 1, (
         "Expected the native PI session name to appear only in metadata, not as rendered message content. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )

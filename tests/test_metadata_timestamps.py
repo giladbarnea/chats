@@ -70,13 +70,13 @@ def test_cmd_parse_metadata_prefers_jsonl_timestamps_over_file_stat(tmp_path, ca
 
     captured = capsys.readouterr()
     expected_time = _utc_to_local_display("2025-02-03T04:05:06.000Z")
-    assert f'modified: "{expected_time}"' in captured.out, (
+    assert f'modified: "{expected_time}"' in captured.err, (
         "Expected parse metadata to use the conversation timestamp for "
-        f"modified time (expected {expected_time}). Got output:\n{captured.out}\n{captured.err}"
+        f"modified time (expected {expected_time}). Got stderr:\n{captured.err}"
     )
-    assert 'modified: "2024-01-02 00:00"' not in captured.out, (
+    assert 'modified: "2024-01-02 00:00"' not in captured.err, (
         "Expected parse metadata not to fall back to the stale filesystem "
-        f"mtime when JSONL timestamps are available. Got output:\n{captured.out}"
+        f"mtime when JSONL timestamps are available. Got stderr:\n{captured.err}"
     )
 
 

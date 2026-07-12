@@ -61,13 +61,13 @@ cat > "$TEMP_PROJECTS/agent-newest.jsonl" << 'EOF'
 EOF
 touch -t 202401010199 "$TEMP_PROJECTS/agent-newest.jsonl"
 
-OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD -1 --color=never 2>/dev/null)
+OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD -1 --color=never 2>&1)
 assert_success
 assert_contains "$OUTPUT" "session_id: dddd4444-ambiguous-beta"
 
 # Test 7: Bare -t must not steal the recent session selector
 echo "Test 7: Negative session index after bare -t..."
-OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD -t -1 --color=never 2>/dev/null)
+OUTPUT=$(HOME="$TEMP_HOME" $CC_CMD -t -1 --color=never 2>&1)
 assert_success
 assert_contains "$OUTPUT" "session_id: dddd4444-ambiguous-beta"
 

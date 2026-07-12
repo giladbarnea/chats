@@ -76,8 +76,15 @@ assert_not_contains "$OUTPUT_STDIN" "<tool-"
 
 # 3. Naive piped to cat (should have NO colors)
 echo "Testing piped output (no colors)..."
-OUTPUT_PIPED=$($CC_CMD "$DATA_FILE_SIMPLE" | cat)
+METADATA_FILE=$(mktemp)
+OUTPUT_PIPED=$($CC_CMD "$DATA_FILE_SIMPLE" 2>"$METADATA_FILE" | cat)
 assert_success
 assert_no_colors "$OUTPUT_PIPED"
+assert_not_contains "$OUTPUT_PIPED" "session_id:"
+
+METADATA=$(<"$METADATA_FILE")
+rm "$METADATA_FILE"
+assert_contains "$METADATA" "session_id:"
+assert_not_contains "$METADATA" "<${USER_MESSAGE_TAG}"
 
 echo "✅ Basic tests passed"

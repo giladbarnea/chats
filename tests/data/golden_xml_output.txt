@@ -1,11 +1,3 @@
----
-session_id: synthetic_flags
-provider: claude
-history_path: tests/data/synthetic_flags.jsonl
-created: "2025-11-23 11:29"
-modified: "2025-11-23 11:29"
-messages: 4
----
 <user-message i="1" date="2025-11-23 11:29">
 ## User
 

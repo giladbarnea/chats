@@ -115,6 +115,7 @@ class ConversationFlags:
     shorten_max_chars: int
     shorten_thinking: bool
     color: bool
+    metadata_color: bool
     paging: bool
 
     def __init__(
@@ -130,7 +131,7 @@ class ConversationFlags:
         shorten: bool = False,
         shorten_max_chars: int = 500,
         shorten_thinking: bool = False,
-        color: bool = False,
+        color: bool | Literal["always", "never", "auto"] = False,
         paging: bool | None = None,
     ):
         self.message_selection = message_selection
@@ -144,6 +145,7 @@ class ConversationFlags:
         self.shorten_max_chars = shorten_max_chars
         self.shorten_thinking = shorten_thinking
         self.color = (color == "always") or (color == "auto" and sys.stdout.isatty())
+        self.metadata_color = color != "never" if isinstance(color, str) else color
         # Paging defaults to color value unless explicitly set
         self.paging = paging if paging is not None else self.color
 
@@ -184,7 +186,7 @@ class ConversationFlags:
             f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
             f"shorten={self.shorten}, shorten_max_chars={self.shorten_max_chars}, "
             f"shorten_thinking={self.shorten_thinking}, "
-            f"color={self.color}, paging={self.paging})"
+            f"color={self.color}, metadata_color={self.metadata_color}, paging={self.paging})"
         )
 
 

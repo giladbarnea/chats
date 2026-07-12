@@ -233,7 +233,8 @@ def cmd_parse(
                 last_custom_title=current_custom_title,
                 created_at=metadata.ctime,
                 modified_at=metadata.mtime,
-                color=flags.color,
+                color=flags.metadata_color,
+                to_stderr=not flags.color,
             )
 
     if output_format == "json":
