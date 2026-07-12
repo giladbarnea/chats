@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+import orjson
+
 from .model import ConversationFlags, Message, Provider, SubagentMetadata
 from .registry import (
     ContentBlockType,
@@ -526,8 +528,8 @@ def _iter_jsonl_entries(content: str) -> list[dict]:
             continue
 
         try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
+            entry = orjson.loads(line)
+        except orjson.JSONDecodeError:
             continue
 
         if isinstance(entry, dict):
