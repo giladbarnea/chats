@@ -15,6 +15,7 @@ RED = "#e27881"
 MAGENTA = "#c88bda"
 BRIGHT_CYAN = "#78c4ce"
 ADDITIONAL_CONTEXT = "#fc9867"
+TOOL_RESULT = "#5f7e86"
 GRAY = "#c9ccd3"
 INK = "#1d1f23"
 
@@ -45,7 +46,7 @@ APP_THEME = Theme(
         # block's extent. Call bright, result dim, error red.
         "tool.call": f"bold {BRIGHT_CYAN}",
         "tool.additional_context": f"bold {ADDITIONAL_CONTEXT}",
-        "tool.result": "#5f7e86",
+        "tool.result": TOOL_RESULT,
         "tool.error": f"bold {RED}",
         # Edit-tool diff bodies.
         "diff.add": GREEN,

@@ -10,6 +10,13 @@ All notable changes to the `conversations` skill.
 - Plain XML parse output now sends optional session metadata frontmatter to stderr, leaving stdout as conversation content only. Automatic no-color output while piping renders that metadata dimly on an interactive stderr; explicit `--color=never` stays ANSI-free. `--only-metadata` remains a metadata-only stdout mode.
 
 ---
+## [2026-07-12] Label Bash result panels as Bash
+
+### Changed
+
+- Colored parse and search views now label user-role messages containing only Bash tool results as `Bash` instead of `User`. Mixed messages containing genuine user text, results from other tools, and the provider-native XML/JSON roles remain unchanged.
+
+---
 ## [2026-07-09] Represent hook additional-context as a tool
 
 ### Added

@@ -319,32 +319,60 @@ def _message_content_renderables(
     return out
 
 
-def _message_header_badge(msg: Message, *, conversation_tag: str | None = None) -> Text:
+def _is_bash_result_message(msg: Message, parts: list[MessagePart]) -> bool:
+    """Whether the visible user message consists only of Bash tool results."""
+    return (
+        msg.get_wrapper_type() is ContentBlockType.USER_MESSAGE
+        and bool(parts)
+        and all(
+            part.kind is MessagePartKind.TOOL
+            and part.data.tag == ContentBlockType.TOOL_OUTPUT.value.xml_tag
+            and part.data.name == "Bash"
+            for part in parts
+        )
+    )
+
+
+def _message_hue(msg: Message, parts: list[MessagePart]) -> str:
+    """Return the colored presentation hue for a visible message."""
+    if _is_bash_result_message(msg, parts):
+        return theme.TOOL_RESULT
+    tag = msg.get_wrapper_type().value.xml_tag
+    return _ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE)
+
+
+def _message_header_text(msg: Message, parts: list[MessagePart]) -> str:
+    """Return the role text shown in a colored message badge."""
+    if _is_bash_result_message(msg, parts):
+        return "Bash"
+    if header := msg.get_header():
+        return re.sub(r"^#+\s*", "", header)
+    return msg.role.title()
+
+
+def _message_header_badge(
+    msg: Message,
+    parts: list[MessagePart],
+    *,
+    conversation_tag: str | None = None,
+) -> Text:
     """A message's role badge: colored role chip + dim id/index/model suffix.
 
     Shared by both colored views — the parse per-message Panel title and the
     search Panel's inline per-message headers (the latter passing the
     conversation's short id as ``conversation_tag``).
     """
-    tag = msg.get_wrapper_type().value.xml_tag
-    header = msg.get_header()
-    header_text = re.sub(r"^#+\s*", "", header) if header else msg.role.title()
     badge = Text()
     if msg.branch_id:
         badge.append(f" ⑂{msg.branch_id} ", style="bold white on #475569")
     badge.append(
-        f" {header_text} ",
-        style=f"bold {theme.INK} on {_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE)}",
+        f" {_message_header_text(msg, parts)} ",
+        style=f"bold {theme.INK} on {_message_hue(msg, parts)}",
     )
     meta = _compact_header_meta(msg, conversation_tag)
     if meta:
         badge.append(f"  ·  {meta}", style="message.meta")
     return badge
-
-
-def _message_border_style(tag: str) -> Style:
-    """The message's role hue, used as the Panel border color."""
-    return Style(color=_ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE))
 
 
 _DEFAULT_ROLE_HUE = theme.GRAY
@@ -666,7 +694,7 @@ def build_messages_group(
             print_targets.append(Markdown("---"))
 
         print_targets.append(
-            _message_header_badge(msg, conversation_tag=conversation_tag)
+            _message_header_badge(msg, parts, conversation_tag=conversation_tag)
         )
         print_targets.append(Text(""))
         print_targets.extend(
@@ -700,9 +728,9 @@ def build_message_panels(
         panels.append(
             Panel(
                 Group(*body),
-                title=_message_header_badge(msg),
+                title=_message_header_badge(msg, parts),
                 title_align="left",
-                border_style=_message_border_style(msg.get_wrapper_type().value.xml_tag),
+                border_style=Style(color=_message_hue(msg, parts)),
                 box=box.ROUNDED,
                 padding=(0, 1),
             )

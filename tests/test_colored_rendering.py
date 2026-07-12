@@ -242,6 +242,36 @@ def test_plain_parse_keeps_xml_tags(tmp_path, monkeypatch, capsys):
     )
 
 
+def test_plain_bash_result_keeps_user_transport_wrapper(tmp_path, monkeypatch, capsys):
+    """The colored relabeling does not change XML's provider transport semantics."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_claude_session(
+        home, "11111111-aaaa-bbbb-cccc-000000000004",
+        [
+            _assistant(content=[
+                {"type": "tool_use", "id": "toolu_0a", "name": "Bash",
+                 "input": {"command": "echo hi"}},
+            ]),
+            _user([{"type": "tool_result", "tool_use_id": "toolu_0a",
+                    "content": "hi"}]),
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    )
+    out = capsys.readouterr().out
+
+    assert '<user-message i="2"' in out, (
+        f"Expected XML to preserve Claude's user-role result envelope. Got:\n{out}"
+    )
+    assert '<tool-output name="Bash"' in out, (
+        f"Expected XML to preserve the semantic Bash tool output. Got:\n{out}"
+    )
+
+
 def test_tool_call_and_result_markers(tmp_path, monkeypatch):
     """Tools render tag-free as ⏺ call / ⎿ result headers with a ▎ rail."""
     home = tmp_path / "home"
@@ -266,9 +296,48 @@ def test_tool_call_and_result_markers(tmp_path, monkeypatch):
 
     assert "⏺ Bash" in out, f"Expected ⏺ call header. Got:\n{out}"
     assert "⎿ Bash" in out, f"Expected ⎿ result header. Got:\n{out}"
+    assert out.count("Bash") == 3, (
+        f"Expected the Bash result panel and both tool markers to name Bash. Got:\n{out}"
+    )
+    assert "User" not in out, (
+        f"A Bash-result-only panel must not be labeled as User. Got:\n{out}"
+    )
     assert "▎" in out, f"Expected the left rail glyph. Got:\n{out}"
     assert "<tool-input" not in out and "<tool-output" not in out, (
         f"Tool blocks must be tag-free in colored output. Got:\n{out}"
+    )
+
+
+def test_bash_result_with_user_text_keeps_user_panel(tmp_path, monkeypatch):
+    """A real user instruction keeps ownership of a mixed Bash-result message."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_claude_session(
+        home, "22222222-aaaa-bbbb-cccc-000000000003",
+        [
+            _assistant(content=[
+                {"type": "tool_use", "id": "toolu_0a", "name": "Bash",
+                 "input": {"command": "echo hi"}},
+            ]),
+            _user([
+                {"type": "tool_result", "tool_use_id": "toolu_0a", "content": "hi"},
+                {"type": "text", "text": "Run it again in ten minutes."},
+            ]),
+        ],
+    )
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    )
+
+    assert "User" in out, f"Expected mixed user text and Bash output to stay User. Got:\n{out}"
+    assert "Run it again in ten minutes." in out, (
+        f"Expected the real user instruction to remain visible. Got:\n{out}"
+    )
+    assert out.count("Bash") == 2, (
+        f"Expected Bash only on the call/result markers, not the mixed panel. Got:\n{out}"
     )
 
 
@@ -370,6 +439,9 @@ def test_read_output_highlighted_with_preserved_line_numbers(tmp_path, monkeypat
         sid, None, None, output_format="xml", emit_metadata=False,
     )
 
+    assert "User" in out, (
+        f"Only Bash results should replace the User panel label. Got:\n{out}"
+    )
     assert "def compute():" in out, f"Expected file content. Got:\n{out}"
     assert "42" in out, (
         f"Expected the input's starting line number (42) preserved, not reset to 1. "
@@ -682,6 +754,34 @@ def test_colored_search_banner_leads_with_title(tmp_path, monkeypatch):
     first_line = out.splitlines()[0]
     assert session_id in first_line, (
         f"Expected the search banner to restate the full session id. Got:\n{out}"
+    )
+
+
+def test_colored_search_labels_bash_result_match_as_bash(tmp_path, monkeypatch):
+    """Colored search uses the same Bash-result presentation as colored parse."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    _write_claude_session(
+        home, "99999999-aaaa-bbbb-cccc-000000000002",
+        [
+            _assistant(content=[
+                {"type": "tool_use", "id": "toolu_0a", "name": "Bash",
+                 "input": {"command": "printf done"}},
+            ]),
+            _user([{"type": "tool_result", "tool_use_id": "toolu_0a",
+                    "content": "BASH_RESULT_NEEDLE"}]),
+        ],
+    )
+
+    out = _render_colored(
+        monkeypatch, cmd_search, "BASH_RESULT_NEEDLE",
+        ConversationFlags(color="always", paging=False, show_tools=True),
+        output_mode=SearchOutputMode.MATCHES,
+    )
+
+    assert "User" not in out, f"A matching Bash result must not be labeled User. Got:\n{out}"
+    assert out.count("Bash") == 2, (
+        f"Expected the search message badge and result marker to name Bash. Got:\n{out}"
     )
 
 
