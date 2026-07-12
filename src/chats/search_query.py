@@ -1,8 +1,8 @@
 """Boolean `and`/`or` search-query parsing for `ch search` patterns.
 
-A pattern with no bare lowercase `and`/`or` word tokens stays one verbatim
-regex term (existing behavior). Once an operator appears, every multi-word or
-regex-shaped term must be quoted, e.g. `'"hello world" and foo'`.
+A pattern with no bare `and`/`or` word tokens (in any letter case) stays one
+verbatim regex term (existing behavior). Once an operator appears, every
+multi-word or regex-shaped term must be quoted, e.g. `'"hello world" and foo'`.
 """
 
 from __future__ import annotations
@@ -146,7 +146,8 @@ def _tokenize(pattern: str) -> list[_Token] | None:
         ):
             position += 1
         word = pattern[start:position]
-        kind = word if word in ("and", "or") else "term"
+        normalized_word = word.casefold()
+        kind = normalized_word if normalized_word in ("and", "or") else "term"
         tokens.append(_Token(kind, word))
     return tokens
 

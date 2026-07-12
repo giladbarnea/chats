@@ -407,23 +407,33 @@ def test_bare_operator_word_is_a_plain_pattern(tmp_path: Path, monkeypatch, caps
     )
 
 
-def test_uppercase_and_is_not_an_operator(tmp_path: Path, monkeypatch, capsys) -> None:
-    """Only lowercase `and`/`or` are operators; `AND` keeps the whole pattern literal."""
+def test_all_operators_are_case_insensitive(tmp_path: Path, monkeypatch, capsys) -> None:
+    """`and`/`or` operators have identical lowercase and uppercase semantics."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
-    _write_session(_claude_session_path(home, "literal-phrase"), ["black and white photo"])
     _write_session(
-        _claude_session_path(home, "split-terms"),
-        ["black coffee", "white walls"],
+        _claude_session_path(home, "has-both"),
+        ["case-alpha", "case-bravo"],
+    )
+    _write_session(
+        _claude_session_path(home, "has-alpha-only"),
+        ["case-alpha"],
     )
 
-    exit_code, matched_ids = _run_search_ids("black AND white", capsys)
-
-    assert exit_code == 0, (
-        f"Expected uppercase AND to keep single-pattern semantics. Got exit code: {exit_code}"
-    )
-    assert matched_ids == ["literal-phrase"], (
-        "Expected `black AND white` to match only the contiguous (case-insensitive) phrase, "
-        f"not to act as a boolean operator. Got matched ids: {matched_ids!r}"
-    )
+    expectations = {
+        "case-alpha and case-bravo": {"has-both"},
+        "case-alpha AND case-bravo": {"has-both"},
+        "case-alpha or case-bravo": {"has-both", "has-alpha-only"},
+        "case-alpha OR case-bravo": {"has-both", "has-alpha-only"},
+    }
+    for pattern, expected_ids in expectations.items():
+        exit_code, matched_ids = _run_search_ids(pattern, capsys)
+        assert exit_code == 0, (
+            f"Expected {pattern!r} to use boolean operator semantics. "
+            f"Got exit code: {exit_code}"
+        )
+        assert set(matched_ids) == expected_ids, (
+            f"Expected {pattern!r} to match {expected_ids!r}. "
+            f"Got matched ids: {matched_ids!r}"
+        )

@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-12] Make boolean search operators case-insensitive
+
+### Changed
+
+- `ch search` now recognizes `and` and `or` without regard to letter case, so `AND`, `OR`, and mixed-case variants use the same boolean query semantics as lowercase operators.
+
+---
 ## [2026-07-12] Keep piped parse output content-only
 
 ### Changed

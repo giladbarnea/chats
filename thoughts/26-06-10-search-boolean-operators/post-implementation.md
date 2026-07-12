@@ -2,6 +2,7 @@
 name: search-boolean-operators-post-implementation
 description: How `and`/`or` search operators were added, key decisions and trade-offs.
 date: 2026-06-10
+follow_up: ../26-07-12-search-case-insensitive-operators/post-implementation.md
 ---
 
 # Search `and`/`or` Operators — Post-Implementation Notes

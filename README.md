@@ -214,7 +214,7 @@ ch search [OPTIONS] <pattern>
 
 **Boolean operators:**
 
-Patterns may combine terms with lowercase `and` / `or`, evaluated per session: each term may match anywhere in the session (different messages, a summary, or the current title). `and` binds tighter than `or`; parentheses group.
+Patterns may combine terms with case-insensitive `and` / `or`, evaluated per session: each term may match anywhere in the session (different messages, a summary, or the current title). `and` binds tighter than `or`; parentheses group.
 
 ```bash
 ch search 'docker and timeout'                  # Session must contain both terms
@@ -224,7 +224,7 @@ ch search 'alpha and bravo and charlie'         # Term chains
 ch search '"hello world" and foo'               # Quote multi-word terms
 ```
 
-Once an operator is present, every multi-word or regex-shaped term must be quoted (`"..."` or `'...'`): `ch search 'hello world and foo'` is an error. A pattern with no bare lowercase `and`/`or` token keeps the existing single-regex semantics, so `hello world`, `deploy-(prod|staging)`, and `black AND white` are each still one pattern. Malformed boolean queries (unquoted multi-word terms, dangling operators, unbalanced parens) exit with code 2.
+Once an operator is present, every multi-word or regex-shaped term must be quoted (`"..."` or `'...'`): `ch search 'hello world and foo'` is an error. Operator recognition is case-insensitive, so `AND`/`OR` and mixed-case variants behave like `and`/`or`. A pattern with no bare operator token keeps the existing single-regex semantics, so `hello world` and `deploy-(prod|staging)` remain single patterns. Malformed boolean queries (unquoted multi-word terms, dangling operators, unbalanced parens) exit with code 2.
 
 **Options:**
 - `-l`: List mode - show only file paths and metadata
