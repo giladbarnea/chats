@@ -295,9 +295,10 @@ def test_tool_call_and_result_markers(tmp_path, monkeypatch):
     )
 
     assert "⏺ Bash" in out, f"Expected ⏺ call header. Got:\n{out}"
-    assert "⎿ Bash" in out, f"Expected ⎿ result header. Got:\n{out}"
-    assert out.count("Bash") == 3, (
-        f"Expected the Bash result panel and both tool markers to name Bash. Got:\n{out}"
+    assert "⎿ output" in out, f"Expected the Bash result marker to read output. Got:\n{out}"
+    assert "⎿ Bash" not in out, f"The Bash result marker must not repeat Bash. Got:\n{out}"
+    assert out.count("Bash") == 2, (
+        f"Expected Bash on the result panel and call marker only. Got:\n{out}"
     )
     assert "User" not in out, (
         f"A Bash-result-only panel must not be labeled as User. Got:\n{out}"
@@ -780,8 +781,9 @@ def test_colored_search_labels_bash_result_match_as_bash(tmp_path, monkeypatch):
     )
 
     assert "User" not in out, f"A matching Bash result must not be labeled User. Got:\n{out}"
-    assert out.count("Bash") == 2, (
-        f"Expected the search message badge and result marker to name Bash. Got:\n{out}"
+    assert "⎿ output" in out, f"Expected the matching Bash result marker to read output. Got:\n{out}"
+    assert out.count("Bash") == 1, (
+        f"Expected only the search message badge to name Bash. Got:\n{out}"
     )
 
 

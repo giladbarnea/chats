@@ -21,7 +21,7 @@ All notable changes to the `conversations` skill.
 
 ### Changed
 
-- Colored parse and search views now label user-role messages containing only Bash tool results as `Bash` instead of `User`. Mixed messages containing genuine user text, results from other tools, and the provider-native XML/JSON roles remain unchanged.
+- Colored parse and search views now label user-role messages containing only Bash tool results as `Bash` instead of `User`, with an inner `⎿ output` marker instead of the redundant `⎿ Bash`. Mixed messages containing genuine user text, results from other tools, and the provider-native XML/JSON roles remain unchanged.
 
 ---
 ## [2026-07-09] Represent hook additional-context as a tool

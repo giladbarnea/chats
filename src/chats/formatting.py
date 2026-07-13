@@ -189,7 +189,9 @@ _TOOL_INPUT_ACCENT_BY_NAME = {"AdditionalContext": "tool.additional_context"}
 
 
 def render_tool_rich(
-    parts: ToolParts, input_by_id: dict[str, dict] | None = None
+    parts: ToolParts,
+    input_by_id: dict[str, dict] | None = None,
+    result_label: str | None = None,
 ) -> list:
     """Render a tool call/result tag-free: a ⏺/⎿ header plus a colored left rail.
 
@@ -212,7 +214,7 @@ def render_tool_rich(
     )
     header = Text()
     header.append(f"{'⎿' if is_result else '⏺'} ", style=accent)
-    header.append(name, style=accent)
+    header.append(result_label if is_result and result_label else name, style=accent)
     if is_error:
         header.append("  ·  error", style="tool.error")
     if key_arg := _tool_key_arg(parts.attrs):
@@ -280,6 +282,7 @@ def _message_content_renderables(
     parts: list[MessagePart],
     highlight_regex: re.Pattern[str] | None,
     input_by_id: dict[str, dict] | None = None,
+    tool_result_label: str | None = None,
 ) -> list:
     """Render a message's visible parts (text, thinking, tools) to renderables.
 
@@ -314,7 +317,7 @@ def _message_content_renderables(
             out.append(LeftRail(Text(part.data, style="italic"), "message.meta"))
 
         elif part.kind == MessagePartKind.TOOL:
-            out.extend(render_tool_rich(part.data, input_by_id))
+            out.extend(render_tool_rich(part.data, input_by_id, tool_result_label))
 
     return out
 
@@ -339,6 +342,13 @@ def _message_hue(msg: Message, parts: list[MessagePart]) -> str:
         return theme.TOOL_RESULT
     tag = msg.get_wrapper_type().value.xml_tag
     return _ROLE_HUE.get(tag, _DEFAULT_ROLE_HUE)
+
+
+def _tool_result_label(msg: Message, parts: list[MessagePart]) -> str | None:
+    """Return the contextual label for tool results in a colored message."""
+    if _is_bash_result_message(msg, parts):
+        return "output"
+    return None
 
 
 def _message_header_text(msg: Message, parts: list[MessagePart]) -> str:
@@ -698,7 +708,12 @@ def build_messages_group(
         )
         print_targets.append(Text(""))
         print_targets.extend(
-            _message_content_renderables(parts, highlight_regex, input_by_id)
+            _message_content_renderables(
+                parts,
+                highlight_regex,
+                input_by_id,
+                _tool_result_label(msg, parts),
+            )
         )
 
     return Group(*print_targets)
@@ -724,7 +739,12 @@ def build_message_panels(
         parts = msg.iter_visible_parts(flags, tool_id_map)
         if not parts:
             continue
-        body = _message_content_renderables(parts, highlight_regex, input_by_id)
+        body = _message_content_renderables(
+            parts,
+            highlight_regex,
+            input_by_id,
+            _tool_result_label(msg, parts),
+        )
         panels.append(
             Panel(
                 Group(*body),
