@@ -42,7 +42,7 @@ from ..parsing import (
     get_jsonl_session_adapter,
 )
 from ..pool_filter import PoolFilter
-from ..search_query import SearchQuery, SearchQueryError, SearchTerm, parse_search_query
+from ..search_query import AndQuery, NotQuery, OrQuery, SearchQuery, SearchQueryError, SearchTerm, parse_search_query
 from ..session_pool import SessionPool
 from ..session_scan import SessionScan
 from ..utils import age_style, collapse_home, elide_to_width, humanize_age
@@ -820,13 +820,27 @@ def _search_hit_for_file(
     )
 
 
+def _evaluate_prefilter(
+    query: SearchQuery,
+    term_matches: Callable[[SearchTerm], bool],
+) -> bool:
+    """Conservative boolean evaluation where NotQuery always passes."""
+    if isinstance(query, NotQuery):
+        return True
+    if isinstance(query, AndQuery):
+        return all(_evaluate_prefilter(operand, term_matches) for operand in query.operands)
+    if isinstance(query, OrQuery):
+        return any(_evaluate_prefilter(operand, term_matches) for operand in query.operands)
+    return term_matches(query)
+
+
 def _search_path_candidate_matches(
     path: Path,
     query: SearchQuery,
     flags: ConversationFlags,
 ) -> bool:
     """Return True when a file's bytes could plausibly satisfy the query."""
-    return query.evaluate(lambda term: _term_path_candidate_matches(path, term, flags))
+    return _evaluate_prefilter(query, lambda term: _term_path_candidate_matches(path, term, flags))
 
 
 def _term_path_candidate_matches(
@@ -885,8 +899,8 @@ def _search_candidate_matches(
 ) -> bool:
     """Return True when raw content is a plausible superset match candidate."""
     content_casefolded = functools.cache(content.casefold)
-    return query.evaluate(
-        lambda term: _term_candidate_matches(content_casefolded, term, flags)
+    return _evaluate_prefilter(
+        query, lambda term: _term_candidate_matches(content_casefolded, term, flags)
     )
 
 

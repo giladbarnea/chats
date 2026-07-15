@@ -1,8 +1,9 @@
-"""Boolean `and`/`or` search-query parsing for `ch search` patterns.
+"""Boolean `and`/`or`/`not` search-query parsing for `ch search` patterns.
 
-A pattern with no bare `and`/`or` word tokens (in any letter case) stays one
+A pattern with no bare operator word tokens (in any letter case) stays one
 verbatim regex term (existing behavior). Once an operator appears, every
 multi-word or regex-shaped term must be quoted, e.g. `'"hello world" and foo'`.
+`not` cannot be mixed with `and`/`or` in the same query.
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from typing import Literal
 _REGEX_META_CHARACTERS = frozenset(".^$*+?{}[]\\|()")
 _QUOTE_CHARACTERS = ('"', "'")
 
-_TokenKind = Literal["term", "and", "or", "lparen", "rparen"]
+_TokenKind = Literal["term", "and", "or", "not", "lparen", "rparen"]
 
 
 class SearchQueryError(ValueError):
@@ -61,7 +62,20 @@ class OrQuery:
             yield from operand.iter_terms()
 
 
-SearchQuery = SearchTerm | AndQuery | OrQuery
+@dataclasses.dataclass(frozen=True)
+class NotQuery:
+    """Negation of a single term. Matches when the inner term does NOT match."""
+
+    operand: SearchQuery
+
+    def evaluate(self, term_matches: Callable[[SearchTerm], bool]) -> bool:
+        return not self.operand.evaluate(term_matches)
+
+    def iter_terms(self) -> Iterator[SearchTerm]:
+        yield from ()
+
+
+SearchQuery = SearchTerm | AndQuery | OrQuery | NotQuery
 
 
 def compile_search_term(pattern: str) -> SearchTerm:
@@ -88,11 +102,79 @@ def parse_search_query(pattern_arg: str) -> SearchQuery:
     tokens = _tokenize(pattern_arg)
     if tokens is None:
         return compile_search_term(pattern_arg)
-    has_operator = any(token.kind in ("and", "or") for token in tokens)
-    has_operand = any(token.kind not in ("and", "or") for token in tokens)
-    if not (has_operator and has_operand):
-        return compile_search_term(pattern_arg)
-    return _Parser(tokens).parse()
+    has_and_or = any(token.kind in ("and", "or") for token in tokens)
+    has_not = any(token.kind == "not" for token in tokens)
+    if has_and_or and has_not:
+        raise SearchQueryError(
+            "Mixing NOT with AND/OR is not supported. Use one operator type per query."
+        )
+    if has_and_or:
+        has_operand = any(token.kind not in ("and", "or") for token in tokens)
+        if not has_operand:
+            return compile_search_term(pattern_arg)
+        return _Parser(tokens).parse()
+    if has_not:
+        has_term = any(token.kind == "term" for token in tokens)
+        if not has_term:
+            return compile_search_term(pattern_arg)
+        return _parse_not_query(tokens)
+    return compile_search_term(pattern_arg)
+
+
+def _parse_not_query(tokens: list[_Token]) -> SearchQuery:
+    """Parse a NOT-only query: `term [NOT term [NOT term ...]]`.
+
+    >>> q = _parse_not_query([_Token("term", "foo"), _Token("not", "NOT"), _Token("term", "bar")])
+    >>> isinstance(q, AndQuery) and len(q.operands) == 2
+    True
+    """
+    position = 0
+    if tokens[position].kind != "term":
+        raise SearchQueryError(
+            "Invalid search query: NOT requires a leading positive term, "
+            f"got {tokens[position].text!r}."
+        )
+    if not tokens[position].text:
+        raise SearchQueryError("Invalid search query: empty quoted term.")
+    positive = compile_search_term(tokens[position].text)
+    position += 1
+    negated: list[NotQuery] = []
+    while position < len(tokens):
+        token = tokens[position]
+        if token.kind in ("lparen", "rparen"):
+            raise SearchQueryError(
+                "Invalid search query: parentheses are not supported with NOT."
+            )
+        if token.kind == "term":
+            raise SearchQueryError(
+                f"Invalid search query: unexpected term {token.text!r}. "
+                "Quote multi-word terms, e.g. '\"hello world\" NOT foo'."
+            )
+        if token.kind != "not":
+            raise SearchQueryError(
+                f"Invalid search query: unexpected {token.text!r}."
+            )
+        position += 1
+        if position >= len(tokens):
+            raise SearchQueryError(
+                "Invalid search query: expected a term after NOT, got end of pattern."
+            )
+        next_token = tokens[position]
+        if next_token.kind in ("lparen", "rparen"):
+            raise SearchQueryError(
+                "Invalid search query: parentheses are not supported with NOT."
+            )
+        if next_token.kind != "term":
+            raise SearchQueryError(
+                f"Invalid search query: expected a term after NOT, got {next_token.text!r}."
+            )
+        if not next_token.text:
+            raise SearchQueryError("Invalid search query: empty quoted term.")
+        negated.append(NotQuery(compile_search_term(next_token.text)))
+        position += 1
+    if not negated:
+        return positive
+    return AndQuery(tuple([positive, *negated]))
 
 
 def _is_plain_literal_search_pattern(pattern: str) -> bool:
@@ -147,7 +229,7 @@ def _tokenize(pattern: str) -> list[_Token] | None:
             position += 1
         word = pattern[start:position]
         normalized_word = word.casefold()
-        kind = normalized_word if normalized_word in ("and", "or") else "term"
+        kind = normalized_word if normalized_word in ("and", "or", "not") else "term"
         tokens.append(_Token(kind, word))
     return tokens
 

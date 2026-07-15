@@ -407,6 +407,188 @@ def test_bare_operator_word_is_a_plain_pattern(tmp_path: Path, monkeypatch, caps
     )
 
 
+def test_not_excludes_sessions_matching_negated_term(tmp_path: Path, monkeypatch, capsys) -> None:
+    """`A NOT B` matches sessions containing A that do not contain B anywhere."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    _write_session(
+        _claude_session_path(home, "has-alpha-only"),
+        ["opname-alpha lives here"],
+    )
+    _write_session(
+        _claude_session_path(home, "has-both"),
+        ["opname-alpha here", "opname-bravo here"],
+    )
+    _write_session(
+        _claude_session_path(home, "has-neither"),
+        ["nothing relevant"],
+    )
+
+    exit_code, matched_ids = _run_search_ids("opname-alpha NOT opname-bravo", capsys)
+
+    assert exit_code == 0, (
+        f"Expected `A NOT B` search to find the session with A but not B. Got exit code: {exit_code}"
+    )
+    assert matched_ids == ["has-alpha-only"], (
+        "Expected only the session containing A but not B to match `A NOT B`. "
+        f"Got matched ids: {matched_ids!r}"
+    )
+
+
+def test_multiple_nots_exclude_all_negated_terms(tmp_path: Path, monkeypatch, capsys) -> None:
+    """`A NOT B NOT C` matches sessions with A that contain neither B nor C."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    _write_session(
+        _claude_session_path(home, "alpha-only"),
+        ["opname-alpha here"],
+    )
+    _write_session(
+        _claude_session_path(home, "alpha-and-bravo"),
+        ["opname-alpha", "opname-bravo"],
+    )
+    _write_session(
+        _claude_session_path(home, "alpha-and-charlie"),
+        ["opname-alpha", "opname-charlie"],
+    )
+
+    exit_code, matched_ids = _run_search_ids(
+        "opname-alpha NOT opname-bravo NOT opname-charlie", capsys
+    )
+
+    assert exit_code == 0, (
+        f"Expected `A NOT B NOT C` to find the session with only A. Got exit code: {exit_code}"
+    )
+    assert matched_ids == ["alpha-only"], (
+        "Expected only the session containing A without B or C to match. "
+        f"Got matched ids: {matched_ids!r}"
+    )
+
+
+def test_not_with_quoted_multi_word_terms(tmp_path: Path, monkeypatch, capsys) -> None:
+    """`'"hello world" NOT "goodbye earth"'` treats quoted phrases as terms."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    _write_session(
+        _claude_session_path(home, "has-hello-only"),
+        ["hello world is great"],
+    )
+    _write_session(
+        _claude_session_path(home, "has-both-phrases"),
+        ["hello world", "goodbye earth"],
+    )
+
+    exit_code, matched_ids = _run_search_ids(
+        '"hello world" NOT "goodbye earth"', capsys
+    )
+
+    assert exit_code == 0, (
+        f"Expected quoted-phrase NOT to find a match. Got exit code: {exit_code}"
+    )
+    assert matched_ids == ["has-hello-only"], (
+        "Expected only the session with the positive phrase but not the negated phrase. "
+        f"Got matched ids: {matched_ids!r}"
+    )
+
+
+def test_mixing_not_with_and_or_is_invalid(tmp_path: Path, monkeypatch, capsys) -> None:
+    """Queries combining NOT with AND or OR must error with exit code 2."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    _write_session(_claude_session_path(home, "any-session"), ["alpha bravo charlie"])
+
+    mixed_patterns = [
+        "alpha AND bravo NOT charlie",
+        "alpha NOT bravo OR charlie",
+        "alpha OR bravo NOT charlie",
+        "alpha NOT bravo AND charlie",
+    ]
+    for pattern in mixed_patterns:
+        with pytest.raises(SystemExit) as exc_info:
+            commands.cmd_search(
+                pattern,
+                ConversationFlags(color="never", paging=False),
+                output_mode=SearchOutputMode.ONLY_ID,
+                emit_metadata=True,
+            )
+        stderr = capsys.readouterr().err
+        assert exc_info.value.code == 2, (
+            f"Expected {pattern!r} to exit with code 2 (mixed operators). "
+            f"Got exit code: {exc_info.value.code}"
+        )
+        assert "not" in stderr.casefold(), (
+            f"Expected the error for {pattern!r} to mention NOT. Got stderr:\n{stderr}"
+        )
+
+
+def test_not_excludes_when_negated_term_in_summary(tmp_path: Path, monkeypatch, capsys) -> None:
+    """A NOT term satisfied only by the session summary still causes exclusion."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    _write_session(
+        _claude_session_path(home, "summary-has-excluded"),
+        ["opname-alpha in message"],
+        summary="summary mentions opname-bravo",
+    )
+    _write_session(
+        _claude_session_path(home, "clean-session"),
+        ["opname-alpha in message"],
+        summary="unrelated summary",
+    )
+
+    exit_code, matched_ids = _run_search_ids("opname-alpha NOT opname-bravo", capsys)
+
+    assert exit_code == 0, (
+        f"Expected the clean session to match. Got exit code: {exit_code}"
+    )
+    assert matched_ids == ["clean-session"], (
+        "Expected the session whose summary contains the negated term to be excluded. "
+        f"Got matched ids: {matched_ids!r}"
+    )
+
+
+def test_bare_not_is_a_plain_pattern(tmp_path: Path, monkeypatch, capsys) -> None:
+    """Searching for just `not` has no operands, so it stays a literal search."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    _write_session(_claude_session_path(home, "contains-word"), ["this is not working"])
+
+    exit_code, matched_ids = _run_search_ids("not", capsys)
+
+    assert exit_code == 0, (
+        f"Expected a bare `not` pattern to behave as a literal search. Got exit code: {exit_code}"
+    )
+    assert matched_ids == ["contains-word"], (
+        "Expected `not` with no operand terms to match sessions containing the word. "
+        f"Got matched ids: {matched_ids!r}"
+    )
+
+
+def test_dangling_not_is_invalid(tmp_path: Path, monkeypatch, capsys) -> None:
+    """`foo NOT` must error instead of silently degrading."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    _write_session(_claude_session_path(home, "any-session"), ["foo bar"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "foo NOT",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=True,
+        )
+    capsys.readouterr()
+
+    assert exc_info.value.code == 2, (
+        f"Expected a dangling NOT to exit with code 2. Got exit code: {exc_info.value.code}"
+    )
+
+
 def test_all_operators_are_case_insensitive(tmp_path: Path, monkeypatch, capsys) -> None:
     """`and`/`or` operators have identical lowercase and uppercase semantics."""
     home = tmp_path / "home"
@@ -426,6 +608,8 @@ def test_all_operators_are_case_insensitive(tmp_path: Path, monkeypatch, capsys)
         "case-alpha AND case-bravo": {"has-both"},
         "case-alpha or case-bravo": {"has-both", "has-alpha-only"},
         "case-alpha OR case-bravo": {"has-both", "has-alpha-only"},
+        "case-alpha not case-bravo": {"has-alpha-only"},
+        "case-alpha NOT case-bravo": {"has-alpha-only"},
     }
     for pattern, expected_ids in expectations.items():
         exit_code, matched_ids = _run_search_ids(pattern, capsys)

@@ -214,7 +214,7 @@ ch search [OPTIONS] <pattern>
 
 **Boolean operators:**
 
-Patterns may combine terms with case-insensitive `and` / `or`, evaluated per session: each term may match anywhere in the session (different messages, a summary, or the current title). `and` binds tighter than `or`; parentheses group.
+Patterns may combine terms with case-insensitive `and` / `or` / `not`, evaluated per session: each term may match anywhere in the session (different messages, a summary, or the current title). `and` binds tighter than `or`; parentheses group.
 
 ```bash
 ch search 'docker and timeout'                  # Session must contain both terms
@@ -222,9 +222,13 @@ ch search 'docker or podman'                    # Session contains either term
 ch search 'deploy and (staging or prod)'        # Compound grouping
 ch search 'alpha and bravo and charlie'         # Term chains
 ch search '"hello world" and foo'               # Quote multi-word terms
+ch search 'docker NOT timeout'                  # Session has docker but not timeout
+ch search '"hello world" NOT goodbye NOT earth' # Multiple exclusions
 ```
 
-Once an operator is present, every multi-word or regex-shaped term must be quoted (`"..."` or `'...'`): `ch search 'hello world and foo'` is an error. Operator recognition is case-insensitive, so `AND`/`OR` and mixed-case variants behave like `and`/`or`. A pattern with no bare operator token keeps the existing single-regex semantics, so `hello world` and `deploy-(prod|staging)` remain single patterns. Malformed boolean queries (unquoted multi-word terms, dangling operators, unbalanced parens) exit with code 2.
+`not` excludes sessions matching the negated term: `foo NOT bar` matches sessions containing `foo` where `bar` does not appear in any visible facet. Multiple `NOT` terms are ANDed. `not` cannot be mixed with `and`/`or` in the same query; parentheses are not supported with `not`.
+
+Once an operator is present, every multi-word or regex-shaped term must be quoted (`"..."` or `'...'`): `ch search 'hello world and foo'` is an error. Operator recognition is case-insensitive, so `AND`/`OR`/`NOT` and mixed-case variants behave like `and`/`or`/`not`. A pattern with no bare operator token keeps the existing single-regex semantics, so `hello world` and `deploy-(prod|staging)` remain single patterns. Malformed boolean queries (unquoted multi-word terms, dangling operators, unbalanced parens) exit with code 2.
 
 **Options:**
 - `-l`: List mode - show only file paths and metadata

@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-15] Add `NOT` search operator
+
+### Added
+
+- `ch search` patterns now support case-insensitive `NOT` for excluding sessions matching a term: `'docker NOT timeout'`, `'"hello world" NOT goodbye NOT earth'`. The first term is a positive match requirement; each `NOT term` excludes sessions where that term appears in any visible facet (messages, summaries, current title). Multiple `NOT` terms are ANDed.
+- `NOT` cannot be mixed with `AND`/`OR` in the same query (exits with code 2 and a clear error). Parentheses are not supported with `NOT` queries.
+- Candidate prefilters treat `NOT` conservatively: negated terms never cause early file rejection, preserving the existing prefilter soundness guarantee.
+
+---
 ## [2026-07-12] Make boolean search operators case-insensitive
 
 ### Changed
