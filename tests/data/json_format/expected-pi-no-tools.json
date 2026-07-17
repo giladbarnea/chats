@@ -5,7 +5,8 @@
     "original_index": 1,
     "content": [
       "<skill name=\"smart-compact\" location=\"/tmp/SKILL.md\">\nUse it.\n</skill>\n\nthere's\n\nonly transcription.json, no md. parse and work with it"
-    ]
+    ],
+    "timestamp": "2026-05-12T10:00:00Z"
   },
   {
     "type": "assistant-response",
@@ -14,6 +15,7 @@
     "model": "deepseek/deepseek-v4-pro",
     "content": [
       "Now let me read the full transcript to understand it semantically. I'll write a script to dump it in a readable format."
-    ]
+    ],
+    "timestamp": "2026-05-12T10:00:01Z"
   }
 ]

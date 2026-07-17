@@ -165,7 +165,8 @@ JSON array to stdout (no metadata; always valid JSON):
     "original_index": 1,
     "content": [
       "User message text"
-    ]
+    ],
+    "timestamp": "2026-07-17T12:34:56.789Z"
   },
   {
     "type": "assistant-response",
@@ -181,7 +182,8 @@ JSON array to stdout (no metadata; always valid JSON):
         "command": "git status",
         "workdir": "/tmp"
       }
-    ]
+    ],
+    "timestamp": "2026-07-17T12:35:01.234Z"
   }
 ]
 ```
@@ -190,6 +192,7 @@ JSON format:
 - Always outputs plain JSON (no Rich formatting)
 - Mirrors the structured message model instead of embedding XML wrappers into strings
 - Each message carries its wrapper tag as `type` plus any XML-attribute metadata such as `original_index`, `model`, `agent_id`, or `sourceToolUserId`
+- Messages carry their raw ISO `timestamp` when present; agent messages may also carry an optional `name`, preserving their XML `date=` and identity metadata across a round trip
 - `content` is an ordered array of raw strings and typed blocks like `thinking`, `tool-input`, and `tool-output`
 - Tool blocks expose structured fields instead of XML tags / fenced pseudo-content
 - Raw text that happens to contain XML-like strings stays a plain string value
@@ -203,6 +206,19 @@ Markdown-only output intended for piping into files or other tools.
 - If exactly one visible message is output: prints just the message content.
 - If multiple messages are output: prints role headers (`# User`, `# Assistant`, etc.) with `---` separators.
 - Implies `--no-metadata`.
+
+### Parse Structured JSON
+
+`ch parse <json-file>` rebuilds plain XML-tagged Markdown from the structured JSON array emitted by parse mode:
+
+```bash
+ch "$SESSION_ID" -t:s --agents -f json > session.json
+ch parse session.json > session.md
+```
+
+`session.md` is byte-for-byte identical to the plain stdout conversation body produced by redirecting the same source command without `-f json`. Visibility decisions—including tool inclusion and shortening, and merged agent messages—are already baked into the JSON; `ch parse` does not reapply them or discover a session provider.
+
+The command writes only the conversation body to stdout and emits no session metadata frontmatter. Ordinary plain session parsing may send optional YAML frontmatter to stderr, but structured JSON does not contain enough session-level information to reconstruct it. The raw message timestamp and optional agent name described above are message-level metadata retained specifically for exact body reconstruction.
 
 ### Search Mode
 

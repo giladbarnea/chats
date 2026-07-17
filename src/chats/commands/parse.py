@@ -16,7 +16,13 @@ from ..formatting import (
     print_metadata,
     render_message_panels,
 )
-from ..model import ConversationFlags, Message, ParseOutputMode, SubagentMetadata
+from ..model import (
+    ConversationFlags,
+    Message,
+    ParseOutputMode,
+    SubagentMetadata,
+    messages_from_json_data,
+)
 from ..parsing import (
     detect_format,
     extract_cwd_from_jsonl,
@@ -106,6 +112,28 @@ def _apply_slice_selectors(
         for position, message in enumerate(messages)
         if position in selected_positions
     ]
+
+
+def cmd_parse_json(json_file: Path) -> None:
+    """Rebuild plain XML-tagged Markdown from structured parse JSON."""
+    try:
+        data = json.loads(json_file.read_text(encoding="utf-8"))
+        messages = messages_from_json_data(data)
+        flags = ConversationFlags(
+            show_thinking=True,
+            show_tools=True,
+            show_plans=True,
+            color="never",
+            paging=False,
+        )
+        formatted = format_to_xml(messages, flags, _build_tool_id_map(messages))
+    except (AttributeError, OSError, TypeError, ValueError) as error:
+        print_error(f"Error parsing structured JSON: {error}")
+        sys.exit(1)
+
+    if not formatted:
+        return
+    resolve._write_parse_output(formatted, None)
 
 
 def cmd_parse(

@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Literal
 
 from .parts import MessagePart, MessagePartKind, ToolParts
-from .registry import ContentBlockType
+from .registry import TOOL_SCHEMAS, ContentBlockType
 from .tool_filter import ToolFilter, resolve_tool_visibility
-from .tools import tool_to_json, tool_to_parts
+from .tools import tool_input_needs_wrapper, tool_to_json, tool_to_parts
 from .utils import shorten_data, truncate_middle
 
 Provider = Literal["claude", "pi", "codex", "antigravitycli"]
@@ -367,9 +367,14 @@ class Message:
             payload["agent_id"] = self.agent_id
             if self.subagent_type:
                 payload["subagent_type"] = self.subagent_type
+            if self.name:
+                payload["name"] = self.name
 
         if self.model:
             payload["model"] = self.model.removeprefix("claude-")
+
+        if self.timestamp:
+            payload["timestamp"] = self.timestamp
 
         return payload
 
@@ -512,3 +517,211 @@ class Message:
         if date := self.get_date_attribute():
             attrs.append(f'date="{date}"')
         return " ".join(attrs)
+
+
+_MESSAGE_WRAPPER_TYPES = {
+    block_type.value.xml_tag: block_type
+    for block_type in ContentBlockType
+    if block_type.value.header is not None
+}
+_MESSAGE_JSON_KEYS = {
+    "type",
+    "role",
+    "original_index",
+    "content",
+    "branch",
+    "isMeta",
+    "sourceToolUserId",
+    "agent_id",
+    "subagent_type",
+    "name",
+    "model",
+    "timestamp",
+}
+
+
+def messages_from_json_data(data: object) -> list[Message]:
+    """Reconstruct messages from the structured array emitted by ``-f json``.
+
+    >>> messages_from_json_data([])
+    []
+    """
+    if not isinstance(data, list):
+        raise ValueError("Expected the JSON root to be an array of messages.")
+    return [
+        _message_from_json_data(payload, position)
+        for position, payload in enumerate(data, start=1)
+    ]
+
+
+def _message_from_json_data(payload: object, position: int) -> Message:
+    context = f"message {position}"
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected {context} to be an object.")
+
+    unexpected_keys = set(payload) - _MESSAGE_JSON_KEYS
+    if unexpected_keys:
+        raise ValueError(
+            f"Unexpected keys in {context}: {sorted(unexpected_keys)!r}."
+        )
+
+    wrapper_name = payload.get("type")
+    if not isinstance(wrapper_name, str):
+        raise ValueError(f"Expected {context}.type to be a string.")
+    wrapper_type = _MESSAGE_WRAPPER_TYPES.get(wrapper_name)
+    if wrapper_type is None:
+        raise ValueError(f"Unknown message type in {context}: {wrapper_name!r}.")
+
+    role = payload.get("role")
+    if not isinstance(role, str):
+        raise ValueError(f"Expected {context}.role to be a string.")
+
+    original_index = payload.get("original_index")
+    if type(original_index) is not int:
+        raise ValueError(f"Expected {context}.original_index to be an integer.")
+
+    content = payload.get("content")
+    if not isinstance(content, list):
+        raise ValueError(f"Expected {context}.content to be an array.")
+
+    is_meta = payload.get("isMeta", False)
+    if type(is_meta) is not bool:
+        raise ValueError(f"Expected {context}.isMeta to be a boolean.")
+
+    message = Message(
+        role=role,
+        index=original_index,
+        agent_id=_optional_json_string(payload, "agent_id", context),
+        timestamp=_optional_json_string(payload, "timestamp", context),
+        subagent_type=_optional_json_string(payload, "subagent_type", context),
+        name=_optional_json_string(payload, "name", context),
+        model=_optional_json_string(payload, "model", context),
+        is_meta=is_meta,
+        source_tool_user_id=_optional_json_string(
+            payload, "sourceToolUserId", context
+        ),
+        wrapper_type=wrapper_type,
+        branch_id=_optional_json_string(payload, "branch", context),
+    )
+    _populate_message_content(message, content, context)
+    return message
+
+
+def _optional_json_string(
+    payload: dict[object, object], key: str, context: str
+) -> str | None:
+    value = payload.get(key)
+    if value is None or isinstance(value, str):
+        return value
+    raise ValueError(f"Expected {context}.{key} to be a string.")
+
+
+def _populate_message_content(
+    message: Message, content: list[object], context: str
+) -> None:
+    seen_text = False
+    for position, block in enumerate(content, start=1):
+        block_context = f"{context}.content[{position}]"
+        if isinstance(block, str):
+            if seen_text:
+                raise ValueError(f"Expected at most one text value in {context}.content.")
+            message.text = block
+            seen_text = True
+            continue
+        if not isinstance(block, dict):
+            raise ValueError(f"Expected {block_context} to be a string or object.")
+
+        block_type = block.get("type")
+        if block_type == ContentBlockType.THINKING.value.xml_tag:
+            message.thinking = _single_content_string(block, block_context)
+            continue
+        if block_type == ContentBlockType.SUBAGENT_TASK.value.xml_tag:
+            message.subagent_task = _single_content_string(block, block_context)
+            continue
+        if block_type == ContentBlockType.TOOL_INPUT.value.xml_tag:
+            _append_tool_input(message, block, block_context)
+            continue
+        if block_type == ContentBlockType.TOOL_OUTPUT.value.xml_tag:
+            message.tools.append(_tool_output_from_json(block, block_context))
+            continue
+        raise ValueError(f"Unknown content type in {block_context}: {block_type!r}.")
+
+
+def _single_content_string(block: dict[object, object], context: str) -> str:
+    if set(block) != {"type", "content"} or not isinstance(
+        block.get("content"), str
+    ):
+        raise ValueError(f"Expected {context} to contain one string content field.")
+    return block["content"]
+
+
+def _append_tool_input(
+    message: Message, block: dict[object, object], context: str
+) -> None:
+    name = block.get("name")
+    if not isinstance(name, str):
+        raise ValueError(f"Expected {context}.name to be a string.")
+
+    if name == "ExitPlanMode":
+        if set(block) != {"type", "name", "plan"} or not isinstance(
+            block.get("plan"), str
+        ):
+            raise ValueError(f"Expected {context}.plan to be a string.")
+        message.plan = block["plan"]
+        return
+
+    tool_id = _optional_json_string(block, "id", context)
+    input_fields = {
+        key: value
+        for key, value in block.items()
+        if key not in {"type", "name", "id"}
+    }
+    nested_input = input_fields.get("input")
+    is_collision_wrapper = (
+        set(input_fields) == {"input"}
+        and isinstance(nested_input, dict)
+        and tool_input_needs_wrapper(name, nested_input)
+    )
+    schema = TOOL_SCHEMAS.get(name)
+    is_schema_content = schema is not None and schema.content_key == "content"
+    if is_collision_wrapper:
+        input_data = nested_input
+    elif set(input_fields) == {"content"} and not is_schema_content:
+        input_data = input_fields["content"]
+    else:
+        input_data = input_fields
+
+    tool: dict[str, object] = {
+        "type": "tool_use",
+        "name": name,
+        "input": input_data,
+    }
+    if tool_id is not None:
+        tool["id"] = tool_id
+    message.tools.append(tool)
+
+
+def _tool_output_from_json(
+    block: dict[object, object], context: str
+) -> dict[str, object]:
+    allowed_keys = {"type", "name", "id", "is_error", "content"}
+    unexpected_keys = set(block) - allowed_keys
+    if unexpected_keys:
+        raise ValueError(f"Unexpected keys in {context}: {sorted(unexpected_keys)!r}.")
+
+    tool_id = _optional_json_string(block, "id", context)
+    name = _optional_json_string(block, "name", context)
+    is_error = block.get("is_error", False)
+    if type(is_error) is not bool:
+        raise ValueError(f"Expected {context}.is_error to be a boolean.")
+
+    tool: dict[str, object] = {
+        "type": "tool_result",
+        "is_error": is_error,
+    }
+    if tool_id is not None:
+        tool["tool_use_id"] = tool_id
+    tool["name"] = name
+    if "content" in block:
+        tool["content"] = block["content"]
+    return tool

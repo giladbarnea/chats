@@ -7,7 +7,15 @@ import sys
 from pathlib import Path
 
 from . import commands as commands_module
-from .commands import cmd_catalog, cmd_info, cmd_name, cmd_parse, cmd_rm, cmd_search
+from .commands import (
+    cmd_catalog,
+    cmd_info,
+    cmd_name,
+    cmd_parse,
+    cmd_parse_json,
+    cmd_rm,
+    cmd_search,
+)
 from .console import init_module_console, print_warning
 from .model import (
     ConversationFlags,
@@ -358,7 +366,15 @@ def main():
         return value
 
     # Check for subcommands early (before argparse)
-    if len(sys.argv) > 1 and sys.argv[1] == "search":
+    if len(sys.argv) > 1 and sys.argv[1] == "parse":
+        parser = argparse.ArgumentParser(
+            prog="ch parse",
+            description="Rebuild XML-tagged Markdown from structured ch JSON",
+        )
+        parser.add_argument("json_file", type=Path, help="Structured JSON file")
+        args = parser.parse_args(sys.argv[2:])
+        cmd_parse_json(args.json_file)
+    elif len(sys.argv) > 1 and sys.argv[1] == "search":
         # Parse search arguments
         parser = argparse.ArgumentParser(prog="ch search")
         parser.add_argument("pattern", nargs="?", help="Pattern to search for")
@@ -670,6 +686,7 @@ def main():
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""\
 Commands:
+  parse    Rebuild XML-tagged Markdown from structured ch JSON
   search   Search conversations with regex patterns
   name     Assign a custom display name to a conversation
   fork     Duplicate a session into a thinner resumable copy

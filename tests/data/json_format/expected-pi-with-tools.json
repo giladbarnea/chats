@@ -11,7 +11,8 @@
         "id": "00E1",
         "file_path": "/Users/demo/PLAN.md"
       }
-    ]
+    ],
+    "timestamp": "2026-05-12T10:00:01Z"
   },
   {
     "type": "user-message",
@@ -30,6 +31,7 @@
           }
         ]
       }
-    ]
+    ],
+    "timestamp": "2026-05-12T10:00:02Z"
   }
 ]

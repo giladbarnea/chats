@@ -13,6 +13,7 @@ last_updated: 2026/06/19 14:46
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery` tree over terms. Owns tokenizing, `and`/`or` grammar, and per-term regex/literal compilation.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
+- Structured JSON inverse (`ch parse`, `commands/parse.py`): a provider-free transport boundary that reconstructs `Message` objects from `-f json` data and feeds the existing XML formatter without session discovery or provider parsing.
 
 ## Architecture Diagram (Space)
 
@@ -37,7 +38,8 @@ last_updated: 2026/06/19 14:46
 │                                         │                                   │
 │  ┌──────────────────────────────────────▼────────────────────────────────┐  │
 │  │                  COMMAND ORCHESTRATION (commands/)                    │  │
-│  │   cmd_parse  cmd_search  cmd_fork  cmd_name  cmd_rm  cmd_catalog     │  │
+│  │ cmd_parse  cmd_parse_json  cmd_search  cmd_fork  cmd_name  cmd_rm    │  │
+│  │ cmd_catalog                                                          │  │
 │  └──────────────┬───────────────────────────────┬────────────────────────┘  │
 │                 │                               │                           │
 │  ┌──────────────▼─────────────┐   ┌─────────────▼────────────────────────┐  │
@@ -58,7 +60,8 @@ last_updated: 2026/06/19 14:46
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
 │  │                  MODEL + FORMATTING (model.py, formatting.py)         │  │
-│  │  Message / ConversationFlags / render_message_inner_xml / format_*    │  │
+│  │  Message / messages_from_json_data / render_message_inner_xml /       │  │
+│  │  format_* (provider parse and structured JSON inverse converge here)  │  │
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
@@ -159,6 +162,29 @@ TIME   ACTOR                    ACTION                                         T
 │      │                            └── [pager if flags.paging]
 │
 └───►  User                     Sees formatted conversation
+```
+
+### Feature 1b: Structured JSON inverse (`ch parse <json-file>`)
+
+```
+TIME   ACTOR                    ACTION                                         TARGET
+│
+├───►  User                     Runs `ch parse <json-file>`                ──► cli.py:main()
+│
+├───►  main()                   Detects explicit `parse` subcommand        ──► argparse
+│      main()                   cmd_parse_json(json_file)                  ──► commands/parse.py
+│
+├───►  cmd_parse_json           Read and decode one JSON array             ──► structured data
+│      cmd_parse_json           messages_from_json_data(data)              ──► list[Message]
+│                               Strictly validates messages, typed blocks,
+│                               and reversible tool-input shapes
+│
+├───►  cmd_parse_json           _build_tool_id_map(messages)               ──► {tool_id: tool_name}
+│      cmd_parse_json           format_to_xml(messages, show all)          ──► plain XML-tagged Markdown
+│
+└───►  cmd_parse_json           Write conversation body only               ──► stdout
+
+This route does not enter `SessionPool`, input resolution, format detection, provider adapters, agent discovery, visibility filtering, shortening, or metadata/frontmatter output. Those source-side choices are already represented in the JSON array.
 ```
 
 ### Feature 2: Search (`ch search <pattern>`)
@@ -426,6 +452,14 @@ Summary prefix ─────────────► │ extract_summaries_
                           rm path ───────┼────► collect artifacts + delete
                                          │
                           catalog path ──┴────► cmd_parse capture -> pi CLI
+
+Structured ch JSON ───────────────────► messages_from_json_data()
+                                                │
+                                                ├── strict schema validation
+                                                ├── tool-id map
+                                                └── format_to_xml() ──► stdout body
+
+The structured JSON branch bypasses inventory, resolution, format detection, provider adapters, and session metadata.
 ```
 
 ---
@@ -502,6 +536,23 @@ Summary prefix ─────────────► │ extract_summaries_
                                                     │ color → Rich   │
                                                     │ file → write   │
                                                     └────────────────┘
+```
+
+### Structured JSON Inverse State Machine
+
+```
+                         ┌────────────────────┐      ┌────────────────────┐
+  JSON file ────────────►│ DECODE & VALIDATE  │─────►│ RECONSTRUCT        │
+                         │ array/messages/     │      │ Message objects    │
+                         │ typed blocks/tools  │      └─────────┬──────────┘
+                         └─────────┬──────────┘                │
+                                   │ malformed                  ▼
+                                   └──────────► clear error   ┌────────────────────┐
+                                                           │ MAP TOOLS & FORMAT │
+                                                           │ existing XML path  │
+                                                           └─────────┬──────────┘
+                                                                     ▼
+                                                               stdout body only
 ```
 
 ### Search Feature State Machine
@@ -629,6 +680,7 @@ Summary prefix ─────────────► │ extract_summaries_
 cli.py:main()
 │
 ├── [subcommand dispatch]
+│   ├── "parse"  → argparse → cmd_parse_json()
 │   ├── "search" → argparse → cmd_search()
 │   ├── "fork"   → argparse → cmd_fork()
 │   ├── "name"   → argparse → cmd_name()
@@ -636,7 +688,12 @@ cli.py:main()
 │   ├── "catalog"→ cmd_catalog(argv[2:])
 │   └── default  → argparse → cmd_parse()
 │
-├── [parse mode]
+├── [structured JSON inverse]
+│   └── cmd_parse_json(json_file)
+│       read JSON array → messages_from_json_data() → _build_tool_id_map()
+│       → format_to_xml() → stdout body (no resolution/provider/metadata path)
+│
+├── [default parse mode]
 │   ├── Build ConversationFlags (visibility, thinking, tools, agents, plans)
 │   ├── Build PoolFilter (provider, dir, date filters)
 │   └── cmd_parse(flags, input, slices, output, pool_filter, output_mode)
@@ -738,3 +795,4 @@ cli.py
 22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL/raw transcript content as content, not a possible identifier, so stdin and pasted transcripts do not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
 23. **Search Has a Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`; non-ASCII literals, regex-shaped terms, render-generated markers, and any uncertain case fall through. This gate is only a raw plausibility filter: every survivor must still pass `_search_conversation_content()` and its rendered-message visibility semantics.
 24. **`search . -ll` Projection Is Deliberately Narrow**: `_can_project_dot_only_id()` is the eligibility boundary for the only projection fast path: exact dot query, `ONLY_ID`, default visibility, no role/extras, no dir/date filters, and non-raw output. `_project_default_dot_match()` is tri-state; branchable Claude transcripts, read errors, or uncertain cases fall back to `SessionScan`. The projection mirrors default-hidden protocol/tool/thinking/task-notification behavior and should not be broadened without equivalence tests against the full search path.
+25. **Structured JSON Is a Provider-Free, Post-Visibility Boundary**: `ch parse <json-file>` follows `cli.py → cmd_parse_json → messages_from_json_data → _build_tool_id_map → format_to_xml → stdout`. It deliberately performs no session lookup, provider detection/parsing, agent discovery, visibility filtering, or shortening: the input array is the already-selected transport representation emitted by `-f json`. Raw message timestamps and optional agent names preserve body-level XML metadata, while session metadata/frontmatter is absent from JSON and therefore never reconstructed.

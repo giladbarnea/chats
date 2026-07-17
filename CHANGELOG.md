@@ -3,6 +3,16 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-17] Add structured JSON-to-Markdown round trips
+
+### Added
+
+- `ch parse <json-file>` consumes the JSON array from `ch <session> [visibility args] -f json` and writes the byte-exact plain XML-tagged Markdown body produced by the same source command without `-f json`. Tool visibility and shortening, plus merged agents, are already baked into the JSON; the inverse path performs no provider discovery or session lookup and emits no session frontmatter.
+- Structured message JSON now carries the raw timestamp and optional agent name needed to preserve `date=` and agent identity metadata. Ambiguous tool-input dictionaries use an explicit `input` wrapper so serialization remains reversible.
+- Malformed JSON roots, message objects, typed content blocks, and tool structures now fail with clear contextual errors rather than producing partial output.
+- Static round-trip fixtures cover Claude, PI, Codex, and Antigravity CLI across bare, tools, shortened tools, agents, and tools-plus-agents configurations—a 4×5 matrix using 20 distinct real session IDs.
+
+---
 ## [2026-07-15] Add `NOT` search operator
 
 ### Added

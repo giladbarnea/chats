@@ -17,6 +17,29 @@ def _format_edit_content(input_data: dict) -> str:
     return "\n".join(parts)
 
 
+def tool_input_needs_wrapper(name: str, input_data: dict) -> bool:
+    """Return whether flattening a tool-input dictionary would be ambiguous.
+
+    >>> tool_input_needs_wrapper("Unknown", {"content": "value"})
+    True
+    >>> tool_input_needs_wrapper("Write", {"content": "value"})
+    False
+    >>> tool_input_needs_wrapper("Patch", {"input": {"type": "inner"}})
+    True
+    """
+    input_keys = set(input_data)
+    schema = TOOL_SCHEMAS.get(name)
+    is_schema_content = schema is not None and schema.content_key == "content"
+    return (
+        bool({"type", "name", "id"}.intersection(input_keys))
+        or (input_keys == {"content"} and not is_schema_content)
+        or (
+            input_keys == {"input"}
+            and isinstance(input_data.get("input"), dict)
+        )
+    )
+
+
 def tool_to_parts(tool: dict, id_map: dict[str, str] | None = None) -> ToolParts:
     """Convert a raw tool dict to normalized ToolParts.
 
@@ -105,9 +128,10 @@ def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
 
 def _tool_use_to_json(tool: dict, tag: str) -> dict[str, object]:
     """Convert tool_use to structured JSON data."""
+    name = tool.get("name", "Unknown")
     payload: dict[str, object] = {
         "type": tag,
-        "name": tool.get("name", "Unknown"),
+        "name": name,
     }
     if short_tool_id := shorten_tool_use_id(tool.get("id")):
         payload["id"] = short_tool_id
@@ -119,8 +143,7 @@ def _tool_use_to_json(tool: dict, tag: str) -> dict[str, object]:
         payload["content"] = input_data
         return payload
 
-    conflicting_keys = set(payload).intersection(input_data)
-    if conflicting_keys:
+    if tool_input_needs_wrapper(name, input_data):
         payload["input"] = input_data
         return payload
 
@@ -136,7 +159,10 @@ def _tool_result_to_parts(
     is_error = tool.get("is_error", False)
     tool_use_id = tool.get("tool_use_id")
 
-    name = id_map.get(tool_use_id, "") if id_map and tool_use_id else ""
+    if "name" in tool:
+        name = tool["name"] or ""
+    else:
+        name = id_map.get(tool_use_id, "") if id_map and tool_use_id else ""
     attrs: list[tuple[str, str]] = []
     if name:
         attrs.append(("name", name))
@@ -166,7 +192,11 @@ def _tool_result_to_json(
     """Convert tool_result to structured JSON data."""
     payload: dict[str, object] = {"type": tag}
     tool_use_id = tool.get("tool_use_id")
-    if id_map and tool_use_id and (name := id_map.get(tool_use_id)):
+    if "name" in tool:
+        name = tool["name"]
+    else:
+        name = id_map.get(tool_use_id) if id_map and tool_use_id else None
+    if name:
         payload["name"] = name
     if short_tool_id := shorten_tool_use_id(tool_use_id):
         payload["id"] = short_tool_id
