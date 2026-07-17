@@ -32,6 +32,7 @@ from ..parsing import (
     parse_raw_cli_transcript,
 )
 from ..pool_filter import PoolFilter
+from ..xmlmd import messages_from_xmlmd
 from . import resolve
 from .common import _build_tool_id_map
 
@@ -114,11 +115,18 @@ def _apply_slice_selectors(
     ]
 
 
-def cmd_parse_json(json_file: Path) -> None:
-    """Rebuild plain XML-tagged Markdown from structured parse JSON."""
+def cmd_parse_json(input_file: Path | None, *, output_format: str = "xml") -> None:
+    """Convert between structured parse JSON and XML-tagged Markdown."""
+    input_description = "structured JSON" if output_format == "xml" else "XML-tagged Markdown"
     try:
-        data = json.loads(json_file.read_text(encoding="utf-8"))
-        messages = messages_from_json_data(data)
+        content = (
+            input_file.read_text(encoding="utf-8") if input_file is not None else sys.stdin.read()
+        )
+        messages = (
+            messages_from_json_data(json.loads(content))
+            if output_format == "xml"
+            else messages_from_xmlmd(content.rstrip("\n"))
+        )
         flags = ConversationFlags(
             show_thinking=True,
             show_tools=True,
@@ -126,9 +134,10 @@ def cmd_parse_json(json_file: Path) -> None:
             color="never",
             paging=False,
         )
-        formatted = format_to_xml(messages, flags, _build_tool_id_map(messages))
-    except (AttributeError, OSError, TypeError, ValueError) as error:
-        print_error(f"Error parsing structured JSON: {error}")
+        formatter = format_to_xml if output_format == "xml" else format_to_json
+        formatted = formatter(messages, flags, _build_tool_id_map(messages))
+    except (OSError, TypeError, ValueError) as error:
+        print_error(f"Error parsing {input_description}: {error}")
         sys.exit(1)
 
     if not formatted:

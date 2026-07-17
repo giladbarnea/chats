@@ -207,18 +207,22 @@ Markdown-only output intended for piping into files or other tools.
 - If multiple messages are output: prints role headers (`# User`, `# Assistant`, etc.) with `---` separators.
 - Implies `--no-metadata`.
 
-### Parse Structured JSON
+### Convert Structured JSON and XML-tagged Markdown
 
-`ch parse <json-file>` rebuilds plain XML-tagged Markdown from the structured JSON array emitted by parse mode:
+`ch parse` converts the two provider-free parse representations in either direction. It accepts a file or stdin:
 
 ```bash
 ch "$SESSION_ID" -t:s --agents -f json > session.json
 ch parse session.json > session.md
+ch parse -f json session.md > canonical.json
+cat canonical.json | ch parse > session.md
 ```
 
-`session.md` is byte-for-byte identical to the plain stdout conversation body produced by redirecting the same source command without `-f json`. Visibility decisions—including tool inclusion and shortening, and merged agent messages—are already baked into the JSON; `ch parse` does not reapply them or discover a session provider.
+The default direction rebuilds plain XML-tagged Markdown from structured JSON. `-f json` reverses canonical XML-tagged Markdown into structured JSON. Once XML has been canonicalized to JSON, both `JSON → XML → JSON` and `XML → JSON → XML` compositions are byte-stable. Visibility decisions—including tool inclusion, shortening, and merged agent messages—are already baked into either representation; `ch parse` does not reapply them or discover a session provider.
 
-The command writes only the conversation body to stdout and emits no session metadata frontmatter. Ordinary plain session parsing may send optional YAML frontmatter to stderr, but structured JSON does not contain enough session-level information to reconstruct it. The raw message timestamp and optional agent name described above are message-level metadata retained specifically for exact body reconstruction.
+The XML representation intentionally carries less information than the structured JSON emitted directly from a native session. XML dates have minute precision, tool IDs are shortened, schema-irrelevant tool fields are omitted, attribute values are strings, and tool outputs are rendered text. XML-to-JSON conversion preserves everything represented in XML and canonicalizes those lossy fields; it does not invent the discarded native values.
+
+The command writes only the conversation body to stdout and emits no session metadata frontmatter. Ordinary session parsing may send optional YAML frontmatter to stderr, but neither transport representation contains enough session-level information to reconstruct it.
 
 ### Search Mode
 

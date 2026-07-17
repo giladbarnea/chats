@@ -3,14 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
-## [2026-07-17] Add structured JSON-to-Markdown round trips
+## [2026-07-17] Add structured JSON and Markdown round trips
 
 ### Added
 
 - `ch parse <json-file>` consumes the JSON array from `ch <session> [visibility args] -f json` and writes the byte-exact plain XML-tagged Markdown body produced by the same source command without `-f json`. Tool visibility and shortening, plus merged agents, are already baked into the JSON; the inverse path performs no provider discovery or session lookup and emits no session frontmatter.
+- `ch parse -f json <xml-file>` performs the opposite conversion. Both directions also accept stdin, and both `JSON → XML → JSON` and `XML → JSON → XML` stabilize byte-for-byte after the XML representation's inherent losses are canonicalized.
+- XML-to-JSON preserves every field the XML transport represents without pretending to recover omitted native detail: minute-precision dates become local ISO timestamps, tool IDs remain shortened, attributes remain strings, omitted tool fields stay omitted, and rendered tool outputs become strings.
 - Structured message JSON now carries the raw timestamp and optional agent name needed to preserve `date=` and agent identity metadata. Ambiguous tool-input dictionaries use an explicit `input` wrapper so serialization remains reversible.
-- Malformed JSON roots, message objects, typed content blocks, and tool structures now fail with clear contextual errors rather than producing partial output.
-- Static round-trip fixtures cover Claude, PI, Codex, and Antigravity CLI across bare, tools, shortened tools, agents, and tools-plus-agents configurations—a 4×5 matrix using 20 distinct real session IDs.
+- Multiple adjacent text values in structured JSON collapse with the formatter's paragraph separator; text split around a typed block fails clearly because the bucketed `Message` model cannot preserve that order.
+- Malformed JSON roots, message objects, typed content blocks, tool structures, and noncanonical XML fail with clear contextual errors rather than producing partial output.
+- Static round-trip fixtures cover Claude, PI, Codex, and Antigravity CLI across bare, tools, shortened tools, agents, and tools-plus-agents configurations—a 4×5 matrix using 20 distinct real session IDs in both conversion directions.
 
 ---
 ## [2026-07-15] Add `NOT` search operator

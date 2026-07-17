@@ -8,9 +8,9 @@ post_implementation: post-implementation.md
 
 ## Completed outcome
 
-`ch parse <json-file>` now reconstructs the plain XML-tagged Markdown body from JSON emitted by `ch <session> ... -f json`. It reuses the shared `Message` model and XML formatter; provider discovery, visibility filtering, shortening, and agent merging do not run again.
+`ch parse` now converts both provider-free transport representations. Its default output reconstructs plain XML-tagged Markdown from structured JSON; `ch parse -f json` reconstructs canonical structured JSON from that XML. Either input can come from a file or stdin, and both command compositions stabilize byte-for-byte after XML's represented information is canonicalized.
 
-The structured JSON contract now retains raw timestamps and optional agent names. Ambiguous tool-input dictionaries use an explicit `input` wrapper, while existing unambiguous dictionaries remain flattened. Malformed structured input fails cleanly, legacy unambiguous JSON remains accepted, and an empty array produces zero stdout bytes.
+The structured JSON contract retains raw timestamps and optional agent names. Ambiguous tool-input dictionaries use an explicit `input` wrapper, while existing unambiguous dictionaries remain flattened. XML-to-JSON intentionally preserves only what XML carries: minute-precision dates, shortened IDs, string attributes, schema-visible inputs, and rendered tool-output strings. Malformed input in either grammar fails clearly.
 
 ## Fixture clarification
 
@@ -20,6 +20,6 @@ The final corpus contains generated JSON/XML pairs from 20 globally distinct rea
 
 ## Verification
 
-The focused round-trip and structured-JSON suite passes 34 tests. The full `./tests/run_all.sh | cat` run passes 613 tests with 3 skips, including every shell suite. Independent adversarial review also exercised 224 tool schema/key/id combinations and found no remaining material issue.
+The focused round-trip suite passes 49 tests. The full `./tests/run_all.sh | cat` run passes 637 tests with 3 skips, including every shell suite. Independent peer review found no remaining material issue.
 
 See [post-implementation.md](post-implementation.md) for the decisions, surprises, and implementation drift that are not obvious from the source.

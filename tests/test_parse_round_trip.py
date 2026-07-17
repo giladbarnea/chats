@@ -206,6 +206,248 @@ def test_parse_reconstructs_stored_markdown_byte_for_byte(
     )
 
 
+@pytest.mark.parametrize("row", MANIFEST_ROWS, ids=_fixture_id)
+def test_parse_format_json_stabilizes_static_xml_fixtures(
+    row: dict[str, object],
+) -> None:
+    expected_path = (PROJECT_ROOT / row["expected_xml"]).resolve()
+    json_result = subprocess.run(
+        [str(CH_EXECUTABLE), "parse", "-f", "json", str(expected_path)],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        check=False,
+    )
+    assert json_result.returncode == 0, (
+        f"Expected XML fixture {_fixture_id(row)} to convert to JSON. "
+        f"stderr: {json_result.stderr[:500]!r}."
+    )
+
+    stabilized_xml = subprocess.run(
+        [str(CH_EXECUTABLE), "parse"],
+        cwd=PROJECT_ROOT,
+        input=json_result.stdout,
+        capture_output=True,
+        check=False,
+    )
+    expected = expected_path.read_bytes()
+    assert stabilized_xml.returncode == 0, stabilized_xml.stderr[:500]
+    assert stabilized_xml.stdout == expected, (
+        f"Expected XML -> JSON -> XML to stabilize byte-for-byte for {_fixture_id(row)}. "
+        f"Expected {_byte_summary(expected)}; got {_byte_summary(stabilized_xml.stdout)}."
+    )
+
+    stabilized_json = subprocess.run(
+        [str(CH_EXECUTABLE), "parse", "-f", "json"],
+        cwd=PROJECT_ROOT,
+        input=stabilized_xml.stdout,
+        capture_output=True,
+        check=False,
+    )
+    assert stabilized_json.returncode == 0, stabilized_json.stderr[:500]
+    assert stabilized_json.stdout == json_result.stdout, (
+        f"Expected JSON -> XML -> JSON to stabilize byte-for-byte for {_fixture_id(row)}. "
+        f"Expected {_byte_summary(json_result.stdout)}; "
+        f"got {_byte_summary(stabilized_json.stdout)}."
+    )
+
+    canonical_json = json.loads(json_result.stdout)
+    typed_tool_blocks = [
+        block
+        for message in canonical_json
+        for block in message["content"]
+        if isinstance(block, dict)
+        and block.get("type") in {"tool-input", "tool-output"}
+    ]
+    if any(argument.startswith("-t") for argument in row["arguments"]):
+        assert typed_tool_blocks, (
+            f"Expected XML tools to remain typed JSON blocks for {_fixture_id(row)}."
+        )
+
+
+def test_parse_accepts_messages_with_multiple_string_content_values(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "multiple-text-values.json"
+    input_path.write_text(
+        json.dumps([
+            {
+                "type": "assistant-response",
+                "role": "assistant",
+                "original_index": 1,
+                "content": ["First paragraph.", "Second paragraph."],
+            }
+        ]),
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [str(CH_EXECUTABLE), "parse", str(input_path)],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, (
+        "Expected public `ch parse` to accept every string value in a message's "
+        f"ordered content array. stderr: {completed.stderr!r}."
+    )
+    expected = (
+        '<assistant-response i="1">\n'
+        "## Assistant\n\n"
+        "First paragraph.\n\n"
+        "Second paragraph.\n"
+        "</assistant-response>\n"
+    )
+    assert completed.stdout == expected, (
+        "Expected adjacent text values to collapse into one exact Markdown projection "
+        f"using the formatter's paragraph separator. Got: {completed.stdout!r}."
+    )
+
+
+def test_parse_rejects_text_values_interleaved_with_typed_blocks(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "interleaved-text-values.json"
+    input_path.write_text(
+        json.dumps([
+            {
+                "type": "assistant-response",
+                "role": "assistant",
+                "original_index": 1,
+                "content": [
+                    "Before thinking.",
+                    {"type": "thinking", "content": "Reasoning."},
+                    "After thinking.",
+                ],
+            }
+        ]),
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [str(CH_EXECUTABLE), "parse", str(input_path)],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1, (
+        "Expected `ch parse` to reject content ordering that its bucketed Message "
+        f"model cannot preserve. stdout: {completed.stdout!r}."
+    )
+    assert "Text values must be adjacent" in completed.stderr, (
+        "Expected the ordering failure to explain the accepted transport shape. "
+        f"Got: {completed.stderr!r}."
+    )
+
+
+def test_parse_format_json_accepts_xml_and_stabilizes_both_representations() -> None:
+    source_json = json.dumps([
+        {
+            "type": "assistant-response",
+            "role": "assistant",
+            "original_index": 3,
+            "content": ["A canonical response."],
+            "model": "sonnet-4-6",
+            "timestamp": "2026-07-17T18:42:37.123Z",
+        }
+    ])
+
+    xml_result = subprocess.run(
+        [str(CH_EXECUTABLE), "parse"],
+        cwd=PROJECT_ROOT,
+        input=source_json,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert xml_result.returncode == 0, (
+        f"Expected `ch parse` to accept structured JSON on stdin. Got: {xml_result.stderr!r}."
+    )
+
+    json_result = subprocess.run(
+        [str(CH_EXECUTABLE), "parse", "-f", "json"],
+        cwd=PROJECT_ROOT,
+        input=xml_result.stdout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert json_result.returncode == 0, (
+        "Expected `ch parse -f json` to accept `ch parse` stdout on stdin. "
+        f"Got: {json_result.stderr!r}."
+    )
+    canonical_json = json.loads(json_result.stdout)
+    assert canonical_json == [
+        {
+            "type": "assistant-response",
+            "role": "assistant",
+            "original_index": 3,
+            "content": ["A canonical response."],
+            "model": "sonnet-4-6",
+            "timestamp": "2026-07-17T21:42:00",
+        }
+    ], (
+        "Expected XML-to-JSON conversion to preserve every represented message field and "
+        "canonicalize XML's minute-precision local date. "
+        f"Got: {canonical_json!r}."
+    )
+
+    stabilized_xml = subprocess.run(
+        [str(CH_EXECUTABLE), "parse"],
+        cwd=PROJECT_ROOT,
+        input=json_result.stdout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert stabilized_xml.returncode == 0, stabilized_xml.stderr
+    assert stabilized_xml.stdout == xml_result.stdout, (
+        "Expected the XML -> JSON -> XML composition to stabilize byte-for-byte. "
+        f"Expected: {xml_result.stdout!r}; got: {stabilized_xml.stdout!r}."
+    )
+
+
+def test_parse_format_json_preserves_text_after_subagent_task() -> None:
+    source = [
+        {
+            "type": "agent",
+            "role": "agent",
+            "original_index": 1,
+            "content": [
+                {"type": "subagent-task", "content": "Inspect the parser."},
+                "Task preface.",
+            ],
+            "agent_id": "agent-1",
+        }
+    ]
+    xml_result = subprocess.run(
+        [str(CH_EXECUTABLE), "parse"],
+        cwd=PROJECT_ROOT,
+        input=json.dumps(source),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert xml_result.returncode == 0, xml_result.stderr
+
+    json_result = subprocess.run(
+        [str(CH_EXECUTABLE), "parse", "-f", "json"],
+        cwd=PROJECT_ROOT,
+        input=xml_result.stdout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert json_result.returncode == 0, json_result.stderr
+    assert json.loads(json_result.stdout) == source, (
+        "Expected canonical agent XML to preserve text ordered after its subagent task. "
+        f"Got: {json_result.stdout!r}."
+    )
+
+
 def test_json_messages_preserve_metadata_required_to_rebuild_xml_wrappers() -> None:
     flags = ConversationFlags(color="never", paging=False)
     message = Message(

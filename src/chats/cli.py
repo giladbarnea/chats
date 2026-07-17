@@ -369,11 +369,23 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "parse":
         parser = argparse.ArgumentParser(
             prog="ch parse",
-            description="Rebuild XML-tagged Markdown from structured ch JSON",
+            description="Convert between structured ch JSON and XML-tagged Markdown",
         )
-        parser.add_argument("json_file", type=Path, help="Structured JSON file")
+        parser.add_argument(
+            "input_file",
+            type=Path,
+            nargs="?",
+            help="Input file (reads stdin when omitted)",
+        )
+        parser.add_argument(
+            "-f",
+            "--format",
+            choices=["xml", "json"],
+            default="xml",
+            help="Output format: xml or json (default: xml)",
+        )
         args = parser.parse_args(sys.argv[2:])
-        cmd_parse_json(args.json_file)
+        cmd_parse_json(args.input_file, output_format=args.format)
     elif len(sys.argv) > 1 and sys.argv[1] == "search":
         # Parse search arguments
         parser = argparse.ArgumentParser(prog="ch search")

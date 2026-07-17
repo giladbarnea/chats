@@ -619,14 +619,13 @@ def _optional_json_string(
 def _populate_message_content(
     message: Message, content: list[object], context: str
 ) -> None:
-    seen_text = False
+    text_values: list[str] = []
+    text_positions: list[int] = []
     for position, block in enumerate(content, start=1):
         block_context = f"{context}.content[{position}]"
         if isinstance(block, str):
-            if seen_text:
-                raise ValueError(f"Expected at most one text value in {context}.content.")
-            message.text = block
-            seen_text = True
+            text_values.append(block)
+            text_positions.append(position)
             continue
         if not isinstance(block, dict):
             raise ValueError(f"Expected {block_context} to be a string or object.")
@@ -645,6 +644,10 @@ def _populate_message_content(
             message.tools.append(_tool_output_from_json(block, block_context))
             continue
         raise ValueError(f"Unknown content type in {block_context}: {block_type!r}.")
+
+    if text_positions and text_positions[-1] - text_positions[0] + 1 != len(text_positions):
+        raise ValueError(f"Text values must be adjacent in {context}.content.")
+    message.text = "\n\n".join(text_values)
 
 
 def _single_content_string(block: dict[object, object], context: str) -> str:

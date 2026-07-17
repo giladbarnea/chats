@@ -1,7 +1,7 @@
 ---
 name: architecture
 description: Document the architecture of the `ch` CLI tool.
-last_updated: 2026/06/19 14:46
+last_updated: 2026/07/17 22:16
 ---
 
 # ARCHITECTURE.md
@@ -13,7 +13,7 @@ last_updated: 2026/06/19 14:46
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery` tree over terms. Owns tokenizing, `and`/`or` grammar, and per-term regex/literal compilation.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
-- Structured JSON inverse (`ch parse`, `commands/parse.py`): a provider-free transport boundary that reconstructs `Message` objects from `-f json` data and feeds the existing XML formatter without session discovery or provider parsing.
+- Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
 
 ## Architecture Diagram (Space)
 
@@ -59,9 +59,9 @@ last_updated: 2026/06/19 14:46
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
-│  │                  MODEL + FORMATTING (model.py, formatting.py)         │  │
-│  │  Message / messages_from_json_data / render_message_inner_xml /       │  │
-│  │  format_* (provider parse and structured JSON inverse converge here)  │  │
+│  │             MODEL + TRANSPORT (model.py, xmlmd.py, formatting.py)     │  │
+│  │  Message / messages_from_json_data / messages_from_xmlmd / format_*   │  │
+│  │  (provider parse and both transport directions converge here)         │  │
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
@@ -164,27 +164,30 @@ TIME   ACTOR                    ACTION                                         T
 └───►  User                     Sees formatted conversation
 ```
 
-### Feature 1b: Structured JSON inverse (`ch parse <json-file>`)
+### Feature 1b: Bidirectional parse transport (`ch parse`)
 
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch parse <json-file>`                ──► cli.py:main()
+├───►  User                     Runs `ch parse [-f xml|json] [file]`        ──► cli.py:main()
+│                               (file omitted → stdin)
 │
 ├───►  main()                   Detects explicit `parse` subcommand        ──► argparse
-│      main()                   cmd_parse_json(json_file)                  ──► commands/parse.py
+│      main()                   cmd_parse_json(input_file, output_format)  ──► commands/parse.py
 │
-├───►  cmd_parse_json           Read and decode one JSON array             ──► structured data
-│      cmd_parse_json           messages_from_json_data(data)              ──► list[Message]
-│                               Strictly validates messages, typed blocks,
-│                               and reversible tool-input shapes
+├───►  cmd_parse_json           [xml output] json.loads +                  ──► list[Message]
+│                               messages_from_json_data()
+│                               OR
+│      cmd_parse_json           [json output] messages_from_xmlmd()        ──► list[Message]
+│                               Canonical outer/inner blocks and tool
+│                               schemas are validated and reconstructed
 │
 ├───►  cmd_parse_json           _build_tool_id_map(messages)               ──► {tool_id: tool_name}
-│      cmd_parse_json           format_to_xml(messages, show all)          ──► plain XML-tagged Markdown
+│      cmd_parse_json           format_to_xml() or format_to_json()        ──► opposite representation
 │
 └───►  cmd_parse_json           Write conversation body only               ──► stdout
 
-This route does not enter `SessionPool`, input resolution, format detection, provider adapters, agent discovery, visibility filtering, shortening, or metadata/frontmatter output. Those source-side choices are already represented in the JSON array.
+This route does not enter `SessionPool`, provider adapters, agent discovery, visibility filtering, shortening, or metadata/frontmatter output. XML-to-JSON canonicalizes only what XML represents: minute-precision dates, shortened IDs, string attributes, schema-visible tool inputs, and rendered-string tool outputs. Both compositions are byte-stable after that canonicalization.
 ```
 
 ### Feature 2: Search (`ch search <pattern>`)
@@ -538,18 +541,18 @@ The structured JSON branch bypasses inventory, resolution, format detection, pro
                                                     └────────────────┘
 ```
 
-### Structured JSON Inverse State Machine
+### Bidirectional Parse Transport State Machine
 
 ```
                          ┌────────────────────┐      ┌────────────────────┐
-  JSON file ────────────►│ DECODE & VALIDATE  │─────►│ RECONSTRUCT        │
-                         │ array/messages/     │      │ Message objects    │
-                         │ typed blocks/tools  │      └─────────┬──────────┘
+  JSON or XML ──────────►│ DECODE & VALIDATE  │─────►│ RECONSTRUCT        │
+                         │ selected grammar /  │      │ Message objects    │
+                         │ blocks / tools      │      └─────────┬──────────┘
                          └─────────┬──────────┘                │
                                    │ malformed                  ▼
                                    └──────────► clear error   ┌────────────────────┐
                                                            │ MAP TOOLS & FORMAT │
-                                                           │ existing XML path  │
+                                                           │ opposite transport │
                                                            └─────────┬──────────┘
                                                                      ▼
                                                                stdout body only
@@ -688,10 +691,11 @@ cli.py:main()
 │   ├── "catalog"→ cmd_catalog(argv[2:])
 │   └── default  → argparse → cmd_parse()
 │
-├── [structured JSON inverse]
-│   └── cmd_parse_json(json_file)
-│       read JSON array → messages_from_json_data() → _build_tool_id_map()
-│       → format_to_xml() → stdout body (no resolution/provider/metadata path)
+├── [bidirectional parse transport]
+│   └── cmd_parse_json(input_file, output_format)
+│       JSON → messages_from_json_data() → format_to_xml()
+│       OR XML → messages_from_xmlmd() → format_to_json()
+│       → stdout body (no resolution/provider/metadata path)
 │
 ├── [default parse mode]
 │   ├── Build ConversationFlags (visibility, thinking, tools, agents, plans)
@@ -752,6 +756,7 @@ cli.py
 ├── catalog/          → commands, console, model
 ├── formatting.py     → model, parsing, console, tools, utils
 ├── parsing.py        → model, utils
+├── xmlmd.py          → model, registry
 ├── search_query.py
 ├── session_pool.py   → model, parsing
 ├── session_scan.py   → model, parsing, ordering, pool_filter
@@ -795,4 +800,4 @@ cli.py
 22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL/raw transcript content as content, not a possible identifier, so stdin and pasted transcripts do not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
 23. **Search Has a Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`; non-ASCII literals, regex-shaped terms, render-generated markers, and any uncertain case fall through. This gate is only a raw plausibility filter: every survivor must still pass `_search_conversation_content()` and its rendered-message visibility semantics.
 24. **`search . -ll` Projection Is Deliberately Narrow**: `_can_project_dot_only_id()` is the eligibility boundary for the only projection fast path: exact dot query, `ONLY_ID`, default visibility, no role/extras, no dir/date filters, and non-raw output. `_project_default_dot_match()` is tri-state; branchable Claude transcripts, read errors, or uncertain cases fall back to `SessionScan`. The projection mirrors default-hidden protocol/tool/thinking/task-notification behavior and should not be broadened without equivalence tests against the full search path.
-25. **Structured JSON Is a Provider-Free, Post-Visibility Boundary**: `ch parse <json-file>` follows `cli.py → cmd_parse_json → messages_from_json_data → _build_tool_id_map → format_to_xml → stdout`. It deliberately performs no session lookup, provider detection/parsing, agent discovery, visibility filtering, or shortening: the input array is the already-selected transport representation emitted by `-f json`. Raw message timestamps and optional agent names preserve body-level XML metadata, while session metadata/frontmatter is absent from JSON and therefore never reconstructed.
+25. **`ch parse` Is a Provider-Free, Post-Visibility Boundary**: default output follows `messages_from_json_data → format_to_xml`; `-f json` follows `messages_from_xmlmd → format_to_json`. Neither performs session lookup, provider parsing, agent discovery, visibility filtering, or shortening. XML-to-JSON preserves all XML-represented semantics but canonicalizes its intentional losses: dates have minute precision, tool IDs remain shortened, attributes are strings, only schema-visible tool input fields exist, and tool outputs are rendered strings. After that projection, both command compositions are byte-stable.
