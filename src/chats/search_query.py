@@ -30,6 +30,7 @@ class SearchTerm:
     pattern: str
     regex: re.Pattern[str]
     literal_candidate: str | None
+    case_sensitive: bool
 
     def evaluate(self, term_matches: Callable[[SearchTerm], bool]) -> bool:
         return term_matches(self)
@@ -78,30 +79,45 @@ class NotQuery:
 SearchQuery = SearchTerm | AndQuery | OrQuery | NotQuery
 
 
-def compile_search_term(pattern: str) -> SearchTerm:
-    """Compile one pattern with regex-or-literal fallback search semantics."""
-    flags = re.IGNORECASE | re.MULTILINE | re.DOTALL
+def compile_search_term(pattern: str, *, case_sensitive: bool = False) -> SearchTerm:
+    """Compile one pattern with regex-or-literal fallback search semantics.
+
+    >>> compile_search_term("Needle", case_sensitive=True).regex.search("needle") is None
+    True
+    """
+    flags = re.MULTILINE | re.DOTALL
+    if not case_sensitive:
+        flags |= re.IGNORECASE
     try:
         regex = re.compile(pattern, flags)
         literal_candidate = (
-            pattern.casefold() if _is_plain_literal_search_pattern(pattern) else None
+            (pattern if case_sensitive else pattern.casefold())
+            if _is_plain_literal_search_pattern(pattern)
+            else None
         )
     except re.error:
         regex = re.compile(re.escape(pattern), flags)
-        literal_candidate = pattern.casefold()
+        literal_candidate = pattern if case_sensitive else pattern.casefold()
     return SearchTerm(
-        pattern=pattern, regex=regex, literal_candidate=literal_candidate
+        pattern=pattern,
+        regex=regex,
+        literal_candidate=literal_candidate,
+        case_sensitive=case_sensitive,
     )
 
 
-def parse_search_query(pattern_arg: str) -> SearchQuery:
+def parse_search_query(
+    pattern_arg: str,
+    *,
+    case_sensitive: bool = False,
+) -> SearchQuery:
     """Parse a search pattern into a boolean query tree.
 
     Raises SearchQueryError when operators are present but the query is malformed.
     """
     tokens = _tokenize(pattern_arg)
     if tokens is None:
-        return compile_search_term(pattern_arg)
+        return compile_search_term(pattern_arg, case_sensitive=case_sensitive)
     has_and_or = any(token.kind in ("and", "or") for token in tokens)
     has_not = any(token.kind == "not" for token in tokens)
     if has_and_or and has_not:
@@ -111,17 +127,21 @@ def parse_search_query(pattern_arg: str) -> SearchQuery:
     if has_and_or:
         has_operand = any(token.kind not in ("and", "or") for token in tokens)
         if not has_operand:
-            return compile_search_term(pattern_arg)
-        return _Parser(tokens).parse()
+            return compile_search_term(pattern_arg, case_sensitive=case_sensitive)
+        return _Parser(tokens, case_sensitive=case_sensitive).parse()
     if has_not:
         has_term = any(token.kind == "term" for token in tokens)
         if not has_term:
-            return compile_search_term(pattern_arg)
-        return _parse_not_query(tokens)
-    return compile_search_term(pattern_arg)
+            return compile_search_term(pattern_arg, case_sensitive=case_sensitive)
+        return _parse_not_query(tokens, case_sensitive=case_sensitive)
+    return compile_search_term(pattern_arg, case_sensitive=case_sensitive)
 
 
-def _parse_not_query(tokens: list[_Token]) -> SearchQuery:
+def _parse_not_query(
+    tokens: list[_Token],
+    *,
+    case_sensitive: bool = False,
+) -> SearchQuery:
     """Parse a NOT-only query: `term [NOT term [NOT term ...]]`.
 
     >>> q = _parse_not_query([_Token("term", "foo"), _Token("not", "NOT"), _Token("term", "bar")])
@@ -136,7 +156,10 @@ def _parse_not_query(tokens: list[_Token]) -> SearchQuery:
         )
     if not tokens[position].text:
         raise SearchQueryError("Invalid search query: empty quoted term.")
-    positive = compile_search_term(tokens[position].text)
+    positive = compile_search_term(
+        tokens[position].text,
+        case_sensitive=case_sensitive,
+    )
     position += 1
     negated: list[NotQuery] = []
     while position < len(tokens):
@@ -170,7 +193,14 @@ def _parse_not_query(tokens: list[_Token]) -> SearchQuery:
             )
         if not next_token.text:
             raise SearchQueryError("Invalid search query: empty quoted term.")
-        negated.append(NotQuery(compile_search_term(next_token.text)))
+        negated.append(
+            NotQuery(
+                compile_search_term(
+                    next_token.text,
+                    case_sensitive=case_sensitive,
+                )
+            )
+        )
         position += 1
     if not negated:
         return positive
@@ -237,9 +267,10 @@ def _tokenize(pattern: str) -> list[_Token] | None:
 class _Parser:
     """Recursive-descent parser: `or` over `and` over terms and parenthesized groups."""
 
-    def __init__(self, tokens: list[_Token]) -> None:
+    def __init__(self, tokens: list[_Token], *, case_sensitive: bool = False) -> None:
         self.tokens = tokens
         self.position = 0
+        self.case_sensitive = case_sensitive
 
     def parse(self) -> SearchQuery:
         query = self._parse_or()
@@ -286,7 +317,10 @@ class _Parser:
             if not token.text:
                 raise SearchQueryError("Invalid search query: empty quoted term.")
             self.position += 1
-            return compile_search_term(token.text)
+            return compile_search_term(
+                token.text,
+                case_sensitive=self.case_sensitive,
+            )
         raise SearchQueryError(
             f"Invalid search query: expected a term, got {token.text!r}."
         )

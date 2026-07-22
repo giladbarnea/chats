@@ -48,6 +48,7 @@ def _run_search_cli(monkeypatch, *argv: str) -> tuple[int, dict[str, object]]:
         flags,
         pool_filter=None,
         *,
+        case_sensitive=False,
         output_mode=None,
         output_format="xml",
         emit_metadata=True,

@@ -468,8 +468,23 @@ def main():
             action="store_true",
             help="Show plan content (ExitPlanMode)",
         )
-        parser.add_argument(
+        case_group = parser.add_mutually_exclusive_group()
+        case_group.add_argument(
             "-s",
+            "--case-sensitive",
+            dest="case_sensitive",
+            action="store_true",
+            help="Match letter case exactly (default: false)",
+        )
+        case_group.add_argument(
+            "-i",
+            "--case-insensitive",
+            dest="case_sensitive",
+            action="store_false",
+            help="Ignore letter case (default: true)",
+        )
+        parser.set_defaults(case_sensitive=False)
+        parser.add_argument(
             "--short",
             nargs="?",
             const=True,
@@ -546,6 +561,7 @@ def main():
             args.pattern,
             flags,
             PoolFilter.from_args(args),
+            case_sensitive=args.case_sensitive,
             output_mode=output_mode,
             output_format="raw" if args.raw else "xml",
             emit_metadata=not (args.no_metadata or args.raw),

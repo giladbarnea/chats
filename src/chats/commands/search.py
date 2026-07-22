@@ -105,16 +105,17 @@ _CONVERSATION_BORDER_CYCLE: tuple[str, ...] = (
 
 
 def _build_highlight_regex(query: SearchQuery) -> re.Pattern[str] | None:
-    """Compile one case-insensitive regex over the query's plain-literal terms.
+    """Compile one regex over the query's plain-literal terms.
 
     Only literal terms are highlighted; regex terms are skipped to avoid greedy
     spans painting half a message. Longer literals first so alternation prefers
     the most specific match.
     """
+    terms = list(query.iter_terms())
     literals = sorted(
         {
             term.pattern
-            for term in query.iter_terms()
+            for term in terms
             if term.literal_candidate is not None and term.pattern
         },
         key=len,
@@ -122,7 +123,8 @@ def _build_highlight_regex(query: SearchQuery) -> re.Pattern[str] | None:
     )
     if not literals:
         return None
-    return re.compile("|".join(re.escape(literal) for literal in literals), re.IGNORECASE)
+    flags = 0 if all(term.case_sensitive for term in terms) else re.IGNORECASE
+    return re.compile("|".join(re.escape(literal) for literal in literals), flags)
 
 
 def _display_messages_for_hit(
@@ -439,6 +441,7 @@ def cmd_search(
     flags: ConversationFlags,
     pool_filter: PoolFilter | None = None,
     *,
+    case_sensitive: bool = False,
     output_mode: SearchOutputMode = SearchOutputMode.MATCHES,
     output_format: str = "xml",
     emit_metadata: bool = True,
@@ -453,7 +456,7 @@ def cmd_search(
     pool_filter = pool_filter or PoolFilter()
 
     try:
-        query = parse_search_query(pattern_arg)
+        query = parse_search_query(pattern_arg, case_sensitive=case_sensitive)
     except SearchQueryError as error:
         print_error(str(error))
         sys.exit(2)
@@ -854,7 +857,11 @@ def _term_path_candidate_matches(
     needle = _ascii_literal_needle(term)
     if needle is None:
         return True
-    return _file_contains_ascii_case_insensitive(path, needle)
+    return _file_contains_ascii(
+        path,
+        needle,
+        case_sensitive=term.case_sensitive,
+    )
 
 
 def _ascii_literal_needle(term: SearchTerm) -> bytes | None:
@@ -868,13 +875,18 @@ def _ascii_literal_needle(term: SearchTerm) -> bytes | None:
     return term.literal_candidate.encode("ascii")
 
 
-def _file_contains_ascii_case_insensitive(path: Path, needle: bytes) -> bool:
+def _file_contains_ascii(
+    path: Path,
+    needle: bytes,
+    *,
+    case_sensitive: bool,
+) -> bool:
     """Search a file for an ASCII literal using chunked byte reads.
 
-    Sound only over ASCII bytes: a non-ASCII source character can case-fold to the
-    ASCII needle (U+212A KELVIN SIGN -> 'k'), which `bytes.lower()` would not catch.
-    Any non-ASCII byte therefore makes this gate defer to the decode-based content
-    gate rather than risk rejecting a real hit.
+    For insensitive search this is sound only over ASCII bytes: a non-ASCII source
+    character can case-fold to the ASCII needle (U+212A KELVIN SIGN -> 'k'), which
+    `bytes.lower()` would not catch. Any non-ASCII byte therefore makes this gate
+    defer to the decode-based content gate rather than risk rejecting a real hit.
     """
     if not needle:
         return True
@@ -886,7 +898,8 @@ def _file_contains_ascii_case_insensitive(path: Path, needle: bytes) -> bool:
             if not chunk.isascii():
                 return True
             haystack = previous + chunk
-            if needle in haystack.lower():
+            searchable_haystack = haystack if case_sensitive else haystack.lower()
+            if needle in searchable_haystack:
                 return True
             previous = haystack[-overlap_width:] if overlap_width else b""
     return False
@@ -900,11 +913,18 @@ def _search_candidate_matches(
     """Return True when raw content is a plausible superset match candidate."""
     content_casefolded = functools.cache(content.casefold)
     return _evaluate_prefilter(
-        query, lambda term: _term_candidate_matches(content_casefolded, term, flags)
+        query,
+        lambda term: _term_candidate_matches(
+            content,
+            content_casefolded,
+            term,
+            flags,
+        ),
     )
 
 
 def _term_candidate_matches(
+    content: str,
     content_casefolded: Callable[[], str],
     term: SearchTerm,
     flags: ConversationFlags,
@@ -916,7 +936,8 @@ def _term_candidate_matches(
         return True
     if not term.pattern.isascii():
         return True
-    if term.literal_candidate in content_casefolded():
+    searchable_content = content if term.case_sensitive else content_casefolded()
+    if term.literal_candidate in searchable_content:
         return True
     return _term_can_match_generated_marker(term, flags)
 
@@ -939,7 +960,11 @@ def _term_can_match_generated_marker(term: SearchTerm, flags: ConversationFlags)
     if flags.show_plans:
         markers.append("ExitPlanMode")
 
-    return any(term.literal_candidate in marker.casefold() for marker in markers)
+    return any(
+        term.literal_candidate
+        in (marker if term.case_sensitive else marker.casefold())
+        for marker in markers
+    )
 
 
 def _search_conversation_content(

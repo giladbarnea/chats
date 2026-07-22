@@ -1,7 +1,7 @@
 ---
 name: architecture
 description: Document the architecture of the `ch` CLI tool.
-last_updated: 2026/07/17 22:16
+last_updated: 2026/07/22
 ---
 
 # ARCHITECTURE.md
@@ -11,7 +11,7 @@ last_updated: 2026/07/17 22:16
 - `SessionPool` (`session_pool.py`): the per-invocation inventory of all supported session files. It owns the "one big pool" mental model for exact-id resolution and provider-aware search routing.
 - `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, the current latest custom title, and already-visible messages.
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
-- `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery` tree over terms. Owns tokenizing, `and`/`or` grammar, and per-term regex/literal compilation.
+- `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery`/`NotQuery` tree over terms. Owns tokenizing, `and`/`or`/`not` grammar, and per-term regex/literal compilation under the selected case-sensitivity mode.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
 - Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
 
@@ -200,15 +200,15 @@ TIME   ACTOR                    ACTION                                         T
 ├───►  main()                   Detects sys.argv[1] == "search"            ──► argparse (search parser)
 │      argparse                 Parses: pattern, -l, -ll, -d, -ma,        ──► args namespace
 │                               -ca, -f, --only-user/assistant, -T, -t,
-│                               -a, -A, -s, --color, etc.
+│                               -a, -A, -s/-i case mode, --short, --color, etc.
 │
 ├───►  main()                   Builds ConversationFlags + PoolFilter      ──► flags, pool_filter
 │      main()                   cmd_search(pattern, flags, pool_filter, ...) ──► commands/
 │
-├───►  cmd_search               parse_search_query(pattern)                ──► SearchQuery tree
-│                               Bare case-insensitive and/or tokens → boolean tree
+├───►  cmd_search               parse_search_query(pattern, case_sensitive) ─► SearchQuery tree
+│                               Bare case-insensitive and/or/not tokens → boolean tree
 │                               (exit 2 on malformed boolean queries);
-│                               otherwise one term: re.compile + re.escape
+│                               otherwise one term: case-aware re.compile + re.escape
 │                               fallback + optional literal_candidate
 │
 ├───►  cmd_search               SessionPool.discover(include_sidechains=   ──► pool
@@ -713,7 +713,7 @@ cli.py:main()
 │   ├── Build ConversationFlags + PoolFilter
 │   └── cmd_search(pattern, flags, pool_filter, output_mode)
 │
-│       1. Compile regex, derive literal candidate
+│       1. Compile regex in the selected case mode, derive a matching literal candidate
 │       2. SessionPool.discover() → candidate files (newest-first by stat mtime)
 │       3. Per-file: candidate prefilter → SessionScan → regex confirm → yield SearchHit
 │       4. Stream each hit as it is confirmed (no global re-sort); page colored
@@ -795,9 +795,9 @@ cli.py
 17. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
 18. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex/Antigravity sessions currently resolve to deleting the single JSONL file.
 19. **Antigravity Full Transcript Preference**: Antigravity session discovery treats `{session_id}/.system_generated/logs/transcript_full.jsonl` as canonical when present and falls back to `transcript.jsonl` only for sessions without the full variant. The brain directory name is the native session id.
-20. **Boolean Search Is Session-Scoped**: `parse_search_query` interprets bare `and`/`or`/`not` word tokens case-insensitively as a boolean query tree (`and`/`or` with parens; `and` binds tighter). `not` is a separate flat form (`term NOT term [NOT term ...]`) that cannot be mixed with `and`/`or` and does not support parentheses. Each positive term is satisfied by a match anywhere in the session's facets (summaries, current title, rendered messages), so `and` terms may match in different messages; displayed matches are the union over positive terms. `not` terms exclude sessions where the negated term matches in any facet. Patterns without operator tokens — including regex parens and unterminated quotes — keep verbatim single-regex semantics. Malformed boolean queries exit 2. The literal candidate prefilter evaluates the same tree over per-term raw-content plausibility, treating `not` conservatively (never rejects).
+20. **Boolean Search Is Session-Scoped**: `parse_search_query` interprets bare `and`/`or`/`not` word tokens case-insensitively as a boolean query tree (`and`/`or` with parens; `and` binds tighter). `not` is a separate flat form (`term NOT term [NOT term ...]`) that cannot be mixed with `and`/`or` and does not support parentheses. Each positive term is satisfied by a match anywhere in the session's facets (summaries, current title, rendered messages), so `and` terms may match in different messages; displayed matches are the union over positive terms. `not` terms exclude sessions where the negated term matches in any facet. `-s/--case-sensitive` changes every term's matching mode without changing the case-insensitive operator grammar; `-i/--case-insensitive` is the explicit spelling of the default. Patterns without operator tokens — including regex parens and unterminated quotes — keep verbatim single-regex semantics. Malformed boolean queries exit 2. The literal candidate prefilter evaluates the same tree over per-term raw-content plausibility, treating `not` conservatively (never rejects).
 21. **Search Displays As It Scans**: `cmd_search` streams each `SearchHit` the instant `iter_hits()` confirms it, in scan order (newest first by filesystem mtime), instead of buffering, re-sorting by in-band mtime, then paging. `_stream_search_results` renders each hit via `get_console().capture()` and feeds the ANSI to a `StreamingPager` (a long-lived `less -r`) that flushes per hit; quitting `less` early sets `pager.closed`, which stops the scan. Display order therefore remains filesystem mtime, not semantic mtime, because streaming search optimizes for sub-second first results; recent-index resolution is separate and now uses JSONL recency (note 3). Two consequences for the colored `-l` view, whose aggregates can't be known mid-stream: the `N sessions · newest first` line is a trailing summary, and per-row provider labels key off whether the candidate pool spans providers rather than the final hit set. `-r/--raw` opts out (collect-all, single buffered emit) because its single-visible-message rule needs the whole set.
 22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL/raw transcript content as content, not a possible identifier, so stdin and pasted transcripts do not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
-23. **Search Has a Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`; non-ASCII literals, regex-shaped terms, render-generated markers, and any uncertain case fall through. This gate is only a raw plausibility filter: every survivor must still pass `_search_conversation_content()` and its rendered-message visibility semantics.
+23. **Search Has a Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`, using exact bytes for case-sensitive terms and lowercase bytes for the default case-insensitive terms; non-ASCII literals, regex-shaped terms, render-generated markers, and any uncertain case fall through. This gate is only a raw plausibility filter: every survivor must still pass `_search_conversation_content()` and its rendered-message visibility semantics.
 24. **`search . -ll` Projection Is Deliberately Narrow**: `_can_project_dot_only_id()` is the eligibility boundary for the only projection fast path: exact dot query, `ONLY_ID`, default visibility, no role/extras, no dir/date filters, and non-raw output. `_project_default_dot_match()` is tri-state; branchable Claude transcripts, read errors, or uncertain cases fall back to `SessionScan`. The projection mirrors default-hidden protocol/tool/thinking/task-notification behavior and should not be broadened without equivalence tests against the full search path.
 25. **`ch parse` Is a Provider-Free, Post-Visibility Boundary**: default output follows `messages_from_json_data → format_to_xml`; `-f json` follows `messages_from_xmlmd → format_to_json`. Neither performs session lookup, provider parsing, agent discovery, visibility filtering, or shortening. XML-to-JSON preserves all XML-represented semantics but canonicalizes its intentional losses: dates have minute precision, tool IDs remain shortened, attributes are strings, only schema-visible tool input fields exist, and tool outputs are rendered strings. After that projection, both command compositions are byte-stable.

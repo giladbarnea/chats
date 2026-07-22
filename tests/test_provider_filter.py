@@ -211,6 +211,7 @@ def _make_fake_cmd_search(captured: dict):
         flags,
         pool_filter=None,
         *,
+        case_sensitive=False,
         output_mode=SearchOutputMode.MATCHES,
         output_format="xml",
         emit_metadata=True,

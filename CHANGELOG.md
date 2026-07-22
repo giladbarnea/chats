@@ -3,6 +3,17 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-07-22] Add explicit search case modes
+
+### Added
+
+- `ch search` now accepts mutually exclusive `-s, --case-sensitive` and `-i, --case-insensitive` flags. Search remains case-insensitive by default; the selected mode applies consistently to plain literals, regexes, boolean-query terms, summaries, current titles, rendered messages, candidate prefilters, and match highlighting.
+
+### Changed
+
+- Search-mode `-s` now means case-sensitive matching. Search output shortening remains available through `--short`; default parse mode keeps its existing `-s, --short` spelling.
+
+---
 ## [2026-07-17] Add structured JSON and Markdown round trips
 
 ### Added

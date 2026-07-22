@@ -255,6 +255,9 @@ Once an operator is present, every multi-word or regex-shaped term must be quote
 - `-ll`, `--only-id`: Show only matching session IDs (implies `--color never` and `--no-paging`)
 - `-f`, `--full`: Show entire matching conversations instead of only matching messages
 - `-r`, `--raw`: Render search results as plain markdown (implies `--no-metadata`, `--color never`, and `--no-paging`)
+- `-s`, `--case-sensitive`: Match letter case exactly (default: false)
+- `-i`, `--case-insensitive`: Ignore letter case (default: true)
+- `--short [MAX_CHARS]`: Shorten string values in search output
 - `-p, --provider claude|pi|codex|antigravitycli`: Restrict search to sessions from a specific provider
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE
@@ -266,12 +269,15 @@ Once an operator is present, every multi-word or regex-shaped term must be quote
 
 `--only-user` and `--only-assistant` narrow regular message matches. Session summaries and the latest current title remain searchable facets, so a title/summary hit can still return a session even when role filtering leaves no matching message body. As in parse mode, these `--only-*` flags override `--thinking`, `--tools`, `--agents`, `--plans`, and `--all` with a warning.
 
+`--case-sensitive` and `--case-insensitive` are mutually exclusive. The selected mode applies to every regex or literal term, including terms inside boolean queries; operator words such as `AND`, `OR`, and `NOT` remain case-insensitive syntax. Search-mode shortening uses the long `--short` spelling because `-s` selects case-sensitive matching.
+
 **Date formats:** ISO dates (`2024-12-15`, `24-12-15`), with time (`2024-12-15T14:30`, `2024-12-15 14:30:45`), or relative (`1h`, `2d`, `3w`, `4m`, `5y`).
 
 **Examples:**
 
 ```bash
 ch search "error message"              # Case-insensitive search
+ch search -s "Error Message"           # Case-sensitive search
 ch search "implement.*feature"         # Regex pattern
 ch search -l "bug fix"                 # List matching files only
 ch search -ll "bug fix"                # Print only matching session IDs
@@ -288,7 +294,7 @@ ch search -p antigravitycli "TODO"     # Search only Antigravity CLI sessions
 ```
 
 **Search Features:**
-- Case-insensitive regex (multiline, DOTALL)
+- Case-insensitive regex by default; `-s, --case-sensitive` opts into exact-case matching (multiline, DOTALL)
 - Searches visible rendered message content, conversation summaries, and the latest current custom title
 - By default renders only matching messages; `-f, --full` renders every visible message from each matching conversation
 - Visibility flags affect search semantics: hidden thinking/tools/agents/plans and non-selected regular-message roles do not count as message matches
