@@ -1,6 +1,8 @@
-"""2026-07-12: aligned behavior with /Users/giladbarnea/.claude/hooks/auto_session_name.py and /Users/giladbarnea/.pi/agent/extensions/auto-session-name.ts. Keep all three aligned when changing.
+"""Keep behavior aligned with /Users/giladbarnea/.codex/hooks/auto_session_name.py,
+/Users/giladbarnea/.claude/hooks/auto_session_name.py, and
+/Users/giladbarnea/.pi/agent/extensions/auto-session-name.ts.
 
-Note: the other two renamers also rename `herdr` elements; this implementation avoids this intentionally.
+The three hooks also rename Herdr elements; this implementation intentionally does not.
 """
 
 from __future__ import annotations
