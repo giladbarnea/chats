@@ -61,14 +61,14 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- Claude hook additional-context (top-level `type: "attachment"` entries with `attachment.type == "hook_additional_context"`, injected by `UserPromptSubmit`, `SessionStart`, `Pre`/`PostToolUse`, ... hooks) now classifies as a synthetic `AdditionalContext` tool: hidden by default, shown with `-t`, and name-filterable (`-t AdditionalContext`, `-t !AdditionalContext`). The `hookName` renders as a `<tool-input name="AdditionalContext" hook_name="...">` attribute and the injected text as the body. It obeys the shared tool policy across parse, JSON, search, and `ch fork` filtering (a thin fork drops it; `-t`/`-t:s` keeps and shortens it).
+- Claude hook additional-context (top-level `type: "attachment"` entries with `attachment.type == "hook_additional_context"`, injected by `UserPromptSubmit`, `SessionStart`, `Pre`/`PostToolUse`, ... hooks) now classifies as a synthetic `AdditionalContext` tool: hidden by default, shown with `-t`, and name-filterable (`-t AdditionalContext`, `-t !AdditionalContext`). The `hookName` renders as a `<tool-input name="AdditionalContext" hook_name="...">` attribute and the injected text as the body. It obeys the shared tool policy across parse, JSON, and search; `-t`/`-t:s` keeps and shortens it.
 
 ---
 ## [2026-07-04] Classify Claude skill payloads as tool outputs
 
 ### Fixed
 
-- Claude `isMeta=true` text payloads linked to a source tool via `sourceToolUseID` now classify as tool outputs for that source tool instead of regular user text, including in `ch fork` filtering. Skill payloads therefore obey tool direction/name filters: `-t:i` hides the loaded skill body, while `-t:o` or `-t Skill:o` shows it as `<tool-output name="Skill" ...>` / a native `tool_result`.
+- Claude `isMeta=true` text payloads linked to a source tool via `sourceToolUseID` now classify as tool outputs for that source tool instead of regular user text. Skill payloads therefore obey tool direction/name filters: `-t:i` hides the loaded skill body, while `-t:o` or `-t Skill:o` shows it as `<tool-output name="Skill" ...>`.
 
 ---
 ## [2026-07-04] Add explicit short limits to tool specs
@@ -352,21 +352,20 @@ All notable changes to the `conversations` skill.
 
 - Claude sidechain discovery now assumes only the `<session_id>/subagents/agent-*.jsonl` layout exists.
 - `find_all_supported_session_files()` now only discovers `agent-*.jsonl` inside Claude `subagents/`, so unrelated JSONL files in that directory no longer leak into parse/search/recent-index flows.
-- `ch fork --agents` now always writes Claude sidechains back into `<new_session_id>/subagents/`.
 
 ---
 ## [2026-05-03] Fix Claude agent detection for new subagents/ layout
 
 ### Fixed
 
-- `find_agent_files_for_session()`, `_find_claude_sidechain_files()`, and `find_all_supported_session_files()` now discover agent files in Claude's new `<session_id>/subagents/` directory layout, while maintaining backward compatibility with the old flat layout.
+- `find_agent_files_for_session()` and `find_all_supported_session_files()` now discover agent files in Claude's new `<session_id>/subagents/` directory layout, while maintaining backward compatibility with the old flat layout.
 
 ---
 ## [2026-05-01] Hide plans and session-rename messages by default
 
 ### Changed
 
-- Parse/search/fork now treat plan content as opt-in: `--plans` shows `ExitPlanMode` content, and `--all` now includes plans too.
+- Parse and search now treat plan content as opt-in: `--plans` shows `ExitPlanMode` content, and `--all` now includes plans too.
 - Default parse output no longer renders provider-native session-title records as `<session-rename>` blocks.
 - Search still indexes custom titles as a metadata/search facet, but no longer renders rename records as visible message content.
 - Catalog capture now mirrors the new default by omitting plan content unless explicitly opted in upstream.

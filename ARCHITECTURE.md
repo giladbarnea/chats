@@ -38,7 +38,7 @@ last_updated: 2026/07/22
 │                                         │                                   │
 │  ┌──────────────────────────────────────▼────────────────────────────────┐  │
 │  │                  COMMAND ORCHESTRATION (commands/)                    │  │
-│  │ cmd_parse  cmd_parse_json  cmd_search  cmd_fork  cmd_name  cmd_rm    │  │
+│  │ cmd_parse  cmd_parse_json  cmd_search  cmd_name  cmd_rm              │  │
 │  │ cmd_catalog                                                          │  │
 │  └──────────────┬───────────────────────────────┬────────────────────────┘  │
 │                 │                               │                           │
@@ -685,7 +685,6 @@ cli.py:main()
 ├── [subcommand dispatch]
 │   ├── "parse"  → argparse → cmd_parse_json()
 │   ├── "search" → argparse → cmd_search()
-│   ├── "fork"   → argparse → cmd_fork()
 │   ├── "name"   → argparse → cmd_name()
 │   ├── "rm"     → argparse → cmd_rm()
 │   ├── "catalog"→ cmd_catalog(argv[2:])
@@ -719,10 +718,6 @@ cli.py:main()
 │       4. Stream each hit as it is confirmed (no global re-sort); page colored
 │          output through a StreamingPager (less -r) writing+flushing per hit
 │       5. raw mode is the exception: collect all, then one buffered emit
-│
-├── [fork mode]
-│   └── cmd_fork(session_id, flags)
-│       resolve → fork_session() → write provider-native fork
 │
 ├── [name mode]
 │   └── cmd_name(session_id, name, auto=?, dry_run=?)
@@ -760,7 +755,6 @@ cli.py
 ├── search_query.py
 ├── session_pool.py   → model, parsing
 ├── session_scan.py   → model, parsing, ordering, pool_filter
-├── forking.py        → model, parsing, utils
 ├── tool_filter.py
 ├── pool_filter.py    → model, parsing
 ├── console.py
@@ -788,7 +782,7 @@ cli.py
 10. **Search Raw Output Is Formatting-Only**: `search -r/--raw` does not change match semantics or breadth semantics. It reuses the same `SearchOutputMode` decision, then formats the chosen messages as plain markdown instead of Rich/XML.
 11. **Optional Metadata Stays Sparse**: provider-owned metadata extractors may populate optional fields like `forked_from`, but `print_metadata()` omits absent values instead of rendering null-like placeholders.
 12. **Metadata Message Counts After Slicing**: parse-mode metadata reports `len(messages)` after slice application, not the original conversation length.
-13. **Tool ID Map Lifecycle**: `_build_tool_id_map()` is deliberately called before parse-mode slicing so that a surviving `tool_result` can still resolve the display name of a sliced-out `tool_use`. Claude `isMeta` text payloads with `sourceToolUseID` are normalized into linked `tool_result` entries in parse mode, and fork filtering mirrors that classification on the native JSONL copy, so Skill payloads and similar protocol bodies inherit the same direction/name filtering as ordinary tool outputs.
+13. **Tool ID Map Lifecycle**: `_build_tool_id_map()` is deliberately called before parse-mode slicing so that a surviving `tool_result` can still resolve the display name of a sliced-out `tool_use`. Claude `isMeta` text payloads with `sourceToolUseID` are normalized into linked `tool_result` entries, so Skill payloads and similar protocol bodies inherit the same direction/name filtering as ordinary tool outputs.
 14. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based merge of Claude sidechains into the main timeline. It infers placement from `Task` dispatch timing rather than a strict relational join.
 15. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
 16. **Shared Session-Title Semantics**: metadata/resolution/search treat provider-native session-name records as one current-title abstraction: Claude `custom-title`, Codex `event_msg.payload.thread_name` when `payload.type == "thread_name_updated"`, and PI `session_info.name`. Only the latest title is acknowledged; historical titles are ignored.

@@ -8,7 +8,6 @@ Format and search supported AI CLI conversation history files. The `ch` CLI conv
 
 **Core functions:**
 - **Parse**: Convert conversation history to XML-tagged markdown
-- **Fork**: Duplicate a session into a thinner resumable copy
 - **Search**: Find conversations using regex patterns with rich display
 - **Format**: Convert between JSONL and raw transcript formats
 - **Remove**: Safely delete conversation sessions and all associated files
@@ -307,39 +306,6 @@ ch search -p antigravitycli "TODO"     # Search only Antigravity CLI sessions
 - `search --raw` mirrors parse raw output: a single visible message prints as content only; otherwise each session is labeled with a setext `Session <id>` heading and sessions are separated by one `---`
 - Full markdown rendering with syntax highlighting
 
-### Fork Mode
-
-Create a new supported session file that keeps only the parts of the conversation you want to carry forward.
-
-```bash
-ch fork [OPTIONS] <session>
-```
-
-`fork` resolves the input session the same way parse does for file paths, recent negative indices, session identifiers, and summary prefixes, then writes a new native session file back to disk. The fork keeps the original ecosystem’s on-disk format:
-
-- Claude forks become new `~/.claude/projects/.../<session-id>.jsonl` files
-- Codex forks keep their `rollout-...-<session-id>.jsonl` filename shape
-- PI forks keep their timestamp-prefixed `<timestamp>_<session-id>.jsonl` filename shape
-
-By default, `fork` strips thinking, tool payloads, plan content, and Claude sidechains, which makes the new session much smaller than the original transcript. You can opt content back in with the same visibility knobs as parse:
-
-```bash
-ch fork -1
-ch fork --plans session-id
-ch fork -t session-id
-ch fork -T short -t Read:o:s -t Bash:i session-id
-ch fork -A session-id
-```
-
-**Options:**
-- `-T, --thinking [full|short]`: Include thinking content, optionally shortened
-- `-t, --tools [SPEC]`: Include tool use/result content, with the same filter syntax as parse
-- `-a, --agents`: Include Claude sidechain agent sessions and keep Task linkage intact
-- `--plans`: Include plan content (`ExitPlanMode`)
-- `-A, --all`: Include thinking, tools, agents, and plans
-
-**Display:** On success, prints a one-line confirmation — a green `v` followed by the source and new session filenames in cyan (e.g. `v Forked <source>.jsonl -> <new-id>.jsonl`).
-
 ### Rm Mode
 
 Remove a conversation session and all associated files.
@@ -529,7 +495,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 1. **User messages** (`type: "user"`)
    - `message.content`: string or array (can include tool results)
    - User-side local command protocol payloads stay hidden by default across adapters, including Claude `<command-*>...</command-*>` inputs and `<local-command-stdout>...</local-command-stdout>` outputs
-   - Claude `isMeta=true` user messages also stay hidden by default. When an `isMeta` text payload carries `sourceToolUseID`, it is treated as another output for that source tool in parse and fork filtering, so direction/name filters apply (`-t:i` hides it, `-t:o` and `-t Skill:o` show it). Other meta text remains visible only with `-t, --tools`.
+   - Claude `isMeta=true` user messages also stay hidden by default. When an `isMeta` text payload carries `sourceToolUseID`, it is treated as another output for that source tool, so direction/name filters apply (`-t:i` hides it, `-t:o` and `-t Skill:o` show it). Other meta text remains visible only with `-t, --tools`.
    - Claude background-task notifications (string content wrapped in `<task-notification>...</task-notification>`, emitted when a background `Agent` task finishes) classify as a synthetic `TaskNotification` tool: hidden by default, shown with `-t`, name-filterable (`-t TaskNotification`). The `tool_use_id` (linking back to the originating `Agent` dispatch), `status`, and `summary` render as `<tool-input>` attributes and the task result as the body; double quotes in attribute values are downgraded to single quotes
    - Claude post-compaction summaries (`isCompactSummary: true`, injected when a conversation is continued past its context limit) render as a visible `<compaction>` block — shown by default like `<recap>`, with its own hue and a "Compaction" badge in colored output, rather than as a regular user message
    - Common fields: `cwd`, `sessionId`, `version`, `gitBranch`, `uuid`, `parentUuid`, `timestamp`
@@ -574,7 +540,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - `attachment.type: "hook_additional_context"` is the text a hook injects into the transcript (from `UserPromptSubmit`, `SessionStart`, `PreToolUse:*`, `PostToolUse:*`, ...)
    - Classifies as a synthetic `AdditionalContext` tool: hidden by default, shown with `-t`, name-filterable (`-t AdditionalContext`, `-t !AdditionalContext`)
    - `attachment.hookName` renders as the `hook_name` attribute and the joined `attachment.content` list as the body: `<tool-input name="AdditionalContext" hook_name="UserPromptSubmit">`
-   - Obeys the shared tool policy across parse, JSON, search, and `ch fork` filtering (a thin fork drops it; `-t`/`-t:s` keeps and shortens it). Other `attachment.type`s are skipped
+   - Obeys the shared tool policy across parse, JSON, and search; `-t`/`-t:s` keeps and shortens it. Other `attachment.type`s are skipped
 
 8. **Antigravity CLI transcript entries**
    - Stored under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`

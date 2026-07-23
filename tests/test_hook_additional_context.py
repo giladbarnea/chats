@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A Claude hook's injected additional-context attachment is represented as an
 `AdditionalContext` tool, so it obeys the same `-t/--tools` visibility policy as
-any other tool across parse, JSON, search, and fork.
+any other tool across parse, JSON, and search.
 """
 
 from __future__ import annotations
@@ -11,8 +11,6 @@ from pathlib import Path
 
 import pytest
 
-import chats.commands as commands_module
-import chats.forking as forking_module
 from chats import (
     ConversationFlags,
     SearchOutputMode,
@@ -170,68 +168,6 @@ def test_json_output_carries_name_hook_and_body() -> None:
     )
     assert HOOK_MARKER in json.dumps(block), (
         f"Expected the injected body in the JSON block. Got:\n{block}"
-    )
-
-
-def _write_claude_session(project_dir: Path, session_id: str) -> Path:
-    session_path = project_dir / f"{session_id}.jsonl"
-    session_path.parent.mkdir(parents=True, exist_ok=True)
-    entries = [
-        {
-            "type": "user",
-            "uuid": "u1",
-            "sessionId": session_id,
-            "message": {"role": "user", "content": "go"},
-        },
-        {
-            "type": "attachment",
-            "uuid": "att1",
-            "parentUuid": "u1",
-            "sessionId": session_id,
-            "attachment": {
-                "type": "hook_additional_context",
-                "content": [f"{HOOK_MARKER} injected context body"],
-                "hookName": "UserPromptSubmit",
-                "toolUseID": "hook-abc123",
-                "hookEvent": "UserPromptSubmit",
-            },
-        },
-    ]
-    session_path.write_text(
-        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
-        encoding="utf-8",
-    )
-    return session_path
-
-
-def test_fork_obeys_tool_visibility_for_hook_context(tmp_path, monkeypatch) -> None:
-    """Fork mirrors the display policy: hook context stays only when tools are kept."""
-    temp_home = tmp_path / "home"
-    monkeypatch.setattr(Path, "home", lambda: temp_home)
-    project_dir = temp_home / ".claude" / "projects" / "demo-project"
-    history_file = temp_home / ".claude" / "history.jsonl"
-    history_file.parent.mkdir(parents=True, exist_ok=True)
-    history_file.write_text("", encoding="utf-8")
-
-    generated = iter(["thin-fork", "with-tools-fork"])
-    monkeypatch.setattr(
-        forking_module, "_generate_claude_session_id", lambda: next(generated)
-    )
-
-    source = _write_claude_session(project_dir, "hook-fork-source")
-
-    commands_module.cmd_fork(str(source), ConversationFlags(color=False, paging=False))
-    thin = (project_dir / "thin-fork.jsonl").read_text(encoding="utf-8")
-    assert HOOK_MARKER not in thin, (
-        f"Expected a default (no --tools) fork to drop hook additional-context. Got:\n{thin}"
-    )
-
-    commands_module.cmd_fork(
-        str(source), ConversationFlags(show_tools=True, color=False, paging=False)
-    )
-    with_tools = (project_dir / "with-tools-fork.jsonl").read_text(encoding="utf-8")
-    assert HOOK_MARKER in with_tools, (
-        f"Expected a `--tools` fork to keep hook additional-context. Got:\n{with_tools}"
     )
 
 

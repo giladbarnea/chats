@@ -160,16 +160,6 @@ sessions:
     edited_files: [src/chats/cli.py, src/chats/commands.py, src/chats/parsing.py, tests/test_search_cli_args.py, README.md, CHANGELOG.md]
     branch: main
     forked: 229ad818-eb68-44e2-b9a7-378ff552a7ee
-  # Apr 14 26
-  rollout-2026-04-14T17-58-43-70583a99-e247-4e3b-a5ec-589918fd23ff:
-    description: "Added an adapter-aware `ch fork` command that duplicates Claude, Codex, and PI sessions into thinner resumable copies, then tightened CLI wiring, docs, and coverage before publishing the change."
-    directories: [~/dev/chats]
-    keywords: [fork-command, session-rewrite, tdd]
-    prominent_tech_stack: []
-    updated_when_message_count_was: 13
-    new_files: [src/chats/forking.py, tests/test_fork.py]
-    edited_files: [README.md, src/chats/__init__.py, src/chats/cli.py, src/chats/commands.py, src/chats/model.py, src/chats/parsing.py, src/chats/tool_filter.py]
-    branch: main
   # Apr 12 26
   rollout-2026-04-12T13-41-58-019d8148-b1e3-7741-9a0e-321c48d1c346:
     description: "Finished the broken partial implementation of `-t:s` tool-body truncation left by a previous agent: fixed a missing `truncate_middle` import in `model.py`, changed tool shortening from recursive `shorten_data` on raw dicts to `truncate_middle` on the rendered `ToolParts.content` string, rewrote `truncate_middle` to use a 500-char budget with `\n...\n` placeholder and a 495-char activation threshold, rewrote cross-ecosystem integration tests (`Claude`/`Codex`/`PI`) with canonical session shapes, and updated the shell `-s` seam test to generate payloads exceeding the new threshold. Full suite green."

@@ -6,7 +6,6 @@ import re
 import sys
 from pathlib import Path
 
-from . import commands as commands_module
 from .commands import (
     cmd_catalog,
     cmd_info,
@@ -205,20 +204,6 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         shorten_thinking=shorten_thinking,
         color=args.color,
         paging=args.paging,
-    )
-
-
-def _build_fork_flags(args: argparse.Namespace) -> ConversationFlags:
-    """Convert fork-mode args into ConversationFlags."""
-    show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
-    return ConversationFlags(
-        show_thinking=show_thinking,
-        show_tools=_resolve_show_tools(args.tools, args.all),
-        show_agents=args.agents or args.all,
-        show_plans=args.plans or args.all,
-        shorten_thinking=shorten_thinking,
-        color=False,
-        paging=False,
     )
 
 
@@ -607,65 +592,6 @@ def main():
             auto=args.auto,
             dry_run=args.dry_run,
         )
-    elif len(sys.argv) > 1 and sys.argv[1] == "fork":
-        parser = argparse.ArgumentParser(
-            prog="ch fork",
-            description="Duplicate a supported session into a thinner resumable fork",
-        )
-        parser.add_argument(
-            "session",
-            nargs="?",
-            help="Conversation/session ID, summary prefix, recent negative index, or file path",
-        )
-        parser.add_argument(
-            "-T",
-            "--thinking",
-            nargs="?",
-            const="full",
-            default=None,
-            help="Include thinking tokens (optional: short)",
-        )
-        parser.add_argument(
-            "-t",
-            "--tools",
-            action="append",
-            nargs="?",
-            const=True,
-            default=None,
-            help="Include tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
-        )
-        parser.add_argument(
-            "-a",
-            "--agents",
-            action="store_true",
-            help="Include agent sidechain messages",
-        )
-        parser.add_argument(
-            "-A",
-            "--all",
-            action="store_true",
-            help="Show everything (thinking, tools, agents, plans)",
-        )
-        parser.add_argument(
-            "--plans",
-            action="store_true",
-            help="Include plan content (ExitPlanMode)",
-        )
-
-        args, _unknown = parser.parse_known_args(sys.argv[2:])
-        _repair_visibility_option_positionals(
-            args, input_attr="session", allow_slice=False
-        )
-
-        if args.session is None:
-            parser.error("the following arguments are required: session")
-
-        try:
-            flags = _build_fork_flags(args)
-        except ValueError as exc:
-            parser.error(str(exc))
-
-        commands_module.cmd_fork(args.session, flags)
     elif len(sys.argv) > 1 and sys.argv[1] == "rm":
         # Parse rm arguments
         parser = argparse.ArgumentParser(
@@ -717,7 +643,6 @@ Commands:
   parse    Rebuild XML-tagged Markdown from structured ch JSON
   search   Search conversations with regex patterns
   name     Assign a custom display name to a conversation
-  fork     Duplicate a session into a thinner resumable copy
   rm       Remove a conversation session and all associated files
   catalog  AI-powered session cataloging
   info     Show aggregated statistics for a Claude or PI session

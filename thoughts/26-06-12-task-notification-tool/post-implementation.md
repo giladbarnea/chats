@@ -23,7 +23,7 @@ Decisions worth recording:
   instead, preserving the visual chain-link without touching the map.
 - **Detection is content-shape-based** (fullmatch in `parsing._parse_task_notification_tool`), like the
   `<command-*>` hiding, rather than keying off the entry-level `origin.kind` field — it works for raw
-  stdin and forked copies that may lack the envelope.
+  stdin that lacks the envelope.
 - **Attribute set deliberately small.** Only `tool_use_id` (the linkage anchor), `status`, and `summary`
   survive as attributes; `task_id`, `output_file`, and the `usage` counters were dropped as noise. Trimming
   `_TASK_NOTIFICATION_FIELD_TAGS` (not just the schema) matters because `_tool_use_to_json` splats every
@@ -31,9 +31,6 @@ Decisions worth recording:
 - **Attribute double quotes are downgraded to single quotes, not escaped.** No attr in the codebase escapes;
   the `summary` field carries literal `"`, so `_parse_task_notification_tool` swaps them for every attribute
   field (the markdown `result` body keeps its quotes verbatim).
-- **`fork` intentionally untouched.** Fork keeps user string content wholesale (it doesn't strip
-  `<command-*>` protocol strings either), so notifications survive forks as-is. Revisit only if fork
-  ever learns content-shape filtering for user strings.
 
 TDD ran five red/green cycles in `tests/test_task_notifications.py`; the filter and JSON cycles were
 green on arrival because the behavior falls out of `ToolFilter` and `_tool_use_to_json` once the

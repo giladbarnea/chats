@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-from ..console import get_console, print_error
-from ..forking import fork_session
+from ..console import print_error
 from ..formatting import render_message_inner_xml as render_message_inner_xml
 from ..model import (
     ConversationFlags,
@@ -168,18 +166,6 @@ from .search import (
 from .search import (
     display_search_result as display_search_result,
 )
-
-
-def cmd_fork(session_id: str, flags: ConversationFlags) -> Path:
-    """Fork a supported session into a thinner resumable copy."""
-    conv_file = resolve_conversation_file(session_id)
-    target_path = fork_session(conv_file, flags)
-
-    console = get_console()
-    console.print(
-        f"[green]v[/green] Forked [cyan]{conv_file.name}[/cyan] -> [cyan]{target_path.name}[/cyan]"
-    )
-    return target_path
 
 
 def cmd_catalog(args: list[str]) -> None:
