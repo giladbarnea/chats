@@ -417,6 +417,30 @@ def test_edit_renders_as_diff_not_old_new_blocks(tmp_path, monkeypatch):
     assert "38;2;152;195;121" in styled, f"Expected green added-line color. Got:\n{styled}"
 
 
+def test_plain_claude_read_path_is_preserved(tmp_path, monkeypatch, capsys):
+    """A current Claude Read path survives in canonical plain XML output."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_claude_session(
+        home, "44444444-aaaa-bbbb-cccc-000000000002",
+        [_assistant(content=[
+            {"type": "tool_use", "id": "toolu_0r", "name": "Read",
+             "input": {"path": "/tmp/snippet.py"}},
+        ])],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    )
+    out = capsys.readouterr().out
+
+    assert 'file_path="/tmp/snippet.py"' in out, (
+        "Expected Claude Read.input.path to render through the canonical file_path "
+        f"attribute. Got:\n{out}"
+    )
+
+
 def test_read_output_highlighted_with_preserved_line_numbers(tmp_path, monkeypatch):
     """A Read result is highlighted by extension, keeping the input's line range."""
     home = tmp_path / "home"
@@ -427,7 +451,7 @@ def test_read_output_highlighted_with_preserved_line_numbers(tmp_path, monkeypat
         [
             _assistant(content=[
                 {"type": "tool_use", "id": "toolu_0r", "name": "Read",
-                 "input": {"file_path": "/tmp/snippet.py"}},
+                 "input": {"path": "/tmp/snippet.py"}},
             ]),
             _user([{"type": "tool_result", "tool_use_id": "toolu_0r",
                     "content": read_output}]),
@@ -478,7 +502,7 @@ def test_colored_read_output_is_shortened_with_tool_short(tmp_path, monkeypatch)
         [
             _assistant(content=[
                 {"type": "tool_use", "id": "toolu_0r", "name": "Read",
-                 "input": {"file_path": "/tmp/snippet.py"}},
+                 "input": {"path": "/tmp/snippet.py"}},
             ]),
             _user([{"type": "tool_result", "tool_use_id": "toolu_0r",
                     "content": read_output}]),
@@ -510,7 +534,7 @@ def test_colored_read_output_is_shortened_with_standalone_short(tmp_path, monkey
         [
             _assistant(content=[
                 {"type": "tool_use", "id": "toolu_0r", "name": "Read",
-                 "input": {"file_path": "/tmp/snippet.py"}},
+                 "input": {"path": "/tmp/snippet.py"}},
             ]),
             _user([{"type": "tool_result", "tool_use_id": "toolu_0r",
                     "content": read_output}]),
@@ -542,7 +566,7 @@ def test_colored_read_output_is_shortened_with_scoped_spec(tmp_path, monkeypatch
         [
             _assistant(content=[
                 {"type": "tool_use", "id": "toolu_0r", "name": "Read",
-                 "input": {"file_path": "/tmp/snippet.py"}},
+                 "input": {"path": "/tmp/snippet.py"}},
             ]),
             _user([{"type": "tool_result", "tool_use_id": "toolu_0r",
                     "content": read_output}]),

@@ -1875,7 +1875,12 @@ def _parse_assistant_entry(
                 ):
                     msg.plan = plan_content
             elif flags.show_tools:
-                msg.tools.append(item)
+                msg.tools.append({
+                    **item,
+                    "input": normalize_tool_input_keys(
+                        "claude", tool_name, item.get("input", {})
+                    ),
+                })
 
     if text_blocks and show_message_text:
         msg.text = "\n\n".join(text_blocks)

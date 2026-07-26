@@ -5,7 +5,7 @@ TEST_DATA="tests/data/tool_filter_data.jsonl"
 
 # Create synthetic data: two tool_use + two tool_result (one is an error)
 echo '{"type":"user","message":{"role":"user","content":"Run some tools"},"timestamp":"2025-01-01T12:00:00Z"}' > "$TEST_DATA"
-echo '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_bash","name":"Bash","input":{"command":"ls"}},{"type":"tool_use","id":"toolu_read","name":"Read","input":{"file_path":"test.txt"}}]},"timestamp":"2025-01-01T12:00:01Z"}' >> "$TEST_DATA"
+echo '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_bash","name":"Bash","input":{"command":"ls"}},{"type":"tool_use","id":"toolu_read","name":"Read","input":{"path":"test.txt"}}]},"timestamp":"2025-01-01T12:00:01Z"}' >> "$TEST_DATA"
 echo '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_bash","content":"file1","is_error":true},{"type":"tool_result","tool_use_id":"toolu_read","content":"readcontent"}]},"timestamp":"2025-01-01T12:00:02Z"}' >> "$TEST_DATA"
 
 echo "Testing Tool Filtering CLI..."

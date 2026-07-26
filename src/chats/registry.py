@@ -101,6 +101,11 @@ TOOL_NAME_ALIASES: dict[str, dict[str, str]] = {
 
 # Provider-native input keys mapped to canonical schema keys after name aliasing.
 TOOL_INPUT_KEY_ALIASES: dict[str, dict[str, dict[str, str]]] = {
+    "claude": {
+        "Read": {
+            "path": "file_path",
+        },
+    },
     "codex": {
         "Bash": {
             "cmd": "command",

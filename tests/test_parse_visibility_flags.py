@@ -30,7 +30,7 @@ def _write_session(path: Path) -> None:
                         "type": "tool_use",
                         "id": "toolu_read_1",
                         "name": "Read",
-                        "input": {"file_path": "notes.txt"},
+                        "input": {"path": "notes.txt"},
                     },
                     {
                         "type": "tool_use",
