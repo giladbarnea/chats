@@ -223,7 +223,7 @@ class TestCmdNameAuto:
         with patch("chats.commands.name.subprocess.run", return_value=mock_result):
             cmd_name(str(session_file), None, auto=True)
 
-        last = get_last_line_json(session_file, -2)
+        last = get_last_line_json(session_file)
         assert last["type"] == "agent-name"
         assert last["agentName"] == f"[{date_prefix}][project] implement auto-rename"
 

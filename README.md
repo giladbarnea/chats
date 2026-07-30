@@ -364,7 +364,7 @@ ch name -n <session> --auto
 ```
 
 This mutates the conversation file by appending the provider-native session-title entry shape:
-- Claude: `custom-title` plus `agent-name`, and also appends `/rename ...` to `~/.claude/history.jsonl`
+- Claude: `custom-title` plus `agent-name`
 - Codex: `event_msg.payload.type == "thread_name_updated"`
 - PI: `session_info.name`
 

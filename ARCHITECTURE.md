@@ -290,9 +290,6 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_name                 Append provider-native entries to conv_file ─► .jsonl file
 │
-├───►  cmd_name                 [Claude only] append /rename ... to        ──► ~/.claude/history.jsonl
-│      │                        history.jsonl
-│
 └───►  cmd_name                 Print confirmation                         ──► console
 ```
 

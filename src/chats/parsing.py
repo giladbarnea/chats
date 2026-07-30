@@ -32,7 +32,6 @@ class JsonlSessionAdapter:
     matches: Callable[[Path | None], bool]
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
     build_name_entries: NameEntryBuilder
-    writes_claude_history: bool = False
     find_session_files: Callable[[], list[Path]] | None = None
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
     is_sidechain_path: Callable[[Path], bool] = lambda _path: False
@@ -1415,22 +1414,11 @@ def _require_last_entry_id(entries: list[dict], provider_name: str) -> str:
 
 
 def _build_claude_name_entries(
-    entries: list[dict],
+    _entries: list[dict],
     session_id: str,
     new_name: str,
 ) -> list[dict]:
-    """Build Claude-native rename entries including the /rename system command record."""
-    parent_uuid = entries[-1].get("uuid", "") if entries else ""
-    cwd = ""
-    version = "UNKNOWN"
-    git_branch = "HEAD"
-    for entry in reversed(entries):
-        if not cwd and "cwd" in entry:
-            cwd = entry["cwd"]
-        if not version and "version" in entry:
-            version = entry["version"]
-        if not git_branch and "gitBranch" in entry:
-            git_branch = entry["gitBranch"]
+    """Build the two Claude-native rename entries: custom-title and agent-name."""
     return [
         {
             "type": "custom-title",
@@ -1441,23 +1429,6 @@ def _build_claude_name_entries(
             "type": "agent-name",
             "agentName": new_name,
             "sessionId": session_id,
-        },
-        {
-            "parentUuid": parent_uuid,
-            "isSidechain": False,
-            "type": "system",
-            "subtype": "local_command",
-            "content": f"<command-name>/rename</command-name>\n <command-message>rename</command-message>\n <command-args>{new_name}</command-args>",
-            "level": "info",
-            "timestamp": _jsonl_timestamp_now(),
-            "uuid": uuid.uuid4().hex,
-            "isMeta": False,
-            "userType": "external",
-            "entrypoint": "cli",
-            "cwd": cwd,
-            "sessionId": session_id,
-            "version": version,
-            "gitBranch": git_branch,
         },
     ]
 
@@ -1686,7 +1657,6 @@ JSONL_SESSION_ADAPTERS = [
         matches=lambda _source_path: True,
         parse_messages=_parse_default_jsonl,
         build_name_entries=_build_claude_name_entries,
-        writes_claude_history=True,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),
         extract_session_id=lambda path: path.stem,
     ),

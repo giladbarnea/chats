@@ -146,8 +146,6 @@ def cmd_name(
     dry_run: bool = False,
 ) -> None:
     """Rename a conversation by appending the provider-native session-title entry."""
-    import time
-
     if new_name is not None and auto:
         print_error("Cannot specify both a new name and --auto.")
         sys.exit(1)
@@ -166,7 +164,6 @@ def cmd_name(
     session_id = get_native_session_id(conv_file)
 
     content = conv_file.read_text(encoding="utf-8")
-    project = extract_cwd_from_jsonl(content) or ""
     entries = decode_jsonl_entries(content)
 
     if auto:
@@ -197,21 +194,6 @@ def cmd_name(
     except Exception as error:
         print_error(f"Error writing file: {error}")
         sys.exit(1)
-
-    if adapter.writes_claude_history:
-        history_entry = {
-            "display": f"/rename {new_name}",
-            "pastedContents": {},
-            "timestamp": int(time.time() * 1000),
-            "project": project,
-            "sessionId": session_id,
-        }
-        history_file = Path.home() / ".claude" / "history.jsonl"
-        try:
-            with open(history_file, "a", encoding="utf-8") as handle:
-                handle.write(json.dumps(history_entry, separators=(",", ":")) + "\n")
-        except Exception as error:
-            print_error(f"Error writing history.jsonl: {error}")
 
     console = get_console()
     console.print(f"[green]v[/green] Renamed [cyan]{conv_file.name}[/cyan]")
