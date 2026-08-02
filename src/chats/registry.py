@@ -26,6 +26,7 @@ class ContentBlockType(Enum):
     COMPACTION = ContentBlockInfo("compaction", "## Compaction")
     ASSISTANT_RESPONSE = ContentBlockInfo("assistant-response", "## Assistant")
     AGENT = ContentBlockInfo("agent", "## Agent")
+    CUSTOM = ContentBlockInfo("custom", "## Custom")
     SESSION_RENAME = ContentBlockInfo("session-rename", "## Renamed Session")
 
     # Content blocks (inner)

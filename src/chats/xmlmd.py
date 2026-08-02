@@ -41,6 +41,7 @@ _ROLE_BY_WRAPPER = {
     ContentBlockType.USER_COMMAND_INPUT: "user",
     ContentBlockType.USER_COMMAND_OUTPUT: "user",
     ContentBlockType.COMPACTION: "user",
+    ContentBlockType.CUSTOM: "custom",
     ContentBlockType.SESSION_RENAME: "session-rename",
 }
 
@@ -93,6 +94,16 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
     timestamp = f"{date.replace(' ', 'T')}:00" if date is not None else None
     is_meta = attributes.pop("isMeta", "false") == "true"
     source_tool_user_id = attributes.pop("sourceToolUserId", None)
+    inherited_context_value = attributes.pop("inherited_context", None)
+    if inherited_context_value not in {None, "true", "false"}:
+        raise ValueError(
+            f"Expected message {position} inherited_context to be true or false."
+        )
+    inherited_context = (
+        inherited_context_value == "true"
+        if inherited_context_value is not None
+        else None
+    )
     message = Message(
         role=_ROLE_BY_WRAPPER.get(wrapper_type, "assistant"),
         index=original_index,
@@ -102,6 +113,9 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
         subagent_type=attributes.pop("subagent_type", None),
         name=attributes.pop("name", None),
         model=attributes.pop("model", None),
+        custom_type=attributes.pop("custom_type", None),
+        inherited_context=inherited_context,
+        status=attributes.pop("status", None),
         is_meta=is_meta,
         source_tool_user_id=source_tool_user_id,
         wrapper_type=wrapper_type,

@@ -109,9 +109,9 @@ Automatically detects input format by examining **first non-empty line only** (d
                      #   Combine: -t "Read:o:s Bash:i" or -t Read:o:s -t Bash:i
                      #   Order-free: -t i:Bash == -t Bash:i
                      #   Long form: -t input, -t output, -t short, -t error
--a, --agents         # Include subagent messages
+-a, --agents         # Include subagent messages and Pi agent custom records
 -b, --branches       # Include abandoned (rewound) branch messages, tagged branch="N"
--A, --all            # Show everything (thinking, tools, agents, plans)
+-A, --all            # Show everything, including arbitrary Pi custom records
 --plans              # Show plan content (ExitPlanMode)
 -s, --short [MAX_CHARS]  # Shorten string values in output (default max chars=500; explicit MAX_CHARS must be >7)
 
@@ -191,7 +191,7 @@ JSON format:
 - Always outputs plain JSON (no Rich formatting)
 - Mirrors the structured message model instead of embedding XML wrappers into strings
 - Each message carries its wrapper tag as `type` plus any XML-attribute metadata such as `original_index`, `model`, `agent_id`, or `sourceToolUserId`
-- Messages carry their raw ISO `timestamp` when present; agent messages may also carry an optional `name`, preserving their XML `date=` and identity metadata across a round trip
+- Messages carry their raw ISO `timestamp` when present; custom and agent messages preserve `custom_type`, `inherited_context`, `status`, and optional agent identity metadata across a round trip
 - `content` is an ordered array of raw strings and typed blocks like `thinking`, `tool-input`, and `tool-output`
 - Tool blocks expose structured fields instead of XML tags / fenced pseudo-content
 - Raw text that happens to contain XML-like strings stays a plain string value
@@ -536,13 +536,19 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Only the latest such entry is acknowledged for resolution, search, and metadata
    - Searchable in search mode and emitted as `custom_title:` in metadata frontmatter
 
-7. **Hook additional-context attachments** (`type: "attachment"`, Claude)
+7. **PI custom messages** (`type: "custom"` and selected `custom_message` records)
+   - Hidden by default
+   - `--all` renders arbitrary `custom.data` as JSON without assuming its schema
+   - `--agents` renders `pi-user-agents` and `subagents:record` as agent interactions
+   - `subagent-notification` records stay hidden because `subagents:record` carries the useful result
+
+8. **Hook additional-context attachments** (`type: "attachment"`, Claude)
    - `attachment.type: "hook_additional_context"` is the text a hook injects into the transcript (from `UserPromptSubmit`, `SessionStart`, `PreToolUse:*`, `PostToolUse:*`, ...)
    - Classifies as a synthetic `AdditionalContext` tool: hidden by default, shown with `-t`, name-filterable (`-t AdditionalContext`, `-t !AdditionalContext`)
    - `attachment.hookName` renders as the `hook_name` attribute and the joined `attachment.content` list as the body: `<tool-input name="AdditionalContext" hook_name="UserPromptSubmit">`
    - Obeys the shared tool policy across parse, JSON, and search; `-t`/`-t:s` keeps and shortens it. Other `attachment.type`s are skipped
 
-8. **Antigravity CLI transcript entries**
+9. **Antigravity CLI transcript entries**
    - Stored under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`
    - `transcript_full.jsonl` is preferred when present; `transcript.jsonl` is used only when the full variant is missing
    - Session identity comes from the `{session_id}` brain directory, not from in-record fields
@@ -561,7 +567,7 @@ In `ch` output, messages on an abandoned **rewind** branch are hidden by default
 
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)
-- Two kinds are captured: agent-initiated subagents dispatched via the `Task` tool with `subagent_type` (e.g., "Explore", "codebase-analyzer:single-subsystem"), and user-initiated `/fork` background agents
+- Three kinds are captured: agent-initiated sidechains, user-initiated `/fork` background agents, and inline Pi `pi-user-agents` / `subagents:record` custom records
 - Stored separately as `agent-{shortId}.jsonl` under `{session_id}/subagents/` (e.g., `{session_id}/subagents/agent-51c28bca.jsonl`); a `/fork` instead uses `agent-{slug}-{taskId}.jsonl` with a sibling `.meta.json` carrying `agentType: "fork"`
 - Same structure as main conversations
 - Include `agentId` field and `isSidechain: true` at entry level

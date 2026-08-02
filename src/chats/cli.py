@@ -196,6 +196,7 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         show_thinking=show_thinking,
         show_tools=_resolve_show_tools(args.tools, args.all),
         show_agents=args.agents or args.all,
+        show_custom=args.all,
         show_branches=args.branches or args.all,
         show_plans=args.plans or args.all,
         allow_empty_output=message_selection != MessageSelection.ALL,
@@ -434,7 +435,10 @@ def main():
             help="Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
         )
         parser.add_argument(
-            "-a", "--agents", action="store_true", help="Include agent messages"
+            "-a",
+            "--agents",
+            action="store_true",
+            help="Include agent messages and Pi agent custom records",
         )
         parser.add_argument(
             "-b",
@@ -446,7 +450,7 @@ def main():
             "-A",
             "--all",
             action="store_true",
-            help="Show everything (thinking, tools, agents, plans)",
+            help="Show everything, including arbitrary Pi custom records",
         )
         parser.add_argument(
             "--plans",
@@ -534,6 +538,7 @@ def main():
             show_thinking=show_thinking,
             show_tools=show_tools,
             show_agents=args.agents or args.all,
+            show_custom=args.all,
             show_branches=args.branches or args.all,
             show_plans=args.plans or args.all,
             shorten=shorten_max_chars is not None,
@@ -724,7 +729,10 @@ Commands:
             cafter_help="Restrict recent-index resolution to sessions created after DATE",
         )
         parser.add_argument(
-            "-a", "--agents", action="store_true", help="Include agent messages"
+            "-a",
+            "--agents",
+            action="store_true",
+            help="Include agent messages and Pi agent custom records",
         )
         parser.add_argument(
             "-b",
@@ -736,7 +744,7 @@ Commands:
             "-A",
             "--all",
             action="store_true",
-            help="Show everything (thinking, tools, agents, plans)",
+            help="Show everything, including arbitrary Pi custom records",
         )
         parser.add_argument(
             "--plans",

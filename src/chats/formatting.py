@@ -272,7 +272,7 @@ def _compact_header_meta(msg: Message, conversation_tag: str | None) -> str:
     parts = (
         conversation_tag,
         f"#{msg.index}",
-        msg.model.removeprefix("claude-") if msg.model else None,
+        msg.get_display_model(),
         msg.get_display_date(),
     )
     return "  ·  ".join(part for part in parts if part)
@@ -399,6 +399,7 @@ _ROLE_HUE: dict[str, str] = {
     "compaction": theme.YELLOW,
     "assistant-response": theme.MAGENTA,
     "agent": theme.CYAN,
+    "custom": theme.GRAY,
     "session-rename": theme.RED,
 }
 

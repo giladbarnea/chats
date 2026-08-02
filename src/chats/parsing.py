@@ -925,6 +925,10 @@ def _parse_pi_jsonl_entries(
             msg = _parse_pi_message_entry(entry, index, flags)
         elif entry_type == "compaction":
             msg = _parse_pi_compaction_entry(entry, index, flags)
+        elif entry_type == "custom":
+            msg = _parse_pi_custom_entry(entry, index, flags)
+        elif entry_type == "custom_message":
+            msg = _parse_pi_custom_message_entry(entry, index, flags)
         else:
             msg = None
 
@@ -933,6 +937,162 @@ def _parse_pi_jsonl_entries(
             index += 1
 
     return messages
+
+
+_PI_USER_AGENT_RESPONSE_PATTERN = re.compile(
+    r"<response>(?P<response>.*?)</response>",
+    re.DOTALL,
+)
+
+
+def _extract_pi_user_agent_response(content: object) -> str | None:
+    """Extract the response element from a Pi user-agent payload.
+
+    >>> _extract_pi_user_agent_response("<user_agent><response>done</response></user_agent>")
+    'done'
+    """
+    if not isinstance(content, str):
+        return None
+    match = _PI_USER_AGENT_RESPONSE_PATTERN.search(content)
+    if match is None:
+        return None
+    return match.group("response").strip() or None
+
+
+def _pi_user_agent_payload(entry: dict) -> tuple[object, object]:
+    """Return the content and details from either Pi user-agent envelope."""
+    if entry.get("type") != "custom":
+        return entry.get("content"), entry.get("details")
+    data = entry.get("data")
+    if not isinstance(data, dict):
+        return None, None
+    return data.get("content"), data.get("details")
+
+
+def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
+    """Normalize one Pi user-agent interaction from its details metadata."""
+    content, details = _pi_user_agent_payload(entry)
+    if not isinstance(details, dict):
+        return None
+
+    task = details.get("task")
+    if not isinstance(task, str) or not task.strip():
+        return None
+
+    agent_id = entry.get("id")
+    if not isinstance(agent_id, str):
+        agent_id = None
+    model = details.get("model")
+    if not isinstance(model, str):
+        model = None
+    inherited_context = details.get("inheritedContext")
+    if type(inherited_context) is not bool:
+        inherited_context = None
+
+    message = Message(
+        role="agent",
+        index=index,
+        agent_id=agent_id,
+        timestamp=entry.get("timestamp"),
+        subagent_task=task,
+        model=model,
+        wrapper_type=ContentBlockType.AGENT,
+        custom_type="pi-user-agents",
+        inherited_context=inherited_context,
+    )
+    is_error = details.get("ok") is False
+    error = details.get("error")
+    if is_error and (not isinstance(error, str) or not error):
+        return None
+    if is_error:
+        message.tools = [
+            {
+                "type": "tool_result",
+                "name": "Bash",
+                "content": error,
+                "is_error": True,
+            }
+        ]
+        message.tools_always_visible = True
+        return message
+
+    response = _extract_pi_user_agent_response(content)
+    if response is None:
+        return None
+    message.text = response
+    return message
+
+
+def _parse_pi_subagent_record(entry: dict, index: int) -> Message | None:
+    """Normalize a Pi subagent response record as one agent interaction."""
+    data = entry.get("data")
+    if not isinstance(data, dict):
+        return None
+
+    agent_id = data.get("id")
+    subagent_type = data.get("type")
+    description = data.get("description")
+    status = data.get("status")
+    result = data.get("result")
+    values = (agent_id, subagent_type, description, status, result)
+    if not all(isinstance(value, str) and value for value in values):
+        return None
+
+    return Message(
+        role="agent",
+        index=index,
+        text=result,
+        agent_id=agent_id,
+        timestamp=entry.get("timestamp"),
+        subagent_type=subagent_type,
+        subagent_task=description,
+        wrapper_type=ContentBlockType.AGENT,
+        custom_type="subagents:record",
+        status=status,
+    )
+
+
+def _parse_pi_custom_entry(
+    entry: dict,
+    index: int,
+    flags: ConversationFlags,
+) -> Message | None:
+    """Normalize a Pi custom entry through the shared message model."""
+    custom_type = entry.get("customType")
+    if not isinstance(custom_type, str):
+        return None
+    if custom_type == "pi-user-agents":
+        return _parse_pi_user_agent_entry(entry, index) if flags.show_agents else None
+    if custom_type == "subagents:record":
+        return _parse_pi_subagent_record(entry, index) if flags.show_agents else None
+    if not flags.show_custom:
+        return None
+
+    data = json.dumps(entry.get("data"), indent=2, ensure_ascii=False)
+    return Message(
+        role="custom",
+        index=index,
+        text=f"```json\n{data}\n```",
+        timestamp=entry.get("timestamp"),
+        wrapper_type=ContentBlockType.CUSTOM,
+        custom_type=custom_type,
+    )
+
+
+def _parse_pi_custom_message_entry(
+    entry: dict,
+    index: int,
+    flags: ConversationFlags,
+) -> Message | None:
+    """Normalize displayed Pi user-agent messages and drop notifications."""
+    custom_type = entry.get("customType")
+    if custom_type == "subagent-notification":
+        return None
+    if custom_type != "pi-user-agents" or not flags.show_agents:
+        return None
+    if entry.get("display") is not True:
+        return None
+    return _parse_pi_user_agent_entry(entry, index)
 
 
 def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:

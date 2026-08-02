@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-02] Add Pi custom-message support
+
+### Added
+
+- Pi `type: "custom"` records stay hidden by default and render under `--all` without assuming a `data` schema.
+- `--agents` now renders Pi `pi-user-agents` and `subagents:record` records through the shared agent view across plain, JSON, raw, colored, and search output. Duplicate `subagent-notification` records stay hidden.
+- User-agent metadata comes from `details`; success text comes from the native `<response>` element, while `details.ok is False` failures use the existing Bash error presentation.
+
+---
 ## [2026-07-22] Add explicit search case modes
 
 ### Added
