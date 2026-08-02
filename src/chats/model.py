@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import sys
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -541,12 +542,14 @@ class Message:
         if model := self.get_display_model():
             attrs.append(f'model="{model}"')
         if self.custom_type:
-            attrs.append(f'custom_type="{self.custom_type}"')
+            escaped_custom_type = html.escape(self.custom_type, quote=True)
+            attrs.append(f'custom_type="{escaped_custom_type}"')
         if self.inherited_context is not None:
-            value = str(self.inherited_context).lower()
-            attrs.append(f'inherited_context="{value}"')
+            inherited_context = str(self.inherited_context).lower()
+            attrs.append(f'inherited_context="{inherited_context}"')
         if self.status:
-            attrs.append(f'status="{self.status}"')
+            escaped_status = html.escape(self.status, quote=True)
+            attrs.append(f'status="{escaped_status}"')
         if date := self.get_date_attribute():
             attrs.append(f'date="{date}"')
         return " ".join(attrs)

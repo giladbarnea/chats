@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import re
 
@@ -94,6 +95,12 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
     timestamp = f"{date.replace(' ', 'T')}:00" if date is not None else None
     is_meta = attributes.pop("isMeta", "false") == "true"
     source_tool_user_id = attributes.pop("sourceToolUserId", None)
+    custom_type_value = attributes.pop("custom_type", None)
+    custom_type = (
+        html.unescape(custom_type_value) if custom_type_value is not None else None
+    )
+    status_value = attributes.pop("status", None)
+    status = html.unescape(status_value) if status_value is not None else None
     inherited_context_value = attributes.pop("inherited_context", None)
     if inherited_context_value not in {None, "true", "false"}:
         raise ValueError(
@@ -113,9 +120,9 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
         subagent_type=attributes.pop("subagent_type", None),
         name=attributes.pop("name", None),
         model=attributes.pop("model", None),
-        custom_type=attributes.pop("custom_type", None),
+        custom_type=custom_type,
         inherited_context=inherited_context,
-        status=attributes.pop("status", None),
+        status=status,
         is_meta=is_meta,
         source_tool_user_id=source_tool_user_id,
         wrapper_type=wrapper_type,

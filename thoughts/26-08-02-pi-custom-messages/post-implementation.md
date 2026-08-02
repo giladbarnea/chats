@@ -12,6 +12,8 @@ A plan review caught three important traps. Pi adapter selection depends on a pa
 
 Agent metadata comes only from `details`; only the response body comes from native content. Error classification uses identity with `False`. The structured transport now carries `custom_type`, `inherited_context`, and `status`, preserving the strict JSON/XML round trip.
 
-`tests/test_pi_custom_messages.py` drives the public CLI through plain, JSON, raw, colored, search, and transport paths. Focused affected tests passed. The full Python suite passed 641 tests and retained one unrelated performance-budget miss already present at baseline.
+The final diff review caught two boundary cases. Partial special records now fall back to generic data under `--all`. XML entity escaping preserves arbitrary custom-type metadata.
+
+`tests/test_pi_custom_messages.py` drives the public CLI through plain, JSON, raw, colored, search, and transport paths. The non-performance suite passed 644 tests, and all shell tests passed. An isolated performance rerun retained only the unrelated baseline search-budget miss.
 
 Useful maps were `README.md` sections “Display Options” and “Conversation File Structure”, plus `ARCHITECTURE.md` sections “Parse”, “Search”, and “Shared Invariants”.

@@ -122,6 +122,100 @@ def test_generic_pi_custom_messages_are_hidden_by_default_and_shown_by_all(
     )
 
 
+@pytest.mark.parametrize(
+    ("custom_type", "sentinel"),
+    [
+        pytest.param("pi-user-agents", "PARTIAL_USER_AGENT", id="user-agent"),
+        pytest.param(
+            "subagents:record", "PARTIAL_SUBAGENT_RECORD", id="subagent-record"
+        ),
+    ],
+)
+def test_all_renders_partial_special_pi_custom_records_as_generic_data(
+    tmp_path: Path,
+    custom_type: str,
+    sentinel: str,
+) -> None:
+    def select(entry: dict[str, object]) -> bool:
+        return entry.get("type") == "custom" and entry.get("customType") == custom_type
+
+    def mutate(entry: dict[str, object]) -> None:
+        entry["data"] = {"unexpected": sentinel}
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    completed = _run_ch(
+        home,
+        str(session_path),
+        "--all",
+        "--color=never",
+        "--no-metadata",
+    )
+
+    assert completed.returncode == 0, (
+        f"Expected `--all` to preserve a partial {custom_type} record. "
+        f"stderr: {completed.stderr!r}."
+    )
+    assert f'custom_type="{custom_type}"' in completed.stdout, (
+        f"Expected generic output for the partial {custom_type} record. "
+        f"stdout: {completed.stdout!r}."
+    )
+    assert sentinel in completed.stdout, (
+        f"Expected generic output to retain arbitrary {custom_type} data. "
+        f"stdout: {completed.stdout!r}."
+    )
+
+
+def test_generic_pi_custom_type_round_trips_xml_attribute_characters(
+    tmp_path: Path,
+) -> None:
+    custom_type = 'custom "quoted" & <angled>'
+
+    def select(entry: dict[str, object]) -> bool:
+        return (
+            entry.get("type") == "custom"
+            and entry.get("customType") == "claude-bridge-integrity"
+        )
+
+    def mutate(entry: dict[str, object]) -> None:
+        entry["customType"] = custom_type
+        entry["data"] = {"sentinel": "ESCAPED_CUSTOM_TYPE"}
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    native_xml = _run_ch(
+        home,
+        str(session_path),
+        "--all",
+        "--color=never",
+        "--no-metadata",
+    )
+
+    assert native_xml.returncode == 0, native_xml.stderr
+    assert (
+        'custom_type="custom &quot;quoted&quot; &amp; &lt;angled&gt;"'
+        in native_xml.stdout
+    ), (
+        f"Expected the arbitrary custom type to be XML-safe. stdout: {native_xml.stdout!r}."
+    )
+
+    canonical_json = _run_ch(
+        home,
+        "parse",
+        "--format=json",
+        input_text=native_xml.stdout,
+    )
+    assert canonical_json.returncode == 0, canonical_json.stderr
+    messages = json.loads(canonical_json.stdout)
+    assert messages[0].get("custom_type") == custom_type, (
+        f"Expected XML parsing to restore the custom type. Got: {messages!r}."
+    )
+
+    rebuilt_xml = _run_ch(home, "parse", input_text=canonical_json.stdout)
+    assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
+    assert rebuilt_xml.stdout == native_xml.stdout, (
+        "Expected the escaped custom type to stabilize across the public transport path."
+    )
+
+
 def test_agents_render_successful_pi_user_agents_as_interactions(
     tmp_path: Path,
 ) -> None:

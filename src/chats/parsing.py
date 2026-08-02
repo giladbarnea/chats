@@ -1061,10 +1061,13 @@ def _parse_pi_custom_entry(
     custom_type = entry.get("customType")
     if not isinstance(custom_type, str):
         return None
-    if custom_type == "pi-user-agents":
-        return _parse_pi_user_agent_entry(entry, index) if flags.show_agents else None
-    if custom_type == "subagents:record":
-        return _parse_pi_subagent_record(entry, index) if flags.show_agents else None
+    special_message: Message | None = None
+    if custom_type == "pi-user-agents" and flags.show_agents:
+        special_message = _parse_pi_user_agent_entry(entry, index)
+    if custom_type == "subagents:record" and flags.show_agents:
+        special_message = _parse_pi_subagent_record(entry, index)
+    if special_message is not None:
+        return special_message
     if not flags.show_custom:
         return None
 
