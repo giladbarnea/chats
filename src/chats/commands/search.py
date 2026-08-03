@@ -791,8 +791,8 @@ def _search_hit_for_file(
     ):
         return None
     candidate_gates_are_sound = (
-        get_jsonl_session_adapter(conv_file).name != "pi"
-        or not (flags.show_custom or flags.show_agents)
+        not (flags.show_custom or flags.show_agents)
+        or get_jsonl_session_adapter(conv_file).name != "pi"
     )
     if candidate_gates_are_sound and not _search_path_candidate_matches(
         conv_file, query, flags
