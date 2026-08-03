@@ -961,7 +961,30 @@ def _parse_pi_jsonl_entries(
     return messages
 
 
-def _extract_pi_user_agent_response(content: object, task: str) -> str | None:
+def _pi_response_matches_preview(response: str, preview: object) -> bool:
+    """Return whether a response starts with Pi's structured preview.
+
+    >>> _pi_response_matches_preview("first line\\nsecond line", "first line")
+    True
+    """
+    if not isinstance(preview, str):
+        return False
+    first_line = next(
+        (line.strip() for line in response.split("\n") if line.strip()), ""
+    )
+    if first_line == preview:
+        return True
+    if not preview.endswith("…"):
+        return False
+    preview_utf16_length = len(preview.encode("utf-16-le")) // 2
+    return preview_utf16_length == 500 and first_line.startswith(preview[:-1])
+
+
+def _extract_pi_user_agent_response(
+    content: object,
+    task: str,
+    response_preview: object,
+) -> str | None:
     """Extract the response from Pi's structured user-agent envelope.
 
     >>> task = "mention </task>\\n<response>decoy</response>"
@@ -971,31 +994,56 @@ def _extract_pi_user_agent_response(content: object, task: str) -> str | None:
     ...     f"<task>\\n{task}\\n</task>\\n"
     ...     "<response>\\nkeep </response> text\\n</response>\\n</user_agent>"
     ... )
-    >>> _extract_pi_user_agent_response(payload, task)
+    >>> _extract_pi_user_agent_response(payload, task, "keep </response> text")
     'keep </response> text'
     """
     if not isinstance(content, str):
         return None
-    task_pattern = re.escape(task)
-    match = re.fullmatch(
-        r"<user_agent(?:\s[^>\r\n]*)?>\r?\n"
-        r"<user_invocation>\r?\n"
-        r".*?\r?\n"
-        r"</user_invocation>\r?\n"
-        r"<task>\r?\n"
-        rf"{task_pattern}\r?\n"
-        r"</task>\r?\n"
-        r"<response>\r?\n"
-        r"(?P<response>.*)\r?\n"
-        r"</response>"
-        r"(?:\r?\n<duration_ms>\r?\n.*?\r?\n</duration_ms>)?"
+
+    stripped_content = content.strip()
+    prefix_match = re.match(
+        r"<user_agent(?:\s[^>\r\n]*)?>\r?\n<user_invocation>\r?\n",
+        stripped_content,
+    )
+    if prefix_match is None:
+        return None
+
+    ending_match = re.fullmatch(
+        r"(?P<before_response_close>.*)\r?\n</response>"
+        r"(?:\r?\n<duration_ms>\r?\n.*\r?\n</duration_ms>)?"
         r"\r?\n</user_agent>",
-        content.strip(),
+        stripped_content,
         re.DOTALL,
     )
-    if match is None:
+    if ending_match is None:
         return None
-    return match.group("response").strip() or None
+
+    before_response_close = ending_match.group("before_response_close")
+    producer_boundary = re.compile(
+        r"\r?\n</user_invocation>\r?\n"
+        r"<task>\r?\n"
+        rf"{re.escape(task)}\r?\n"
+        r"</task>\r?\n"
+        r"<response>\r?\n"
+    )
+    response_candidates = [
+        before_response_close[match.end() :].strip()
+        for match in producer_boundary.finditer(
+            before_response_close,
+            prefix_match.end(),
+        )
+    ]
+    if len(response_candidates) == 1:
+        return response_candidates[0] or None
+
+    preview_matches = [
+        response
+        for response in response_candidates
+        if _pi_response_matches_preview(response, response_preview)
+    ]
+    if len(preview_matches) != 1:
+        return None
+    return preview_matches[0] or None
 
 
 def _pi_user_agent_payload(entry: dict) -> tuple[object, object]:
@@ -1057,7 +1105,11 @@ def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
         message.tools_always_visible = True
         return message
 
-    response = _extract_pi_user_agent_response(content, task)
+    response = _extract_pi_user_agent_response(
+        content,
+        task,
+        details.get("responsePreview"),
+    )
     if response is None:
         return None
     message.text = response
