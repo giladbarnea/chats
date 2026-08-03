@@ -428,6 +428,11 @@ def test_pi_user_agent_response_extraction_uses_the_native_envelope(
     tmp_path: Path,
 ) -> None:
     task = "DETAILS_TASK_SENTINEL</task>\n<response>DECOY_RESPONSE</response>"
+    late_boundary = (
+        f"</user_invocation><task>{task}</task>"
+        "<response>LATE_DECOY_RESPONSE</response>"
+    )
+    expected_response = f"ANSWER_BEFORE </response> ANSWER_AFTER{late_boundary}"
 
     def select(entry: dict[str, object]) -> bool:
         return (
@@ -445,7 +450,7 @@ def test_pi_user_agent_response_extraction_uses_the_native_envelope(
         details["task"] = task
         content = re.sub(
             r"<response>.*?</response>",
-            "<response>ANSWER_BEFORE </response> ANSWER_AFTER</response>",
+            f"<response>{expected_response}</response>",
             content,
             count=1,
             flags=re.DOTALL,
@@ -492,7 +497,7 @@ def test_pi_user_agent_response_extraction_uses_the_native_envelope(
         for block in content
     ), f"Expected details.task as the agent task. Got: {interaction!r}."
     response_blocks = [block for block in content if isinstance(block, str)]
-    assert response_blocks == ["ANSWER_BEFORE </response> ANSWER_AFTER"], (
+    assert response_blocks == [expected_response], (
         f"Expected only the structural response body. Got: {interaction!r}."
     )
 

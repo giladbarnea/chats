@@ -956,7 +956,7 @@ def _extract_pi_user_agent_response(content: object, task: str) -> str | None:
     task_pattern = re.escape(task)
     match = re.fullmatch(
         r"<user_agent(?:\s[^>]*)?>\s*"
-        r"<user_invocation>.*</user_invocation>\s*"
+        r"<user_invocation>.*?</user_invocation>\s*"
         rf"<task>\s*{task_pattern}\s*</task>\s*"
         r"<response>(?P<response>.*)</response>\s*"
         r"(?:<duration_ms>.*?</duration_ms>\s*)?</user_agent>",
