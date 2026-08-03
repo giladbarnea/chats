@@ -551,8 +551,9 @@ class Message:
             attrs.append(("text_encoding", text_encoding))
         if date := self.get_date_attribute():
             attrs.append(("date", date))
+        escape_attributes = self.custom_type is not None
         return " ".join(
-            f'{name}="{html.escape(str(value), quote=True)}"'
+            f'{name}="{html.escape(str(value), quote=True) if escape_attributes else value}"'
             for name, value in attrs
         )
 

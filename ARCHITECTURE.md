@@ -1,7 +1,7 @@
 ---
 name: architecture
 description: Document the architecture of the `ch` CLI tool.
-last_updated: 2026/07/22
+last_updated: 2026/08/03
 ---
 
 # ARCHITECTURE.md
@@ -13,7 +13,7 @@ last_updated: 2026/07/22
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery`/`NotQuery` tree over terms. Owns tokenizing, `and`/`or`/`not` grammar, and per-term regex/literal compilation under the selected case-sensitivity mode.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
-- Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
+- Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`, `xml_transport.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
 
 ## Architecture Diagram (Space)
 
@@ -59,8 +59,9 @@ last_updated: 2026/07/22
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
-│  │             MODEL + TRANSPORT (model.py, xmlmd.py, formatting.py)     │  │
-│  │  Message / messages_from_json_data / messages_from_xmlmd / format_*   │  │
+│  │       MODEL + TRANSPORT (model.py, formatting.py, xmlmd.py,          │  │
+│  │                          xml_transport.py)                            │  │
+│  │  Message / structured JSON / canonical XML / reversible encoding     │  │
 │  │  (provider parse and both transport directions converge here)         │  │
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
@@ -746,9 +747,11 @@ cli.py
 │   ├── rm.py         → model, parsing, console, utils
 │   └── common.py     → model
 ├── catalog/          → commands, console, model
-├── formatting.py     → model, parsing, console, tools, utils
+├── formatting.py     → model, parsing, console, tools, utils, xml_transport
 ├── parsing.py        → model, utils
-├── xmlmd.py          → model, registry
+├── tools.py          → parts, registry, utils, xml_transport
+├── xmlmd.py          → model, registry, xml_transport
+├── xml_transport.py  → registry
 ├── search_query.py
 ├── session_pool.py   → model, parsing
 ├── session_scan.py   → model, parsing, ordering, pool_filter
@@ -771,8 +774,8 @@ cli.py
 2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
 3. **Recent Negative Indices Use JSONL Mtime With Cheap Predicates**: `_resolve_recent_conversation_file()` excludes sidechains, applies the cwd probe before timestamp sorting, then orders survivors newest-first by `get_jsonl_last_timestamp()`. Date filters reuse that modified-time value for `mafter` and probe first timestamp only when `cafter` is active. This keeps recent-index resolution tied to transcript content while still avoiding full metadata construction for the pool; sessions without a readable in-band timestamp use the existing filesystem-mtime fallback.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.
-5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the rendered XML of visible message content. If tools, thinking, agents, plans, or regular user/assistant roles are hidden by flags, they do not count as message matches. Summary and current-title facets intentionally stay outside role selection.
-6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled; it discovers more files by including Claude sidechain sessions in the `SessionPool`.
+5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the semantic inner XML of visible message content before transport-only escaping. If tools, thinking, agents, plans, or regular user/assistant roles are hidden by flags, they do not count as message matches. Summary and current-title facets intentionally stay outside role selection.
+6. **`--agents` Changes the Search Universe**: search does not merely render more content when `-a/--agents` is enabled. It includes Claude sidechain sessions in the `SessionPool` and exposes inline Pi agent records within each Pi session.
 7. **Candidate Pass Is an Optimization, Not New Semantics**: plain-literal queries first go through `_search_candidate_matches()`, but every surviving file still gets the normal rendered-content confirmation pass. Render-dependent patterns bypass the candidate shortcut entirely.
 8. **Search Metadata Is Lazy**: `_load_conversation_metadata()` is paid only after a file has a content hit. Date filters still apply, but only to candidate hits rather than the entire search universe up front.
 9. **Search Output Mode Separates Match Semantics From Display Breadth**: `SessionScan` and regex confirmation always determine the matching conversation first. `SearchOutputMode.MATCHES` renders only `hit.matches` (the default), while `SearchOutputMode.FULL` renders `hit.messages`, including summary/current-title-only hits.
@@ -791,5 +794,5 @@ cli.py
 22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL/raw transcript content as content, not a possible identifier, so stdin and pasted transcripts do not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
 23. **Search Has a Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`, using exact bytes for case-sensitive terms and lowercase bytes for the default case-insensitive terms; non-ASCII literals, regex-shaped terms, render-generated markers, and any uncertain case fall through. This gate is only a raw plausibility filter: every survivor must still pass `_search_conversation_content()` and its rendered-message visibility semantics.
 24. **`search . -ll` Projection Is Deliberately Narrow**: `_can_project_dot_only_id()` is the eligibility boundary for the only projection fast path: exact dot query, `ONLY_ID`, default visibility, no role/extras, no dir/date filters, and non-raw output. `_project_default_dot_match()` is tri-state; branchable Claude transcripts, read errors, or uncertain cases fall back to `SessionScan`. The projection mirrors default-hidden protocol/tool/thinking/task-notification behavior and should not be broadened without equivalence tests against the full search path.
-25. **`ch parse` Is a Provider-Free, Post-Visibility Boundary**: default output follows `messages_from_json_data → format_to_xml`; `-f json` follows `messages_from_xmlmd → format_to_json`. Neither performs session lookup, provider parsing, agent discovery, visibility filtering, or shortening. XML-to-JSON preserves all XML-represented semantics but canonicalizes its intentional losses: dates have minute precision, tool IDs remain shortened, attributes are strings, only schema-visible tool input fields exist, and tool outputs are rendered strings. After that projection, both command compositions are byte-stable.
-26. **Pi Custom Messages Normalize Inside the Pi Adapter**: generic `type == "custom"` records use the shared `custom` wrapper only under `--all`; valid `pi-user-agents` and `subagents:record` records become shared agent messages under `--agents`; partial special records fall back to generic data under `--all`; `subagent-notification` and `display:false` duplicates never enter the normalized message list. Search and every formatter therefore reuse the same visible messages without provider-specific rendering branches.
+25. **`ch parse` Is a Provider-Free, Post-Visibility Boundary**: default output follows `messages_from_json_data → format_to_xml`; `-f json` follows `messages_from_xmlmd → format_to_json`. Neither performs session lookup, provider parsing, agent discovery, visibility filtering, or shortening. XML-to-JSON preserves all XML-represented semantics but canonicalizes its intentional losses: dates have minute precision, tool IDs remain shortened, attributes are strings, only schema-visible tool input fields exist, and tool outputs are rendered strings. After that projection, both command compositions are byte-stable. Canonical XML escapes wrapper attributes on messages with `custom_type` metadata. It applies reversible HTML transport encoding when message text resembles an inner block or a typed-block body contains its closing delimiter.
+26. **Pi Custom Messages Normalize Inside the Pi Adapter**: generic `type == "custom"` records use the shared `custom` wrapper only under `--all`; valid `pi-user-agents` and `subagents:record` records become shared agent messages under `--agents`; special `type == "custom"` records that cannot normalize fall back to generic data under `--all`. `subagent-notification`, `display:false`, and `custom_message` records without `display:true` never enter the normalized message list. Successful `pi-user-agents` metadata comes from `details`, while only the native `<response>` body supplies response text. A failure requires `details.ok is False`, takes its task and error from `details`, and marks its synthetic Bash result always visible so `--agents` does not require `--tools`. Search and every formatter reuse the same visible messages without provider-specific rendering branches.

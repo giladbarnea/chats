@@ -7,9 +7,9 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- Pi `type: "custom"` records stay hidden by default and render under `--all` without assuming a `data` schema.
-- `--agents` now renders Pi `pi-user-agents` and `subagents:record` records through the shared agent view across plain, JSON, raw, colored, and search output. Duplicate `subagent-notification` records stay hidden.
-- User-agent metadata comes from `details`; success text comes from the native `<response>` element, while `details.ok is False` failures use the existing Bash error presentation.
+- Pi `type: "custom"` records stay hidden by default and render under `--all` without assuming a `data` schema. `subagent-notification` and `display: false` duplicates stay hidden.
+- `--agents` now renders Pi `pi-user-agents` and `subagents:record` records through the shared agent view across plain, JSON, raw, colored, and search output.
+- User-agent metadata comes from `details`; success text comes from the native `<response>` element, while failures require `details.ok is False`, use `details.task` and `details.error`, and retain Bash error presentation without `--tools`.
 
 ---
 ## [2026-07-22] Add explicit search case modes

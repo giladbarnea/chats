@@ -59,9 +59,7 @@ def render_inner_xml_block(
         body = html.escape(body, quote=False)
         block_attributes.append(("encoding", _INNER_BLOCK_ENCODING))
 
-    attribute_text = " ".join(
-        f'{name}="{value}"' for name, value in block_attributes
-    )
+    attribute_text = " ".join(f'{name}="{value}"' for name, value in block_attributes)
     opening_tag = f"<{tag} {attribute_text}>" if attribute_text else f"<{tag}>"
     return f"{opening_tag}\n{body}\n</{tag}>"
 
