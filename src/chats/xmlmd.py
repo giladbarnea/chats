@@ -71,7 +71,10 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
     if wrapper_type is None:
         raise ValueError(f"Unknown message type in message {position}: {tag!r}.")
 
-    attributes = dict(_ATTRIBUTE.findall(match.group("attrs")))
+    attributes = {
+        name: html.unescape(value)
+        for name, value in _ATTRIBUTE.findall(match.group("attrs"))
+    }
     if "i" not in attributes:
         raise ValueError(f"Expected message {position} to have an integer i attribute.")
     try:
@@ -95,12 +98,8 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
     timestamp = f"{date.replace(' ', 'T')}:00" if date is not None else None
     is_meta = attributes.pop("isMeta", "false") == "true"
     source_tool_user_id = attributes.pop("sourceToolUserId", None)
-    custom_type_value = attributes.pop("custom_type", None)
-    custom_type = (
-        html.unescape(custom_type_value) if custom_type_value is not None else None
-    )
-    status_value = attributes.pop("status", None)
-    status = html.unescape(status_value) if status_value is not None else None
+    custom_type = attributes.pop("custom_type", None)
+    status = attributes.pop("status", None)
     inherited_context_value = attributes.pop("inherited_context", None)
     if inherited_context_value not in {None, "true", "false"}:
         raise ValueError(

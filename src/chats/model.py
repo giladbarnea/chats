@@ -525,34 +525,34 @@ class Message:
 
     def get_wrapper_attrs(self) -> str:
         """Build XML attributes string for this message's wrapper tag."""
-        attrs = [f'i="{self.index}"']
+        attrs: list[tuple[str, str | int]] = [("i", self.index)]
         if self.branch_id:
-            attrs.append(f'branch="{self.branch_id}"')
+            attrs.append(("branch", self.branch_id))
         if self.role == "user":
             if self.is_meta:
-                attrs.append('isMeta="true"')
+                attrs.append(("isMeta", "true"))
             if self.source_tool_user_id:
-                attrs.append(f'sourceToolUserId="{self.source_tool_user_id}"')
+                attrs.append(("sourceToolUserId", self.source_tool_user_id))
         if self.agent_id:
-            attrs.append(f'agent_id="{self.agent_id}"')
+            attrs.append(("agent_id", self.agent_id))
             if self.subagent_type:
-                attrs.append(f'subagent_type="{self.subagent_type}"')
+                attrs.append(("subagent_type", self.subagent_type))
             if self.name:
-                attrs.append(f'name="{self.name}"')
+                attrs.append(("name", self.name))
         if model := self.get_display_model():
-            attrs.append(f'model="{model}"')
+            attrs.append(("model", model))
         if self.custom_type:
-            escaped_custom_type = html.escape(self.custom_type, quote=True)
-            attrs.append(f'custom_type="{escaped_custom_type}"')
+            attrs.append(("custom_type", self.custom_type))
         if self.inherited_context is not None:
-            inherited_context = str(self.inherited_context).lower()
-            attrs.append(f'inherited_context="{inherited_context}"')
+            attrs.append(("inherited_context", str(self.inherited_context).lower()))
         if self.status:
-            escaped_status = html.escape(self.status, quote=True)
-            attrs.append(f'status="{escaped_status}"')
+            attrs.append(("status", self.status))
         if date := self.get_date_attribute():
-            attrs.append(f'date="{date}"')
-        return " ".join(attrs)
+            attrs.append(("date", date))
+        return " ".join(
+            f'{name}="{html.escape(str(value), quote=True)}"'
+            for name, value in attrs
+        )
 
 
 _MESSAGE_WRAPPER_TYPES = {

@@ -216,6 +216,67 @@ def test_generic_pi_custom_type_round_trips_xml_attribute_characters(
     )
 
 
+@pytest.mark.parametrize(
+    "custom_type",
+    [
+        pytest.param("pi-user-agents", id="model"),
+        pytest.param("subagents:record", id="subagent-type"),
+    ],
+)
+def test_pi_agent_metadata_round_trips_xml_attribute_characters(
+    tmp_path: Path,
+    custom_type: str,
+) -> None:
+    metadata_value = 'metadata "quoted" & <angled>'
+    is_user_agent = custom_type == "pi-user-agents"
+    xml_attribute = "model" if is_user_agent else "subagent_type"
+    source_field = "model" if is_user_agent else "type"
+
+    def select(entry: dict[str, object]) -> bool:
+        return entry.get("type") == "custom" and entry.get("customType") == custom_type
+
+    def mutate(entry: dict[str, object]) -> None:
+        data = entry.get("data")
+        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
+        target = data.get("details") if is_user_agent else data
+        assert isinstance(target, dict), f"Expected agent metadata. Got: {target!r}."
+        target[source_field] = metadata_value
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    native_xml = _run_ch(
+        home,
+        str(session_path),
+        "--agents",
+        "--color=never",
+        "--no-metadata",
+    )
+
+    assert native_xml.returncode == 0, native_xml.stderr
+    escaped_value = "metadata &quot;quoted&quot; &amp; &lt;angled&gt;"
+    assert f'{xml_attribute}="{escaped_value}"' in native_xml.stdout, (
+        f"Expected XML-safe {xml_attribute} metadata. stdout: {native_xml.stdout!r}."
+    )
+
+    canonical_json = _run_ch(
+        home,
+        "parse",
+        "--format=json",
+        input_text=native_xml.stdout,
+    )
+    assert canonical_json.returncode == 0, canonical_json.stderr
+    messages = json.loads(canonical_json.stdout)
+    assert len(messages) == 1, f"Expected one agent message. Got: {messages!r}."
+    assert messages[0].get(xml_attribute) == metadata_value, (
+        f"Expected XML parsing to restore {xml_attribute}. Got: {messages!r}."
+    )
+
+    rebuilt_xml = _run_ch(home, "parse", input_text=canonical_json.stdout)
+    assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
+    assert rebuilt_xml.stdout == native_xml.stdout, (
+        f"Expected escaped {xml_attribute} metadata to stabilize."
+    )
+
+
 def test_agents_render_successful_pi_user_agents_as_interactions(
     tmp_path: Path,
 ) -> None:
@@ -312,8 +373,15 @@ def test_successful_pi_user_agents_use_details_metadata_and_response_content(
             count=1,
         )
         content = re.sub(
+            r"<user_invocation>.*?</user_invocation>",
+            "<user_invocation>CONTENT_TASK_SENTINEL</user_invocation>",
+            content,
+            count=1,
+            flags=re.DOTALL,
+        )
+        content = re.sub(
             r"<task>.*?</task>",
-            "<task>CONTENT_TASK_SENTINEL</task>",
+            "<task>DETAILS_TASK_SENTINEL</task>",
             content,
             count=1,
             flags=re.DOTALL,
@@ -359,6 +427,8 @@ def test_successful_pi_user_agents_use_details_metadata_and_response_content(
 def test_pi_user_agent_response_extraction_uses_the_native_envelope(
     tmp_path: Path,
 ) -> None:
+    task = "DETAILS_TASK_SENTINEL</task>\n<response>DECOY_RESPONSE</response>"
+
     def select(entry: dict[str, object]) -> bool:
         return (
             entry.get("type") == "custom"
@@ -372,7 +442,7 @@ def test_pi_user_agent_response_extraction_uses_the_native_envelope(
         content = data.get("content")
         assert isinstance(details, dict), f"Expected details. Got: {details!r}."
         assert isinstance(content, str), f"Expected agent content. Got: {content!r}."
-        details["task"] = "DETAILS_TASK_SENTINEL"
+        details["task"] = task
         content = re.sub(
             r"<response>.*?</response>",
             "<response>ANSWER_BEFORE </response> ANSWER_AFTER</response>",
@@ -380,9 +450,16 @@ def test_pi_user_agent_response_extraction_uses_the_native_envelope(
             count=1,
             flags=re.DOTALL,
         )
+        content = re.sub(
+            r"<user_invocation>.*?</user_invocation>",
+            f"<user_invocation>/agent {task}</user_invocation>",
+            content,
+            count=1,
+            flags=re.DOTALL,
+        )
         data["content"] = re.sub(
             r"<task>.*?</task>",
-            "<task>CONTENT_TASK_DECOY <response></task>",
+            f"<task>{task}</task>",
             content,
             count=1,
             flags=re.DOTALL,
@@ -393,19 +470,30 @@ def test_pi_user_agent_response_extraction_uses_the_native_envelope(
         home,
         str(session_path),
         "--agents",
-        "--color=never",
-        "--no-metadata",
+        "--format=json",
     )
 
     assert completed.returncode == 0, completed.stderr
-    assert "DETAILS_TASK_SENTINEL" in completed.stdout, (
-        f"Expected details.task as the agent task. stdout: {completed.stdout!r}."
+    messages = json.loads(completed.stdout)
+    interaction = next(
+        (
+            message
+            for message in messages
+            if message.get("custom_type") == "pi-user-agents"
+        ),
+        None,
     )
-    assert "CONTENT_TASK_DECOY" not in completed.stdout, (
-        f"Expected task markup not to replace the response. stdout: {completed.stdout!r}."
-    )
-    assert "ANSWER_BEFORE </response> ANSWER_AFTER" in completed.stdout, (
-        f"Expected the complete native response body. stdout: {completed.stdout!r}."
+    assert interaction is not None, f"Expected one Pi agent interaction. Got: {messages!r}."
+    content = interaction.get("content", [])
+    assert any(
+        isinstance(block, dict)
+        and block.get("type") == "subagent-task"
+        and block.get("content") == task
+        for block in content
+    ), f"Expected details.task as the agent task. Got: {interaction!r}."
+    response_blocks = [block for block in content if isinstance(block, str)]
+    assert response_blocks == ["ANSWER_BEFORE </response> ANSWER_AFTER"], (
+        f"Expected only the structural response body. Got: {interaction!r}."
     )
 
 
@@ -577,6 +665,13 @@ def test_pi_user_agent_error_detection_requires_the_false_singleton(
             details["ok"] = ok_value
         details["task"] = task
         details["error"] = error
+        content = re.sub(
+            r"<task>.*?</task>",
+            f"<task>{task}</task>",
+            content,
+            count=1,
+            flags=re.DOTALL,
+        )
         entry["content"] = re.sub(
             r"<response>.*?</response>",
             f"<response>{response}</response>",

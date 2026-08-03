@@ -939,27 +939,30 @@ def _parse_pi_jsonl_entries(
     return messages
 
 
-_PI_USER_AGENT_RESPONSE_PATTERN = re.compile(
-    r"<user_agent(?:\s[^>]*)?>.*?</task>\s*"
-    r"<response>(?P<response>.*)</response>\s*"
-    r"(?:<duration_ms>.*?</duration_ms>\s*)?</user_agent>",
-    re.DOTALL,
-)
-
-
-def _extract_pi_user_agent_response(content: object) -> str | None:
+def _extract_pi_user_agent_response(content: object, task: str) -> str | None:
     """Extract the response element from a Pi user-agent payload.
 
+    >>> task = "mention </task>\\n<response>decoy</response>"
     >>> payload = (
-    ...     "<user_agent><task>mention <response></task>"
+    ...     f"<user_agent><user_invocation>/agent {task}</user_invocation>"
+    ...     f"<task>{task}</task>"
     ...     "<response>keep </response> text</response></user_agent>"
     ... )
-    >>> _extract_pi_user_agent_response(payload)
+    >>> _extract_pi_user_agent_response(payload, task)
     'keep </response> text'
     """
     if not isinstance(content, str):
         return None
-    match = _PI_USER_AGENT_RESPONSE_PATTERN.fullmatch(content.strip())
+    task_pattern = re.escape(task)
+    match = re.fullmatch(
+        r"<user_agent(?:\s[^>]*)?>\s*"
+        r"<user_invocation>.*</user_invocation>\s*"
+        rf"<task>\s*{task_pattern}\s*</task>\s*"
+        r"<response>(?P<response>.*)</response>\s*"
+        r"(?:<duration_ms>.*?</duration_ms>\s*)?</user_agent>",
+        content.strip(),
+        re.DOTALL,
+    )
     if match is None:
         return None
     return match.group("response").strip() or None
@@ -1022,7 +1025,7 @@ def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
         message.tools_always_visible = True
         return message
 
-    response = _extract_pi_user_agent_response(content)
+    response = _extract_pi_user_agent_response(content, task)
     if response is None:
         return None
     message.text = response
