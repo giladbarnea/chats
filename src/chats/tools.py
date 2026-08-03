@@ -208,8 +208,8 @@ def _tool_result_to_json(
     return payload
 
 
-def render_tool_xml(parts: ToolParts) -> str:
-    """Render ToolParts to XML string."""
+def render_tool_xml(parts: ToolParts, *, encode_transport: bool) -> str:
+    """Render ToolParts to an XML string."""
     attribute_text = " ".join(f'{name}="{value}"' for name, value in parts.attrs)
     opening_tag = (
         f"<{parts.tag} {attribute_text}>" if attribute_text else f"<{parts.tag}>"
@@ -217,4 +217,9 @@ def render_tool_xml(parts: ToolParts) -> str:
 
     if parts.is_empty:
         return f"{opening_tag}</{parts.tag}>"
-    return render_inner_xml_block(parts.tag, parts.content, parts.attrs)
+    return render_inner_xml_block(
+        parts.tag,
+        parts.content,
+        parts.attrs,
+        encode_transport=encode_transport,
+    )

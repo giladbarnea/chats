@@ -12,17 +12,16 @@ _INNER_BLOCK_TAG_PATTERN = "|".join(
     for block_type in ContentBlockType
     if block_type.value.header is None
 )
+_INNER_XML_BLOCK_OPENING_PATTERN = re.compile(
+    rf"^<(?:{_INNER_BLOCK_TAG_PATTERN})"
+    r'(?:\s+[\w-]+="[^"]*")*>',
+    re.MULTILINE,
+)
 INNER_XML_BLOCK_PATTERN = re.compile(
     rf"^<(?P<tag>{_INNER_BLOCK_TAG_PATTERN})"
     r'(?P<attrs>(?:\s+[\w-]+="[^"]*")*)>'
     r"(?P<body>.*?)</(?P=tag)>$",
     re.DOTALL | re.MULTILINE,
-)
-XML_TRANSPORT_GENERATED_MARKERS = (
-    f'encoding="{_INNER_BLOCK_ENCODING}"',
-    "&amp;",
-    "&lt;",
-    "&gt;",
 )
 
 
@@ -33,8 +32,10 @@ def encode_xml_text(text: str) -> tuple[str, str | None]:
     ('&lt;thinking&gt;literal&lt;/thinking&gt;', 'html')
     >>> encode_xml_text("plain text")
     ('plain text', None)
+    >>> encode_xml_text("literal\\n<thinking>\\nunclosed")[1]
+    'html'
     """
-    if INNER_XML_BLOCK_PATTERN.search(text) is None:
+    if _INNER_XML_BLOCK_OPENING_PATTERN.search(text) is None:
         return text, None
     return html.escape(text, quote=False), _INNER_BLOCK_ENCODING
 
@@ -43,14 +44,18 @@ def render_inner_xml_block(
     tag: str,
     body: str,
     attributes: Iterable[tuple[str, str]] = (),
+    *,
+    encode_transport: bool,
 ) -> str:
-    """Render an inner XML block with reversible delimiter encoding.
+    """Render an inner XML block with optional reversible delimiter encoding.
 
-    >>> render_inner_xml_block("subagent-task", "keep </subagent-task> literal")
+    >>> render_inner_xml_block(
+    ...     "subagent-task", "keep </subagent-task> literal", encode_transport=True
+    ... )
     '<subagent-task encoding="html">\nkeep &lt;/subagent-task&gt; literal\n</subagent-task>'
     """
     block_attributes = list(attributes)
-    if f"</{tag}>" in body:
+    if encode_transport and f"</{tag}>" in body:
         body = html.escape(body, quote=False)
         block_attributes.append(("encoding", _INNER_BLOCK_ENCODING))
 

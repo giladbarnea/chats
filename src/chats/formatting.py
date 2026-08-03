@@ -406,9 +406,13 @@ _ROLE_HUE: dict[str, str] = {
 
 
 def _render_message_inner_xml(
-    msg: Message, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
+    msg: Message,
+    flags: ConversationFlags,
+    tool_id_map: dict[str, str] | None = None,
+    *,
+    encode_transport: bool,
 ) -> tuple[str, str | None]:
-    """Render message inner content and return its text transport encoding."""
+    """Render message inner XML with optional reversible transport encoding."""
     output_parts: list[str] = []
     tool_parts: list[str] = []
     text_encoding: str | None = None
@@ -422,21 +426,37 @@ def _render_message_inner_xml(
     for part in msg.iter_visible_parts(flags, tool_id_map):
         if part.kind == MessagePartKind.TEXT:
             flush_tools()
-            encoded_text, text_encoding = encode_xml_text(part.data)
-            output_parts.append(encoded_text)
+            rendered_text = part.data
+            if encode_transport:
+                rendered_text, text_encoding = encode_xml_text(part.data)
+            output_parts.append(rendered_text)
 
         elif part.kind == MessagePartKind.THINKING:
             flush_tools()
             tag = ContentBlockType.THINKING.value.xml_tag
-            output_parts.append(render_inner_xml_block(tag, part.data))
+            output_parts.append(
+                render_inner_xml_block(
+                    tag,
+                    part.data,
+                    encode_transport=encode_transport,
+                )
+            )
 
         elif part.kind == MessagePartKind.SUBAGENT_TASK:
             flush_tools()
             tag = ContentBlockType.SUBAGENT_TASK.value.xml_tag
-            output_parts.append(render_inner_xml_block(tag, part.data))
+            output_parts.append(
+                render_inner_xml_block(
+                    tag,
+                    part.data,
+                    encode_transport=encode_transport,
+                )
+            )
 
         elif part.kind == MessagePartKind.TOOL:
-            tool_parts.append(render_tool_xml(part.data))
+            tool_parts.append(
+                render_tool_xml(part.data, encode_transport=encode_transport)
+            )
 
     flush_tools()
 
@@ -446,8 +466,13 @@ def _render_message_inner_xml(
 def render_message_inner_xml(
     msg: Message, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
 ) -> str:
-    """Render message inner content without its outer wrapper."""
-    return _render_message_inner_xml(msg, flags, tool_id_map)[0]
+    """Render semantic inner XML without transport-only escaping."""
+    return _render_message_inner_xml(
+        msg,
+        flags,
+        tool_id_map,
+        encode_transport=False,
+    )[0]
 
 
 def format_to_xml(
@@ -459,7 +484,12 @@ def format_to_xml(
     output_parts = []
 
     for msg in messages:
-        content, text_encoding = _render_message_inner_xml(msg, flags, tool_id_map)
+        content, text_encoding = _render_message_inner_xml(
+            msg,
+            flags,
+            tool_id_map,
+            encode_transport=True,
+        )
         if not content:
             continue
 

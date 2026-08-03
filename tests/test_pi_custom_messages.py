@@ -423,6 +423,60 @@ def test_successful_pi_user_agents_use_details_metadata_and_response_content(
     )
 
 
+def test_pi_user_agent_response_accepts_a_normalized_task(
+    tmp_path: Path,
+) -> None:
+    task = "--all"
+    response = "NORMALIZED_TASK_RESPONSE_SENTINEL"
+
+    def select(entry: dict[str, object]) -> bool:
+        return (
+            entry.get("type") == "custom"
+            and entry.get("customType") == "pi-user-agents"
+        )
+
+    def mutate(entry: dict[str, object]) -> None:
+        data = entry.get("data")
+        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
+        details = data.get("details")
+        assert isinstance(details, dict), f"Expected details. Got: {details!r}."
+        details["task"] = task
+        data["content"] = _pi_user_agent_content(
+            task=task,
+            response=response,
+            invocation=r"/agent \-\-all",
+        )
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    completed = _run_ch(
+        home,
+        str(session_path),
+        "--agents",
+        "--format=json",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    messages = json.loads(completed.stdout)
+    interaction = next(
+        (
+            message
+            for message in messages
+            if message.get("custom_type") == "pi-user-agents"
+        ),
+        {},
+    )
+    assert any(
+        isinstance(block, dict)
+        and block.get("type") == "subagent-task"
+        and block.get("content") == task
+        for block in interaction.get("content", [])
+    ), f"Expected the normalized details task. Got: {messages!r}."
+    assert response in interaction.get("content", []), (
+        "Expected the native response when the raw invocation keeps task escapes. "
+        f"Got: {messages!r}."
+    )
+
+
 def test_pi_user_agent_response_extraction_uses_the_native_envelope(
     tmp_path: Path,
 ) -> None:
@@ -1027,7 +1081,18 @@ def test_pi_agent_text_inner_blocks_round_trip_as_text(
         "--color=never",
         "--no-metadata",
     )
+    native_raw = _run_ch(home, str(session_path), "--agents", "--raw")
     assert native_xml.returncode == 0, native_xml.stderr
+    assert native_raw.returncode == 0, native_raw.stderr
+    assert "&lt;thinking&gt;" in native_xml.stdout, (
+        f"Expected plain XML to encode colliding text. stdout: {native_xml.stdout!r}."
+    )
+    assert literal_text in native_raw.stdout, (
+        f"Expected raw output to preserve the agent text. stdout: {native_raw.stdout!r}."
+    )
+    assert "&lt;thinking&gt;" not in native_raw.stdout, (
+        f"Expected XML transport entities to stay out of raw output. stdout: {native_raw.stdout!r}."
+    )
 
     canonical_json = _run_ch(
         home,
@@ -1060,6 +1125,68 @@ def test_pi_agent_text_inner_blocks_round_trip_as_text(
     assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
     assert rebuilt_xml.stdout == native_xml.stdout, (
         "Expected colliding agent text to stabilize across XML and JSON."
+    )
+
+
+def test_pi_agent_text_unmatched_inner_opening_round_trips_before_thinking(
+    tmp_path: Path,
+) -> None:
+    home = tmp_path / "home"
+    literal_text = "TEXT_BEFORE\n<thinking>\nUNMATCHED_OPENING"
+    thinking = "STRUCTURAL_THINKING"
+    structured_messages = [
+        {
+            "type": "agent",
+            "role": "agent",
+            "original_index": 1,
+            "custom_type": "pi-user-agents",
+            "content": [
+                {"type": "subagent-task", "content": "ROUND_TRIP_TASK"},
+                literal_text,
+                {"type": "thinking", "content": thinking},
+            ],
+        }
+    ]
+
+    native_xml = _run_ch(
+        home,
+        "parse",
+        input_text=json.dumps(structured_messages),
+    )
+    assert native_xml.returncode == 0, native_xml.stderr
+    assert 'text_encoding="html"' in native_xml.stdout, (
+        "Expected an unmatched text opening delimiter to use XML transport encoding. "
+        f"stdout: {native_xml.stdout!r}."
+    )
+
+    canonical_json = _run_ch(
+        home,
+        "parse",
+        "--format=json",
+        input_text=native_xml.stdout,
+    )
+    assert canonical_json.returncode == 0, canonical_json.stderr
+    messages = json.loads(canonical_json.stdout)
+    interaction = messages[0] if messages else {}
+    text_blocks = [
+        block for block in interaction.get("content", []) if isinstance(block, str)
+    ]
+    thinking_blocks = [
+        block
+        for block in interaction.get("content", [])
+        if isinstance(block, dict) and block.get("type") == "thinking"
+    ]
+    assert text_blocks == [literal_text], (
+        f"Expected the unmatched opening to remain text. Got: {messages!r}."
+    )
+    assert [block.get("content") for block in thinking_blocks] == [thinking], (
+        f"Expected the following thinking block to remain structural. Got: {messages!r}."
+    )
+
+    rebuilt_xml = _run_ch(home, "parse", input_text=canonical_json.stdout)
+    assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
+    assert rebuilt_xml.stdout == native_xml.stdout, (
+        "Expected unmatched-opening XML transport to stabilize."
     )
 
 
