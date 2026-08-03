@@ -21,6 +21,7 @@ from ..model import (
     Message,
     ParseOutputMode,
     SubagentMetadata,
+    assign_progressive_shortening,
     messages_from_json_data,
 )
 from ..parsing import (
@@ -214,6 +215,7 @@ def cmd_parse(
             joined_selectors = " ".join(selectors)
             print_error(f"Slice {joined_selectors} produced no messages.")
             sys.exit(0)
+    assign_progressive_shortening(messages, flags, tool_id_map)
 
     current_custom_title = (
         extract_latest_custom_title_from_content(content)

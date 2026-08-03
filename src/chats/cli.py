@@ -24,6 +24,12 @@ from .model import (
 )
 from .ordering import is_single_negative_index
 from .pool_filter import PoolFilter, add_pool_filter_args
+from .shortening import (
+    DEFAULT_SHORT_POLICY,
+    ShortPolicy,
+    looks_like_short_spec,
+    parse_short_spec,
+)
 from .tool_filter import ToolFilter, parse_tool_spec
 
 
@@ -78,25 +84,13 @@ def _short_uses_attached_value(argv_tokens: list[str]) -> bool:
     return any(token.startswith(("--short=", "-s=")) for token in argv_tokens)
 
 
-def _resolve_short_max_chars(
-    raw_short: bool | str | None,
-    *,
-    attached_value: bool = False,
-) -> int | None:
-    """Return the shortening character limit requested by `--short`, or None when disabled."""
+def _resolve_short_policy(raw_short: bool | str | None) -> ShortPolicy | None:
+    """Return the complete shortening policy requested by `--short`."""
     if raw_short is None:
         return None
     if raw_short is True:
-        return 500
-    if attached_value and isinstance(raw_short, str):
-        if _is_valid_short_max_chars_token(raw_short):
-            return int(raw_short)
-        raise ValueError(
-            f"Invalid --short value: {raw_short!r}. Expected digits > 7."
-        )
-    if isinstance(raw_short, str) and _is_valid_short_max_chars_token(raw_short):
-        return int(raw_short)
-    return 500
+        return DEFAULT_SHORT_POLICY
+    return parse_short_spec(raw_short).resolve(DEFAULT_SHORT_POLICY)
 
 
 def _warn_only_override(only_flag: str, disabled_flags: list[str]) -> None:
@@ -187,10 +181,7 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
     """Convert normalized parse-mode args into ConversationFlags."""
     show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
     message_selection = _resolve_message_selection(args)
-    shorten_max_chars = _resolve_short_max_chars(
-        args.short,
-        attached_value=getattr(args, "_short_uses_attached_value", False),
-    )
+    short_policy = _resolve_short_policy(args.short)
     return ConversationFlags(
         message_selection=message_selection,
         show_thinking=show_thinking,
@@ -200,8 +191,9 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
         show_branches=args.branches or args.all,
         show_plans=args.plans or args.all,
         allow_empty_output=message_selection != MessageSelection.ALL,
-        shorten=shorten_max_chars is not None,
-        shorten_max_chars=shorten_max_chars or 500,
+        shorten=short_policy is not None,
+        shorten_max_chars=(short_policy or DEFAULT_SHORT_POLICY).max_chars,
+        shorten_progressive=(short_policy or DEFAULT_SHORT_POLICY).progressive,
         shorten_thinking=shorten_thinking,
         color=args.color,
         paging=args.paging,
@@ -318,6 +310,8 @@ def _repair_short_option_positionals(
     if getattr(args, "_short_uses_attached_value", False):
         return
     if _is_valid_short_max_chars_token(args.short):
+        return
+    if looks_like_short_spec(args.short):
         return
 
     input_value = getattr(args, input_attr)
@@ -525,10 +519,7 @@ def main():
             show_thinking, shorten_thinking = _resolve_thinking_mode(
                 args.thinking, args.all
             )
-            shorten_max_chars = _resolve_short_max_chars(
-                args.short,
-                attached_value=getattr(args, "_short_uses_attached_value", False),
-            )
+            short_policy = _resolve_short_policy(args.short)
             show_tools = _resolve_show_tools(args.tools, args.all)
         except ValueError as exc:
             parser.error(str(exc))
@@ -541,8 +532,9 @@ def main():
             show_custom=args.all,
             show_branches=args.branches or args.all,
             show_plans=args.plans or args.all,
-            shorten=shorten_max_chars is not None,
-            shorten_max_chars=shorten_max_chars or 500,
+            shorten=short_policy is not None,
+            shorten_max_chars=(short_policy or DEFAULT_SHORT_POLICY).max_chars,
+            shorten_progressive=(short_policy or DEFAULT_SHORT_POLICY).progressive,
             shorten_thinking=shorten_thinking,
             color=args.color,
             paging=args.paging,

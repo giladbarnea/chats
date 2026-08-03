@@ -68,6 +68,8 @@ def _run_ch(
     input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
+    if "--color=always" in arguments:
+        environment.pop("NO_COLOR", None)
     environment["HOME"] = str(home)
     environment["TZ"] = "Asia/Jerusalem"
     environment["COLORTERM"] = "truecolor"

@@ -31,6 +31,7 @@ from ..model import (
     MessageSelection,
     Provider,
     SearchOutputMode,
+    assign_progressive_shortening,
 )
 from ..parsing import (
     _extract_antigravity_user_text,
@@ -1145,6 +1146,7 @@ def _search_conversation_content(
         return None
 
     tool_id_map = _build_tool_id_map(messages)
+    assign_progressive_shortening(messages, flags, tool_id_map)
     rendered_messages = [
         (message, render_message_inner_xml(message, flags, tool_id_map))
         for message in messages
