@@ -911,6 +911,24 @@ def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message
     return _parse_default_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
+def _is_hidden_pi_custom_entry(entry: dict) -> bool:
+    """Return whether a Pi custom envelope is hidden duplicate plumbing.
+
+    >>> _is_hidden_pi_custom_entry({"type": "custom", "customType": "subagent-notification"})
+    True
+    >>> _is_hidden_pi_custom_entry({"type": "custom", "display": False})
+    True
+    """
+    return (
+        entry.get("customType") == "subagent-notification"
+        or entry.get("display") is False
+        or (
+            entry.get("type") == "custom_message"
+            and entry.get("display") is not True
+        )
+    )
+
+
 def _parse_pi_jsonl_entries(
     entries: list[dict], flags: ConversationFlags
 ) -> list[Message]:
@@ -920,6 +938,10 @@ def _parse_pi_jsonl_entries(
 
     for entry in entries:
         entry_type = entry.get("type")
+        if entry_type in {"custom", "custom_message"} and _is_hidden_pi_custom_entry(
+            entry
+        ):
+            continue
 
         if entry_type == "message":
             msg = _parse_pi_message_entry(entry, index, flags)
@@ -1096,13 +1118,8 @@ def _parse_pi_custom_message_entry(
     index: int,
     flags: ConversationFlags,
 ) -> Message | None:
-    """Normalize displayed Pi user-agent messages and drop notifications."""
-    custom_type = entry.get("customType")
-    if custom_type == "subagent-notification":
-        return None
-    if custom_type != "pi-user-agents" or not flags.show_agents:
-        return None
-    if entry.get("display") is not True:
+    """Normalize a visible Pi custom-message user-agent interaction."""
+    if entry.get("customType") != "pi-user-agents" or not flags.show_agents:
         return None
     return _parse_pi_user_agent_entry(entry, index)
 

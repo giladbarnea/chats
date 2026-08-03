@@ -6,6 +6,7 @@ import re
 
 from .model import Message
 from .registry import TOOL_SCHEMAS, ContentBlockType
+from .xml_transport import decode_inner_xml_block_body
 
 
 _OUTER_TYPES = {
@@ -205,6 +206,9 @@ def _append_inner_block(
         body = body[1:]
     if body.endswith("\n"):
         body = body[:-1]
+
+    attributes = dict(_ATTRIBUTE.findall(match.group("attrs")))
+    body = decode_inner_xml_block_body(body, attributes.pop("encoding", None))
     if tag == "thinking":
         message.thinking = body
         return
@@ -212,7 +216,6 @@ def _append_inner_block(
         message.subagent_task = body
         return
 
-    attributes = dict(_ATTRIBUTE.findall(match.group("attrs")))
     name = attributes.pop("name", None)
     if tag == "tool-output":
         message.tools.append(_tool_output_from_xmlmd(name, attributes, body, position))

@@ -25,6 +25,7 @@ from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
 from .tools import render_tool_xml
 from .utils import collapse_home, elide_to_width
+from .xml_transport import render_inner_xml_block
 
 
 class PaddedInlineCodeMarkdown(_Markdown):
@@ -429,12 +430,12 @@ def render_message_inner_xml(
         elif part.kind == MessagePartKind.THINKING:
             flush_tools()
             tag = ContentBlockType.THINKING.value.xml_tag
-            output_parts.append(f"<{tag}>\n{part.data}\n</{tag}>")
+            output_parts.append(render_inner_xml_block(tag, part.data))
 
         elif part.kind == MessagePartKind.SUBAGENT_TASK:
             flush_tools()
             tag = ContentBlockType.SUBAGENT_TASK.value.xml_tag
-            output_parts.append(f"<{tag}>\n{part.data}\n</{tag}>")
+            output_parts.append(render_inner_xml_block(tag, part.data))
 
         elif part.kind == MessagePartKind.TOOL:
             tool_parts.append(render_tool_xml(part.data))

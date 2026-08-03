@@ -5,6 +5,7 @@ import json
 from .parts import ToolParts
 from .registry import TOOL_SCHEMAS, ContentBlockType
 from .utils import extract_text_from_content, shorten_tool_use_id
+from .xml_transport import render_inner_xml_block
 
 
 def _format_edit_content(input_data: dict) -> str:
@@ -209,9 +210,11 @@ def _tool_result_to_json(
 
 def render_tool_xml(parts: ToolParts) -> str:
     """Render ToolParts to XML string."""
-    attr_str = " ".join(f'{k}="{v}"' for k, v in parts.attrs)
-    tag_open = f"<{parts.tag} {attr_str}>" if attr_str else f"<{parts.tag}>"
+    attribute_text = " ".join(f'{name}="{value}"' for name, value in parts.attrs)
+    opening_tag = (
+        f"<{parts.tag} {attribute_text}>" if attribute_text else f"<{parts.tag}>"
+    )
 
     if parts.is_empty:
-        return f"{tag_open}</{parts.tag}>"
-    return f"{tag_open}\n{parts.content}\n</{parts.tag}>"
+        return f"{opening_tag}</{parts.tag}>"
+    return render_inner_xml_block(parts.tag, parts.content, parts.attrs)

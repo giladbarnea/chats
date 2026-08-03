@@ -727,6 +727,23 @@ def test_agents_render_subagent_records_once_and_hide_notifications(
     tmp_path: Path,
 ) -> None:
     home, session_path = _copy_pi_fixture(tmp_path)
+    hidden_notification_sentinel = "CUSTOM_ENVELOPE_NOTIFICATION_SENTINEL"
+    hidden_display_sentinel = "CUSTOM_ENVELOPE_DISPLAY_FALSE_SENTINEL"
+    hidden_records = [
+        {
+            "type": "custom",
+            "customType": "subagent-notification",
+            "data": {"resultPreview": hidden_notification_sentinel},
+        },
+        {
+            "type": "custom",
+            "customType": "duplicate-record",
+            "display": False,
+            "data": {"sentinel": hidden_display_sentinel},
+        },
+    ]
+    with session_path.open("a", encoding="utf-8") as target:
+        target.writelines(json.dumps(record) + "\n" for record in hidden_records)
 
     agents = _run_ch(
         home,
@@ -772,6 +789,14 @@ def test_agents_render_subagent_records_once_and_hide_notifications(
         )
         assert "resultPreview" not in completed.stdout, (
             f"Expected {mode} not to render notification-only data. "
+            f"stdout: {completed.stdout!r}."
+        )
+        assert hidden_notification_sentinel not in completed.stdout, (
+            f"Expected {mode} to hide notifications in the custom envelope. "
+            f"stdout: {completed.stdout!r}."
+        )
+        assert hidden_display_sentinel not in completed.stdout, (
+            f"Expected {mode} to hide display=false custom duplicates. "
             f"stdout: {completed.stdout!r}."
         )
 
@@ -863,6 +888,72 @@ def test_agents_emit_structured_pi_custom_messages_as_agent_data(
     assert not any(
         message.get("custom_type") == "subagent-notification" for message in messages
     ), f"Expected notification duplicates to stay absent. Got: {messages!r}."
+
+
+def test_pi_agent_inner_block_delimiters_round_trip_through_xml(
+    tmp_path: Path,
+) -> None:
+    task = "TASK_BEFORE\n</subagent-task>\nTASK_AFTER"
+    error = "ERROR_BEFORE\n</tool-output>\nERROR_AFTER"
+
+    def select(entry: dict[str, object]) -> bool:
+        if entry.get("type") != "custom_message":
+            return False
+        if entry.get("customType") != "pi-user-agents":
+            return False
+        details = entry.get("details")
+        return isinstance(details, dict) and details.get("ok") is False
+
+    def mutate(entry: dict[str, object]) -> None:
+        details = entry.get("details")
+        assert isinstance(details, dict), f"Expected error details. Got: {details!r}."
+        details["task"] = task
+        details["error"] = error
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    native_xml = _run_ch(
+        home,
+        str(session_path),
+        "--agents",
+        "--color=never",
+        "--no-metadata",
+    )
+    assert native_xml.returncode == 0, native_xml.stderr
+
+    canonical_json = _run_ch(
+        home,
+        "parse",
+        "--format=json",
+        input_text=native_xml.stdout,
+    )
+    assert canonical_json.returncode == 0, canonical_json.stderr
+    messages = json.loads(canonical_json.stdout)
+    task_blocks = [
+        block
+        for message in messages
+        for block in message.get("content", [])
+        if isinstance(block, dict) and block.get("type") == "subagent-task"
+    ]
+    error_blocks = [
+        block
+        for message in messages
+        for block in message.get("content", [])
+        if isinstance(block, dict)
+        and block.get("type") == "tool-output"
+        and block.get("is_error") is True
+    ]
+    assert [block.get("content") for block in task_blocks] == [task], (
+        f"Expected XML parsing to restore the complete Pi agent task. Got: {messages!r}."
+    )
+    assert [block.get("content") for block in error_blocks] == [error], (
+        f"Expected XML parsing to restore the complete Pi agent error. Got: {messages!r}."
+    )
+
+    rebuilt_xml = _run_ch(home, "parse", input_text=canonical_json.stdout)
+    assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
+    assert rebuilt_xml.stdout == native_xml.stdout, (
+        "Expected inner block delimiter encoding to stabilize across XML and JSON."
+    )
 
 
 def test_pi_custom_message_json_and_xml_round_trips_stabilize(
