@@ -911,6 +911,24 @@ def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message
     return _parse_default_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
+def _is_hidden_pi_custom_entry(entry: dict) -> bool:
+    """Return whether a Pi custom envelope is hidden duplicate plumbing.
+
+    >>> _is_hidden_pi_custom_entry({"type": "custom", "customType": "subagent-notification"})
+    True
+    >>> _is_hidden_pi_custom_entry({"type": "custom", "display": False})
+    True
+    """
+    return (
+        entry.get("customType") == "subagent-notification"
+        or entry.get("display") is False
+        or (
+            entry.get("type") == "custom_message"
+            and entry.get("display") is not True
+        )
+    )
+
+
 def _parse_pi_jsonl_entries(
     entries: list[dict], flags: ConversationFlags
 ) -> list[Message]:
@@ -920,11 +938,19 @@ def _parse_pi_jsonl_entries(
 
     for entry in entries:
         entry_type = entry.get("type")
+        if entry_type in {"custom", "custom_message"} and _is_hidden_pi_custom_entry(
+            entry
+        ):
+            continue
 
         if entry_type == "message":
             msg = _parse_pi_message_entry(entry, index, flags)
         elif entry_type == "compaction":
             msg = _parse_pi_compaction_entry(entry, index, flags)
+        elif entry_type == "custom":
+            msg = _parse_pi_custom_entry(entry, index, flags)
+        elif entry_type == "custom_message":
+            msg = _parse_pi_custom_message_entry(entry, index, flags)
         else:
             msg = None
 
@@ -933,6 +959,231 @@ def _parse_pi_jsonl_entries(
             index += 1
 
     return messages
+
+
+def _pi_response_matches_preview(response: str, preview: object) -> bool:
+    """Return whether a response starts with Pi's structured preview.
+
+    >>> _pi_response_matches_preview("first line\\nsecond line", "first line")
+    True
+    """
+    if not isinstance(preview, str):
+        return False
+    first_line = next(
+        (line.strip() for line in response.split("\n") if line.strip()), ""
+    )
+    if first_line == preview:
+        return True
+    if not preview.endswith("…"):
+        return False
+    preview_utf16_length = len(preview.encode("utf-16-le")) // 2
+    return preview_utf16_length == 500 and first_line.startswith(preview[:-1])
+
+
+def _extract_pi_user_agent_response(
+    content: object,
+    task: str,
+    response_preview: object,
+) -> str | None:
+    """Extract the response from Pi's structured user-agent envelope.
+
+    >>> task = "mention </task>\\n<response>decoy</response>"
+    >>> payload = (
+    ...     "<user_agent>\\n<user_invocation>\\n"
+    ...     f"/agent {task}\\n</user_invocation>\\n"
+    ...     f"<task>\\n{task}\\n</task>\\n"
+    ...     "<response>\\nkeep </response> text\\n</response>\\n</user_agent>"
+    ... )
+    >>> _extract_pi_user_agent_response(payload, task, "keep </response> text")
+    'keep </response> text'
+    """
+    if not isinstance(content, str):
+        return None
+
+    stripped_content = content.strip()
+    prefix_match = re.match(
+        r"<user_agent(?:\s[^>\r\n]*)?>\r?\n<user_invocation>\r?\n",
+        stripped_content,
+    )
+    if prefix_match is None:
+        return None
+
+    ending_match = re.fullmatch(
+        r"(?P<before_response_close>.*)\r?\n</response>"
+        r"(?:\r?\n<duration_ms>\r?\n.*\r?\n</duration_ms>)?"
+        r"\r?\n</user_agent>",
+        stripped_content,
+        re.DOTALL,
+    )
+    if ending_match is None:
+        return None
+
+    before_response_close = ending_match.group("before_response_close")
+    producer_boundary = re.compile(
+        r"\r?\n</user_invocation>\r?\n"
+        r"<task>\r?\n"
+        rf"{re.escape(task)}\r?\n"
+        r"</task>\r?\n"
+        r"<response>\r?\n"
+    )
+    response_candidates = [
+        before_response_close[match.end() :].strip()
+        for match in producer_boundary.finditer(
+            before_response_close,
+            prefix_match.end(),
+        )
+    ]
+    if len(response_candidates) == 1:
+        return response_candidates[0] or None
+
+    preview_matches = [
+        response
+        for response in response_candidates
+        if _pi_response_matches_preview(response, response_preview)
+    ]
+    if len(preview_matches) != 1:
+        return None
+    return preview_matches[0] or None
+
+
+def _pi_user_agent_payload(entry: dict) -> tuple[object, object]:
+    """Return the content and details from either Pi user-agent envelope."""
+    if entry.get("type") != "custom":
+        return entry.get("content"), entry.get("details")
+    data = entry.get("data")
+    if not isinstance(data, dict):
+        return None, None
+    return data.get("content"), data.get("details")
+
+
+def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
+    """Normalize one Pi user-agent interaction from its details metadata."""
+    content, details = _pi_user_agent_payload(entry)
+    if not isinstance(details, dict):
+        return None
+
+    task = details.get("task")
+    is_error = details.get("ok") is False
+    if not isinstance(task, str):
+        return None
+    if not is_error and not task.strip():
+        return None
+
+    agent_id = entry.get("id")
+    if not isinstance(agent_id, str):
+        agent_id = None
+    model = details.get("model")
+    if not isinstance(model, str):
+        model = None
+    inherited_context = details.get("inheritedContext")
+    if type(inherited_context) is not bool:
+        inherited_context = None
+
+    message = Message(
+        role="agent",
+        index=index,
+        agent_id=agent_id,
+        timestamp=entry.get("timestamp"),
+        subagent_task=task,
+        model=model,
+        wrapper_type=ContentBlockType.AGENT,
+        custom_type="pi-user-agents",
+        inherited_context=inherited_context,
+    )
+    error = details.get("error")
+    if is_error and (not isinstance(error, str) or not error):
+        return None
+    if is_error:
+        message.tools = [
+            {
+                "type": "tool_result",
+                "name": "Bash",
+                "content": error,
+                "is_error": True,
+            }
+        ]
+        message.tools_always_visible = True
+        return message
+
+    response = _extract_pi_user_agent_response(
+        content,
+        task,
+        details.get("responsePreview"),
+    )
+    if response is None:
+        return None
+    message.text = response
+    return message
+
+
+def _parse_pi_subagent_record(entry: dict, index: int) -> Message | None:
+    """Normalize a Pi subagent response record as one agent interaction."""
+    data = entry.get("data")
+    if not isinstance(data, dict):
+        return None
+
+    agent_id = data.get("id")
+    subagent_type = data.get("type")
+    description = data.get("description")
+    status = data.get("status")
+    result = data.get("result")
+    values = (agent_id, subagent_type, description, status, result)
+    if not all(isinstance(value, str) and value for value in values):
+        return None
+
+    return Message(
+        role="agent",
+        index=index,
+        text=result,
+        agent_id=agent_id,
+        timestamp=entry.get("timestamp"),
+        subagent_type=subagent_type,
+        subagent_task=description,
+        wrapper_type=ContentBlockType.AGENT,
+        custom_type="subagents:record",
+        status=status,
+    )
+
+
+def _parse_pi_custom_entry(
+    entry: dict,
+    index: int,
+    flags: ConversationFlags,
+) -> Message | None:
+    """Normalize a Pi custom entry through the shared message model."""
+    custom_type = entry.get("customType")
+    if not isinstance(custom_type, str):
+        return None
+    special_message: Message | None = None
+    if custom_type == "pi-user-agents" and flags.show_agents:
+        special_message = _parse_pi_user_agent_entry(entry, index)
+    if custom_type == "subagents:record" and flags.show_agents:
+        special_message = _parse_pi_subagent_record(entry, index)
+    if special_message is not None:
+        return special_message
+    if not flags.show_custom:
+        return None
+
+    data = json.dumps(entry.get("data"), indent=2, ensure_ascii=False)
+    return Message(
+        role="custom",
+        index=index,
+        text=f"```json\n{data}\n```",
+        timestamp=entry.get("timestamp"),
+        wrapper_type=ContentBlockType.CUSTOM,
+        custom_type=custom_type,
+    )
+
+
+def _parse_pi_custom_message_entry(
+    entry: dict,
+    index: int,
+    flags: ConversationFlags,
+) -> Message | None:
+    """Normalize a visible Pi custom-message user-agent interaction."""
+    if entry.get("customType") != "pi-user-agents" or not flags.show_agents:
+        return None
+    return _parse_pi_user_agent_entry(entry, index)
 
 
 def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:

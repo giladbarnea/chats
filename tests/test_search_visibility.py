@@ -311,3 +311,146 @@ def test_cmd_search_render_dependent_plan_tag_query_still_works(
         "Expected the plan-tag session to appear for a render-dependent query. "
         f"Got stdout:\n{stdout}"
     )
+
+
+def test_cmd_search_xml_transport_entity_does_not_bypass_prefilter(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".claude" / "projects" / "proj" / "entity.jsonl"
+    _write_claude_session(
+        session_path,
+        [
+            {
+                "type": "assistant",
+                "timestamp": "2025-01-01T00:00:00Z",
+                "cwd": "/tmp/search-visibility",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "thinking",
+                            "thinking": "<thinking>literal</thinking>",
+                        }
+                    ],
+                },
+            }
+        ],
+    )
+    session_reads: list[Path] = []
+    real_read_text = Path.read_text
+
+    def tracked_read_text(path: Path, *args, **kwargs):
+        if path == session_path:
+            session_reads.append(path)
+        return real_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", tracked_read_text)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "&lt;/thinking&gt;",
+            ConversationFlags(
+                color="never",
+                paging=False,
+                show_thinking=True,
+            ),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1, (
+        "Expected XML-only transport entities to stay outside search semantics. "
+        f"Got exit code: {exc_info.value.code}\n"
+        f"stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert session_reads == [], (
+        "Expected an XML-only entity miss to stop at the byte prefilter. "
+        f"Got reads: {session_reads!r}."
+    )
+    assert "Error processing conversation file" not in captured.err, (
+        f"Expected a clean prefilter miss. stderr: {captured.err!r}."
+    )
+
+
+def test_cmd_search_pi_agent_literal_miss_keeps_candidate_gates(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".pi" / "agent" / "sessions" / "proj" / "agent.jsonl"
+    session_path.parent.mkdir(parents=True)
+    task = "VISIBLE_PI_AGENT_TASK"
+    response = "VISIBLE_PI_AGENT_RESPONSE"
+    content = (
+        "<user_agent>\n"
+        "<user_invocation>\n"
+        f"/agent {task}\n"
+        "</user_invocation>\n"
+        "<task>\n"
+        f"{task}\n"
+        "</task>\n"
+        "<response>\n"
+        f"{response}\n"
+        "</response>\n"
+        "</user_agent>"
+    )
+    entries = [
+        {"type": "session", "id": "pi-agent-prefilter"},
+        {
+            "type": "custom",
+            "customType": "pi-user-agents",
+            "data": {
+                "content": content,
+                "details": {
+                    "task": task,
+                    "model": "test/model",
+                    "ok": True,
+                },
+            },
+        },
+    ]
+    session_path.write_text(
+        "".join(json.dumps(entry, separators=(",", ":")) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+    session_reads: list[Path] = []
+    real_read_text = Path.read_text
+
+    def tracked_read_text(path: Path, *args, **kwargs):
+        if path == session_path:
+            session_reads.append(path)
+        return real_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", tracked_read_text)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "absent-stable-pi-needle",
+            ConversationFlags(
+                color="never",
+                paging=False,
+                show_agents=True,
+            ),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1, (
+        "Expected the absent Pi agent literal not to match. "
+        f"Got exit code: {exc_info.value.code}\n"
+        f"stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert session_reads == [], (
+        "Expected a stable Pi agent literal miss to stop at the byte prefilter. "
+        f"Got reads: {session_reads!r}."
+    )

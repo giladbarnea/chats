@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import sys
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -108,6 +109,7 @@ class ConversationFlags:
     show_thinking: bool
     show_tools: bool | list[ToolFilter]
     show_agents: bool
+    show_custom: bool
     show_branches: bool
     show_plans: bool
     allow_empty_output: bool
@@ -125,6 +127,7 @@ class ConversationFlags:
         show_thinking: bool = False,
         show_tools: bool | list[ToolFilter] = False,
         show_agents: bool = False,
+        show_custom: bool = False,
         show_branches: bool = False,
         show_plans: bool = False,
         allow_empty_output: bool = False,
@@ -138,6 +141,7 @@ class ConversationFlags:
         self.show_thinking = show_thinking
         self.show_tools = show_tools
         self.show_agents = show_agents
+        self.show_custom = show_custom
         self.show_branches = show_branches
         self.show_plans = show_plans
         self.allow_empty_output = allow_empty_output
@@ -171,6 +175,7 @@ class ConversationFlags:
             self.show_thinking
             and self.show_tools
             and self.show_agents
+            and self.show_custom
             and self.show_branches
             and self.show_plans
         )
@@ -182,7 +187,7 @@ class ConversationFlags:
             f"show_assistant_messages={self.show_assistant_messages}, "
             f"show_thinking={self.show_thinking}, "
             f"show_tools={self.show_tools}, show_agents={self.show_agents}, "
-            f"show_branches={self.show_branches}, "
+            f"show_custom={self.show_custom}, show_branches={self.show_branches}, "
             f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
             f"shorten={self.shorten}, shorten_max_chars={self.shorten_max_chars}, "
             f"shorten_thinking={self.shorten_thinking}, "
@@ -223,6 +228,10 @@ class Message:
     is_meta: bool = False
     source_tool_user_id: str | None = None
     wrapper_type: ContentBlockType | None = None
+    custom_type: str | None = None
+    inherited_context: bool | None = None
+    status: str | None = None
+    tools_always_visible: bool = False
     branch_id: str | None = None  # abandoned rewind-branch id; None on the main thread
 
     @property
@@ -269,7 +278,7 @@ class Message:
             parts.append(MessagePart(MessagePartKind.THINKING, thinking))
 
         # Tools
-        if flags.show_tools and self.tools:
+        if (flags.show_tools or self.tools_always_visible) and self.tools:
             self._append_tool_parts(parts, flags, tool_id_map)
 
         # Plan (as tool-like part with name="ExitPlanMode")
@@ -320,7 +329,7 @@ class Message:
                 "content": thinking,
             })
 
-        if flags.show_tools and self.tools:
+        if (flags.show_tools or self.tools_always_visible) and self.tools:
             content.extend(self._visible_tool_json_content(flags, tool_id_map))
 
         if flags.show_plans and self.plan:
@@ -370,8 +379,17 @@ class Message:
             if self.name:
                 payload["name"] = self.name
 
-        if self.model:
-            payload["model"] = self.model.removeprefix("claude-")
+        if model := self.get_display_model():
+            payload["model"] = model
+
+        if self.custom_type:
+            payload["custom_type"] = self.custom_type
+
+        if self.inherited_context is not None:
+            payload["inherited_context"] = self.inherited_context
+
+        if self.status:
+            payload["status"] = self.status
 
         if self.timestamp:
             payload["timestamp"] = self.timestamp
@@ -392,9 +410,10 @@ class Message:
         representation can be left untruncated.
         """
         for tool in self.tools:
+            filter_value = True if self.tools_always_visible else flags.show_tools
             show, local_short_max_chars = resolve_tool_visibility(
                 tool,
-                flags.show_tools,
+                filter_value,
                 id_map,
                 default_short_max_chars=flags.shorten_max_chars,
             )
@@ -413,7 +432,8 @@ class Message:
         tool_id_map: dict[str, str] | None,
     ) -> None:
         """Append visible tool parts based on filters."""
-        id_map = self._tool_name_id_map(flags.show_tools, tool_id_map)
+        filter_value = True if self.tools_always_visible else flags.show_tools
+        id_map = self._tool_name_id_map(filter_value, tool_id_map)
         for tool in self._iter_visible_tools(flags, id_map):
             parts.append(MessagePart(MessagePartKind.TOOL, tool_to_parts(tool, id_map)))
 
@@ -423,7 +443,8 @@ class Message:
         tool_id_map: dict[str, str] | None,
     ) -> list[dict[str, object]]:
         """Return visible tools in structured JSON form."""
-        id_map = self._tool_name_id_map(flags.show_tools, tool_id_map)
+        filter_value = True if self.tools_always_visible else flags.show_tools
+        id_map = self._tool_name_id_map(filter_value, tool_id_map)
         return [tool_to_json(tool, id_map) for tool in self._iter_visible_tools(flags, id_map)]
 
     def _tool_name_id_map(
@@ -483,6 +504,12 @@ class Message:
             return f"{header} '{self.name}'"
         return header
 
+    def get_display_model(self) -> str | None:
+        """Return the model metadata in its provider-normalized display form."""
+        if self.model is None or self.custom_type:
+            return self.model
+        return self.model.removeprefix("claude-")
+
     def get_date_attribute(self) -> str | None:
         """Return the message date and time for XML attributes, semi-machine-friendly."""
         if timestamp := _message_timestamp_datetime(self.timestamp):
@@ -496,27 +523,39 @@ class Message:
             return None
         return f"{timestamp:%B} {_ordinal_day(timestamp.day)}, {timestamp:%H:%M}"
 
-    def get_wrapper_attrs(self) -> str:
+    def get_wrapper_attrs(self, *, text_encoding: str | None = None) -> str:
         """Build XML attributes string for this message's wrapper tag."""
-        attrs = [f'i="{self.index}"']
+        attrs: list[tuple[str, str | int]] = [("i", self.index)]
         if self.branch_id:
-            attrs.append(f'branch="{self.branch_id}"')
+            attrs.append(("branch", self.branch_id))
         if self.role == "user":
             if self.is_meta:
-                attrs.append('isMeta="true"')
+                attrs.append(("isMeta", "true"))
             if self.source_tool_user_id:
-                attrs.append(f'sourceToolUserId="{self.source_tool_user_id}"')
+                attrs.append(("sourceToolUserId", self.source_tool_user_id))
         if self.agent_id:
-            attrs.append(f'agent_id="{self.agent_id}"')
+            attrs.append(("agent_id", self.agent_id))
             if self.subagent_type:
-                attrs.append(f'subagent_type="{self.subagent_type}"')
+                attrs.append(("subagent_type", self.subagent_type))
             if self.name:
-                attrs.append(f'name="{self.name}"')
-        if self.model:
-            attrs.append(f'model="{self.model.removeprefix("claude-")}"')
+                attrs.append(("name", self.name))
+        if model := self.get_display_model():
+            attrs.append(("model", model))
+        if self.custom_type:
+            attrs.append(("custom_type", self.custom_type))
+        if self.inherited_context is not None:
+            attrs.append(("inherited_context", str(self.inherited_context).lower()))
+        if self.status:
+            attrs.append(("status", self.status))
+        if text_encoding:
+            attrs.append(("text_encoding", text_encoding))
         if date := self.get_date_attribute():
-            attrs.append(f'date="{date}"')
-        return " ".join(attrs)
+            attrs.append(("date", date))
+        escape_attributes = self.custom_type is not None
+        return " ".join(
+            f'{name}="{html.escape(str(value), quote=True) if escape_attributes else value}"'
+            for name, value in attrs
+        )
 
 
 _MESSAGE_WRAPPER_TYPES = {
@@ -536,6 +575,9 @@ _MESSAGE_JSON_KEYS = {
     "subagent_type",
     "name",
     "model",
+    "custom_type",
+    "inherited_context",
+    "status",
     "timestamp",
 }
 
@@ -596,6 +638,9 @@ def _message_from_json_data(payload: object, position: int) -> Message:
         subagent_type=_optional_json_string(payload, "subagent_type", context),
         name=_optional_json_string(payload, "name", context),
         model=_optional_json_string(payload, "model", context),
+        custom_type=_optional_json_string(payload, "custom_type", context),
+        inherited_context=_optional_json_bool(payload, "inherited_context", context),
+        status=_optional_json_string(payload, "status", context),
         is_meta=is_meta,
         source_tool_user_id=_optional_json_string(
             payload, "sourceToolUserId", context
@@ -614,6 +659,15 @@ def _optional_json_string(
     if value is None or isinstance(value, str):
         return value
     raise ValueError(f"Expected {context}.{key} to be a string.")
+
+
+def _optional_json_bool(
+    payload: dict[object, object], key: str, context: str
+) -> bool | None:
+    value = payload.get(key)
+    if value is None or type(value) is bool:
+        return value
+    raise ValueError(f"Expected {context}.{key} to be a boolean.")
 
 
 def _populate_message_content(

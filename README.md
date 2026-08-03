@@ -109,9 +109,9 @@ Automatically detects input format by examining **first non-empty line only** (d
                      #   Combine: -t "Read:o:s Bash:i" or -t Read:o:s -t Bash:i
                      #   Order-free: -t i:Bash == -t Bash:i
                      #   Long form: -t input, -t output, -t short, -t error
--a, --agents         # Include subagent messages
+-a, --agents         # Include subagent messages and Pi agent custom records
 -b, --branches       # Include abandoned (rewound) branch messages, tagged branch="N"
--A, --all            # Show everything (thinking, tools, agents, plans)
+-A, --all            # Include thinking, tools, agents, plans, and visible Pi custom records
 --plans              # Show plan content (ExitPlanMode)
 -s, --short [MAX_CHARS]  # Shorten string values in output (default max chars=500; explicit MAX_CHARS must be >7)
 
@@ -191,7 +191,7 @@ JSON format:
 - Always outputs plain JSON (no Rich formatting)
 - Mirrors the structured message model instead of embedding XML wrappers into strings
 - Each message carries its wrapper tag as `type` plus any XML-attribute metadata such as `original_index`, `model`, `agent_id`, or `sourceToolUserId`
-- Messages carry their raw ISO `timestamp` when present; agent messages may also carry an optional `name`, preserving their XML `date=` and identity metadata across a round trip
+- Messages carry their raw ISO `timestamp` when present; custom and agent messages preserve `custom_type`, `inherited_context`, `status`, and optional agent identity metadata across a round trip
 - `content` is an ordered array of raw strings and typed blocks like `thinking`, `tool-input`, and `tool-output`
 - Tool blocks expose structured fields instead of XML tags / fenced pseudo-content
 - Raw text that happens to contain XML-like strings stays a plain string value
@@ -219,7 +219,7 @@ cat canonical.json | ch parse > session.md
 
 The default direction rebuilds plain XML-tagged Markdown from structured JSON. `-f json` reverses canonical XML-tagged Markdown into structured JSON. Once XML has been canonicalized to JSON, both `JSON → XML → JSON` and `XML → JSON → XML` compositions are byte-stable. Visibility decisions—including tool inclusion, shortening, and merged agent messages—are already baked into either representation; `ch parse` does not reapply them or discover a session provider.
 
-The XML representation intentionally carries less information than the structured JSON emitted directly from a native session. XML dates have minute precision, tool IDs are shortened, schema-irrelevant tool fields are omitted, attribute values are strings, and tool outputs are rendered text. XML-to-JSON conversion preserves everything represented in XML and canonicalizes those lossy fields; it does not invent the discarded native values.
+The XML representation intentionally carries less information than the structured JSON emitted directly from a native session. XML dates have minute precision, tool IDs are shortened, schema-irrelevant tool fields are omitted, attribute values are strings, and tool outputs are rendered text. XML-to-JSON conversion preserves everything represented in XML and canonicalizes those lossy fields; it does not invent the discarded native values. For custom messages, canonical XML escapes wrapper metadata. Delimiter-like message text and typed-block bodies use reversible HTML transport encoding, which `ch parse` decodes.
 
 The command writes only the conversation body to stdout and emits no session metadata frontmatter. Ordinary session parsing may send optional YAML frontmatter to stderr, but neither transport representation contains enough session-level information to reconstruct it.
 
@@ -536,13 +536,20 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Only the latest such entry is acknowledged for resolution, search, and metadata
    - Searchable in search mode and emitted as `custom_title:` in metadata frontmatter
 
-7. **Hook additional-context attachments** (`type: "attachment"`, Claude)
+7. **PI custom messages** (`type: "custom"` and selected `custom_message` records)
+   - Hidden by default
+   - `--all` renders arbitrary `type: "custom"` data as JSON without assuming its schema, including incomplete special records that cannot normalize
+   - `--agents` renders successful and failed `pi-user-agents` and `subagents:record` records through the shared agent view
+   - Failed `pi-user-agents` records use Bash error presentation without requiring `--tools`
+   - `subagent-notification` and `display: false` duplicate records stay hidden, including with `--all`
+
+8. **Hook additional-context attachments** (`type: "attachment"`, Claude)
    - `attachment.type: "hook_additional_context"` is the text a hook injects into the transcript (from `UserPromptSubmit`, `SessionStart`, `PreToolUse:*`, `PostToolUse:*`, ...)
    - Classifies as a synthetic `AdditionalContext` tool: hidden by default, shown with `-t`, name-filterable (`-t AdditionalContext`, `-t !AdditionalContext`)
    - `attachment.hookName` renders as the `hook_name` attribute and the joined `attachment.content` list as the body: `<tool-input name="AdditionalContext" hook_name="UserPromptSubmit">`
    - Obeys the shared tool policy across parse, JSON, and search; `-t`/`-t:s` keeps and shortens it. Other `attachment.type`s are skipped
 
-8. **Antigravity CLI transcript entries**
+9. **Antigravity CLI transcript entries**
    - Stored under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`
    - `transcript_full.jsonl` is preferred when present; `transcript.jsonl` is used only when the full variant is missing
    - Session identity comes from the `{session_id}` brain directory, not from in-record fields
@@ -561,13 +568,14 @@ In `ch` output, messages on an abandoned **rewind** branch are hidden by default
 
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)
-- Two kinds are captured: agent-initiated subagents dispatched via the `Task` tool with `subagent_type` (e.g., "Explore", "codebase-analyzer:single-subsystem"), and user-initiated `/fork` background agents
-- Stored separately as `agent-{shortId}.jsonl` under `{session_id}/subagents/` (e.g., `{session_id}/subagents/agent-51c28bca.jsonl`); a `/fork` instead uses `agent-{slug}-{taskId}.jsonl` with a sibling `.meta.json` carrying `agentType: "fork"`
-- Same structure as main conversations
-- Include `agentId` field and `isSidechain: true` at entry level
-- Agent messages render as `<agent agent_id="..." subagent_type="...">`. A user-initiated `/fork` carries `subagent_type="fork"` and is headed `Fork` (a `Fork` badge in colored output) to set it apart from agent-initiated `Task` subagents, which stay `Agent`
+- Three kinds are captured: agent-initiated sidechains, user-initiated `/fork` background agents, and inline Pi `pi-user-agents` / `subagents:record` custom records
+- Claude sidechains and `/fork` transcripts are stored separately under `{session_id}/subagents/`. Sidechains use `agent-{shortId}.jsonl`; a `/fork` uses `agent-{slug}-{taskId}.jsonl` with a sibling `.meta.json` carrying `agentType: "fork"`
+- These file-backed transcripts use the same structure as main conversations. Their entries include `agentId` and `isSidechain: true`
+- All three kinds render through the shared `<agent>` wrapper. File-backed Claude agents carry `agent_id` and `subagent_type`; inline Pi agents carry `custom_type`
+- A user-initiated `/fork` carries `subagent_type="fork"` and is headed `Fork` (a `Fork` badge in colored output). Agent-initiated `Task` subagents stay `Agent`
 - A classic subagent is anchored in-thread by its first line's `sessionId`; a `/fork` has no in-thread anchor and is matched instead by its leading `fork-context-ref.parentSessionId`
-- Tool results from agents include `agentId: xxx (for resuming...)` in content
+- Inline Pi records stay in the main transcript and do not create sidechain files
+- Claude agent tool results include `agentId: xxx (for resuming...)` in content
 
 **Why `TaskNotification` is an unpaired tool:**
 

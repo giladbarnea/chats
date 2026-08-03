@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import html
 import json
 import re
 
 from .model import Message
 from .registry import TOOL_SCHEMAS, ContentBlockType
+from .xml_transport import INNER_XML_BLOCK_PATTERN, decode_xml_transport_body
 
 
 _OUTER_TYPES = {
@@ -24,12 +26,6 @@ _OUTER_MESSAGE = re.compile(
     re.DOTALL,
 )
 _ATTRIBUTE = re.compile(r'([\w-]+)="([^"]*)"')
-_INNER_BLOCK = re.compile(
-    r'^<(?P<tag>thinking|subagent-task|tool-input|tool-output)'
-    r'(?P<attrs>(?:\s+[\w-]+="[^"]*")*)>'
-    r'(?P<body>.*?)</(?P=tag)>$',
-    re.DOTALL | re.MULTILINE,
-)
 _FENCED_BODY = re.compile(r'^```[^\n]*\n(?P<content>.*)\n```$', re.DOTALL)
 _EDIT_BODY = re.compile(
     r'^(?:old_string:\n```\n(?P<old>.*?)\n```)?'
@@ -41,6 +37,7 @@ _ROLE_BY_WRAPPER = {
     ContentBlockType.USER_COMMAND_INPUT: "user",
     ContentBlockType.USER_COMMAND_OUTPUT: "user",
     ContentBlockType.COMPACTION: "user",
+    ContentBlockType.CUSTOM: "custom",
     ContentBlockType.SESSION_RENAME: "session-rename",
 }
 
@@ -69,7 +66,10 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
     if wrapper_type is None:
         raise ValueError(f"Unknown message type in message {position}: {tag!r}.")
 
-    attributes = dict(_ATTRIBUTE.findall(match.group("attrs")))
+    attributes = {
+        name: html.unescape(value)
+        for name, value in _ATTRIBUTE.findall(match.group("attrs"))
+    }
     if "i" not in attributes:
         raise ValueError(f"Expected message {position} to have an integer i attribute.")
     try:
@@ -93,6 +93,19 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
     timestamp = f"{date.replace(' ', 'T')}:00" if date is not None else None
     is_meta = attributes.pop("isMeta", "false") == "true"
     source_tool_user_id = attributes.pop("sourceToolUserId", None)
+    custom_type = attributes.pop("custom_type", None)
+    status = attributes.pop("status", None)
+    text_encoding = attributes.pop("text_encoding", None)
+    inherited_context_value = attributes.pop("inherited_context", None)
+    if inherited_context_value not in {None, "true", "false"}:
+        raise ValueError(
+            f"Expected message {position} inherited_context to be true or false."
+        )
+    inherited_context = (
+        inherited_context_value == "true"
+        if inherited_context_value is not None
+        else None
+    )
     message = Message(
         role=_ROLE_BY_WRAPPER.get(wrapper_type, "assistant"),
         index=original_index,
@@ -102,6 +115,9 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
         subagent_type=attributes.pop("subagent_type", None),
         name=attributes.pop("name", None),
         model=attributes.pop("model", None),
+        custom_type=custom_type,
+        inherited_context=inherited_context,
+        status=status,
         is_meta=is_meta,
         source_tool_user_id=source_tool_user_id,
         wrapper_type=wrapper_type,
@@ -113,11 +129,12 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
         )
 
     _populate_xmlmd_content(message, body, position)
+    message.text = decode_xml_transport_body(message.text, text_encoding)
     if wrapper_type is ContentBlockType.AGENT:
-        if is_meta or source_tool_user_id or _contains_only_tool_outputs(message):
-            message.role = "user"
-        elif message.subagent_task:
+        if message.subagent_task or custom_type:
             message.role = "agent"
+        elif is_meta or source_tool_user_id or _contains_only_tool_outputs(message):
+            message.role = "user"
     return message
 
 
@@ -134,7 +151,7 @@ def _unindent_agent_body(body: str, position: int) -> str:
 
 
 def _populate_xmlmd_content(message: Message, body: str, position: int) -> None:
-    matches = list(_INNER_BLOCK.finditer(body))
+    matches = list(INNER_XML_BLOCK_PATTERN.finditer(body))
     if not matches:
         message.text = body
         return
@@ -185,6 +202,9 @@ def _append_inner_block(
         body = body[1:]
     if body.endswith("\n"):
         body = body[:-1]
+
+    attributes = dict(_ATTRIBUTE.findall(match.group("attrs")))
+    body = decode_xml_transport_body(body, attributes.pop("encoding", None))
     if tag == "thinking":
         message.thinking = body
         return
@@ -192,7 +212,6 @@ def _append_inner_block(
         message.subagent_task = body
         return
 
-    attributes = dict(_ATTRIBUTE.findall(match.group("attrs")))
     name = attributes.pop("name", None)
     if tag == "tool-output":
         message.tools.append(_tool_output_from_xmlmd(name, attributes, body, position))
