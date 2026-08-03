@@ -94,7 +94,7 @@ def looks_like_short_spec(candidate: str) -> bool:
         and int(components[0]) >= MIN_SHORT_MAX_CHARS
         and not components[1]
     )
-    return candidate in {"", "7"} or incomplete_numeric_spec or any(
+    return not candidate or incomplete_numeric_spec or any(
         component.lower() in PROGRESSIVE_SHORT_COMPONENTS
         for component in components
     )

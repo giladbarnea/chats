@@ -26,45 +26,61 @@ PROGRESSIVE_VALUES = (
 INVALID_PROGRESSIVE_VALUES = (
     "",
     "7",
+    "7:p",
     "p:7",
+    "7:progressive",
+    "progressive:7",
     "32:",
     "p:",
+    "progressive:",
+    "32:p:",
+    "32:progressive:",
+    "p:32:",
+    "progressive:32:",
     "unknown",
     "p:p",
+    "progressive:progressive",
     "32:64",
     "32:p:extra",
+    "32:progressive:extra",
 )
-GLOBAL_VALID_CASES = (
-    *((value, expected_length, "long-attached") for value, expected_length in PROGRESSIVE_VALUES),
-    ("32:p", 32, "long-detached"),
-    ("32:p", 32, "short-detached"),
+GLOBAL_CARRIERS = ("long-attached", "long-detached", "short-detached")
+TOOL_CARRIERS = (
+    "short-detached",
+    "short-attached",
+    "long-detached",
+    "long-attached",
 )
-GLOBAL_INVALID_CASES = (
-    *((value, "long-attached") for value in INVALID_PROGRESSIVE_VALUES),
-    ("p:", "long-detached"),
-    ("p:", "short-detached"),
+TOOL_SHORT_MODIFIERS = ("s", "short")
+LEGACY_DETACHED_SLICE_VALUES = ("7", "32:64")
+GLOBAL_VALID_CASES = tuple(
+    (value, expected_length, carrier)
+    for value, expected_length in PROGRESSIVE_VALUES
+    for carrier in GLOBAL_CARRIERS
 )
-TOOL_VALID_CASES = (
-    *(
-        (value, expected_length, modifier, "long-attached")
-        for value, expected_length in PROGRESSIVE_VALUES
-        for modifier in ("s", "short")
-    ),
-    ("32:p", 32, "s", "short-detached"),
-    ("32:p", 32, "s", "short-attached"),
-    ("32:p", 32, "s", "long-detached"),
+GLOBAL_INVALID_CASES = tuple(
+    (value, carrier)
+    for value in INVALID_PROGRESSIVE_VALUES
+    for carrier in GLOBAL_CARRIERS
+    if value not in LEGACY_DETACHED_SLICE_VALUES or carrier == "long-attached"
 )
-TOOL_INVALID_CASES = (
-    *((value, "s", "long-attached") for value in INVALID_PROGRESSIVE_VALUES),
-    ("p:", "short", "long-attached"),
-    ("p:", "s", "short-detached"),
-    ("p:", "s", "short-attached"),
-    ("p:", "s", "long-detached"),
+TOOL_VALID_CASES = tuple(
+    (value, expected_length, modifier, carrier)
+    for value, expected_length in PROGRESSIVE_VALUES
+    for modifier in TOOL_SHORT_MODIFIERS
+    for carrier in TOOL_CARRIERS
+)
+TOOL_INVALID_CASES = tuple(
+    (value, modifier, carrier)
+    for value in INVALID_PROGRESSIVE_VALUES
+    for modifier in TOOL_SHORT_MODIFIERS
+    for carrier in TOOL_CARRIERS
 )
 
 
 def _timestamp(index: int) -> str:
-    return f"2026-08-03T12:{index:02}:00.000Z"
+    hour_offset, minute = divmod(index, 60)
+    return f"2026-08-03T{12 + hour_offset:02}:{minute:02}:00.000Z"
 
 
 def _uuid(index: int) -> str:
@@ -378,6 +394,48 @@ def test_invalid_global_progressive_value_fails_before_input_resolution(
     assert result.stdout == ""
     assert "short" in result.stderr.lower()
     assert "error reading input" not in result.stderr.lower()
+
+
+@pytest.mark.parametrize(
+    ("selector", "expected_indices"),
+    [
+        pytest.param("7", [7], id="single-message"),
+        pytest.param("32:64", list(range(32, 64)), id="range"),
+    ],
+)
+def test_detached_short_after_file_preserves_legacy_slice(
+    tmp_path: Path,
+    selector: str,
+    expected_indices: list[int],
+) -> None:
+    session = _write_claude_session(
+        tmp_path,
+        [
+            _assistant_text(f"MESSAGE {index} {'¤' * 800}", index)
+            for index in range(1, 65)
+        ],
+    )
+
+    result = _run_ch(
+        tmp_path,
+        str(session),
+        "-s",
+        selector,
+        "--color=never",
+        "--no-metadata",
+    )
+
+    _assert_success(result)
+    rendered_indices = re.findall(r'<assistant-response i="(\d+)"', result.stdout)
+    expected_index_strings = [str(index) for index in expected_indices]
+    assert rendered_indices == expected_index_strings, (
+        f"Expected `{selector}` to select {expected_indices!r}. Got: {rendered_indices!r}."
+    )
+    rendered_lengths = [len(body) for body in _assistant_bodies(result.stdout)]
+    assert rendered_lengths == [500] * len(expected_indices), (
+        "Expected bare `-s` to keep its fixed 500-character limit while slicing. "
+        f"Got: {rendered_lengths!r}."
+    )
 
 
 @pytest.mark.parametrize(
