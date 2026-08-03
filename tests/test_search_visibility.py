@@ -311,3 +311,56 @@ def test_cmd_search_render_dependent_plan_tag_query_still_works(
         "Expected the plan-tag session to appear for a render-dependent query. "
         f"Got stdout:\n{stdout}"
     )
+
+
+def test_cmd_search_generated_xml_entity_reaches_rendered_confirmation(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".claude" / "projects" / "proj" / "entity.jsonl"
+    _write_claude_session(
+        session_path,
+        [
+            {
+                "type": "assistant",
+                "timestamp": "2025-01-01T00:00:00Z",
+                "cwd": "/tmp/search-visibility",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "thinking",
+                            "thinking": "<thinking>literal</thinking>",
+                        }
+                    ],
+                },
+            }
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "&lt;/thinking&gt;",
+            ConversationFlags(
+                color="never",
+                paging=False,
+                show_thinking=True,
+            ),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected a generated XML entity search to reach rendered confirmation. "
+        f"Got exit code: {exc_info.value.code}\n"
+        f"stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.splitlines() == ["entity"], (
+        "Expected the entity-bearing Claude session without a raw-byte entity hit. "
+        f"Got stdout:\n{captured.out}"
+    )

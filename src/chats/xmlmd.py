@@ -6,7 +6,7 @@ import re
 
 from .model import Message
 from .registry import TOOL_SCHEMAS, ContentBlockType
-from .xml_transport import decode_inner_xml_block_body
+from .xml_transport import INNER_XML_BLOCK_PATTERN, decode_xml_transport_body
 
 
 _OUTER_TYPES = {
@@ -26,12 +26,6 @@ _OUTER_MESSAGE = re.compile(
     re.DOTALL,
 )
 _ATTRIBUTE = re.compile(r'([\w-]+)="([^"]*)"')
-_INNER_BLOCK = re.compile(
-    r'^<(?P<tag>thinking|subagent-task|tool-input|tool-output)'
-    r'(?P<attrs>(?:\s+[\w-]+="[^"]*")*)>'
-    r'(?P<body>.*?)</(?P=tag)>$',
-    re.DOTALL | re.MULTILINE,
-)
 _FENCED_BODY = re.compile(r'^```[^\n]*\n(?P<content>.*)\n```$', re.DOTALL)
 _EDIT_BODY = re.compile(
     r'^(?:old_string:\n```\n(?P<old>.*?)\n```)?'
@@ -101,6 +95,7 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
     source_tool_user_id = attributes.pop("sourceToolUserId", None)
     custom_type = attributes.pop("custom_type", None)
     status = attributes.pop("status", None)
+    text_encoding = attributes.pop("text_encoding", None)
     inherited_context_value = attributes.pop("inherited_context", None)
     if inherited_context_value not in {None, "true", "false"}:
         raise ValueError(
@@ -134,8 +129,9 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
         )
 
     _populate_xmlmd_content(message, body, position)
+    message.text = decode_xml_transport_body(message.text, text_encoding)
     if wrapper_type is ContentBlockType.AGENT:
-        if message.subagent_task:
+        if message.subagent_task or custom_type:
             message.role = "agent"
         elif is_meta or source_tool_user_id or _contains_only_tool_outputs(message):
             message.role = "user"
@@ -155,7 +151,7 @@ def _unindent_agent_body(body: str, position: int) -> str:
 
 
 def _populate_xmlmd_content(message: Message, body: str, position: int) -> None:
-    matches = list(_INNER_BLOCK.finditer(body))
+    matches = list(INNER_XML_BLOCK_PATTERN.finditer(body))
     if not matches:
         message.text = body
         return
@@ -208,7 +204,7 @@ def _append_inner_block(
         body = body[:-1]
 
     attributes = dict(_ATTRIBUTE.findall(match.group("attrs")))
-    body = decode_inner_xml_block_body(body, attributes.pop("encoding", None))
+    body = decode_xml_transport_body(body, attributes.pop("encoding", None))
     if tag == "thinking":
         message.thinking = body
         return

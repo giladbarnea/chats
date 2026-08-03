@@ -523,7 +523,7 @@ class Message:
             return None
         return f"{timestamp:%B} {_ordinal_day(timestamp.day)}, {timestamp:%H:%M}"
 
-    def get_wrapper_attrs(self) -> str:
+    def get_wrapper_attrs(self, *, text_encoding: str | None = None) -> str:
         """Build XML attributes string for this message's wrapper tag."""
         attrs: list[tuple[str, str | int]] = [("i", self.index)]
         if self.branch_id:
@@ -547,6 +547,8 @@ class Message:
             attrs.append(("inherited_context", str(self.inherited_context).lower()))
         if self.status:
             attrs.append(("status", self.status))
+        if text_encoding:
+            attrs.append(("text_encoding", text_encoding))
         if date := self.get_date_attribute():
             attrs.append(("date", date))
         return " ".join(

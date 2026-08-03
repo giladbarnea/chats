@@ -25,7 +25,7 @@ from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import ContentBlockType
 from .tools import render_tool_xml
 from .utils import collapse_home, elide_to_width
-from .xml_transport import render_inner_xml_block
+from .xml_transport import encode_xml_text, render_inner_xml_block
 
 
 class PaddedInlineCodeMarkdown(_Markdown):
@@ -405,16 +405,13 @@ _ROLE_HUE: dict[str, str] = {
 }
 
 
-def render_message_inner_xml(
+def _render_message_inner_xml(
     msg: Message, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
-) -> str:
-    """Render message inner content (text, thinking, tools) to XML string.
-
-    Iterates msg.iter_visible_parts(flags), formats each part.
-    Does NOT include outer wrapper tag or header.
-    """
+) -> tuple[str, str | None]:
+    """Render message inner content and return its text transport encoding."""
     output_parts: list[str] = []
     tool_parts: list[str] = []
+    text_encoding: str | None = None
 
     def flush_tools() -> None:
         nonlocal tool_parts
@@ -425,7 +422,8 @@ def render_message_inner_xml(
     for part in msg.iter_visible_parts(flags, tool_id_map):
         if part.kind == MessagePartKind.TEXT:
             flush_tools()
-            output_parts.append(part.data)
+            encoded_text, text_encoding = encode_xml_text(part.data)
+            output_parts.append(encoded_text)
 
         elif part.kind == MessagePartKind.THINKING:
             flush_tools()
@@ -442,7 +440,14 @@ def render_message_inner_xml(
 
     flush_tools()
 
-    return "\n\n".join(output_parts)
+    return "\n\n".join(output_parts), text_encoding
+
+
+def render_message_inner_xml(
+    msg: Message, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
+) -> str:
+    """Render message inner content without its outer wrapper."""
+    return _render_message_inner_xml(msg, flags, tool_id_map)[0]
 
 
 def format_to_xml(
@@ -454,7 +459,7 @@ def format_to_xml(
     output_parts = []
 
     for msg in messages:
-        content = render_message_inner_xml(msg, flags, tool_id_map)
+        content, text_encoding = _render_message_inner_xml(msg, flags, tool_id_map)
         if not content:
             continue
 
@@ -468,7 +473,7 @@ def format_to_xml(
         wrapper_type = msg.get_wrapper_type()
         tag = wrapper_type.value.xml_tag
         header = msg.get_header()
-        attrs = msg.get_wrapper_attrs()
+        attrs = msg.get_wrapper_attrs(text_encoding=text_encoding)
 
         if wrapper_type is ContentBlockType.AGENT:
             content = textwrap.indent(content, "  ")

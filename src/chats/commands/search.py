@@ -46,6 +46,7 @@ from ..search_query import AndQuery, NotQuery, OrQuery, SearchQuery, SearchQuery
 from ..session_pool import SessionPool
 from ..session_scan import SessionScan
 from ..utils import age_style, collapse_home, elide_to_width, humanize_age
+from ..xml_transport import XML_TRANSPORT_GENERATED_MARKERS
 from . import resolve
 from .common import _build_tool_id_map
 
@@ -83,7 +84,14 @@ class SearchHit:
         )
 
 
-_RENDER_DEPENDENT_SEARCH_TOKENS = ("<", '="', "```", "old_string:", "new_string:")
+_RENDER_DEPENDENT_SEARCH_TOKENS = (
+    "<",
+    '="',
+    "```",
+    "old_string:",
+    "new_string:",
+    "&",
+)
 _ASCII_SCAN_CHUNK_SIZE = 1024 * 1024
 
 
@@ -955,7 +963,7 @@ def _term_can_match_generated_marker(term: SearchTerm, flags: ConversationFlags)
     if term.literal_candidate is None:
         return False
 
-    markers: list[str] = []
+    markers = list(XML_TRANSPORT_GENERATED_MARKERS)
     if flags.show_thinking:
         markers.append("thinking")
     if flags.show_tools or flags.show_plans:

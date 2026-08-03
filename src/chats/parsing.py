@@ -962,13 +962,14 @@ def _parse_pi_jsonl_entries(
 
 
 def _extract_pi_user_agent_response(content: object, task: str) -> str | None:
-    """Extract the response element from a Pi user-agent payload.
+    """Extract the response from Pi's structured user-agent envelope.
 
     >>> task = "mention </task>\\n<response>decoy</response>"
     >>> payload = (
-    ...     f"<user_agent><user_invocation>/agent {task}</user_invocation>"
-    ...     f"<task>{task}</task>"
-    ...     "<response>keep </response> text</response></user_agent>"
+    ...     "<user_agent>\\n<user_invocation>\\n"
+    ...     f"/agent {task}\\n</user_invocation>\\n"
+    ...     f"<task>\\n{task}\\n</task>\\n"
+    ...     "<response>\\nkeep </response> text\\n</response>\\n</user_agent>"
     ... )
     >>> _extract_pi_user_agent_response(payload, task)
     'keep </response> text'
@@ -977,11 +978,18 @@ def _extract_pi_user_agent_response(content: object, task: str) -> str | None:
         return None
     task_pattern = re.escape(task)
     match = re.fullmatch(
-        r"<user_agent(?:\s[^>]*)?>\s*"
-        r"<user_invocation>.*?</user_invocation>\s*"
-        rf"<task>\s*{task_pattern}\s*</task>\s*"
-        r"<response>(?P<response>.*)</response>\s*"
-        r"(?:<duration_ms>.*?</duration_ms>\s*)?</user_agent>",
+        r"<user_agent(?:\s[^>\r\n]*)?>\r?\n"
+        r"<user_invocation>\r?\n"
+        rf".*?{task_pattern}[ \t]*\r?\n"
+        r"</user_invocation>\r?\n"
+        r"<task>\r?\n"
+        rf"{task_pattern}\r?\n"
+        r"</task>\r?\n"
+        r"<response>\r?\n"
+        r"(?P<response>.*)\r?\n"
+        r"</response>"
+        r"(?:\r?\n<duration_ms>\r?\n.*?\r?\n</duration_ms>)?"
+        r"\r?\n</user_agent>",
         content.strip(),
         re.DOTALL,
     )
@@ -1007,7 +1015,10 @@ def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
         return None
 
     task = details.get("task")
-    if not isinstance(task, str) or not task.strip():
+    is_error = details.get("ok") is False
+    if not isinstance(task, str):
+        return None
+    if not is_error and not task.strip():
         return None
 
     agent_id = entry.get("id")
@@ -1031,7 +1042,6 @@ def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
         custom_type="pi-user-agents",
         inherited_context=inherited_context,
     )
-    is_error = details.get("ok") is False
     error = details.get("error")
     if is_error and (not isinstance(error, str) or not error):
         return None
