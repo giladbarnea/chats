@@ -790,11 +790,19 @@ def _search_hit_for_file(
         conv_file
     ):
         return None
-    if not _search_path_candidate_matches(conv_file, query, flags):
+    candidate_gates_are_sound = (
+        get_jsonl_session_adapter(conv_file).name != "pi"
+        or not (flags.show_custom or flags.show_agents)
+    )
+    if candidate_gates_are_sound and not _search_path_candidate_matches(
+        conv_file, query, flags
+    ):
         return None
 
     content = conv_file.read_text(encoding="utf-8")
-    if not _search_candidate_matches(content, query, flags):
+    if candidate_gates_are_sound and not _search_candidate_matches(
+        content, query, flags
+    ):
         return None
 
     result = _search_conversation_content(conv_file, content, query, flags, pool_filter)

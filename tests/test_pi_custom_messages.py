@@ -356,6 +356,59 @@ def test_successful_pi_user_agents_use_details_metadata_and_response_content(
     )
 
 
+def test_pi_user_agent_response_extraction_uses_the_native_envelope(
+    tmp_path: Path,
+) -> None:
+    def select(entry: dict[str, object]) -> bool:
+        return (
+            entry.get("type") == "custom"
+            and entry.get("customType") == "pi-user-agents"
+        )
+
+    def mutate(entry: dict[str, object]) -> None:
+        data = entry.get("data")
+        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
+        details = data.get("details")
+        content = data.get("content")
+        assert isinstance(details, dict), f"Expected details. Got: {details!r}."
+        assert isinstance(content, str), f"Expected agent content. Got: {content!r}."
+        details["task"] = "DETAILS_TASK_SENTINEL"
+        content = re.sub(
+            r"<response>.*?</response>",
+            "<response>ANSWER_BEFORE </response> ANSWER_AFTER</response>",
+            content,
+            count=1,
+            flags=re.DOTALL,
+        )
+        data["content"] = re.sub(
+            r"<task>.*?</task>",
+            "<task>CONTENT_TASK_DECOY <response></task>",
+            content,
+            count=1,
+            flags=re.DOTALL,
+        )
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    completed = _run_ch(
+        home,
+        str(session_path),
+        "--agents",
+        "--color=never",
+        "--no-metadata",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "DETAILS_TASK_SENTINEL" in completed.stdout, (
+        f"Expected details.task as the agent task. stdout: {completed.stdout!r}."
+    )
+    assert "CONTENT_TASK_DECOY" not in completed.stdout, (
+        f"Expected task markup not to replace the response. stdout: {completed.stdout!r}."
+    )
+    assert "ANSWER_BEFORE </response> ANSWER_AFTER" in completed.stdout, (
+        f"Expected the complete native response body. stdout: {completed.stdout!r}."
+    )
+
+
 def test_pi_user_agent_display_false_duplicates_stay_hidden(
     tmp_path: Path,
 ) -> None:
@@ -759,6 +812,27 @@ def test_pi_custom_message_json_and_xml_round_trips_stabilize(
         f"JSON stderr: {canonical_json.stderr!r}; XML stderr: {stabilized_xml.stderr!r}."
     )
     assert stabilized_json.returncode == 0, stabilized_json.stderr
+    canonical_messages = json.loads(canonical_json.stdout)
+    failed_interaction = next(
+        (
+            message
+            for message in canonical_messages
+            if message.get("custom_type") == "pi-user-agents"
+            and any(
+                isinstance(block, dict)
+                and block.get("type") == "tool-output"
+                and block.get("is_error") is True
+                for block in message.get("content", [])
+            )
+        ),
+        None,
+    )
+    assert failed_interaction is not None, (
+        f"Expected the canonical transport to retain a Pi agent error. Got: {canonical_messages!r}."
+    )
+    assert failed_interaction.get("role") == "agent", (
+        f"Expected the Pi agent error role to survive XML parsing. Got: {failed_interaction!r}."
+    )
     assert stabilized_xml.stdout == rebuilt_xml.stdout, (
         "Expected Pi custom-message XML to stabilize after canonical JSON conversion."
     )
@@ -898,4 +972,63 @@ def test_search_uses_pi_custom_message_visibility_flags(
     )
     assert shown_custom.stdout.strip() == "019fb81a-3222-7aec-930e-c3c91e44db09", (
         f"Expected the source fixture session id. stdout: {shown_custom.stdout!r}."
+    )
+
+
+def test_search_confirms_text_generated_by_pi_custom_normalization(
+    tmp_path: Path,
+) -> None:
+    custom_home, _session_path = _copy_pi_custom_fixture(tmp_path / "custom")
+    pretty_json = _run_ch(
+        custom_home,
+        "search",
+        '"label": "stale_queued_tool_results_dropped"',
+        "--provider=pi",
+        "--only-id",
+        "--all",
+        "--case-sensitive",
+    )
+
+    def select_error(entry: dict[str, object]) -> bool:
+        if entry.get("type") != "custom_message":
+            return False
+        if entry.get("customType") != "pi-user-agents":
+            return False
+        details = entry.get("details")
+        return isinstance(details, dict) and details.get("ok") is False
+
+    def isolate_error(entry: dict[str, object]) -> None:
+        details = entry.get("details")
+        assert isinstance(details, dict), f"Expected error details. Got: {details!r}."
+        details["task"] = "CANDIDATE_GATE_AGENT_TASK"
+        details["error"] = "CANDIDATE_GATE_AGENT_ERROR"
+        entry["content"] = "<user_agent_error></user_agent_error>"
+
+    agent_home, _session_path = _derive_pi_fixture(
+        tmp_path / "agent", select_error, isolate_error
+    )
+    synthetic_bash = _run_ch(
+        agent_home,
+        "search",
+        "Bash",
+        "--provider=pi",
+        "--only-id",
+        "--agents",
+        "--case-sensitive",
+    )
+
+    expected_session_id = "019fb81a-3222-7aec-930e-c3c91e44db09"
+    assert pretty_json.returncode == 0, (
+        "Expected search to inspect pretty-printed Pi custom JSON after raw gates. "
+        f"stderr: {pretty_json.stderr!r}."
+    )
+    assert pretty_json.stdout.strip() == expected_session_id, (
+        f"Expected the Pi custom JSON session. stdout: {pretty_json.stdout!r}."
+    )
+    assert synthetic_bash.returncode == 0, (
+        "Expected search to inspect the synthetic Pi agent Bash error after raw gates. "
+        f"stderr: {synthetic_bash.stderr!r}."
+    )
+    assert synthetic_bash.stdout.strip() == expected_session_id, (
+        f"Expected the Pi agent error session. stdout: {synthetic_bash.stdout!r}."
     )

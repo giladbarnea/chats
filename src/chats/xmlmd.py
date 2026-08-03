@@ -135,10 +135,10 @@ def _message_from_xmlmd(block: str, position: int) -> Message:
 
     _populate_xmlmd_content(message, body, position)
     if wrapper_type is ContentBlockType.AGENT:
-        if is_meta or source_tool_user_id or _contains_only_tool_outputs(message):
-            message.role = "user"
-        elif message.subagent_task:
+        if message.subagent_task:
             message.role = "agent"
+        elif is_meta or source_tool_user_id or _contains_only_tool_outputs(message):
+            message.role = "user"
     return message
 
 

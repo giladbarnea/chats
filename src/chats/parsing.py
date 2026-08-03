@@ -940,7 +940,9 @@ def _parse_pi_jsonl_entries(
 
 
 _PI_USER_AGENT_RESPONSE_PATTERN = re.compile(
-    r"<response>(?P<response>.*?)</response>",
+    r"<user_agent(?:\s[^>]*)?>.*?</task>\s*"
+    r"<response>(?P<response>.*)</response>\s*"
+    r"(?:<duration_ms>.*?</duration_ms>\s*)?</user_agent>",
     re.DOTALL,
 )
 
@@ -948,12 +950,16 @@ _PI_USER_AGENT_RESPONSE_PATTERN = re.compile(
 def _extract_pi_user_agent_response(content: object) -> str | None:
     """Extract the response element from a Pi user-agent payload.
 
-    >>> _extract_pi_user_agent_response("<user_agent><response>done</response></user_agent>")
-    'done'
+    >>> payload = (
+    ...     "<user_agent><task>mention <response></task>"
+    ...     "<response>keep </response> text</response></user_agent>"
+    ... )
+    >>> _extract_pi_user_agent_response(payload)
+    'keep </response> text'
     """
     if not isinstance(content, str):
         return None
-    match = _PI_USER_AGENT_RESPONSE_PATTERN.search(content)
+    match = _PI_USER_AGENT_RESPONSE_PATTERN.fullmatch(content.strip())
     if match is None:
         return None
     return match.group("response").strip() or None
