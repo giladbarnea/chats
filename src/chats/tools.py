@@ -136,6 +136,10 @@ def _tool_use_to_json(tool: dict, tag: str) -> dict[str, object]:
     }
     if short_tool_id := shorten_tool_use_id(tool.get("id")):
         payload["id"] = short_tool_id
+    if native_tool_call_id := tool.get("native_tool_call_id"):
+        payload["native_tool_call_id"] = native_tool_call_id
+    if "native_content_index" in tool:
+        payload["native_content_index"] = tool["native_content_index"]
 
     input_data = tool.get("input", {})
     if not input_data:
@@ -201,6 +205,8 @@ def _tool_result_to_json(
         payload["name"] = name
     if short_tool_id := shorten_tool_use_id(tool_use_id):
         payload["id"] = short_tool_id
+    if native_tool_call_id := tool.get("native_tool_call_id"):
+        payload["native_tool_call_id"] = native_tool_call_id
     if tool.get("is_error", False):
         payload["is_error"] = True
     if "content" in tool:
