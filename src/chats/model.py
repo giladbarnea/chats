@@ -11,6 +11,7 @@ from typing import Literal
 
 from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import TOOL_SCHEMAS, ContentBlockType
+from .shortening import ShortPolicy
 from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_input_needs_wrapper, tool_to_json, tool_to_parts
 from .utils import shorten_data, truncate_middle
@@ -115,6 +116,7 @@ class ConversationFlags:
     allow_empty_output: bool
     shorten: bool
     shorten_max_chars: int
+    shorten_progressive: bool
     shorten_thinking: bool
     color: bool
     metadata_color: bool
@@ -133,6 +135,7 @@ class ConversationFlags:
         allow_empty_output: bool = False,
         shorten: bool = False,
         shorten_max_chars: int = 500,
+        shorten_progressive: bool = False,
         shorten_thinking: bool = False,
         color: bool | Literal["always", "never", "auto"] = False,
         paging: bool | None = None,
@@ -147,6 +150,7 @@ class ConversationFlags:
         self.allow_empty_output = allow_empty_output
         self.shorten = shorten
         self.shorten_max_chars = shorten_max_chars
+        self.shorten_progressive = shorten_progressive
         self.shorten_thinking = shorten_thinking
         self.color = (color == "always") or (color == "auto" and sys.stdout.isatty())
         self.metadata_color = color != "never" if isinstance(color, str) else color
@@ -180,6 +184,13 @@ class ConversationFlags:
             and self.show_plans
         )
 
+    @property
+    def global_short_policy(self) -> ShortPolicy | None:
+        """Return the active global short policy, if shortening is enabled."""
+        if not self.shorten:
+            return None
+        return ShortPolicy(self.shorten_max_chars, self.shorten_progressive)
+
     def __repr__(self) -> str:
         return (
             f"ConversationFlags(message_selection={self.message_selection!r}, "
@@ -190,6 +201,7 @@ class ConversationFlags:
             f"show_custom={self.show_custom}, show_branches={self.show_branches}, "
             f"show_plans={self.show_plans}, allow_empty_output={self.allow_empty_output}, "
             f"shorten={self.shorten}, shorten_max_chars={self.shorten_max_chars}, "
+            f"shorten_progressive={self.shorten_progressive}, "
             f"shorten_thinking={self.shorten_thinking}, "
             f"color={self.color}, metadata_color={self.metadata_color}, paging={self.paging})"
         )
@@ -233,11 +245,24 @@ class Message:
     status: str | None = None
     tools_always_visible: bool = False
     branch_id: str | None = None  # abandoned rewind-branch id; None on the main thread
+    progressive_position: int | None = field(default=None, repr=False)
+    progressive_qualifying_count: int = field(default=0, repr=False)
 
     @property
     def off_main_branch(self) -> bool:
         """True when this message sits on an abandoned rewind branch."""
         return self.branch_id is not None
+
+    def _effective_short_max_chars(self, policy: ShortPolicy) -> int:
+        return policy.effective_max_chars(
+            self.progressive_position,
+            self.progressive_qualifying_count,
+        )
+
+    def _global_short_max_chars(self, flags: ConversationFlags) -> int:
+        return self._effective_short_max_chars(
+            ShortPolicy(flags.shorten_max_chars, flags.shorten_progressive)
+        )
 
     def iter_visible_parts(
         self, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
@@ -261,7 +286,10 @@ class Message:
         # Text content
         if self.text:
             text = (
-                shorten_data(self.text, max_chars=flags.shorten_max_chars)
+                shorten_data(
+                    self.text,
+                    max_chars=self._global_short_max_chars(flags),
+                )
                 if flags.shorten
                 else self.text
             )
@@ -271,7 +299,14 @@ class Message:
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking, max_chars=flags.shorten_max_chars)
+                truncate_middle(
+                    self.thinking,
+                    max_chars=(
+                        self._global_short_max_chars(flags)
+                        if flags.shorten
+                        else flags.shorten_max_chars
+                    ),
+                )
                 if should_shorten_thinking
                 else self.thinking
             )
@@ -284,7 +319,10 @@ class Message:
         # Plan (as tool-like part with name="ExitPlanMode")
         if flags.show_plans and self.plan:
             plan_content = (
-                shorten_data(self.plan, max_chars=flags.shorten_max_chars)
+                shorten_data(
+                    self.plan,
+                    max_chars=self._global_short_max_chars(flags),
+                )
                 if flags.shorten
                 else self.plan
             )
@@ -311,7 +349,10 @@ class Message:
 
         if self.text:
             text = (
-                shorten_data(self.text, max_chars=flags.shorten_max_chars)
+                shorten_data(
+                    self.text,
+                    max_chars=self._global_short_max_chars(flags),
+                )
                 if flags.shorten
                 else self.text
             )
@@ -320,7 +361,14 @@ class Message:
         if flags.show_thinking and self.thinking:
             should_shorten_thinking = flags.shorten or flags.shorten_thinking
             thinking = (
-                truncate_middle(self.thinking, max_chars=flags.shorten_max_chars)
+                truncate_middle(
+                    self.thinking,
+                    max_chars=(
+                        self._global_short_max_chars(flags)
+                        if flags.shorten
+                        else flags.shorten_max_chars
+                    ),
+                )
                 if should_shorten_thinking
                 else self.thinking
             )
@@ -334,7 +382,10 @@ class Message:
 
         if flags.show_plans and self.plan:
             plan_content = (
-                shorten_data(self.plan, max_chars=flags.shorten_max_chars)
+                shorten_data(
+                    self.plan,
+                    max_chars=self._global_short_max_chars(flags),
+                )
                 if flags.shorten
                 else self.plan
             )
@@ -409,21 +460,66 @@ class Message:
         the colored diff/highlight, JSON) from already-short data, so no
         representation can be left untruncated.
         """
+        for tool, local_short_policy in self._iter_visible_tool_policies(
+            flags,
+            id_map,
+        ):
+            short_policy = local_short_policy or flags.global_short_policy
+            if short_policy is not None:
+                tool = _shorten_tool_payload(
+                    tool,
+                    max_chars=self._effective_short_max_chars(short_policy),
+                )
+            yield tool
+
+    def _iter_visible_tool_policies(
+        self,
+        flags: ConversationFlags,
+        id_map: dict[str, str],
+    ) -> Iterator[tuple[dict, ShortPolicy | None]]:
+        """Yield visible tools with their winning local short policy."""
+        filter_value = True if self.tools_always_visible else flags.show_tools
         for tool in self.tools:
-            filter_value = True if self.tools_always_visible else flags.show_tools
-            show, local_short_max_chars = resolve_tool_visibility(
+            show, local_short_policy = resolve_tool_visibility(
                 tool,
                 filter_value,
                 id_map,
                 default_short_max_chars=flags.shorten_max_chars,
+                default_short_progressive=(
+                    flags.shorten and flags.shorten_progressive
+                ),
             )
-            if not show:
-                continue
-            if local_short_max_chars is not None:
-                tool = _shorten_tool_payload(tool, max_chars=local_short_max_chars)
-            elif flags.shorten:
-                tool = _shorten_tool_payload(tool, max_chars=flags.shorten_max_chars)
-            yield tool
+            if show:
+                yield tool, local_short_policy
+
+    def has_progressive_payload(
+        self,
+        flags: ConversationFlags,
+        tool_id_map: dict[str, str] | None = None,
+    ) -> bool:
+        """Return whether one visible payload uses a progressive short policy."""
+        global_policy = flags.global_short_policy
+        global_payload_visible = bool(
+            self.text
+            or flags.show_thinking and self.thinking
+            or flags.show_plans and self.plan
+        )
+        if (
+            global_policy is not None
+            and global_policy.progressive
+            and global_payload_visible
+        ):
+            return True
+
+        if not ((flags.show_tools or self.tools_always_visible) and self.tools):
+            return False
+        filter_value = True if self.tools_always_visible else flags.show_tools
+        id_map = self._tool_name_id_map(filter_value, tool_id_map)
+        return any(
+            (policy := local_policy or global_policy) is not None
+            and policy.progressive
+            for _, local_policy in self._iter_visible_tool_policies(flags, id_map)
+        )
 
     def _append_tool_parts(
         self,
@@ -556,6 +652,27 @@ class Message:
             f'{name}="{html.escape(str(value), quote=True) if escape_attributes else value}"'
             for name, value in attrs
         )
+
+
+def assign_progressive_shortening(
+    messages: list[Message],
+    flags: ConversationFlags,
+    tool_id_map: dict[str, str] | None = None,
+) -> None:
+    """Assign one shared progressive position to each qualifying message."""
+    for message in messages:
+        message.progressive_position = None
+        message.progressive_qualifying_count = 0
+
+    qualifying_messages = [
+        message
+        for message in messages
+        if message.has_progressive_payload(flags, tool_id_map)
+    ]
+    qualifying_count = len(qualifying_messages)
+    for position, message in enumerate(qualifying_messages):
+        message.progressive_position = position
+        message.progressive_qualifying_count = qualifying_count
 
 
 _MESSAGE_WRAPPER_TYPES = {

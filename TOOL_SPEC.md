@@ -4,10 +4,13 @@ This document captures the **intended completion-truth definition** of the tool 
 
 It deliberately does **not** model buggy or overly permissive behavior from the current parser. The goal is to define the form we want to support and encourage.
 
+Short values and progressive behavior are defined by [SHORT_SPEC.md](SHORT_SPEC.md).
+
 ## Top level
 
 * `FILTERS := SPEC (WS SPEC)*`
-* Repeated `-t` is equivalent to providing more `SPEC`s.
+* Tool filters accept all four carriers: `-t FILTERS`, `-t:FILTERS`, `--tools FILTERS`, and `--tools=FILTERS`.
+* Repeating a carrier is equivalent to providing more `SPEC`s.
 * Cross-`SPEC` validation is intentionally out of scope.
 * After a space, state resets to a fresh `SPEC`.
 
@@ -45,8 +48,8 @@ And:
 * `NAME := exact tool name`
 * `DIRECTION := i | input | o | output`
 * `ERROR := e | error`
-* `SHORT := s [=MAX_CHARS] | short [=MAX_CHARS]`
-* `MAX_CHARS := decimal integer > 7`
+* `SHORT := s [=SHORT_SPEC] | short [=SHORT_SPEC]`
+* `SHORT_SPEC :=` the grammar in [SHORT_SPEC.md](SHORT_SPEC.md)
 
 ## Distinct-slot rule
 
@@ -152,6 +155,8 @@ Invalid next tokens:
 * `Read:o`
 * `Read:o:s`
 * `Read:o:s=80`
+* `Read:o:s=128:p`
+* `s=progressive`
 * `s:o:Read`
 * `s=10`
 * `!Read:o:e`
@@ -172,9 +177,7 @@ Invalid next tokens:
 
 ## Short limits and precedence
 
-A bare `SHORT` fills the short slot without setting its own numeric limit. It uses the current global short default. With no global override, that default is 500; with `--short=N`, that default is `N`.
-
-An explicit `SHORT=MAX_CHARS` fills the short slot and sets a tool-local limit. That limit is more specific than the global default.
+[SHORT_SPEC.md](SHORT_SPEC.md) owns the value grammar, defaults, local inheritance, progressive sequence, and effective limits. A bare `SHORT` inherits the complete active global short policy. An explicit `SHORT=SHORT_SPEC` resolves its local policy under that contract.
 
 When several visible positive specs match the same tool and more than one declares `SHORT`, the short value is chosen by specificity:
 
@@ -187,6 +190,7 @@ Examples:
 * `--short=10 -t:s` shortens regular messages and tools to 10
 * `--short -t:s=10` shortens regular messages to 500 and tools to 10
 * `--short=20 -t:s=10 -t:Bash:s=30` shortens regular messages to 20, non-Bash tools to 10, and Bash tools to 30
+* `--short=128:p -t:s` makes tools inherit the global progressive policy
 
 ## Practical scope
 
