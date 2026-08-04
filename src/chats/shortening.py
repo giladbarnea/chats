@@ -53,36 +53,31 @@ DEFAULT_SHORT_POLICY = ShortPolicy(DEFAULT_SHORT_MAX_CHARS, False)
 def parse_short_spec(candidate: str) -> ShortSpec:
     """Parse the shared global and tool-local short-spec grammar.
 
-    >>> parse_short_spec("progressive:32")
+    >>> parse_short_spec("progressive=32")
     ShortSpec(max_chars=32, progressive=True)
     """
-    components = candidate.split(":")
-    if not components or any(not component for component in components):
-        raise _invalid_short_spec(candidate)
-    if len(components) > 2:
-        raise _invalid_short_spec(candidate)
-
-    maximum_components = [component for component in components if component.isdigit()]
-    progressive_components = [
-        component
-        for component in components
-        if component.lower() in PROGRESSIVE_SHORT_COMPONENTS
-    ]
-    if len(maximum_components) > 1 or len(progressive_components) > 1:
-        raise _invalid_short_spec(candidate)
-    if len(maximum_components) + len(progressive_components) != len(components):
-        raise _invalid_short_spec(candidate)
-
-    maximum = int(maximum_components[0]) if maximum_components else None
-    if maximum is not None and maximum < MIN_SHORT_MAX_CHARS:
-        raise _invalid_short_spec(candidate)
-    if len(components) == 2 and (maximum is None or not progressive_components):
-        raise _invalid_short_spec(candidate)
-
-    return ShortSpec(
-        max_chars=maximum,
-        progressive=bool(progressive_components),
+    progressive_component, separator, maximum_component = candidate.partition("=")
+    is_progressive = (
+        progressive_component.lower() in PROGRESSIVE_SHORT_COMPONENTS
     )
+    progressive_with_limit = is_progressive and bool(separator)
+
+    if progressive_with_limit and not maximum_component.isdigit():
+        raise _invalid_short_spec(candidate)
+    if progressive_with_limit and int(maximum_component) < MIN_SHORT_MAX_CHARS:
+        raise _invalid_short_spec(candidate)
+    if progressive_with_limit:
+        return ShortSpec(max_chars=int(maximum_component), progressive=True)
+
+    if is_progressive:
+        return ShortSpec(max_chars=None, progressive=True)
+    if separator or not candidate.isdigit():
+        raise _invalid_short_spec(candidate)
+
+    maximum = int(candidate)
+    if maximum < MIN_SHORT_MAX_CHARS:
+        raise _invalid_short_spec(candidate)
+    return ShortSpec(max_chars=maximum, progressive=False)
 
 
 def looks_like_short_spec(candidate: str) -> bool:
@@ -94,14 +89,15 @@ def looks_like_short_spec(candidate: str) -> bool:
         and int(components[0]) >= MIN_SHORT_MAX_CHARS
         and not components[1]
     )
+    progressive_component = candidate.partition("=")[0]
     return not candidate or incomplete_numeric_spec or any(
         component.lower() in PROGRESSIVE_SHORT_COMPONENTS
         for component in components
-    )
+    ) or progressive_component.lower() in PROGRESSIVE_SHORT_COMPONENTS
 
 
 def _invalid_short_spec(candidate: str) -> ValueError:
     return ValueError(
         f"Invalid short value: {candidate!r}. Expected N, p, progressive, "
-        "N:p, or p:N with N >= 8."
+        "p=N, or progressive=N with N >= 8."
     )

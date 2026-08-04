@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-04] Align progressive short limits with equals syntax
+
+### Changed
+
+- Progressive final limits now use `p=N` or `progressive=N`, matching the existing `--short=N` and tool-local `s=N` assignment style.
+- The former `N:P` and `P:N` colon forms are now invalid.
+
+---
 ## [2026-08-03] Add progressive shortening
 
 ### Added

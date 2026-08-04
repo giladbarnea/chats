@@ -472,7 +472,7 @@ def main():
             nargs="?",
             const=True,
             default=None,
-            help="Shorten strings in output (optional: SHORT_SPEC, e.g. 128:p)",
+            help="Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)",
         )
         parser.add_argument(
             "--color",
@@ -749,7 +749,7 @@ Commands:
             nargs="?",
             const=True,
             default=None,
-            help="Shorten strings in output (optional: SHORT_SPEC, e.g. 128:p)",
+            help="Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)",
         )
         parser.add_argument(
             "--color",

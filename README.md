@@ -105,7 +105,7 @@ Automatically detects input format by examining **first non-empty line only** (d
                      #   Name:    -t Bash, -t Read, -t !Bash (exclude)
                      #   Direction: -t i (inputs), -t o (outputs), -t Bash:i
                      #   Error:   -t e (errors only), -t Bash:e
-                     #   Short:   -t s (fixed 500), -t s=p, -t Read:o:s=80:p
+                     #   Short:   -t s (fixed 500), -t s=p, -t Read:o:s=p=80
                      #   Combine: -t "Read:o:s Bash:i" or -t Read:o:s -t Bash:i
                      #   Order-free: -t i:Bash == -t Bash:i
                      #   Long form: -t input, -t output, -t short, -t error
@@ -124,14 +124,14 @@ See [SHORT_SPEC.md](SHORT_SPEC.md) for shortening values and [TOOL_SPEC.md](TOOL
 
 `--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, `--plans`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
 
-`--short` accepts a fixed limit such as `128`, progressive mode with `p` or `progressive`, or both as `128:p` or `p:128`. Progressive mode gives early qualifying messages smaller limits and the final one the full limit. A bare `--short` remains fixed at 500. Tool-local `:s` and `:short` accept the same values; a bare local modifier inherits the global policy.
+`--short` accepts a fixed limit such as `128`, progressive mode with `p` or `progressive`, or progressive mode with a final limit such as `p=128` or `progressive=128`. Progressive mode gives early qualifying messages smaller limits and the final one the full limit. A bare `--short` remains fixed at 500. Tool-local `:s` and `:short` accept the same values; a bare local modifier inherits the global policy.
 
 ```bash
 ch <id> --short                  # Fixed 500
 ch <id> --short=p                # Progressive, ending at 500
-ch <id> --short=128:progressive  # Progressive, ending at 128
+ch <id> --short=progressive=128  # Progressive, ending at 128
 ch <id> -t Read:o:s=p            # Progressive Read outputs
-ch <id> --short=128:p -t:s       # Tools inherit the global policy
+ch <id> --short=p=128 -t:s       # Tools inherit the global policy
 ```
 
 Detached parsing keeps legacy message selectors after the input. `ch <id> -s 7` and `ch <id> -s 32:64` mean bare fixed-500 shortening plus that selector. Attached `--short=<value>` forms are strict.

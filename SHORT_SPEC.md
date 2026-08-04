@@ -6,17 +6,17 @@ Tool selection and short-policy precedence remain defined in [TOOL_SPEC.md](TOOL
 ## Grammar
 
 ```text
-SHORT_SPEC := N | P | N:P | P:N
+SHORT_SPEC := N | P | P=N
 N          := decimal integer, N >= 8
 P          := p | progressive
 ```
 
-`P` aliases are case-insensitive. Component order does not change the result.
-`N` alone selects fixed shortening. `P` selects progressive shortening.
+`P` aliases are case-insensitive. `N` alone selects fixed shortening.
+`P` selects progressive shortening, and `P=N` sets its final limit.
 
-Reject empty components, unknown components, repeated components, more than two
-components, and any `N < 8`. Invalid examples include `7`, `32:`, `p:`,
-`32:p:`, `p:32:`, `p:p`, `32:64`, and `32:p:extra`.
+Reject empty values, unknown components, reversed assignments, repeated
+assignments, colon-separated progressive limits, and any `N < 8`. Invalid
+examples include `7`, `p=`, `p=7`, `32=p`, `p=32=64`, `32:p`, and `p:32`.
 
 ## Global carriers and defaults
 
@@ -24,7 +24,7 @@ Parse mode accepts `--short=SHORT_SPEC`, `--short SHORT_SPEC`, and `-s SHORT_SPE
 Search accepts the attached and detached `--short` forms. Search reserves `-s` for case-sensitive matching.
 
 A bare global `--short` or parse-mode `-s` selects fixed `N = 500`.
-Global `P` selects progressive `N = 500`. Global `N:P` supplies both fields.
+Global `P` selects progressive `N = 500`. Global `P=N` supplies both fields.
 Attached values are strict and fail when they do not match the grammar.
 
 After a parse input, detached `-s 7` and `-s 32:64` retain their legacy meaning:
@@ -37,7 +37,7 @@ Inside one tool spec, use `s[=SHORT_SPEC]` or `short[=SHORT_SPEC]`.
 
 A bare local `s` inherits the complete active global policy. Without one, it uses fixed 500.
 Local `s=P` inherits only `N` from the global policy, or 500, and selects progressive mode.
-Local `s=N` selects fixed `N`. Local `s=N:P` supplies the complete local policy.
+Local `s=N` selects fixed `N`. Local `s=P=N` supplies the complete local policy.
 [TOOL_SPEC.md](TOOL_SPEC.md) chooses the winning declaration before this inheritance is resolved.
 
 ## Progressive sequence

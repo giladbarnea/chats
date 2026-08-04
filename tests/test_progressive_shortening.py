@@ -18,31 +18,28 @@ PLACEHOLDER_LENGTH = len("\n...\n")
 PROGRESSIVE_VALUES = (
     ("p", 500),
     ("progressive", 500),
-    ("32:p", 32),
-    ("p:32", 32),
-    ("32:progressive", 32),
-    ("progressive:32", 32),
+    ("p=32", 32),
+    ("progressive=32", 32),
 )
 INVALID_PROGRESSIVE_VALUES = (
     "",
     "7",
-    "7:p",
-    "p:7",
-    "7:progressive",
-    "progressive:7",
-    "32:",
-    "p:",
-    "progressive:",
-    "32:p:",
-    "32:progressive:",
-    "p:32:",
-    "progressive:32:",
+    "p=7",
+    "progressive=7",
+    "p=",
+    "progressive=",
     "unknown",
-    "p:p",
-    "progressive:progressive",
+    "p=p",
+    "progressive=progressive",
+    "32=p",
+    "32=progressive",
+    "p=32=extra",
+    "progressive=32=extra",
+    "32:p",
+    "p:32",
+    "32:progressive",
+    "progressive:32",
     "32:64",
-    "32:p:extra",
-    "32:progressive:extra",
 )
 GLOBAL_CARRIERS = ("long-attached", "long-detached", "short-detached")
 TOOL_CARRIERS = (
@@ -289,7 +286,11 @@ def _assert_symbol_lengths(
     source_length: int = SOURCE_LENGTH,
 ) -> None:
     for symbol, effective_length in symbols_and_lengths:
-        assert output.count(symbol) == _expected_symbol_count(effective_length, source_length)
+        expected_count = _expected_symbol_count(effective_length, source_length)
+        assert output.count(symbol) == expected_count, (
+            f"Expected {expected_count} instances of {symbol!r} for a "
+            f"{effective_length}-character limit. Got: {output.count(symbol)}."
+        )
 
 
 def _assistant_bodies(output: str) -> list[str]:
@@ -330,9 +331,9 @@ def test_global_progressive_aliases_and_carriers_are_byte_identical(
 
     arguments = [
         _global_short_arguments("long-attached", value)
-        for value in ("32:p", "p:32", "32:progressive", "progressive:32")
+        for value in ("p=32", "progressive=32")
     ] + [
-        _global_short_arguments(carrier, "32:p")
+        _global_short_arguments(carrier, "p=32")
         for carrier in ("long-detached", "short-detached")
     ]
     outputs = [
@@ -501,14 +502,14 @@ def test_tool_progressive_modifiers_are_order_independent_and_directional(
         tmp_path,
         str(session),
         "-t",
-        "Read:o:s=progressive:32",
+        "Read:o:s=progressive=32",
         "--color=never",
         "--no-metadata",
     )
     second = _run_ch(
         tmp_path,
         str(session),
-        "-t:s=32:p:o:Read",
+        "-t:s=p=32:o:Read",
         "--color=never",
         "--no-metadata",
     )
@@ -626,7 +627,7 @@ def test_global_progressive_shortening_uses_one_sequence_for_visible_messages(
     result = _run_ch(
         tmp_path,
         str(session),
-        "--short=128:p",
+        "--short=p=128",
         "--color=never",
         "--no-metadata",
     )
@@ -642,7 +643,7 @@ def test_global_progressive_singleton_receives_the_full_limit(tmp_path: Path) ->
     result = _run_ch(
         tmp_path,
         str(session),
-        "--short=128:p",
+        "--short=p=128",
         "--color=never",
         "--no-metadata",
     )
@@ -665,7 +666,7 @@ def test_short_qualifying_message_advances_the_progressive_sequence(tmp_path: Pa
     result = _run_ch(
         tmp_path,
         str(session),
-        "--short=128:p",
+        "--short=p=128",
         "--color=never",
         "--no-metadata",
     )
@@ -686,7 +687,7 @@ def test_slice_recomputes_progressive_positions_after_message_selection(tmp_path
         tmp_path,
         str(session),
         "2:4",
-        "--short=128:p",
+        "--short=p=128",
         "--color=never",
         "--no-metadata",
     )
@@ -707,7 +708,7 @@ def test_progressive_limit_eight_shortens_every_qualifier_to_eight(tmp_path: Pat
     result = _run_ch(
         tmp_path,
         str(session),
-        "--short=8:p",
+        "--short=p=8",
         "--color=never",
         "--no-metadata",
     )
@@ -737,7 +738,7 @@ def test_local_progressive_sequence_excludes_plain_fixed_and_hidden_messages(
         tmp_path,
         str(session),
         "-t",
-        "Bash:s=128:p",
+        "Bash:s=p=128",
         "-t",
         "Read",
         "--color=never",
@@ -777,7 +778,7 @@ def test_multiple_progressive_tools_in_one_message_share_one_factor(tmp_path: Pa
         tmp_path,
         str(session),
         "-t",
-        "Bash:s=128:p",
+        "Bash:s=p=128",
         "-t",
         "Read",
         "--color=never",
@@ -819,7 +820,7 @@ def test_progressive_tool_limit_applies_to_each_string_leaf(tmp_path: Path) -> N
         tmp_path,
         str(session),
         "-t",
-        "Custom:s=32:p",
+        "Custom:s=p=32",
         "--color=never",
         "--no-metadata",
     )
@@ -840,7 +841,7 @@ def test_bare_local_short_inherits_the_complete_global_progressive_policy(
     result = _run_ch(
         tmp_path,
         str(session),
-        "--short=64:p",
+        "--short=p=64",
         "-t",
         "Bash:s",
         "--color=never",
@@ -876,7 +877,7 @@ def test_bare_local_short_without_global_short_remains_fixed_at_500(tmp_path: Pa
     [
         ("64", "s=progressive", (8, 64)),
         (None, "short=progressive", (8, 500)),
-        ("128:p", "s=32:p", (8, 32)),
+        ("p=128", "s=p=32", (8, 32)),
     ],
 )
 def test_local_progressive_policy_inherits_only_unspecified_global_fields(
@@ -940,9 +941,9 @@ def test_global_and_local_progressive_policies_share_a_message_union_sequence(
     result = _run_ch(
         tmp_path,
         str(session),
-        "--short=128:p",
+        "--short=p=128",
         "-t",
-        "s=64:p",
+        "s=p=64",
         "-t",
         "Bash:s=32",
         "--color=never",
@@ -979,7 +980,7 @@ def test_all_renderers_use_the_same_progressive_lengths(tmp_path: Path) -> None:
         _run_ch(
             tmp_path,
             str(session),
-            "--short=128:p",
+            "--short=p=128",
             *arguments,
             "--no-metadata",
         )
@@ -1004,7 +1005,7 @@ def test_progressive_shortening_does_not_shorten_metadata(tmp_path: Path) -> Non
     result = _run_ch(
         tmp_path,
         str(session),
-        "--short=32:p",
+        "--short=p=32",
         "--color=never",
     )
 
@@ -1027,7 +1028,7 @@ def test_search_assigns_positions_before_match_filtering_and_preserves_them_in_f
         tmp_path,
         "search",
         "MATCH",
-        "--short=128:p",
+        "--short=p=128",
         "--color=never",
         "--no-metadata",
     )
@@ -1035,7 +1036,7 @@ def test_search_assigns_positions_before_match_filtering_and_preserves_them_in_f
         tmp_path,
         "search",
         "MATCH",
-        "--short=128:p",
+        "--short=p=128",
         "--full",
         "--color=never",
         "--no-metadata",

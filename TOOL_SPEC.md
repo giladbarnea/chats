@@ -155,8 +155,8 @@ Invalid next tokens:
 * `Read:o`
 * `Read:o:s`
 * `Read:o:s=80`
-* `Read:o:s=128:p`
-* `s=progressive`
+* `Read:o:s=p=128`
+* `s=progressive=128`
 * `s:o:Read`
 * `s=10`
 * `!Read:o:e`
@@ -190,7 +190,7 @@ Examples:
 * `--short=10 -t:s` shortens regular messages and tools to 10
 * `--short -t:s=10` shortens regular messages to 500 and tools to 10
 * `--short=20 -t:s=10 -t:Bash:s=30` shortens regular messages to 20, non-Bash tools to 10, and Bash tools to 30
-* `--short=128:p -t:s` makes tools inherit the global progressive policy
+* `--short=p=128 -t:s` makes tools inherit the global progressive policy
 
 ## Practical scope
 
