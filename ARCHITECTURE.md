@@ -13,6 +13,7 @@ last_updated: 2026/08/03
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery`/`NotQuery` tree over terms. Owns tokenizing, `and`/`or`/`not` grammar, and per-term regex/literal compilation under the selected case-sensitivity mode.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
+- `ShortSpec` / `ShortPolicy` (`shortening.py`): the shared global and tool-local short-value parser plus its resolved fixed or progressive policy. [SHORT_SPEC.md](SHORT_SPEC.md) owns the behavior contract.
 - Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`, `xml_transport.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
 
 ## Architecture Diagram (Space)
@@ -104,6 +105,7 @@ TIME   ACTOR                    ACTION                                         T
 │                               Warns on contradictions                        --only-assistant, --no-*
 │
 ├───►  main()                   _build_parse_flags(args)                   ──► ConversationFlags
+│                               Parses global/tool short values            ──► ShortSpec / ShortPolicy
 │
 ├───►  main()                   cmd_parse(flags, input, slice, out, fmt,   ──► commands/
 │                               only_metadata, only_id)
@@ -145,6 +147,7 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_parse                parse_slice_notation(selector)             ──► (start, stop)
 │      cmd_parse                OR matching selector positions             ──► sliced messages
+│      cmd_parse                assign_progressive_shortening()            ──► post-slice positions
 │
 ├───►  cmd_parse                [if --only-metadata] emit frontmatter +    ──► stdout / file
 │                               exit
@@ -232,8 +235,9 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        │   │   ├── extract_*_from_entries()
 │      │                        │   │   └── parse_jsonl_entries() or raw parse
 │      │                        │   ├── pool_filter.passes_cwd(scan.cwd)
-│      │                        │   ├── regex.search() summaries/titles
 │      │                        │   ├── _build_tool_id_map(messages)
+│      │                        │   ├── assign_progressive_shortening()
+│      │                        │   ├── regex.search() summaries/titles
 │      │                        │   └── regex.search(render_message_inner_xml(msg))
 │      │                        ├── _load_conversation_metadata(path)
 │      │                        └── Build + yield SearchHit

@@ -62,7 +62,7 @@ def parse_tool_spec(spec: str) -> ToolFilter:
     """Parse a single tool filter spec string into a ToolFilter.
 
     Syntax: [!][Name][:modifier[:modifier...]]
-    Modifiers: i/input, o/output, e/error, s/short, s=NUMBER/short=NUMBER
+    Modifiers: i/input, o/output, e/error, s/short, s=SHORT_SPEC/short=SHORT_SPEC
     Order of tokens doesn't matter. Leading colon is optional.
     """
     negate = spec.startswith("!")

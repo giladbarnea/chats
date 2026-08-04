@@ -3,6 +3,19 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-03] Add progressive shortening
+
+### Added
+
+- Global `--short` and tool-local `:s` / `:short` values now share one short-spec grammar: fixed `N`, progressive `p` / `progressive`, or either `N:P` order, with `N >= 8`.
+- Progressive policies share one visible-message union sequence. Each policy ramps from 8 to its own final limit, while every string leaf keeps an independent limit across XML, JSON, raw, Rich, and search rendering.
+
+### Changed
+
+- Parse assigns progressive positions after message slicing. Search assigns them before match filtering, so matches-only and full output preserve the same session positions.
+- Bare shortening remains fixed at 500. Bare local short modifiers inherit the complete global policy, and detached `-s 7` / `-s 32:64` parse forms retain their legacy selector behavior.
+
+---
 ## [2026-08-02] Add Pi custom-message support
 
 ### Added

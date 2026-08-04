@@ -80,7 +80,7 @@ def _is_valid_short_max_chars_token(candidate: str) -> bool:
 
 
 def _short_uses_attached_value(argv_tokens: list[str]) -> bool:
-    """Return True when `--short` was spelled with an attached `=NUMBER` value."""
+    """Return True when `--short` was spelled with an attached `=SHORT_SPEC` value."""
     return any(token.startswith(("--short=", "-s=")) for token in argv_tokens)
 
 
@@ -472,7 +472,7 @@ def main():
             nargs="?",
             const=True,
             default=None,
-            help="Shorten strings in output (optional: max characters)",
+            help="Shorten strings in output (optional: SHORT_SPEC, e.g. 128:p)",
         )
         parser.add_argument(
             "--color",
@@ -749,7 +749,7 @@ Commands:
             nargs="?",
             const=True,
             default=None,
-            help="Shorten strings in output (optional: max characters)",
+            help="Shorten strings in output (optional: SHORT_SPEC, e.g. 128:p)",
         )
         parser.add_argument(
             "--color",
