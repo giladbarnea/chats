@@ -535,3 +535,73 @@ def test_structured_json_round_trip_preserves_ambiguous_tool_input_dicts(
         f"tool-input dictionary. Input: {tool_input!r}; serialized: {json_data!r}; "
         f"expected XML: {expected_xml!r}; actual XML: {actual_xml!r}."
     )
+
+
+def test_parse_accepts_native_pi_provenance_without_changing_xml() -> None:
+    native_tool_call_id = "call_01CNfull-native-tool-call-id"
+    messages = [
+        {
+            "type": "assistant-response",
+            "role": "assistant",
+            "original_index": 1,
+            "native_entry_id": "assistant-entry-id",
+            "content": [
+                {
+                    "type": "tool-input",
+                    "name": "Read",
+                    "id": "01CN",
+                    "native_tool_call_id": native_tool_call_id,
+                    "native_content_index": 2,
+                    "file_path": "/tmp/example.txt",
+                }
+            ],
+        },
+        {
+            "type": "user-message",
+            "role": "user",
+            "original_index": 2,
+            "native_entry_id": "tool-result-entry-id",
+            "content": [
+                {
+                    "type": "tool-output",
+                    "name": "Read",
+                    "id": "01CN",
+                    "native_tool_call_id": native_tool_call_id,
+                    "content": "contents",
+                }
+            ],
+        },
+    ]
+    messages_without_provenance = json.loads(json.dumps(messages))
+    for message in messages_without_provenance:
+        message.pop("native_entry_id")
+        for block in message["content"]:
+            block.pop("native_tool_call_id")
+            block.pop("native_content_index", None)
+
+    with_provenance = subprocess.run(
+        [str(CH_EXECUTABLE), "parse"],
+        cwd=PROJECT_ROOT,
+        input=json.dumps(messages),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    without_provenance = subprocess.run(
+        [str(CH_EXECUTABLE), "parse"],
+        cwd=PROJECT_ROOT,
+        input=json.dumps(messages_without_provenance),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert with_provenance.returncode == 0, (
+        "Expected `ch parse` to accept the additive native Pi provenance fields. "
+        f"stderr: {with_provenance.stderr!r}."
+    )
+    assert with_provenance.stdout == without_provenance.stdout, (
+        "Expected native Pi provenance to stay outside the XML projection. "
+        f"With provenance: {with_provenance.stdout!r}; "
+        f"without provenance: {without_provenance.stdout!r}."
+    )

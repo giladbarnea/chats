@@ -6,7 +6,8 @@
     "content": [
       "<skill name=\"smart-compact\" location=\"/tmp/SKILL.md\">\nUse it.\n</skill>\n\nthere's\n\nonly transcription.json, no md. parse and work with it"
     ],
-    "timestamp": "2026-05-12T10:00:00Z"
+    "timestamp": "2026-05-12T10:00:00Z",
+    "native_entry_id": "u1"
   },
   {
     "type": "assistant-response",
@@ -16,6 +17,7 @@
     "content": [
       "Now let me read the full transcript to understand it semantically. I'll write a script to dump it in a readable format."
     ],
-    "timestamp": "2026-05-12T10:00:01Z"
+    "timestamp": "2026-05-12T10:00:01Z",
+    "native_entry_id": "a1"
   }
 ]

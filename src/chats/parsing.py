@@ -1056,6 +1056,18 @@ def _pi_user_agent_payload(entry: dict) -> tuple[object, object]:
     return data.get("content"), data.get("details")
 
 
+def _pi_native_entry_id(entry: dict) -> str | None:
+    """Return a Pi entry's stable native id when it has one.
+
+    >>> _pi_native_entry_id({"id": "entry-1"})
+    'entry-1'
+    >>> _pi_native_entry_id({"id": 1}) is None
+    True
+    """
+    entry_id = entry.get("id")
+    return entry_id if isinstance(entry_id, str) and entry_id else None
+
+
 def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
     """Normalize one Pi user-agent interaction from its details metadata."""
     content, details = _pi_user_agent_payload(entry)
@@ -1069,9 +1081,7 @@ def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
     if not is_error and not task.strip():
         return None
 
-    agent_id = entry.get("id")
-    if not isinstance(agent_id, str):
-        agent_id = None
+    agent_id = _pi_native_entry_id(entry)
     model = details.get("model")
     if not isinstance(model, str):
         model = None
@@ -1083,6 +1093,7 @@ def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
         role="agent",
         index=index,
         agent_id=agent_id,
+        native_entry_id=agent_id,
         timestamp=entry.get("timestamp"),
         subagent_task=task,
         model=model,
@@ -1136,6 +1147,7 @@ def _parse_pi_subagent_record(entry: dict, index: int) -> Message | None:
         index=index,
         text=result,
         agent_id=agent_id,
+        native_entry_id=_pi_native_entry_id(entry),
         timestamp=entry.get("timestamp"),
         subagent_type=subagent_type,
         subagent_task=description,
@@ -1169,6 +1181,7 @@ def _parse_pi_custom_entry(
         role="custom",
         index=index,
         text=f"```json\n{data}\n```",
+        native_entry_id=_pi_native_entry_id(entry),
         timestamp=entry.get("timestamp"),
         wrapper_type=ContentBlockType.CUSTOM,
         custom_type=custom_type,
@@ -2190,6 +2203,7 @@ def _parse_pi_compaction_entry(
         role="user",
         index=index,
         text=summary,
+        native_entry_id=_pi_native_entry_id(entry),
         timestamp=entry.get("timestamp"),
         wrapper_type=ContentBlockType.COMPACTION,
     )
@@ -2208,24 +2222,38 @@ def _parse_pi_message_entry(
     """Parse a PI `type=message` entry."""
     message_data = entry.get("message", {})
     role = message_data.get("role")
+    native_entry_id = _pi_native_entry_id(entry)
 
     if role == "user":
-        msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
+        msg = Message(
+            role="user",
+            index=index,
+            timestamp=entry.get("timestamp"),
+            native_entry_id=native_entry_id,
+        )
     elif role == "assistant":
         msg = Message(
             role="assistant",
             index=index,
             timestamp=entry.get("timestamp"),
+            native_entry_id=native_entry_id,
             model=message_data.get("model"),
         )
     elif role == "toolResult":
         if not flags.show_tools:
             return None
 
-        msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
+        native_tool_call_id = message_data.get("toolCallId")
+        msg = Message(
+            role="user",
+            index=index,
+            timestamp=entry.get("timestamp"),
+            native_entry_id=native_entry_id,
+        )
         msg.tools.append({
             "type": "tool_result",
-            "tool_use_id": message_data.get("toolCallId"),
+            "tool_use_id": native_tool_call_id,
+            "native_tool_call_id": native_tool_call_id,
             "content": message_data.get("content", []),
             "is_error": message_data.get("isError", False)
                 or bool(message_data.get("details", {}).get("error")),
@@ -2252,7 +2280,7 @@ def _parse_pi_message_entry(
     if role == "assistant" and isinstance(content_items, list):
         thinking_blocks: list[str] = []
 
-        for item in content_items:
+        for native_content_index, item in enumerate(content_items):
             if not isinstance(item, dict):
                 continue
 
@@ -2261,9 +2289,12 @@ def _parse_pi_message_entry(
                 if thinking := item.get("thinking", "").strip():
                     thinking_blocks.append(thinking)
             elif item_type == "toolCall" and flags.show_tools:
+                native_tool_call_id = item.get("id")
                 msg.tools.append({
                     "type": "tool_use",
-                    "id": item.get("id"),
+                    "id": native_tool_call_id,
+                    "native_tool_call_id": native_tool_call_id,
+                    "native_content_index": native_content_index,
                     "name": _normalize_pi_tool_name(item.get("name")),
                     "input": item.get("arguments", {}),
                 })

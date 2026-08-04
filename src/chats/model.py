@@ -233,6 +233,7 @@ class Message:
     plan: str | None = None  # ExitPlanMode plan content
     agent_id: str | None = None
     timestamp: str | None = None  # ISO timestamp for chronological sorting
+    native_entry_id: str | None = None
     subagent_type: str | None = None  # e.g., "codebase-analyzer:multiple-subsystems"
     name: str | None = None  # subagent nickname (Codex assigns these; Claude does not)
     subagent_task: str | None = None  # the prompt given to a subagent, shown as a block
@@ -444,6 +445,9 @@ class Message:
 
         if self.timestamp:
             payload["timestamp"] = self.timestamp
+
+        if self.native_entry_id:
+            payload["native_entry_id"] = self.native_entry_id
 
         return payload
 
@@ -696,6 +700,7 @@ _MESSAGE_JSON_KEYS = {
     "inherited_context",
     "status",
     "timestamp",
+    "native_entry_id",
 }
 
 
@@ -752,6 +757,7 @@ def _message_from_json_data(payload: object, position: int) -> Message:
         index=original_index,
         agent_id=_optional_json_string(payload, "agent_id", context),
         timestamp=_optional_json_string(payload, "timestamp", context),
+        native_entry_id=_optional_json_string(payload, "native_entry_id", context),
         subagent_type=_optional_json_string(payload, "subagent_type", context),
         name=_optional_json_string(payload, "name", context),
         model=_optional_json_string(payload, "model", context),
@@ -845,10 +851,27 @@ def _append_tool_input(
         return
 
     tool_id = _optional_json_string(block, "id", context)
+    native_tool_call_id = _optional_json_string(
+        block, "native_tool_call_id", context
+    )
+    native_content_index = block.get("native_content_index")
+    if native_content_index is not None and (
+        type(native_content_index) is not int or native_content_index < 0
+    ):
+        raise ValueError(
+            f"Expected {context}.native_content_index to be a non-negative integer."
+        )
     input_fields = {
         key: value
         for key, value in block.items()
-        if key not in {"type", "name", "id"}
+        if key
+        not in {
+            "type",
+            "name",
+            "id",
+            "native_tool_call_id",
+            "native_content_index",
+        }
     }
     nested_input = input_fields.get("input")
     is_collision_wrapper = (
@@ -872,18 +895,32 @@ def _append_tool_input(
     }
     if tool_id is not None:
         tool["id"] = tool_id
+    if native_tool_call_id is not None:
+        tool["native_tool_call_id"] = native_tool_call_id
+    if native_content_index is not None:
+        tool["native_content_index"] = native_content_index
     message.tools.append(tool)
 
 
 def _tool_output_from_json(
     block: dict[object, object], context: str
 ) -> dict[str, object]:
-    allowed_keys = {"type", "name", "id", "is_error", "content"}
+    allowed_keys = {
+        "type",
+        "name",
+        "id",
+        "native_tool_call_id",
+        "is_error",
+        "content",
+    }
     unexpected_keys = set(block) - allowed_keys
     if unexpected_keys:
         raise ValueError(f"Unexpected keys in {context}: {sorted(unexpected_keys)!r}.")
 
     tool_id = _optional_json_string(block, "id", context)
+    native_tool_call_id = _optional_json_string(
+        block, "native_tool_call_id", context
+    )
     name = _optional_json_string(block, "name", context)
     is_error = block.get("is_error", False)
     if type(is_error) is not bool:
@@ -895,6 +932,8 @@ def _tool_output_from_json(
     }
     if tool_id is not None:
         tool["tool_use_id"] = tool_id
+    if native_tool_call_id is not None:
+        tool["native_tool_call_id"] = native_tool_call_id
     tool["name"] = name
     if "content" in block:
         tool["content"] = block["content"]

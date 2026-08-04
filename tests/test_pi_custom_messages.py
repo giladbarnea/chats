@@ -940,6 +940,9 @@ def test_agents_emit_structured_pi_custom_messages_as_agent_data(
     assert success.get("model") == "openai-codex/gpt-5.6-luna (gpt56l)", (
         f"Expected the details model in structured output. Got: {success!r}."
     )
+    assert success.get("native_entry_id") == "928ca38d", (
+        f"Expected the source Pi custom entry id. Got: {success!r}."
+    )
     assert any(
         isinstance(block, str)
         and block.startswith("The visual map is one self-contained HTML file:")
@@ -967,6 +970,9 @@ def test_agents_emit_structured_pi_custom_messages_as_agent_data(
     assert str(error_block.get("content", "")).startswith("Codex error:"), (
         f"Expected details.error as structured error content. Got: {error_block!r}."
     )
+    assert failed.get("native_entry_id") == "f48ec81e", (
+        f"Expected the source Pi custom-message entry id. Got: {failed!r}."
+    )
 
     record = next(
         message
@@ -978,6 +984,9 @@ def test_agents_emit_structured_pi_custom_messages_as_agent_data(
     )
     assert record.get("status") == "completed", (
         f"Expected the structured subagent status. Got: {record!r}."
+    )
+    assert record.get("native_entry_id") == "baf2397b", (
+        f"Expected the source Pi subagent-record entry id. Got: {record!r}."
     )
     assert not any(
         message.get("custom_type") == "subagent-notification" for message in messages

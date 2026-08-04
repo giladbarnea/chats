@@ -9,10 +9,13 @@
         "type": "tool-input",
         "name": "Read",
         "id": "00E1",
+        "native_tool_call_id": "call_00E1abcd",
+        "native_content_index": 0,
         "file_path": "/Users/demo/PLAN.md"
       }
     ],
-    "timestamp": "2026-05-12T10:00:01Z"
+    "timestamp": "2026-05-12T10:00:01Z",
+    "native_entry_id": "a1"
   },
   {
     "type": "user-message",
@@ -23,6 +26,7 @@
         "type": "tool-output",
         "name": "Read",
         "id": "00E1",
+        "native_tool_call_id": "call_00E1abcd",
         "is_error": true,
         "content": [
           {
@@ -32,6 +36,7 @@
         ]
       }
     ],
-    "timestamp": "2026-05-12T10:00:02Z"
+    "timestamp": "2026-05-12T10:00:02Z",
+    "native_entry_id": "u1"
   }
 ]
