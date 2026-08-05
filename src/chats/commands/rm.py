@@ -24,7 +24,11 @@ def _is_claude_session_path(conv_file: Path) -> bool:
 def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
     """Remove a conversation session and all associated files."""
     conv_file = _resolve_session_for_rm(session_id)
-    session_uuid = get_display_session_id(conv_file)
+    try:
+        session_uuid = get_display_session_id(conv_file)
+    except ValueError as error:
+        print_error(str(error))
+        sys.exit(1)
     project_dir_name = conv_file.parent.name
     claude_dir = Path.home() / ".claude"
     is_claude = _is_claude_session_path(conv_file)

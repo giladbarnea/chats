@@ -405,7 +405,36 @@ class TestRmConfirmation:
 
 
 class TestRmNonClaude:
-    """Test rm with PI and Codex session paths."""
+    """Test rm with non-Claude and unknown session paths."""
+
+    def test_unknown_external_jsonl_dry_run_exits_cleanly(self, tmp_path, capsys):
+        """Unknown JSONL should report a user error without removing the file."""
+        session_path = tmp_path / "external" / "transcript.jsonl"
+        session_path.parent.mkdir(parents=True)
+        session_path.write_text(
+            json.dumps({
+                "type": "user",
+                "sessionId": "unknown-provider",
+                "message": {"role": "user", "content": "hello"},
+            })
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_rm(str(session_path), dry_run=True)
+
+        captured = capsys.readouterr()
+        assert exc_info.value.code == 1, (
+            f"Expected unknown JSONL to exit 1. Got: {exc_info.value.code!r}"
+        )
+        assert "Cannot determine JSONL session provider" in captured.err, (
+            "Expected a clear provider-resolution error. "
+            f"Got stderr:\n{captured.err}"
+        )
+        assert session_path.exists(), (
+            "Expected failed dry-run resolution not to remove the unknown session file."
+        )
 
     def test_dry_run_codex_session_by_direct_path(self, tmp_path, monkeypatch, capsys):
         """rm --dry-run on a Codex session path should not crash."""

@@ -338,6 +338,32 @@ class TestRenameErrors:
             cmd_name(str(fake_path), "Some Name")
         assert exc_info.value.code == 1
 
+    def test_unknown_external_jsonl_exits_cleanly(self, tmp_path, capsys):
+        """Unknown JSONL should report a user error without changing the file."""
+        session_path = tmp_path / "external" / "transcript.jsonl"
+        session_path.parent.mkdir(parents=True)
+        original_content = json.dumps({
+            "type": "user",
+            "sessionId": "unknown-provider",
+            "message": {"role": "user", "content": "hello"},
+        }) + "\n"
+        session_path.write_text(original_content, encoding="utf-8")
+
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_name(str(session_path), "New name")
+
+        captured = capsys.readouterr()
+        assert exc_info.value.code == 1, (
+            f"Expected unknown JSONL to exit 1. Got: {exc_info.value.code!r}"
+        )
+        assert "Cannot determine JSONL session provider" in captured.err, (
+            "Expected a clear provider-resolution error. "
+            f"Got stderr:\n{captured.err}"
+        )
+        assert session_path.read_text(encoding="utf-8") == original_content, (
+            "Expected failed naming not to modify the unknown session file."
+        )
+
     def test_empty_name_does_not_modify_file(self, session_with_summary):
         """Failed rename due to empty name leaves file unchanged."""
         with open(session_with_summary, "r") as f:

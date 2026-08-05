@@ -11,6 +11,6 @@ Failing closed made an old test-suite assumption visible. Many Claude fixtures l
 
 The shell harness now copies only declared Claude fixtures into an isolated native path. It does not recreate the removed fallback by treating every JSONL fixture as Claude.
 
-The real Avidor transcript now resolves to its header ID and renders all 86 messages with `--all`. `./tests/run_all.sh` passes, including unit, performance, and shell tests.
+The real Avidor transcript now resolves to its header ID and renders all 86 messages with `--all`. A peer-review follow-up also made `ch name` and `ch rm` report unknown providers cleanly instead of exposing tracebacks. `./tests/run_all.sh` passes, including unit, performance, and shell tests.
 
 Useful references were `ARCHITECTURE.md` and `/Users/giladbarnea/.pi/agent/skills/jsonl-toolkit/references/pi-session-jsonl.md`.

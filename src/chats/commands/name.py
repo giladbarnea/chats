@@ -160,8 +160,12 @@ def cmd_name(
             sys.exit(1)
 
     conv_file = resolve.resolve_conversation_file(conversation_id)
-    adapter = get_jsonl_session_adapter(conv_file)
-    session_id = get_native_session_id(conv_file)
+    try:
+        adapter = get_jsonl_session_adapter(conv_file)
+        session_id = get_native_session_id(conv_file)
+    except ValueError as error:
+        print_error(str(error))
+        sys.exit(1)
 
     content = conv_file.read_text(encoding="utf-8")
     entries = decode_jsonl_entries(content)
