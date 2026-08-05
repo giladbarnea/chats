@@ -171,7 +171,12 @@ def cmd_parse(
             input_file_path,
             "`--only-id`",
         )
-        resolve._write_parse_output(get_display_session_id(resolved_path), output_file)
+        try:
+            session_id = get_display_session_id(resolved_path)
+        except ValueError as error:
+            print_error(str(error))
+            sys.exit(1)
+        resolve._write_parse_output(session_id, output_file)
         return
 
     try:
@@ -192,7 +197,11 @@ def cmd_parse(
 
     format_type = detect_format(content)
     if format_type == "jsonl":
-        messages = parse_jsonl(content, flags, source_path=input_file_path)
+        try:
+            messages = parse_jsonl(content, flags, source_path=input_file_path)
+        except ValueError as error:
+            print_error(str(error))
+            sys.exit(1)
         cwd = extract_cwd_from_jsonl(content)
     else:
         messages = parse_raw_cli_transcript(content, flags)

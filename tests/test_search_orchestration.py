@@ -1194,13 +1194,17 @@ def test_dot_only_id_claude_files_route_through_fallback(
     )
 
 
-def test_projection_never_decides_claude_files(tmp_path: Path) -> None:
+def test_projection_never_decides_claude_files(
+    tmp_path: Path, monkeypatch
+) -> None:
     """Falsifying guardrail: the projection must not return a verdict for Claude files.
 
     A non-UNKNOWN result means the projection judged a Claude transcript's
     visibility itself instead of deferring — the duplication this refactor removes.
     """
-    path = tmp_path / "proj" / "claude-visible.jsonl"
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "claude-visible.jsonl"
     _write_session(path, "visible claude")  # no "last-prompt" marker
 
     result = search_commands._project_default_dot_match(path)

@@ -13,14 +13,21 @@ import pytest
 
 from chats import (
     ConversationFlags,
+    Message,
     SearchOutputMode,
     cmd_search,
-    parse_jsonl,
+    parse_jsonl as _parse_jsonl,
 )
 from chats.formatting import format_to_json, format_to_xml
 from chats.tool_filter import ToolFilter
 
 HOOK_MARKER = "HOOK_CONTEXT_MARKER"
+CLAUDE_SOURCE_PATH = Path.home() / ".claude" / "projects" / "tests" / "session.jsonl"
+
+
+def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse test content through an explicit Claude session path."""
+    return _parse_jsonl(content, flags, source_path=CLAUDE_SOURCE_PATH)
 
 
 def _session_with_hook_context(

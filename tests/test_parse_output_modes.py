@@ -60,11 +60,11 @@ def _write_claude_session(path: Path) -> None:
     path.write_text(_claude_session_content(path.stem), encoding="utf-8")
 
 
-def test_cmd_parse_stdin_jsonl_content_skips_global_session_resolution(
+def test_cmd_parse_stdin_unknown_jsonl_skips_resolution_and_exits(
     monkeypatch,
     capsys,
 ) -> None:
-    """Clearly-JSONL stdin should parse directly instead of scanning the session pool."""
+    """Unknown JSONL stdin should fail directly without scanning the session pool."""
     content = _claude_session_content("stdin-content-session")
     monkeypatch.setattr(resolve_commands.sys, "stdin", io.StringIO(content))
 
@@ -75,27 +75,31 @@ def test_cmd_parse_stdin_jsonl_content_skips_global_session_resolution(
 
     monkeypatch.setattr(resolve_commands.SessionPool, "discover", fail_discover)
 
-    cmd_parse(
-        ConversationFlags(color="never", paging=False),
-        None,
-        slice_str="1",
-        output_file=None,
-        output_format="xml",
-        emit_metadata=False,
-    )
+    with pytest.raises(SystemExit) as exit_info:
+        cmd_parse(
+            ConversationFlags(color="never", paging=False),
+            None,
+            slice_str="1",
+            output_file=None,
+            output_format="xml",
+            emit_metadata=False,
+        )
 
     captured = capsys.readouterr()
-    assert "first prompt" in captured.out, (
-        "Expected stdin JSONL content to be parsed through the real parse path. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    assert exit_info.value.code == 1, (
+        f"Expected unknown JSONL stdin to exit 1. Got: {exit_info.value.code!r}"
+    )
+    assert "Cannot determine JSONL session provider" in captured.err, (
+        "Expected stdin JSONL without a provider signature to fail clearly. "
+        f"Got stderr:\n{captured.err}"
     )
 
 
-def test_cmd_parse_explicit_multiline_jsonl_content_skips_identifier_resolution(
+def test_cmd_parse_explicit_unknown_jsonl_skips_resolution_and_exits(
     monkeypatch,
     capsys,
 ) -> None:
-    """Explicit multiline JSONL content should not be treated as a session identifier."""
+    """Explicit unknown JSONL should fail without identifier resolution."""
     content = _claude_session_content("explicit-content-session")
 
     def fail_resolution(*_args, **_kwargs):
@@ -109,27 +113,31 @@ def test_cmd_parse_explicit_multiline_jsonl_content_skips_identifier_resolution(
         fail_resolution,
     )
 
-    cmd_parse(
-        ConversationFlags(color="never", paging=False),
-        content,
-        slice_str="2",
-        output_file=None,
-        output_format="xml",
-        emit_metadata=False,
-    )
+    with pytest.raises(SystemExit) as exit_info:
+        cmd_parse(
+            ConversationFlags(color="never", paging=False),
+            content,
+            slice_str="2",
+            output_file=None,
+            output_format="xml",
+            emit_metadata=False,
+        )
 
     captured = capsys.readouterr()
-    assert "first response" in captured.out, (
-        "Expected explicit multiline JSONL content to be parsed through the real parse path. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    assert exit_info.value.code == 1, (
+        f"Expected explicit unknown JSONL to exit 1. Got: {exit_info.value.code!r}"
+    )
+    assert "Cannot determine JSONL session provider" in captured.err, (
+        "Expected explicit JSONL without a provider signature to fail clearly. "
+        f"Got stderr:\n{captured.err}"
     )
 
 
-def test_cmd_parse_explicit_one_line_jsonl_content_skips_identifier_resolution(
+def test_cmd_parse_explicit_one_line_unknown_jsonl_skips_resolution_and_exits(
     monkeypatch,
     capsys,
 ) -> None:
-    """An explicit one-line JSONL entry should parse as content, not an identifier."""
+    """One unknown JSONL entry should fail as content, not resolve as an identifier."""
     content = json.dumps({
         "type": "user",
         "message": {"role": "user", "content": "one-line prompt"},
@@ -147,19 +155,23 @@ def test_cmd_parse_explicit_one_line_jsonl_content_skips_identifier_resolution(
         fail_resolution,
     )
 
-    cmd_parse(
-        ConversationFlags(color="never", paging=False),
-        content,
-        slice_str=None,
-        output_file=None,
-        output_format="xml",
-        emit_metadata=False,
-    )
+    with pytest.raises(SystemExit) as exit_info:
+        cmd_parse(
+            ConversationFlags(color="never", paging=False),
+            content,
+            slice_str=None,
+            output_file=None,
+            output_format="xml",
+            emit_metadata=False,
+        )
 
     captured = capsys.readouterr()
-    assert "one-line prompt" in captured.out, (
-        "Expected explicit one-line JSONL content to be parsed through the real parse path. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    assert exit_info.value.code == 1, (
+        f"Expected one-line unknown JSONL to exit 1. Got: {exit_info.value.code!r}"
+    )
+    assert "Cannot determine JSONL session provider" in captured.err, (
+        "Expected one-line JSONL without a provider signature to fail clearly. "
+        f"Got stderr:\n{captured.err}"
     )
 
 

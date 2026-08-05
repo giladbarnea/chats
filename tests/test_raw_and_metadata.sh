@@ -5,7 +5,7 @@ USER_MESSAGE_TAG="${SUPPORTED_MESSAGE_TAGS[user-message]:?'user-message' not in 
 
 echo "Running raw/no-metadata tests..."
 
-DATA_FILE_SYNTHETIC="tests/data/synthetic_flags.jsonl"
+DATA_FILE_SYNTHETIC=$(claude_fixture tests/data/synthetic_flags.jsonl)
 
 # =============================================================================
 # Test 1: --no-metadata suppresses YAML frontmatter in parse mode

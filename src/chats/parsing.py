@@ -22,6 +22,7 @@ from .registry import (
 from .utils import shorten_tool_use_id
 
 NameEntryBuilder = Callable[[list[dict], str, str], list[dict]]
+FirstEntryMatcher = Callable[[dict], bool]
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,7 @@ class JsonlSessionAdapter:
     is_sidechain_path: Callable[[Path], bool] = lambda _path: False
     extract_session_id: Callable[[Path], str | None] = lambda path: path.stem
     extract_forked_from: Callable[[Path], str | None] = lambda _path: None
+    matches_first_entry: FirstEntryMatcher | None = None
 
 
 def get_jsonl_timestamps(file_path: Path) -> tuple[datetime | None, datetime | None]:
@@ -1353,6 +1355,43 @@ def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
     return _parse_codex_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
+def _is_claude_jsonl_path(source_path: Path | None) -> bool:
+    """Return True when the source path is inside ~/.claude/projects/."""
+    if source_path is None:
+        return False
+
+    try:
+        source_path.resolve().relative_to(
+            (Path.home() / ".claude" / "projects").resolve()
+        )
+    except (ValueError, OSError):
+        return False
+    return True
+
+
+def _is_codex_session_header(first_entry: dict) -> bool:
+    """Return whether a first JSONL entry has Codex's native session header.
+
+    >>> _is_codex_session_header({"type": "session_meta"})
+    True
+    """
+    return first_entry.get("type") == "session_meta"
+
+
+def _is_pi_session_header(first_entry: dict) -> bool:
+    """Return whether a first JSONL entry has Pi's native session header.
+
+    >>> _is_pi_session_header({"type": "session", "version": 3})
+    True
+    >>> _is_pi_session_header({"type": "session", "version": "3"})
+    False
+    """
+    return (
+        first_entry.get("type") == "session"
+        and type(first_entry.get("version")) is int
+    )
+
+
 def _is_pi_jsonl_path(source_path: Path | None) -> bool:
     """Return True when the source path is inside ~/.pi/."""
     if source_path is None:
@@ -1889,15 +1928,6 @@ def _build_antigravity_name_entries(
 
 JSONL_SESSION_ADAPTERS = [
     JsonlSessionAdapter(
-        name="pi",
-        matches=_is_pi_jsonl_path,
-        parse_messages=_parse_pi_jsonl,
-        build_name_entries=_build_pi_name_entries,
-        find_session_files=_find_pi_session_files,
-        find_session_matches=_find_pi_session_matches,
-        extract_session_id=_extract_pi_session_id,
-    ),
-    JsonlSessionAdapter(
         name="codex",
         matches=_is_codex_jsonl_path,
         parse_messages=_parse_codex_jsonl,
@@ -1906,6 +1936,17 @@ JSONL_SESSION_ADAPTERS = [
         find_session_matches=_find_codex_session_matches,
         extract_session_id=_extract_codex_session_id,
         extract_forked_from=_extract_codex_forked_from_id,
+        matches_first_entry=_is_codex_session_header,
+    ),
+    JsonlSessionAdapter(
+        name="pi",
+        matches=_is_pi_jsonl_path,
+        parse_messages=_parse_pi_jsonl,
+        build_name_entries=_build_pi_name_entries,
+        find_session_files=_find_pi_session_files,
+        find_session_matches=_find_pi_session_matches,
+        extract_session_id=_extract_pi_session_id,
+        matches_first_entry=_is_pi_session_header,
     ),
     JsonlSessionAdapter(
         name="antigravitycli",
@@ -1918,7 +1959,7 @@ JSONL_SESSION_ADAPTERS = [
     ),
     JsonlSessionAdapter(
         name="claude",
-        matches=lambda _source_path: True,
+        matches=_is_claude_jsonl_path,
         parse_messages=_parse_default_jsonl,
         build_name_entries=_build_claude_name_entries,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),
@@ -1927,12 +1968,51 @@ JSONL_SESSION_ADAPTERS = [
 ]
 
 
-def _select_jsonl_session_adapter(source_path: Path | None) -> JsonlSessionAdapter:
-    """Select the first JSONL adapter whose matcher accepts the source path."""
-    for adapter in JSONL_SESSION_ADAPTERS:
-        if adapter.matches(source_path):
-            return adapter
-    return JSONL_SESSION_ADAPTERS[-1]
+def _read_first_jsonl_entry(source_path: Path | None) -> dict | None:
+    """Read the first non-empty JSON object from a session path."""
+    if source_path is None:
+        return None
+    try:
+        with open(source_path, "rb") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                entry = orjson.loads(line)
+                return entry if isinstance(entry, dict) else None
+    except (OSError, orjson.JSONDecodeError):
+        return None
+    return None
+
+
+def _select_jsonl_session_adapter(
+    source_path: Path | None,
+    first_entry: dict | None = None,
+) -> JsonlSessionAdapter:
+    """Select a JSONL adapter by native path, then by first-entry signature."""
+    path_match = next(
+        (adapter for adapter in JSONL_SESSION_ADAPTERS if adapter.matches(source_path)),
+        None,
+    )
+    if path_match is not None:
+        return path_match
+
+    first_entry = first_entry or _read_first_jsonl_entry(source_path)
+    content_match = next(
+        (
+            adapter
+            for adapter in JSONL_SESSION_ADAPTERS
+            if adapter.matches_first_entry is not None
+            and first_entry is not None
+            and adapter.matches_first_entry(first_entry)
+        ),
+        None,
+    )
+    if content_match is not None:
+        return content_match
+
+    raise ValueError(
+        "Cannot determine JSONL session provider from its path or first entry."
+    )
 
 
 def get_jsonl_session_adapter(source_path: Path | None) -> JsonlSessionAdapter:
@@ -1962,7 +2042,8 @@ def parse_jsonl_entries(
     source_path: Path | None = None,
 ) -> list[Message]:
     """Parse already-decoded JSONL entries via the matching session adapter."""
-    adapter = _select_jsonl_session_adapter(source_path)
+    first_entry = entries[0] if entries else None
+    adapter = _select_jsonl_session_adapter(source_path, first_entry)
     if adapter.name == "pi":
         return _parse_pi_jsonl_entries(entries, flags)
     if adapter.name == "codex":

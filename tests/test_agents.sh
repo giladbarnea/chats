@@ -4,7 +4,7 @@ source tests/lib.sh
 AGENT_TAG="${SUPPORTED_MESSAGE_TAGS[agent]:?'agent' not in SUPPORTED_MESSAGE_TAGS}"
 
 echo "Running agents tests..."
-DATA_FILE="tests/data/synthetic_agents.jsonl"
+DATA_FILE=$(claude_fixture tests/data/synthetic_agents.jsonl)
 
 # =============================================================================
 # Test 1 (positive): -a flag shows agent messages with correct structure

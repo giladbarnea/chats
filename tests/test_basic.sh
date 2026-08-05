@@ -62,7 +62,7 @@ assert_has_colors "$OUTPUT_TTY"
 
 # 2. Naive stdin input
 echo "Testing naive stdin input..."
-OUTPUT_STDIN=$(cat "$DATA_FILE_SIMPLE" | $CC_CMD)
+OUTPUT_STDIN=$(cat "$DATA_FILE_STDIN" | $CC_CMD)
 assert_success
 # Same checks
 ACTUAL_USER_TAGS_STDIN=$(count_user_origin_tags "$OUTPUT_STDIN")

@@ -2,7 +2,7 @@
 source tests/lib.sh
 
 echo "Running structured rendering tests..."
-DATA_FILE_SYNTHETIC="tests/data/synthetic_flags.jsonl"
+DATA_FILE_SYNTHETIC=$(claude_fixture tests/data/synthetic_flags.jsonl)
 GOLDEN_FILE="tests/data/golden_xml_output.txt"
 
 # Helper: strip ANSI codes

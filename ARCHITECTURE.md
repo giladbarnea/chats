@@ -12,7 +12,7 @@ last_updated: 2026/08/03
 - `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, the current latest custom title, and already-visible messages.
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery`/`NotQuery` tree over terms. Owns tokenizing, `and`/`or`/`not` grammar, and per-term regex/literal compilation under the selected case-sensitivity mode.
-- `JsonlSessionAdapter` (`parsing.py`): the provider-owned path matcher/parser boundary. Adapter choice is path-based, not content-probed.
+- `JsonlSessionAdapter` (`parsing.py`): the provider-owned matcher/parser boundary. Adapter choice uses native paths first, then exact Codex and PI first-entry signatures.
 - `ShortSpec` / `ShortPolicy` (`shortening.py`): the shared global and tool-local short-value parser plus its resolved fixed or progressive policy. [SHORT_SPEC.md](SHORT_SPEC.md) owns the behavior contract.
 - Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`, `xml_transport.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
 
@@ -774,7 +774,7 @@ cli.py
 
 ## Architecture Notes & Edge Cases (Shared Invariants / Non-obvious Behaviors)
 
-1. **Adapter Selection Is Path-Based**: `parse_jsonl_entries()` chooses the provider adapter from `source_path`, not by probing payload shape. Raw stdin JSONL with no source path falls through to the default adapter.
+1. **Adapter Selection Fails Closed**: `parse_jsonl_entries()` first checks native provider paths. For unknown paths or stdin, it recognizes Codex through a first `session_meta` object and PI through a first `session` object with an integer `version`. Claude has no content signature, so external Claude-shaped JSONL and all other unknown JSONL fail instead of reaching a default adapter.
 2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
 3. **Recent Negative Indices Use JSONL Mtime With Cheap Predicates**: `_resolve_recent_conversation_file()` excludes sidechains, applies the cwd probe before timestamp sorting, then orders survivors newest-first by `get_jsonl_last_timestamp()`. Date filters reuse that modified-time value for `mafter` and probe first timestamp only when `cafter` is active. This keeps recent-index resolution tied to transcript content while still avoiding full metadata construction for the pool; sessions without a readable in-band timestamp use the existing filesystem-mtime fallback.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.

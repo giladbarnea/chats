@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 source tests/lib.sh
 
-TEST_DATA="tests/data/tool_filter_data.jsonl"
+TEST_DATA="$CH_NATIVE_DATA_DIR/tool_filter_data.jsonl"
 
 # Create synthetic data: two tool_use + two tool_result (one is an error)
 echo '{"type":"user","message":{"role":"user","content":"Run some tools"},"timestamp":"2025-01-01T12:00:00Z"}' > "$TEST_DATA"

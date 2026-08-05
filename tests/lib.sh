@@ -1,18 +1,39 @@
 #!/usr/bin/env zsh
 setopt EXTENDED_GLOB
 
-# Define data files relative to the test script location (assuming running from repo root)
-# So tests/data/... is correct.
-DATA_FILE_SIMPLE="tests/data/a6f25fb8-e7a8-4411-b378-ad0f20e552d1.jsonl"
-DATA_FILE_COMPLEX="tests/data/91410674-da33-4697-b5a8-f334edbc5554.jsonl"
+CH_ORIGINAL_HOME="$HOME"
+CH_TEST_HOME="${TMPDIR:-/tmp}/ch-shell-tests-${USER:-$UID}"
+CH_NATIVE_DATA_DIR="$CH_TEST_HOME/.claude/projects/ch-shell-tests"
+rm -rf "$CH_TEST_HOME"
+mkdir -p "$CH_NATIVE_DATA_DIR"
+
+claude_fixture() {
+  local source_path="$1"
+  local native_path="$CH_NATIVE_DATA_DIR/${source_path:t}"
+  cp "$source_path" "$native_path"
+  print -r -- "$native_path"
+}
+
+DATA_FILE_SIMPLE=$(claude_fixture tests/data/a6f25fb8-e7a8-4411-b378-ad0f20e552d1.jsonl)
+DATA_FILE_COMPLEX=$(claude_fixture tests/data/91410674-da33-4697-b5a8-f334edbc5554.jsonl)
+DATA_FILE_STDIN="$CH_TEST_HOME/pi-stdin.jsonl"
+cat > "$DATA_FILE_STDIN" <<'EOF'
+{"type":"session","version":3,"id":"shell-stdin","timestamp":"2026-08-05T00:00:00.000Z","cwd":"/tmp"}
+{"type":"message","id":"a1","parentId":null,"message":{"role":"assistant","content":[{"type":"text","text":"stdin response"}]}}
+EOF
 
 cc_cmd() {
-  uv run ch "$@"
+  local effective_home="$HOME"
+  if [[ "$effective_home" == "$CH_ORIGINAL_HOME" ]]; then
+    effective_home="$CH_TEST_HOME"
+  fi
+
+  HOME="$effective_home" uv run ch "$@"
 }
 CC_CMD="cc_cmd"
 
 py_cmd() {
-  uv run python "$@"
+  HOME="$CH_TEST_HOME" uv run python "$@"
 }
 PY_CMD="py_cmd"
 

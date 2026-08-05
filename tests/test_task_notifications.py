@@ -8,9 +8,19 @@ Codex's spawn/wait/close + subagent_notification are suppressed.
 """
 
 import json
+from pathlib import Path
 
-from chats import ConversationFlags, parse_jsonl
+from chats import ConversationFlags, Message, parse_jsonl as _parse_jsonl
 from chats.formatting import format_to_xml
+
+
+CLAUDE_SOURCE_PATH = Path.home() / ".claude" / "projects" / "tests" / "session.jsonl"
+
+
+def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse test content through an explicit Claude session path."""
+    return _parse_jsonl(content, flags, source_path=CLAUDE_SOURCE_PATH)
+
 
 TASK_NOTIFICATION_BODY = (
     "<task-notification>\n"

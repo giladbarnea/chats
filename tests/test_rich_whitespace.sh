@@ -2,7 +2,7 @@
 source tests/lib.sh
 
 echo "Running Rich whitespace tests..."
-DATA_FILE="tests/data/1e446a9f-08fd-43ac-be72-8ce337d01dcd.jsonl"
+DATA_FILE=$(claude_fixture tests/data/1e446a9f-08fd-43ac-be72-8ce337d01dcd.jsonl)
 
 # Litmus test: decolored --color=always output should position text identically to --color=never.
 # We check the invariant that no heading is followed by a double blank line, in both paths.

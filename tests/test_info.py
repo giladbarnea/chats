@@ -16,6 +16,15 @@ from chats.commands import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _temporary_home(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+
+def _claude_session_path(tmp_path: Path, filename: str) -> Path:
+    return tmp_path / ".claude" / "projects" / "tests" / filename
+
+
 def _write_session(path: Path, entries: list[dict]) -> None:
     """Write compact JSONL entries to a session fixture path."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -216,7 +225,7 @@ def test_pi_wall_duration_spans_first_to_last_timestamp(tmp_path, monkeypatch):
 
 
 def test_claude_deduplicates_usage_across_repeated_message_lines(tmp_path):
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
 
     info = build_session_info(path)
@@ -236,7 +245,7 @@ def test_claude_deduplicates_usage_across_repeated_message_lines(tmp_path):
 def test_claude_dedup_keeps_final_output_tokens_not_thinking_partial(tmp_path):
     """When a response opens with a thinking block, the first line's output_tokens
     is a partial; the final total is on a later line. Dedup must keep the last."""
-    path = tmp_path / "claude-thinking-first.jsonl"
+    path = _claude_session_path(tmp_path, "claude-thinking-first.jsonl")
     _write_session(
         path,
         [
@@ -272,7 +281,7 @@ def test_claude_dedup_keeps_final_output_tokens_not_thinking_partial(tmp_path):
 
 
 def test_claude_computes_cost_from_pricing_table(tmp_path):
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
 
     info = build_session_info(path)
@@ -287,7 +296,7 @@ def test_claude_computes_cost_from_pricing_table(tmp_path):
 
 def test_claude_prices_one_hour_cache_writes_at_double_input(tmp_path):
     """A 1-hour cache write bills at 2x input, not the 1.25x 5-minute rate."""
-    path = tmp_path / "claude-1h.jsonl"
+    path = _claude_session_path(tmp_path, "claude-1h.jsonl")
     _write_session(
         path,
         [
@@ -364,7 +373,7 @@ def test_pi_total_tokens_is_read_not_recomputed(tmp_path, monkeypatch):
 
 
 def test_claude_counts_messages_tools_and_api_duration(tmp_path):
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
 
     info = build_session_info(path)
@@ -403,7 +412,7 @@ def test_unsupported_provider_is_rejected(tmp_path, monkeypatch):
 
 
 def test_render_contains_all_sections(tmp_path):
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
 
     rendered = render_session_info(build_session_info(path))
@@ -417,7 +426,7 @@ def test_render_contains_all_sections(tmp_path):
 
 def test_cmd_info_preserves_bracketed_session_name(tmp_path, capsys):
     """Square brackets in a name must survive printing, not be eaten as Rich markup."""
-    path = tmp_path / "claude-bracket.jsonl"
+    path = _claude_session_path(tmp_path, "claude-bracket.jsonl")
     _write_session(
         path,
         [
@@ -455,7 +464,7 @@ def test_cmd_info_preserves_bracketed_session_name(tmp_path, capsys):
 def test_render_cost_is_flat_single_line(tmp_path):
     """Cost has a single value, so it renders as one `Cost: X` line within the
     Tokens block, not a standalone `Cost` header over a redundant `Total:`."""
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
     info = build_session_info(path)
 
@@ -519,7 +528,7 @@ def test_json_format_is_flat_with_snake_case_keys(tmp_path, monkeypatch):
 def test_json_per_model_carries_its_dollar_cost(tmp_path):
     """Each per-model entry includes the dollar `cost` the text report shows as
     `($X)`, so the JSON and text reports stay symmetric."""
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
 
     info = build_session_info(path)
@@ -535,7 +544,7 @@ def test_json_per_model_carries_its_dollar_cost(tmp_path):
 def test_root_model_is_reported_and_pretty_humanizes_it(tmp_path):
     """A root-level `model` (raw id) appears in JSON; the text report shows it as
     a humanized `Model:` line between the wall duration and the usage breakdown."""
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
     info = build_session_info(path)
 
@@ -577,7 +586,7 @@ def test_humanize_model_preserves_token_order(model_id, expected):
 
 def test_root_model_picks_the_highest_usage_model(tmp_path):
     """When a session spans models, the dominant one (most tokens) is reported."""
-    path = tmp_path / "claude-multi.jsonl"
+    path = _claude_session_path(tmp_path, "claude-multi.jsonl")
     _write_session(
         path,
         [
@@ -613,7 +622,7 @@ def test_root_model_picks_the_highest_usage_model(tmp_path):
 
 def test_cmd_info_json_format_emits_parseable_json(tmp_path, capsys):
     """`cmd_info(..., output_format="json")` writes a single parseable JSON object."""
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
 
     cmd_info(str(path), output_format="json")
@@ -632,7 +641,7 @@ def test_cmd_info_json_format_emits_parseable_json(tmp_path, capsys):
 
 
 def test_cmd_info_prints_report_for_resolved_path(tmp_path, capsys):
-    path = tmp_path / "claude-session.jsonl"
+    path = _claude_session_path(tmp_path, "claude-session.jsonl")
     _write_session(path, _claude_entries())
 
     cmd_info(str(path))

@@ -76,6 +76,8 @@ Automatically detects input format by examining **first non-empty line only** (d
 - **JSONL**: Line contains valid JSON with `type` field
 - **Raw transcript**: Line has `> ` or `⏺ ` CLI prefix
 
+For JSONL, provider resolution checks the native file path first. External files then require a recognized first object: Codex uses `type: "session_meta"`; PI uses `type: "session"` with an integer `version`. Other external JSONL files fail instead of being assumed to be Claude. Claude files are recognized through their native `~/.claude/projects/` path because Claude has no stable first-object signature.
+
 **Display Options:**
 
 ```bash

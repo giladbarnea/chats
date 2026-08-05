@@ -37,9 +37,17 @@ def temp_claude_home(tmp_path, monkeypatch):
     return temp_home
 
 
-def test_cmd_parse_metadata_prefers_jsonl_timestamps_over_file_stat(tmp_path, capsys):
+def test_cmd_parse_metadata_prefers_jsonl_timestamps_over_file_stat(
+    temp_claude_home, capsys
+):
     """Parse metadata should show conversation timestamps, not stale file mtimes."""
-    conversation_path = tmp_path / "timestamped.jsonl"
+    conversation_path = (
+        temp_claude_home
+        / ".claude"
+        / "projects"
+        / "test-project"
+        / "timestamped.jsonl"
+    )
     conversation_path.write_text(
         "\n".join([
             json.dumps({

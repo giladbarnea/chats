@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-05] Detect external Codex and PI sessions by header
+
+### Changed
+
+- JSONL provider selection now checks native paths first, then exact first-object signatures for Codex (`type: "session_meta"`) and PI (`type: "session"` with an integer `version`).
+- Unknown external JSONL now exits with an error instead of falling through to the Claude adapter. Claude remains path-recognized because its first object is not stable.
+
+---
 ## [2026-08-04] Align progressive short limits with equals syntax
 
 ### Changed

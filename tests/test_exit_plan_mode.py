@@ -15,12 +15,18 @@ from pathlib import Path
 from chats import (
     ConversationFlags,
     Message,
-    parse_jsonl,
+    parse_jsonl as _parse_jsonl,
     render_message_inner_xml,
 )
 
 # Path to test fixture
 FIXTURE_PATH = Path(__file__).parent / "data" / "exit-plan-mode-full-message.jsonl"
+CLAUDE_SOURCE_PATH = Path.home() / ".claude" / "projects" / "tests" / "session.jsonl"
+
+
+def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse fixture content through an explicit Claude session path."""
+    return _parse_jsonl(content, flags, source_path=CLAUDE_SOURCE_PATH)
 
 
 def load_fixture() -> str:

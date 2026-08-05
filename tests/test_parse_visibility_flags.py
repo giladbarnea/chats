@@ -7,7 +7,20 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 from chats.cli import main
+
+
+@pytest.fixture(autouse=True)
+def _temporary_home(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+
+def _claude_session_path(tmp_path: Path, filename: str) -> Path:
+    path = tmp_path / ".claude" / "projects" / "tests" / filename
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def _write_session(path: Path) -> None:
@@ -111,7 +124,7 @@ def test_only_assistant_overrides_thinking_with_warning(
     capsys,
 ) -> None:
     """`--only-assistant` should disable contradictory extras upstream and keep assistant-only output."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -159,7 +172,7 @@ def test_only_assistant_overrides_plans_with_warning(
     capsys,
 ) -> None:
     """`--only-assistant` should disable contradictory plan visibility upstream."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -195,7 +208,7 @@ def test_only_user_and_only_assistant_warn_but_end_with_empty_output(
     capsys,
 ) -> None:
     """Contradictory `--only-*` flags should warn, then fall through to empty output without a no-messages error."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -232,7 +245,7 @@ def test_only_user_overrides_tools_and_agents_with_warning(
     capsys,
 ) -> None:
     """`--only-user` should disable contradictory extras and leave only regular user output."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -277,7 +290,7 @@ def test_default_parse_hides_session_rename_blocks(
     capsys,
 ) -> None:
     """Default parse output should ignore session-rename records."""
-    session_path = tmp_path / "rename-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "rename-fixture.jsonl")
     _write_session_with_custom_title(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -311,7 +324,7 @@ def test_plans_hidden_by_default_and_shown_with_explicit_flag(
     capsys,
 ) -> None:
     """Plans should require `--plans` in parse mode."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -354,7 +367,7 @@ def test_all_now_includes_plans(
     capsys,
 ) -> None:
     """`--all` should include plans now that they are otherwise hidden by default."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -381,7 +394,7 @@ def test_no_assistant_still_shows_agents_when_requested(
     capsys,
 ) -> None:
     """`--no-assistant` should hide regular assistant output without disabling explicit agent visibility."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -413,7 +426,7 @@ def test_no_user_hides_regular_user_text_but_keeps_tool_output(
     capsys,
 ) -> None:
     """`--no-user` should hide normal user text without suppressing explicitly requested tools."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -453,7 +466,7 @@ def test_no_assistant_can_show_thinking_tools_and_agents_together(
     capsys,
 ) -> None:
     """`--no-assistant` should hide regular assistant text while preserving explicitly requested extras."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(
@@ -498,7 +511,7 @@ def test_thinking_short_modifier_truncates_only_thinking_blocks(
     capsys,
 ) -> None:
     """`--thinking=short` should truncate thinking blocks while keeping the block visible."""
-    session_path = tmp_path / "thinking-short-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "thinking-short-fixture.jsonl")
     long_thinking = "THINK_START-" + ("x" * 1000) + "-THINK_END"
     entries = [
         {
@@ -553,7 +566,7 @@ def test_bare_thinking_flag_keeps_following_slice_positional(
     capsys,
 ) -> None:
     """`--thinking` should not consume a following numeric slice argument."""
-    session_path = tmp_path / "visibility-fixture.jsonl"
+    session_path = _claude_session_path(tmp_path, "visibility-fixture.jsonl")
     _write_session(session_path)
 
     exit_code, stdout, stderr = _run_cli(

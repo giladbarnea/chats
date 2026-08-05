@@ -2,7 +2,7 @@
 source tests/lib.sh
 
 echo "Running flags tests (Synthetic Data)..."
-DATA_FILE_SYNTHETIC="tests/data/synthetic_flags.jsonl"
+DATA_FILE_SYNTHETIC=$(claude_fixture tests/data/synthetic_flags.jsonl)
 
 count_message_tags() {
   printf '%s\n' "$1" | grep -E "^<(${PIPE_JOINED_MESSAGE_TAGS})" -c || true
@@ -97,9 +97,9 @@ LONG_PREFIX=$(printf 'p%.0s' {1..240})
 LONG_REMOVED=$(printf 'm%.0s' {1..200})
 LONG_SUFFIX=$(printf 's%.0s' {1..240})
 LONG_TEXT="SHORT_START ${LONG_PREFIX} REMOVED_MIDDLE_MARKER ${LONG_REMOVED} ANOTHER_REMOVED_MARKER ${LONG_SUFFIX} SHORT_END"
-printf '{"type":"user","message":{"role":"user","content":"%s"},"timestamp":"2025-11-23T09:29:08.354Z"}\n' "$LONG_TEXT" > tests/data/long_message.jsonl
+printf '{"type":"user","message":{"role":"user","content":"%s"},"timestamp":"2025-11-23T09:29:08.354Z"}\n' "$LONG_TEXT" > "$CH_NATIVE_DATA_DIR/long_message.jsonl"
 
-OUTPUT_S=$($CC_CMD -s tests/data/long_message.jsonl)
+OUTPUT_S=$($CC_CMD -s "$CH_NATIVE_DATA_DIR/long_message.jsonl")
 assert_success
 # Should contain the middle-truncation ellipsis
 assert_contains "$OUTPUT_S" "..."
@@ -121,7 +121,7 @@ assert_success
 assert_message_count "$OUTPUT_S_RANGE" 2
 
 # Cleanup
-rm tests/data/long_message.jsonl
+rm "$CH_NATIVE_DATA_DIR/long_message.jsonl"
 
 # -o: Output to file
 echo "Testing -o (Output to file)..."

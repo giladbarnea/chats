@@ -4,6 +4,7 @@ source tests/lib.sh
 USER_MESSAGE_TAG="${SUPPORTED_MESSAGE_TAGS[user-message]:?'user-message' not in SUPPORTED_MESSAGE_TAGS}"
 ASSISTANT_RESPONSE_TAG="${SUPPORTED_MESSAGE_TAGS[assistant-response]:?'assistant-response' not in SUPPORTED_MESSAGE_TAGS}"
 SESSION_RENAME_TAG="${SUPPORTED_MESSAGE_TAGS[session-rename]:?'session-rename' not in SUPPORTED_MESSAGE_TAGS}"
+CUSTOM_TITLE_DATA=$(claude_fixture tests/data/custom_title.jsonl)
 
 echo "Running format tests (JSON output)..."
 
@@ -120,7 +121,7 @@ assert_no_colors "$OUTPUT_JSON"
 
 # 3. JSON with stdin
 echo "Testing -f json with stdin..."
-OUTPUT_JSON_STDIN=$(cat "$DATA_FILE_SIMPLE" | $CC_CMD -f json 2>&1 | grep -v "^File:")
+OUTPUT_JSON_STDIN=$(cat "$DATA_FILE_STDIN" | $CC_CMD -f json 2>&1 | grep -v "^File:")
 EXIT_CODE=$?
 if [[ $EXIT_CODE -ne 0 ]]; then
   echo "❌ Stdin test failed with exit code $EXIT_CODE"
@@ -263,7 +264,7 @@ validate_json "$OUTPUT_JSON_PIPED"
 
 # 11. Test custom-title stays hidden by default
 echo "Testing custom-title default visibility..."
-OUTPUT_CUSTOM=$(cc_cmd "tests/data/custom_title.jsonl" --color never --no-metadata 2>/dev/null)
+OUTPUT_CUSTOM=$(cc_cmd "$CUSTOM_TITLE_DATA" --color never --no-metadata 2>/dev/null)
 if echo "$OUTPUT_CUSTOM" | grep -q "<${SESSION_RENAME_TAG}"; then
   echo "❌ custom-title should stay hidden by default"
   exit 1

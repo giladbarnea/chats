@@ -3,9 +3,24 @@
 
 import json
 from datetime import datetime
+from pathlib import Path
 
-from chats import ConversationFlags, ToolFilter, cmd_parse, parse_jsonl
+from chats import (
+    ConversationFlags,
+    Message,
+    ToolFilter,
+    cmd_parse,
+    parse_jsonl as _parse_jsonl,
+)
 from chats.formatting import format_to_xml
+
+
+CLAUDE_SOURCE_PATH = Path.home() / ".claude" / "projects" / "tests" / "session.jsonl"
+
+
+def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
+    """Parse test content through an explicit Claude session path."""
+    return _parse_jsonl(content, flags, source_path=CLAUDE_SOURCE_PATH)
 
 
 def _utc_to_local_display(utc_iso: str) -> str:
@@ -200,11 +215,16 @@ def test_message_wrappers_include_date_attribute_from_timestamp():
     ), f"Expected assistant wrapper to include model then date attrs. Got:\n{output}"
 
 
-def test_cmd_parse_slice_preserves_tool_name_on_tool_output(tmp_path, capsys):
+def test_cmd_parse_slice_preserves_tool_name_on_tool_output(
+    tmp_path, monkeypatch, capsys
+):
     """Sliced parse output should still know the originating tool name."""
     content = """{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_013cAqxRaJroBvWdutKHWm47","name":"Skill","input":{"prompt":"go"}}]}}
 {"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_013cAqxRaJroBvWdutKHWm47","content":"ok"}]}}"""
-    conversation_path = tmp_path / "tool-chain.jsonl"
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    conversation_path = home / ".claude" / "projects" / "tests" / "tool-chain.jsonl"
+    conversation_path.parent.mkdir(parents=True)
     conversation_path.write_text(content, encoding="utf-8")
 
     cmd_parse(

@@ -362,7 +362,23 @@ def test_detached_progressive_value_is_consumed_before_stdin_resolution(
     arguments: tuple[str, str],
 ) -> None:
     symbol = "¶"
-    input_text = f"{json.dumps(_assistant_text(symbol * 800, 1), ensure_ascii=False)}\n"
+    input_text = "".join(
+        f"{json.dumps(entry, ensure_ascii=False)}\n"
+        for entry in (
+            {
+                "type": "session_meta",
+                "payload": {"id": SESSION_ID, "cwd": "/tmp/progressive-shortening"},
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": symbol * 800}],
+                },
+            },
+        )
+    )
 
     result = _run_ch(
         tmp_path,

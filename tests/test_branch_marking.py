@@ -5,7 +5,7 @@ from pathlib import Path
 
 from rich.console import Console
 
-from chats import ConversationFlags, parse_jsonl
+from chats import ConversationFlags, Message, parse_jsonl as _parse_jsonl
 from chats.formatting import build_message_panels, format_to_xml
 from chats.theme import APP_THEME
 
@@ -15,6 +15,16 @@ ROOT_REWIND = Path(__file__).parent / "data" / "claude-branch-root-rewind.jsonl"
 COMPACTED_ROOT_REWIND = (
     Path(__file__).parent / "data" / "claude-branch-compacted-root-rewind.jsonl"
 )
+CLAUDE_SOURCE_PATH = Path.home() / ".claude" / "projects" / "tests" / "session.jsonl"
+
+
+def parse_jsonl(
+    content: str,
+    flags: ConversationFlags,
+    source_path: Path | None = None,
+) -> list[Message]:
+    """Parse fixture content through an explicit Claude session path."""
+    return _parse_jsonl(content, flags, source_path=CLAUDE_SOURCE_PATH)
 
 
 def _parse(show_branches: bool = True):
