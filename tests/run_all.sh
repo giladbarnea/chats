@@ -18,7 +18,7 @@ chmod +x tests/test_structured_rendering.sh
 
 # Run Python unit tests first (fast, comprehensive)
 echo "Running Python unit tests..."
-uv run pytest tests/ -v --tb=short
+uv run pytest tests/
 echo ""
 
 # Run shell tests (CLI seam verification)
