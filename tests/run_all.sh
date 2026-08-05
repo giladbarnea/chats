@@ -18,7 +18,11 @@ chmod +x tests/test_structured_rendering.sh
 
 # Run Python unit tests first (fast, comprehensive)
 echo "Running Python unit tests..."
-uv run pytest tests/
+uv run pytest tests/ --ignore=tests/test_search_perf.py -n 8 --dist=loadfile
+
+echo ""
+echo "Running Python performance tests serially..."
+uv run pytest tests/test_search_perf.py
 echo ""
 
 # Run shell tests (CLI seam verification)
