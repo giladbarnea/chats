@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Behavior tests for boolean `and`/`or` operators in search patterns."""
+"""Behavior tests for boolean `AND`/`OR`/`NOT` operators in search patterns."""
 
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ def _run_search_ids(pattern: str, capsys) -> tuple[int, list[str]]:
 
 
 def test_and_requires_both_terms_in_same_session(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`A and B` matches sessions containing both terms, even in different messages."""
+    """`A AND B` matches sessions containing both terms, even in different messages."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -71,23 +71,23 @@ def test_and_requires_both_terms_in_same_session(tmp_path: Path, monkeypatch, ca
         ["only opname-alpha appears here"],
     )
 
-    exit_code, matched_ids = _run_search_ids("opname-alpha and opname-bravo", capsys)
+    exit_code, matched_ids = _run_search_ids("opname-alpha AND opname-bravo", capsys)
 
     assert exit_code == 0, (
-        f"Expected `A and B` search to find the session with both terms. Got exit code: {exit_code}"
+        f"Expected `A AND B` search to find the session with both terms. Got exit code: {exit_code}"
     )
     assert "has-both" in matched_ids, (
         "Expected the session containing both terms (across different messages) to match. "
         f"Got matched ids: {matched_ids!r}"
     )
     assert "has-alpha-only" not in matched_ids, (
-        "Expected the session containing only one of the `and` terms not to match. "
+        "Expected the session containing only one of the `AND` terms not to match. "
         f"Got matched ids: {matched_ids!r}"
     )
 
 
 def test_or_matches_sessions_with_either_term(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`A or B` matches sessions containing either term, and skips sessions with neither."""
+    """`A OR B` matches sessions containing either term, and skips sessions with neither."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -95,11 +95,11 @@ def test_or_matches_sessions_with_either_term(tmp_path: Path, monkeypatch, capsy
     _write_session(_claude_session_path(home, "has-bravo"), ["opname-bravo here"])
     _write_session(_claude_session_path(home, "has-neither"), ["nothing relevant"])
 
-    exit_code, matched_ids = _run_search_ids("opname-alpha or opname-bravo", capsys)
+    exit_code, matched_ids = _run_search_ids("opname-alpha OR opname-bravo", capsys)
 
-    assert exit_code == 0, f"Expected `A or B` search to find matches. Got exit code: {exit_code}"
+    assert exit_code == 0, f"Expected `A OR B` search to find matches. Got exit code: {exit_code}"
     assert "has-alpha" in matched_ids and "has-bravo" in matched_ids, (
-        "Expected `A or B` to match sessions containing either term. "
+        "Expected `A OR B` to match sessions containing either term. "
         f"Got matched ids: {matched_ids!r}"
     )
     assert "has-neither" not in matched_ids, (
@@ -110,7 +110,7 @@ def test_or_matches_sessions_with_either_term(tmp_path: Path, monkeypatch, capsy
 def test_and_displays_matching_messages_for_all_terms(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
-    """Default search output for `A and B` renders the messages matching each term."""
+    """Default search output for `A AND B` renders the messages matching each term."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -125,7 +125,7 @@ def test_and_displays_matching_messages_for_all_terms(
 
     with pytest.raises(SystemExit) as exc_info:
         commands.cmd_search(
-            "alpha-needle and bravo-needle",
+            "alpha-needle AND bravo-needle",
             ConversationFlags(color="never", paging=False),
             output_mode=SearchOutputMode.MATCHES,
             emit_metadata=False,
@@ -136,7 +136,7 @@ def test_and_displays_matching_messages_for_all_terms(
         f"Expected the search to succeed. Got exit code: {exc_info.value.code}"
     )
     assert "alpha-needle" in stdout and "bravo-needle" in stdout, (
-        "Expected both terms' matching messages to be rendered for an `and` hit. "
+        "Expected both terms' matching messages to be rendered for an `AND` hit. "
         f"Got stdout:\n{stdout}"
     )
     assert "unrelated middle message" not in stdout, (
@@ -146,7 +146,7 @@ def test_and_displays_matching_messages_for_all_terms(
 
 
 def test_quoted_multi_word_term_is_one_term(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`'"hello world" and foo'` treats the quoted phrase as one term."""
+    """`'"hello world" AND foo'` treats the quoted phrase as one term."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -159,7 +159,7 @@ def test_quoted_multi_word_term_is_one_term(tmp_path: Path, monkeypatch, capsys)
         ["hello there", "world of foo-needle"],
     )
 
-    exit_code, matched_ids = _run_search_ids('"hello world" and foo-needle', capsys)
+    exit_code, matched_ids = _run_search_ids('"hello world" AND foo-needle', capsys)
 
     assert exit_code == 0, f"Expected the quoted-phrase search to succeed. Got exit code: {exit_code}"
     assert "phrase-and-foo" in matched_ids, (
@@ -175,14 +175,14 @@ def test_quoted_multi_word_term_is_one_term(tmp_path: Path, monkeypatch, capsys)
 def test_unquoted_multi_word_term_next_to_operator_is_invalid(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
-    """`hello world and foo` must error: operations require quoting multi-word terms."""
+    """`hello world AND foo` must error: operators require quoted multi-word terms."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
-    _write_session(_claude_session_path(home, "any-session"), ["hello world and foo"])
+    _write_session(_claude_session_path(home, "any-session"), ["hello world AND foo"])
 
     with pytest.raises(SystemExit) as exc_info:
         commands.cmd_search(
-            "hello world and foo",
+            "hello world AND foo",
             ConversationFlags(color="never", paging=False),
             output_mode=SearchOutputMode.ONLY_ID,
             emit_metadata=True,
@@ -199,7 +199,7 @@ def test_unquoted_multi_word_term_next_to_operator_is_invalid(
 
 
 def test_and_with_parenthesized_or_group(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`A and (B or C)` requires A plus at least one of B/C in the session."""
+    """`A AND (B OR C)` requires A plus at least one of B/C in the session."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -214,26 +214,26 @@ def test_and_with_parenthesized_or_group(tmp_path: Path, monkeypatch, capsys) ->
     )
 
     exit_code, matched_ids = _run_search_ids(
-        "opname-alpha and (opname-bravo or opname-charlie)", capsys
+        "opname-alpha AND (opname-bravo OR opname-charlie)", capsys
     )
 
     assert exit_code == 0, f"Expected the compound search to succeed. Got exit code: {exit_code}"
     assert "alpha-and-charlie" in matched_ids, (
-        "Expected `A and (B or C)` to match a session containing A and C. "
+        "Expected `A AND (B OR C)` to match a session containing A and C. "
         f"Got matched ids: {matched_ids!r}"
     )
     assert "alpha-alone" not in matched_ids, (
-        "Expected a session with only A not to satisfy `A and (B or C)`. "
+        "Expected a session with only A not to satisfy `A AND (B OR C)`. "
         f"Got matched ids: {matched_ids!r}"
     )
     assert "bravo-and-charlie" not in matched_ids, (
-        "Expected a session without A not to satisfy `A and (B or C)`. "
+        "Expected a session without A not to satisfy `A AND (B OR C)`. "
         f"Got matched ids: {matched_ids!r}"
     )
 
 
 def test_three_term_and_chain(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`A and B and C` requires all three terms in the session."""
+    """`A AND B AND C` requires all three terms in the session."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -247,18 +247,18 @@ def test_three_term_and_chain(tmp_path: Path, monkeypatch, capsys) -> None:
     )
 
     exit_code, matched_ids = _run_search_ids(
-        "opname-alpha and opname-bravo and opname-charlie", capsys
+        "opname-alpha AND opname-bravo AND opname-charlie", capsys
     )
 
     assert exit_code == 0, f"Expected the three-term search to succeed. Got exit code: {exit_code}"
     assert matched_ids == ["all-three"], (
-        "Expected only the session containing all three `and` terms to match. "
+        "Expected only the session containing all three `AND` terms to match. "
         f"Got matched ids: {matched_ids!r}"
     )
 
 
 def test_three_term_or_chain(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`A or B or C` matches a session containing any one term."""
+    """`A OR B OR C` matches a session containing any one term."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -266,18 +266,18 @@ def test_three_term_or_chain(tmp_path: Path, monkeypatch, capsys) -> None:
     _write_session(_claude_session_path(home, "none-of-them"), ["something else"])
 
     exit_code, matched_ids = _run_search_ids(
-        "opname-alpha or opname-bravo or opname-charlie", capsys
+        "opname-alpha OR opname-bravo OR opname-charlie", capsys
     )
 
     assert exit_code == 0, f"Expected the three-term or search to succeed. Got exit code: {exit_code}"
     assert matched_ids == ["charlie-only"], (
-        "Expected `A or B or C` to match exactly the session containing one of the terms. "
+        "Expected `A OR B OR C` to match exactly the session containing one of the terms. "
         f"Got matched ids: {matched_ids!r}"
     )
 
 
 def test_or_and_precedence(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`A or B and C` parses as `A or (B and C)`: and binds tighter than or."""
+    """`A OR B AND C` parses as `A OR (B AND C)`: `AND` binds tighter."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -289,20 +289,20 @@ def test_or_and_precedence(tmp_path: Path, monkeypatch, capsys) -> None:
     )
 
     exit_code, matched_ids = _run_search_ids(
-        "opname-alpha or opname-bravo and opname-charlie", capsys
+        "opname-alpha OR opname-bravo AND opname-charlie", capsys
     )
 
     assert exit_code == 0, f"Expected the precedence search to succeed. Got exit code: {exit_code}"
     assert "alpha-only" in matched_ids, (
-        "Expected `A or B and C` to match a session containing only A. "
+        "Expected `A OR B AND C` to match a session containing only A. "
         f"Got matched ids: {matched_ids!r}"
     )
     assert "bravo-and-charlie" in matched_ids, (
-        "Expected `A or B and C` to match a session containing B and C. "
+        "Expected `A OR B AND C` to match a session containing B and C. "
         f"Got matched ids: {matched_ids!r}"
     )
     assert "bravo-only" not in matched_ids, (
-        "Expected `A or B and C` not to match a session with only B (and binds tighter). "
+        "Expected `A OR B AND C` not to match a session with only B. "
         f"Got matched ids: {matched_ids!r}"
     )
 
@@ -332,7 +332,7 @@ def test_plain_multi_word_pattern_without_operators_stays_one_regex(
 def test_regex_pattern_with_parens_and_no_operators_stays_regex(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
-    """Parens without `and`/`or` keywords keep their regex meaning."""
+    """Parentheses without `AND`/`OR` keywords keep their regex meaning."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -348,7 +348,7 @@ def test_regex_pattern_with_parens_and_no_operators_stays_regex(
 
 
 def test_and_term_satisfied_by_summary_facet(tmp_path: Path, monkeypatch, capsys) -> None:
-    """An `and` term satisfied only by the session summary still counts."""
+    """An `AND` term satisfied only by the session summary still counts."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
@@ -358,26 +358,26 @@ def test_and_term_satisfied_by_summary_facet(tmp_path: Path, monkeypatch, capsys
         summary="summary mentions opname-alpha",
     )
 
-    exit_code, matched_ids = _run_search_ids("opname-alpha and opname-bravo", capsys)
+    exit_code, matched_ids = _run_search_ids("opname-alpha AND opname-bravo", capsys)
 
     assert exit_code == 0, (
-        f"Expected the summary facet to satisfy one `and` term. Got exit code: {exit_code}"
+        f"Expected the summary facet to satisfy one `AND` term. Got exit code: {exit_code}"
     )
     assert matched_ids == ["summary-carries-term"], (
         "Expected a session whose summary satisfies one term and whose message satisfies "
-        f"the other to match `A and B`. Got matched ids: {matched_ids!r}"
+        f"the other to match `A AND B`. Got matched ids: {matched_ids!r}"
     )
 
 
 def test_dangling_operator_is_invalid(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`foo and` must error instead of silently degrading."""
+    """`foo AND` must error instead of silently degrading."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
-    _write_session(_claude_session_path(home, "any-session"), ["foo and"])
+    _write_session(_claude_session_path(home, "any-session"), ["foo AND"])
 
     with pytest.raises(SystemExit) as exc_info:
         commands.cmd_search(
-            "foo and",
+            "foo AND",
             ConversationFlags(color="never", paging=False),
             output_mode=SearchOutputMode.ONLY_ID,
             emit_metadata=True,
@@ -390,19 +390,19 @@ def test_dangling_operator_is_invalid(tmp_path: Path, monkeypatch, capsys) -> No
 
 
 def test_bare_operator_word_is_a_plain_pattern(tmp_path: Path, monkeypatch, capsys) -> None:
-    """Searching for just `and` has no operands, so it stays a literal search."""
+    """Searching for just `AND` has no operands, so it stays a literal search."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
-    _write_session(_claude_session_path(home, "contains-word"), ["bread and butter"])
+    _write_session(_claude_session_path(home, "contains-word"), ["bread AND butter"])
 
-    exit_code, matched_ids = _run_search_ids("and", capsys)
+    exit_code, matched_ids = _run_search_ids("AND", capsys)
 
     assert exit_code == 0, (
-        f"Expected a bare `and` pattern to behave as a literal search. Got exit code: {exit_code}"
+        f"Expected a bare `AND` pattern to behave as a literal search. Got exit code: {exit_code}"
     )
     assert matched_ids == ["contains-word"], (
-        "Expected `and` with no operand terms to match sessions containing the word. "
+        "Expected `AND` with no operand terms to match sessions containing the word. "
         f"Got matched ids: {matched_ids!r}"
     )
 
@@ -552,19 +552,19 @@ def test_not_excludes_when_negated_term_in_summary(tmp_path: Path, monkeypatch, 
 
 
 def test_bare_not_is_a_plain_pattern(tmp_path: Path, monkeypatch, capsys) -> None:
-    """Searching for just `not` has no operands, so it stays a literal search."""
+    """Searching for just `NOT` has no operands, so it stays a literal search."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
-    _write_session(_claude_session_path(home, "contains-word"), ["this is not working"])
+    _write_session(_claude_session_path(home, "contains-word"), ["this is NOT working"])
 
-    exit_code, matched_ids = _run_search_ids("not", capsys)
+    exit_code, matched_ids = _run_search_ids("NOT", capsys)
 
     assert exit_code == 0, (
-        f"Expected a bare `not` pattern to behave as a literal search. Got exit code: {exit_code}"
+        f"Expected a bare `NOT` pattern to behave as a literal search. Got exit code: {exit_code}"
     )
     assert matched_ids == ["contains-word"], (
-        "Expected `not` with no operand terms to match sessions containing the word. "
+        "Expected `NOT` with no operand terms to match sessions containing the word. "
         f"Got matched ids: {matched_ids!r}"
     )
 
@@ -589,35 +589,36 @@ def test_dangling_not_is_invalid(tmp_path: Path, monkeypatch, capsys) -> None:
     )
 
 
-def test_all_operators_are_case_insensitive(tmp_path: Path, monkeypatch, capsys) -> None:
-    """`and`/`or` operators have identical lowercase and uppercase semantics."""
+def test_non_uppercase_operator_words_stay_in_single_pattern(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Lowercase and mixed-case operator words retain single-pattern semantics."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
 
-    _write_session(
-        _claude_session_path(home, "has-both"),
-        ["case-alpha", "case-bravo"],
-    )
-    _write_session(
-        _claude_session_path(home, "has-alpha-only"),
-        ["case-alpha"],
-    )
+    cases = [
+        ("lower-and", "lower-alpha and lower-bravo", ["lower-alpha", "lower-bravo"]),
+        ("mixed-and", "mixed-alpha AnD mixed-bravo", ["mixed-alpha", "mixed-bravo"]),
+        ("lower-or", "lower-charlie or lower-delta", ["lower-charlie"]),
+        ("mixed-or", "mixed-charlie Or mixed-delta", ["mixed-charlie"]),
+        ("lower-not", "lower-echo not lower-foxtrot", ["lower-echo"]),
+        ("mixed-not", "mixed-echo NoT mixed-foxtrot", ["mixed-echo"]),
+    ]
+    for identifier, pattern, boolean_match_messages in cases:
+        literal_identifier = f"{identifier}-literal"
+        _write_session(_claude_session_path(home, literal_identifier), [pattern])
+        _write_session(
+            _claude_session_path(home, f"{identifier}-boolean-match"),
+            boolean_match_messages,
+        )
 
-    expectations = {
-        "case-alpha and case-bravo": {"has-both"},
-        "case-alpha AND case-bravo": {"has-both"},
-        "case-alpha or case-bravo": {"has-both", "has-alpha-only"},
-        "case-alpha OR case-bravo": {"has-both", "has-alpha-only"},
-        "case-alpha not case-bravo": {"has-alpha-only"},
-        "case-alpha NOT case-bravo": {"has-alpha-only"},
-    }
-    for pattern, expected_ids in expectations.items():
         exit_code, matched_ids = _run_search_ids(pattern, capsys)
+
         assert exit_code == 0, (
-            f"Expected {pattern!r} to use boolean operator semantics. "
+            f"Expected non-uppercase operator word in {pattern!r} to stay literal. "
             f"Got exit code: {exit_code}"
         )
-        assert set(matched_ids) == expected_ids, (
-            f"Expected {pattern!r} to match {expected_ids!r}. "
+        assert matched_ids == [literal_identifier], (
+            f"Expected {pattern!r} to match only its contiguous literal phrase. "
             f"Got matched ids: {matched_ids!r}"
         )

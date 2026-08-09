@@ -2,10 +2,13 @@
 name: search-boolean-operators-post-implementation
 description: How `and`/`or` search operators were added, key decisions and trade-offs.
 date: 2026-06-10
+status: historical
 follow_up: ../26-07-12-search-case-insensitive-operators/post-implementation.md
 ---
 
 # Search `and`/`or` Operators — Post-Implementation Notes
+
+> Historical record. Since 2026-08-09, only exact uppercase `AND`, `OR`, and `NOT` tokens are operators. See [README.md](../../README.md#boolean-operators).
 
 New module `src/chats/search_query.py` (tokenizer + recursive-descent parser producing
 `SearchTerm`/`AndQuery`/`OrQuery`) plugged into `commands/search.py`. Behavior pinned by

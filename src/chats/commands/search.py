@@ -1136,7 +1136,7 @@ def _search_conversation_content(
 
     The boolean query is evaluated session-wide: each term is satisfied by a
     match anywhere in the session (summaries, current title, or any rendered
-    message), so `and` terms may match in different messages.
+    message), so `AND` terms may match in different messages.
     """
     scan = SessionScan.from_content(content, flags, source_path=conv_file)
     messages = list(scan.messages)

@@ -1,9 +1,8 @@
-"""Boolean `and`/`or`/`not` search-query parsing for `ch search` patterns.
+"""Boolean `AND`/`OR`/`NOT` search-query parsing for `ch search` patterns.
 
-A pattern with no bare operator word tokens (in any letter case) stays one
-verbatim regex term (existing behavior). Once an operator appears, every
-multi-word or regex-shaped term must be quoted, e.g. `'"hello world" and foo'`.
-`not` cannot be mixed with `and`/`or` in the same query.
+A pattern with no bare uppercase operator word tokens stays one verbatim regex
+term. Once an operator appears, every multi-word or regex-shaped term must be
+quoted, e.g. `'"hello world" AND foo'`. `NOT` cannot be mixed with `AND`/`OR`.
 """
 
 from __future__ import annotations
@@ -17,6 +16,11 @@ _REGEX_META_CHARACTERS = frozenset(".^$*+?{}[]\\|()")
 _QUOTE_CHARACTERS = ('"', "'")
 
 _TokenKind = Literal["term", "and", "or", "not", "lparen", "rparen"]
+_OPERATOR_KINDS: dict[str, _TokenKind] = {
+    "AND": "and",
+    "OR": "or",
+    "NOT": "not",
+}
 
 
 class SearchQueryError(ValueError):
@@ -258,14 +262,13 @@ def _tokenize(pattern: str) -> list[_Token] | None:
         ):
             position += 1
         word = pattern[start:position]
-        normalized_word = word.casefold()
-        kind = normalized_word if normalized_word in ("and", "or", "not") else "term"
+        kind = _OPERATOR_KINDS.get(word, "term")
         tokens.append(_Token(kind, word))
     return tokens
 
 
 class _Parser:
-    """Recursive-descent parser: `or` over `and` over terms and parenthesized groups."""
+    """Recursive-descent parser: `OR` over `AND` over terms and parenthesized groups."""
 
     def __init__(self, tokens: list[_Token], *, case_sensitive: bool = False) -> None:
         self.tokens = tokens
@@ -279,7 +282,7 @@ class _Parser:
             if leftover.kind == "term":
                 raise SearchQueryError(
                     f"Invalid search query: unexpected term {leftover.text!r}. "
-                    "Quote multi-word terms, e.g. '\"hello world\" and foo'."
+                    "Quote multi-word terms, e.g. '\"hello world\" AND foo'."
                 )
             raise SearchQueryError(
                 f"Invalid search query: unexpected {leftover.text!r}."

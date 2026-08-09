@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-09] Restore uppercase-only search operators
+
+### Changed
+
+- `ch search` now recognizes only exact uppercase `AND`, `OR`, and `NOT` tokens as boolean operators. Lowercase and mixed-case words remain part of one regex pattern.
+
+---
 ## [2026-08-05] Detect external Codex and PI sessions by header
 
 ### Changed

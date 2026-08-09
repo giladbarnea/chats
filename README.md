@@ -243,21 +243,21 @@ ch search [OPTIONS] <pattern>
 
 **Boolean operators:**
 
-Patterns may combine terms with case-insensitive `and` / `or` / `not`, evaluated per session: each term may match anywhere in the session (different messages, a summary, or the current title). `and` binds tighter than `or`; parentheses group.
+Patterns may combine terms with uppercase `AND` / `OR` / `NOT`, evaluated per session: each term may match anywhere in the session (different messages, a summary, or the current title). `AND` binds tighter than `OR`; parentheses group.
 
 ```bash
-ch search 'docker and timeout'                  # Session must contain both terms
-ch search 'docker or podman'                    # Session contains either term
-ch search 'deploy and (staging or prod)'        # Compound grouping
-ch search 'alpha and bravo and charlie'         # Term chains
-ch search '"hello world" and foo'               # Quote multi-word terms
+ch search 'docker AND timeout'                  # Session must contain both terms
+ch search 'docker OR podman'                    # Session contains either term
+ch search 'deploy AND (staging OR prod)'        # Compound grouping
+ch search 'alpha AND bravo AND charlie'         # Term chains
+ch search '"hello world" AND foo'               # Quote multi-word terms
 ch search 'docker NOT timeout'                  # Session has docker but not timeout
 ch search '"hello world" NOT goodbye NOT earth' # Multiple exclusions
 ```
 
-`not` excludes sessions matching the negated term: `foo NOT bar` matches sessions containing `foo` where `bar` does not appear in any visible facet. Multiple `NOT` terms are ANDed. `not` cannot be mixed with `and`/`or` in the same query; parentheses are not supported with `not`.
+`NOT` excludes sessions matching the negated term: `foo NOT bar` matches sessions containing `foo` where `bar` does not appear in any visible facet. Multiple `NOT` terms are ANDed. `NOT` cannot be mixed with `AND`/`OR` in the same query; parentheses are not supported with `NOT`.
 
-Once an operator is present, every multi-word or regex-shaped term must be quoted (`"..."` or `'...'`): `ch search 'hello world and foo'` is an error. Operator recognition is case-insensitive, so `AND`/`OR`/`NOT` and mixed-case variants behave like `and`/`or`/`not`. A pattern with no bare operator token keeps the existing single-regex semantics, so `hello world` and `deploy-(prod|staging)` remain single patterns. Malformed boolean queries (unquoted multi-word terms, dangling operators, unbalanced parens) exit with code 2.
+Once an uppercase operator is present, every multi-word or regex-shaped term must be quoted (`"..."` or `'...'`): `ch search 'hello world AND foo'` is an error. Operator recognition is exact: only `AND`, `OR`, and `NOT` are syntax. Lowercase and mixed-case words stay inside one regex pattern, so `hello world and foo`, `black AnD white`, and `deploy-(prod|staging)` remain single patterns. Malformed boolean queries (unquoted multi-word terms, dangling operators, unbalanced parens) exit with code 2.
 
 **Options:**
 - `-l`: List mode - show only file paths and metadata
@@ -278,7 +278,7 @@ Once an operator is present, every multi-word or regex-shaped term must be quote
 
 `--only-user` and `--only-assistant` narrow regular message matches. Session summaries and the latest current title remain searchable facets, so a title/summary hit can still return a session even when role filtering leaves no matching message body. As in parse mode, these `--only-*` flags override `--thinking`, `--tools`, `--agents`, `--plans`, and `--all` with a warning.
 
-`--case-sensitive` and `--case-insensitive` are mutually exclusive. The selected mode applies to every regex or literal term, including terms inside boolean queries; operator words such as `AND`, `OR`, and `NOT` remain case-insensitive syntax. Search-mode shortening uses the long `--short` spelling because `-s` selects case-sensitive matching.
+`--case-sensitive` and `--case-insensitive` are mutually exclusive. The selected mode applies to every regex or literal term, including terms inside boolean queries; it does not change the uppercase-only `AND`, `OR`, and `NOT` grammar. Search-mode shortening uses the long `--short` spelling because `-s` selects case-sensitive matching.
 
 **Date formats:** ISO dates (`2024-12-15`, `24-12-15`), with time (`2024-12-15T14:30`, `2024-12-15 14:30:45`), or relative (`1h`, `2d`, `3w`, `4m`, `5y`).
 
