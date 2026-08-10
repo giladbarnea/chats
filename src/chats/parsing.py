@@ -913,6 +913,21 @@ def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message
     return _parse_default_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
+def _is_joined_pi_user_agent_custom_message(entry: dict) -> bool:
+    """Return whether Pi joined this user-agent response into the main context.
+
+    >>> _is_joined_pi_user_agent_custom_message({"type": "custom_message", "customType": "pi-user-agents", "details": {"mainContextState": "joined"}})
+    True
+    """
+    details = entry.get("details")
+    return (
+        entry.get("type") == "custom_message"
+        and entry.get("customType") == "pi-user-agents"
+        and isinstance(details, dict)
+        and details.get("mainContextState") == "joined"
+    )
+
+
 def _is_hidden_pi_custom_entry(entry: dict) -> bool:
     """Return whether a Pi custom envelope is hidden duplicate plumbing.
 
@@ -921,13 +936,10 @@ def _is_hidden_pi_custom_entry(entry: dict) -> bool:
     >>> _is_hidden_pi_custom_entry({"type": "custom", "display": False})
     True
     """
-    return (
+    return not _is_joined_pi_user_agent_custom_message(entry) and (
         entry.get("customType") == "subagent-notification"
         or entry.get("display") is False
-        or (
-            entry.get("type") == "custom_message"
-            and entry.get("display") is not True
-        )
+        or entry.get("type") == "custom_message"
     )
 
 
@@ -952,7 +964,7 @@ def _parse_pi_jsonl_entries(
         elif entry_type == "custom":
             msg = _parse_pi_custom_entry(entry, index, flags)
         elif entry_type == "custom_message":
-            msg = _parse_pi_custom_message_entry(entry, index, flags)
+            msg = _parse_pi_custom_message_entry(entry, index)
         else:
             msg = None
 
@@ -1193,10 +1205,9 @@ def _parse_pi_custom_entry(
 def _parse_pi_custom_message_entry(
     entry: dict,
     index: int,
-    flags: ConversationFlags,
 ) -> Message | None:
-    """Normalize a visible Pi custom-message user-agent interaction."""
-    if entry.get("customType") != "pi-user-agents" or not flags.show_agents:
+    """Normalize a Pi user-agent response joined into the main context."""
+    if not _is_joined_pi_user_agent_custom_message(entry):
         return None
     return _parse_pi_user_agent_entry(entry, index)
 

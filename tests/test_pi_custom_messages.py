@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 from collections.abc import Callable
@@ -16,11 +15,30 @@ SOURCE_FIXTURE = PROJECT_ROOT / "tests" / "data" / "pi-custom-message.jsonl"
 CH_EXECUTABLE = Path(sys.executable).with_name("ch")
 
 
+def _current_pi_entry(line: str) -> str:
+    entry: dict[str, object] = json.loads(line)
+    if (
+        entry.get("type") == "custom_message"
+        and entry.get("customType") == "pi-user-agents"
+        and entry.get("display") is True
+    ):
+        details = entry.get("details")
+        assert isinstance(details, dict), f"Expected agent details. Got: {details!r}."
+        entry["display"] = False
+        details["mainContextState"] = "joined"
+        return json.dumps(entry, ensure_ascii=False) + "\n"
+    return line
+
+
 def _copy_pi_fixture(tmp_path: Path) -> tuple[Path, Path]:
     home = tmp_path / "home"
     session_path = home / ".pi" / "agent" / "sessions" / "project" / SOURCE_FIXTURE.name
     session_path.parent.mkdir(parents=True)
-    shutil.copyfile(SOURCE_FIXTURE, session_path)
+    with SOURCE_FIXTURE.open(encoding="utf-8") as source, session_path.open(
+        "w", encoding="utf-8"
+    ) as target:
+        for line in source:
+            target.write(_current_pi_entry(line))
     return home, session_path
 
 
@@ -33,7 +51,7 @@ def _copy_pi_custom_fixture(tmp_path: Path) -> tuple[Path, Path]:
         for line in source:
             entry = json.loads(line)
             if entry.get("type") in {"session", "custom", "custom_message"}:
-                target.write(line)
+                target.write(_current_pi_entry(line))
     return home, session_path
 
 
@@ -56,7 +74,7 @@ def _derive_pi_fixture(
             if matched or not selector(entry):
                 continue
             mutate(entry)
-            target.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            target.write(_current_pi_entry(json.dumps(entry, ensure_ascii=False)))
             matched = True
     assert matched, "Expected to derive one matching record from the Pi fixture."
     return home, session_path
@@ -105,6 +123,82 @@ def _pi_user_agent_content(
         "</response>\n"
         "<duration_ms>\n1\n</duration_ms>\n"
         "</user_agent>"
+    )
+
+
+def test_default_output_includes_joined_pi_user_agent_custom_messages(
+    tmp_path: Path,
+) -> None:
+    task = "JOINED_AGENT_TASK"
+    response = "JOINED_AGENT_RESPONSE"
+
+    def select(entry: dict[str, object]) -> bool:
+        if entry.get("type") != "custom_message":
+            return False
+        if entry.get("customType") != "pi-user-agents":
+            return False
+        details = entry.get("details")
+        return (
+            entry.get("display") is True
+            and isinstance(details, dict)
+            and details.get("ok") is True
+        )
+
+    def mutate(entry: dict[str, object]) -> None:
+        details = entry.get("details")
+        assert isinstance(details, dict), f"Expected agent details. Got: {details!r}."
+        entry["display"] = False
+        entry["content"] = _pi_user_agent_content(task=task, response=response)
+        details["task"] = task
+        details["mainContextState"] = "joined"
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    completed = _run_ch(
+        home,
+        str(session_path),
+        "--color=never",
+        "--no-metadata",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert task in completed.stdout and response in completed.stdout, (
+        "Expected a joined Pi user-agent message in default parse output. "
+        f"stdout: {completed.stdout!r}."
+    )
+
+
+def test_default_output_hides_unjoined_pi_user_agent_custom_messages(
+    tmp_path: Path,
+) -> None:
+    task = "UNJOINED_AGENT_TASK"
+    response = "UNJOINED_AGENT_RESPONSE"
+
+    def select(entry: dict[str, object]) -> bool:
+        return (
+            entry.get("type") == "custom_message"
+            and entry.get("customType") == "pi-user-agents"
+            and entry.get("display") is False
+        )
+
+    def mutate(entry: dict[str, object]) -> None:
+        details = entry.get("details")
+        assert isinstance(details, dict), f"Expected agent details. Got: {details!r}."
+        entry["content"] = _pi_user_agent_content(task=task, response=response)
+        details["task"] = task
+        details["mainContextState"] = "background"
+
+    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
+    completed = _run_ch(
+        home,
+        str(session_path),
+        "--color=never",
+        "--no-metadata",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert task not in completed.stdout and response not in completed.stdout, (
+        "Expected a non-joined Pi user-agent message to stay out of default output. "
+        f"stdout: {completed.stdout!r}."
     )
 
 
@@ -548,7 +642,7 @@ def test_pi_user_agent_response_extraction_uses_the_native_envelope(
     )
 
 
-def test_pi_user_agent_display_false_duplicates_stay_hidden(
+def test_unjoined_pi_user_agent_display_false_duplicates_stay_hidden(
     tmp_path: Path,
 ) -> None:
     home, session_path = _copy_pi_custom_fixture(tmp_path)
@@ -565,7 +659,7 @@ def test_pi_user_agent_display_false_duplicates_stay_hidden(
     )
     assert completed.returncode == 0, completed.stderr
     assert completed.stdout.count(duplicated_task) == 1, (
-        "Expected the normal custom record once and its display=false custom_message "
+        "Expected the normal custom record once and its unjoined custom_message "
         f"duplicate to stay hidden. stdout: {completed.stdout!r}."
     )
 

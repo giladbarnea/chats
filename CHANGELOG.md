@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-09] Show joined Pi user-agent messages by default
+
+### Changed
+
+- Pi `pi-user-agents` `custom_message` records now appear without `--agents` or `--tools` when `details.mainContextState` is exactly `joined`. Other `custom_message` records remain hidden.
+
+---
 ## [2026-08-09] Restore uppercase-only search operators
 
 ### Changed

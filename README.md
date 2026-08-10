@@ -547,11 +547,12 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Searchable in search mode and emitted as `custom_title:` in metadata frontmatter
 
 7. **PI custom messages** (`type: "custom"` and selected `custom_message` records)
-   - Hidden by default
+   - Joined `pi-user-agents` `custom_message` records are visible by default when `details.mainContextState` is exactly `joined`
+   - Other custom records stay hidden by default
    - `--all` renders arbitrary `type: "custom"` data as JSON without assuming its schema, including incomplete special records that cannot normalize
-   - `--agents` renders successful and failed `pi-user-agents` and `subagents:record` records through the shared agent view
+   - `--agents` renders successful and failed `pi-user-agents` `custom` records and `subagents:record` records through the shared agent view
    - Failed `pi-user-agents` records use Bash error presentation without requiring `--tools`
-   - `subagent-notification` and `display: false` duplicate records stay hidden, including with `--all`
+   - Non-joined `custom_message`, `subagent-notification`, and other `display: false` records stay hidden, including with `--all`
 
 8. **Hook additional-context attachments** (`type: "attachment"`, Claude)
    - `attachment.type: "hook_additional_context"` is the text a hook injects into the transcript (from `UserPromptSubmit`, `SessionStart`, `PreToolUse:*`, `PostToolUse:*`, ...)
