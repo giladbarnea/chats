@@ -561,7 +561,13 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - `attachment.hookName` renders as the `hook_name` attribute and the joined `attachment.content` list as the body: `<tool-input name="AdditionalContext" hook_name="UserPromptSubmit">`
    - Obeys the shared tool policy across parse, JSON, and search; `-t`/`-t:s` keeps and shortens it. Other `attachment.type`s are skipped
 
-9. **Antigravity CLI transcript entries**
+9. **PI inline-skill expansions** (leading `<skill ...>...</skill>` blocks in user text)
+   - PI expands a slash-command skill by prepending its contents to the user message text, wrapped in a `<skill name="..." location="...">` block
+   - Each leading block splits into its own synthetic message holding a `Skill` tool pair — `<tool-input name="Skill" skill="..." location="...">` plus a `<tool-output>` with the skill body — hidden by default and filterable like any tool (`-t Skill`, `-t Skill:o`, `-t !Skill`)
+   - The typed remainder after the last block stays the visible user message; a skill-only message leaves no user message
+   - Only the leading run of blocks counts: a mid-message `<skill` tag, an unclosed leading tag, or pasted content with literal `<skill` tags after the typed text stays verbatim user text
+
+10. **Antigravity CLI transcript entries**
    - Stored under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`
    - `transcript_full.jsonl` is preferred when present; `transcript.jsonl` is used only when the full variant is missing
    - Session identity comes from the `{session_id}` brain directory, not from in-record fields

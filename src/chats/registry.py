@@ -58,6 +58,7 @@ TOOL_SCHEMAS: dict[str, ToolSchema] = {
     "Edit": ToolSchema(
         ["file_path"], None, None
     ),  # old_string/new_string handled separately
+    "Skill": ToolSchema(["skill", "location", "args"], None, None),
     "Task": ToolSchema(["subagent_type", "model"], "prompt", None),
     "WebFetch": ToolSchema(["url"], "prompt", None),
     "WebSearch": ToolSchema(["query"], None, None),

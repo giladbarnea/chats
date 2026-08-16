@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -958,19 +959,21 @@ def _parse_pi_jsonl_entries(
             continue
 
         if entry_type == "message":
-            msg = _parse_pi_message_entry(entry, index, flags)
+            parsed_messages = _parse_pi_message_entry(entry, index, flags)
         elif entry_type == "compaction":
-            msg = _parse_pi_compaction_entry(entry, index, flags)
+            parsed_messages = [_parse_pi_compaction_entry(entry, index, flags)]
         elif entry_type == "custom":
-            msg = _parse_pi_custom_entry(entry, index, flags)
+            parsed_messages = [_parse_pi_custom_entry(entry, index, flags)]
         elif entry_type == "custom_message":
-            msg = _parse_pi_custom_message_entry(entry, index)
+            parsed_messages = [_parse_pi_custom_message_entry(entry, index)]
         else:
-            msg = None
+            parsed_messages = []
 
-        if msg and msg.has_content():
-            messages.append(msg)
-            index += 1
+        for msg in parsed_messages:
+            if msg and msg.has_content():
+                msg.index = index
+                messages.append(msg)
+                index += 1
 
     return messages
 
@@ -2328,6 +2331,99 @@ def _normalize_pi_tool_name(name: str | None) -> str:
     """Map PI tool names to the canonical names used by the shared renderer."""
     return normalize_tool_name("pi", name)
 
+
+_PI_SKILL_TOKEN_PATTERN = re.compile(r"<skill(?:\s[^>]*)?>|</skill>")
+_PI_SKILL_CLOSE_TAG = "</skill>"
+_PI_SKILL_ATTRIBUTE_PATTERN = re.compile(r'([\w-]+)="([^"]*)"')
+
+
+@dataclass(frozen=True)
+class PiInlineSkill:
+    """One expanded inline skill peeled from the front of a Pi user message."""
+
+    input_data: dict[str, str]
+    body: str
+
+
+def _parse_pi_skill_attributes(opening_tag: str) -> dict[str, str]:
+    """Map a skill opening tag's attributes to Skill tool input keys.
+
+    >>> _parse_pi_skill_attributes('<skill name="a" location="/a/SKILL.md">')
+    {'skill': 'a', 'location': '/a/SKILL.md'}
+    """
+    return {
+        ("skill" if key == "name" else key): value
+        for key, value in _PI_SKILL_ATTRIBUTE_PATTERN.findall(opening_tag)
+    }
+
+
+def _split_pi_inline_skills(text: str) -> tuple[list[PiInlineSkill], str]:
+    r"""Split the leading run of Pi inline-skill blocks from the typed user text.
+
+    Only the leading run counts: the first non-skill text ends the scan, so
+    literal <skill> tags pasted later in the message stay user text. An
+    unclosed leading block means the message is not a skill expansion and is
+    returned untouched.
+
+    >>> skills, remainder = _split_pi_inline_skills(
+    ...     '<skill name="a" location="/a">body</skill>\n\nhello'
+    ... )
+    >>> [skill.input_data for skill in skills], remainder
+    ([{'skill': 'a', 'location': '/a'}], 'hello')
+    >>> _split_pi_inline_skills('hi <skill name="a">x</skill>')
+    ([], 'hi <skill name="a">x</skill>')
+    """
+    skills: list[PiInlineSkill] = []
+    cursor = len(text) - len(text.lstrip())
+
+    while opening := _PI_SKILL_TOKEN_PATTERN.match(text, cursor):
+        if opening.group() == _PI_SKILL_CLOSE_TAG:
+            break
+
+        depth = 1
+        close_end: int | None = None
+        for token in _PI_SKILL_TOKEN_PATTERN.finditer(text, opening.end()):
+            depth += -1 if token.group() == _PI_SKILL_CLOSE_TAG else 1
+            if depth == 0:
+                body = text[opening.end() : token.start()].strip()
+                skills.append(
+                    PiInlineSkill(_parse_pi_skill_attributes(opening.group()), body)
+                )
+                close_end = token.end()
+                break
+        if close_end is None:
+            return [], text
+
+        tail = text[close_end:]
+        cursor = close_end + len(tail) - len(tail.lstrip())
+
+    if not skills:
+        return [], text
+    return skills, text[cursor:]
+
+
+def _pi_inline_skill_message(
+    entry: dict, skill: PiInlineSkill, ordinal: int
+) -> Message:
+    """Represent one expanded inline skill as a synthetic Skill tool pair."""
+    seed = f"{_pi_native_entry_id(entry)}:{ordinal}"
+    tool_use_id = hashlib.sha1(seed.encode()).hexdigest()[:12]
+    message = Message(
+        role="user",
+        timestamp=entry.get("timestamp"),
+        native_entry_id=_pi_native_entry_id(entry),
+    )
+    message.tools = [
+        {
+            "type": "tool_use",
+            "id": tool_use_id,
+            "name": "Skill",
+            "input": skill.input_data,
+        },
+        {"type": "tool_result", "tool_use_id": tool_use_id, "content": skill.body},
+    ]
+    return message
+
 def _parse_pi_compaction_entry(
     entry: dict,
     index: int,
@@ -2361,8 +2457,12 @@ def _parse_pi_message_entry(
     entry: dict,
     index: int,
     flags: ConversationFlags,
-) -> Message | None:
-    """Parse a PI `type=message` entry."""
+) -> list[Message]:
+    """Parse a PI `type=message` entry into its visible messages.
+
+    A user entry whose text starts with expanded inline-skill blocks splits
+    into one synthetic Skill message per block plus the typed remainder.
+    """
     message_data = entry.get("message", {})
     role = message_data.get("role")
     native_entry_id = _pi_native_entry_id(entry)
@@ -2384,7 +2484,7 @@ def _parse_pi_message_entry(
         )
     elif role == "toolResult":
         if not flags.show_tools:
-            return None
+            return []
 
         native_tool_call_id = message_data.get("toolCallId")
         msg = Message(
@@ -2405,23 +2505,29 @@ def _parse_pi_message_entry(
         if isinstance(native_tool_name, str) and native_tool_name:
             tool_result["name"] = _normalize_pi_tool_name(native_tool_name)
         msg.tools.append(tool_result)
-        return msg
+        return [msg]
     else:
-        return None
+        return []
 
     content_items = message_data.get("content", [])
     text_blocks = _extract_text_blocks(content_items)
+
     if role == "user":
         text_blocks = _filter_hidden_user_text_blocks(text_blocks)
+        skills, remainder = _split_pi_inline_skills("\n\n".join(text_blocks))
+        if remainder and flags.show_user_messages:
+            msg.text = remainder
+        skill_messages = (
+            [
+                _pi_inline_skill_message(entry, skill, ordinal)
+                for ordinal, skill in enumerate(skills)
+            ]
+            if flags.show_tools
+            else []
+        )
+        return [*skill_messages, msg]
 
-    if (
-        role == "user"
-        and text_blocks
-        and flags.show_user_messages
-        or role == "assistant"
-        and text_blocks
-        and flags.show_assistant_messages
-    ):
+    if text_blocks and flags.show_assistant_messages:
         msg.text = "\n\n".join(text_blocks)
 
     if role == "assistant" and isinstance(content_items, list):
@@ -2449,7 +2555,7 @@ def _parse_pi_message_entry(
         if thinking_blocks:
             msg.thinking = "\n\n".join(thinking_blocks)
 
-    return msg
+    return [msg]
 
 
 def _extract_codex_text_blocks(content_data: object) -> list[str]:

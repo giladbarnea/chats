@@ -17,13 +17,7 @@ I'll load the three skills you asked for.
 <assistant-response i="3" model="opus-4-8" date="2026-06-28 12:30">
 ## Assistant
 
-<tool-input name="Skill" id="01BM">
-```json
-{
-  "skill": "load-project-context"
-}
-```
-</tool-input>
+<tool-input name="Skill" id="01BM" skill="load-project-context"></tool-input>
 </assistant-response>
 
 ---
@@ -1726,13 +1720,7 @@ Loading the two remaining skills and gathering the rest of the context (the shor
 <assistant-response i="16" model="opus-4-8" date="2026-06-28 12:31">
 ## Assistant
 
-<tool-input name="Skill" id="01UW">
-```json
-{
-  "skill": "tdd"
-}
-```
-</tool-input>
+<tool-input name="Skill" id="01UW" skill="tdd"></tool-input>
 </assistant-response>
 
 ---
@@ -1867,13 +1855,7 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 <assistant-response i="19" model="opus-4-8" date="2026-06-28 12:31">
 ## Assistant
 
-<tool-input name="Skill" id="01BZ">
-```json
-{
-  "skill": "write-tests"
-}
-```
-</tool-input>
+<tool-input name="Skill" id="01BZ" skill="write-tests"></tool-input>
 </assistant-response>
 
 ---
@@ -5602,13 +5584,7 @@ All tests pass. The remaining pyright notes are all pre-existing (`p.data` is a 
 <assistant-response i="84" model="opus-4-8" date="2026-06-28 12:49">
 ## Assistant
 
-<tool-input name="Skill" id="01CN">
-```json
-{
-  "skill": "post-implementation"
-}
-```
-</tool-input>
+<tool-input name="Skill" id="01CN" skill="post-implementation"></tool-input>
 </assistant-response>
 
 ---
@@ -9442,13 +9418,7 @@ I'll load the skill first, then dispatch an Opus reviewer focused on high-confid
 <assistant-response i="197" model="opus-4-8" date="2026-06-28 13:27">
 ## Assistant
 
-<tool-input name="Skill" id="01Fj">
-```json
-{
-  "skill": "instruct-another-ai"
-}
-```
-</tool-input>
+<tool-input name="Skill" id="01Fj" skill="instruct-another-ai"></tool-input>
 </assistant-response>
 
 ---
@@ -9562,13 +9532,7 @@ Classic use cases — *generalize* the principles, this isn't a comprehensive li
 <agent i="203" agent_id="aa14eb3341b758d8b" subagent_type="general-purpose" model="opus-4-8" date="2026-06-28 13:27">
 ## Agent
 
-  <tool-input name="Skill" id="015h">
-  ```json
-  {
-    "skill": "load-project-context"
-  }
-  ```
-  </tool-input>
+  <tool-input name="Skill" id="015h" skill="load-project-context"></tool-input>
 </agent>
 
 ---

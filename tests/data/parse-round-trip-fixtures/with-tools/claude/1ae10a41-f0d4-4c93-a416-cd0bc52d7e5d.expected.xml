@@ -4392,13 +4392,7 @@ I'll load the peer-review skill and examine the current dirty-tree state in para
 <assistant-response i="204" model="opus-4-8" date="2026-07-16 21:45">
 ## Assistant
 
-<tool-input name="Skill" id="018S">
-```json
-{
-  "skill": "peer-review"
-}
-```
-</tool-input>
+<tool-input name="Skill" id="018S" skill="peer-review"></tool-input>
 </assistant-response>
 
 ---
