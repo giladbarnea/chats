@@ -99,6 +99,12 @@ TOOL_NAME_ALIASES: dict[str, dict[str, str]] = {
     },
 }
 
+TOOL_FILTER_NAME_ALIASES: dict[str, str] = {
+    native_name: canonical_name
+    for provider_aliases in TOOL_NAME_ALIASES.values()
+    for native_name, canonical_name in provider_aliases.items()
+}
+
 
 # Provider-native input keys mapped to canonical schema keys after name aliasing.
 TOOL_INPUT_KEY_ALIASES: dict[str, dict[str, dict[str, str]]] = {
@@ -145,6 +151,15 @@ TOOL_INPUT_KEY_ALIASES: dict[str, dict[str, dict[str, str]]] = {
         },
     },
 }
+
+
+def normalize_tool_filter_name(name: str) -> str:
+    """Map any provider-native filter name to its shared canonical name.
+
+    >>> normalize_tool_filter_name("exec_command")
+    'Bash'
+    """
+    return TOOL_FILTER_NAME_ALIASES.get(name.lower(), name)
 
 
 def normalize_tool_name(provider: str, name: str | None) -> str:

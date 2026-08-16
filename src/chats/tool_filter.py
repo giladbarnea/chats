@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .registry import normalize_tool_filter_name
 from .shortening import (
     DEFAULT_SHORT_MAX_CHARS,
     PROGRESSIVE_SHORT_COMPONENTS,
@@ -93,7 +94,7 @@ def parse_tool_spec(spec: str) -> ToolFilter:
         if action:
             setattr(tf, *action)
         elif tf.name is None or not tf.short:
-            tf.name = token
+            tf.name = normalize_tool_filter_name(token)
         else:
             value = (
                 f"{parsed_short_value}:{token}"
@@ -158,13 +159,8 @@ def _is_short_component(candidate: str) -> bool:
 
 
 def _resolve_tool_name(tool: dict, id_map: dict[str, str]) -> str | None:
-    """Extract the tool name from a tool dict, resolving tool_result via id_map."""
-    tool_type = tool.get("type")
-    if tool_type == "tool_use":
-        return tool.get("name")
-    if tool_type == "tool_result":
-        return id_map.get(tool.get("tool_use_id"))
-    return None
+    """Use an explicit tool name, or resolve a linked result through its call."""
+    return tool.get("name") or id_map.get(tool.get("tool_use_id"))
 
 
 def resolve_tool_visibility(

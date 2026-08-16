@@ -2342,14 +2342,18 @@ def _parse_pi_message_entry(
             timestamp=entry.get("timestamp"),
             native_entry_id=native_entry_id,
         )
-        msg.tools.append({
+        tool_result = {
             "type": "tool_result",
             "tool_use_id": native_tool_call_id,
             "native_tool_call_id": native_tool_call_id,
             "content": message_data.get("content", []),
             "is_error": message_data.get("isError", False)
                 or bool(message_data.get("details", {}).get("error")),
-        })
+        }
+        native_tool_name = message_data.get("toolName")
+        if isinstance(native_tool_name, str) and native_tool_name:
+            tool_result["name"] = _normalize_pi_tool_name(native_tool_name)
+        msg.tools.append(tool_result)
         return msg
     else:
         return None

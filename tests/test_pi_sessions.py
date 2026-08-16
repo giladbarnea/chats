@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from chats import ConversationFlags, cmd_parse, cmd_name
+from chats import ConversationFlags, ToolFilter, cmd_name, cmd_parse
 
 
 def _utc_to_local_display(utc_iso: str) -> str:
@@ -601,6 +601,85 @@ def test_cmd_parse_supports_thinking_and_tools_from_pi_session_path(
     )
     assert "hi" in captured.out, (
         "Expected PI toolResult content to be preserved in XML output. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_filters_orphan_pi_result_by_source_tool_name(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A PI result should remain name-filterable when its call is absent."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".pi"
+        / "agent"
+        / "sessions"
+        / "--tmp-project--"
+        / "2026-04-04T12-24-33-963Z_session-orphan-result.jsonl"
+    )
+    _write_pi_session(
+        session_path,
+        [
+            {
+                "type": "session",
+                "version": 3,
+                "id": "session-orphan-result",
+                "timestamp": "2026-04-04T12:24:33.963Z",
+                "cwd": "/tmp/project",
+            },
+            {
+                "type": "message",
+                "id": "user-1",
+                "parentId": "session-orphan-result",
+                "timestamp": "2026-04-04T12:25:47.187Z",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "Show the orphan result."}],
+                },
+            },
+            {
+                "type": "message",
+                "id": "tool-result-1",
+                "parentId": "user-1",
+                "timestamp": "2026-04-04T12:25:48.467Z",
+                "message": {
+                    "role": "toolResult",
+                    "toolCallId": "call_missing",
+                    "toolName": "read",
+                    "content": [
+                        {"type": "text", "text": "orphan PI result content"}
+                    ],
+                    "isError": False,
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(
+            show_tools=[ToolFilter(name="Read")],
+            color="never",
+            paging=False,
+        ),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert '<tool-output name="Read"' in captured.out, (
+        "Expected `-t Read` to include an orphan PI result from toolName='read'. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "orphan PI result content" in captured.out, (
+        "Expected the filtered orphan PI result to preserve its content. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 

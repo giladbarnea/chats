@@ -32,6 +32,11 @@ BASH_ERROR = {
     "content": "cmd failed",
     "is_error": True,
 }
+SOLO_BASH_RESULT = {
+    "type": "tool_result",
+    "name": "Bash",
+    "content": "standalone bash output",
+}
 READ_USE = {
     "type": "tool_use",
     "name": "Read",
@@ -238,6 +243,62 @@ class TestFilterIntegration:
         assert len(parts) == 1
         assert parts[0].data.tag == "tool-input"
         assert dict(parts[0].data.attrs).get("name") == "Bash"
+
+    def test_name_filter_includes_solo_result_by_direct_name(self):
+        message = make_message(SOLO_BASH_RESULT)
+        flags = ConversationFlags(show_tools=[parse_tool_spec("Bash")])
+
+        parts = tool_parts_from(message, flags, {})
+
+        assert len(parts) == 1, (
+            "Expected `-t Bash` to include a solo result carrying name='Bash'. "
+            f"Got: {parts!r}"
+        )
+        assert dict(parts[0].data.attrs).get("name") == "Bash", (
+            "Expected the solo result to keep its explicit Bash name. "
+            f"Got: {parts[0]!r}"
+        )
+
+    def test_negated_name_filter_excludes_solo_result_by_direct_name(self):
+        message = make_message(SOLO_BASH_RESULT)
+        flags = ConversationFlags(show_tools=[parse_tool_spec("!Bash")])
+
+        parts = tool_parts_from(message, flags, {})
+
+        assert parts == [], (
+            "Expected `-t !Bash` to exclude a solo result carrying name='Bash'. "
+            f"Got: {parts!r}"
+        )
+
+    @pytest.mark.parametrize(
+        "native_name, canonical_name, tools",
+        [
+            ("read", "Read", (READ_USE, READ_RESULT)),
+            ("exec_command", "Bash", (BASH_USE, BASH_RESULT)),
+            ("run_command", "Bash", (BASH_USE, BASH_RESULT)),
+        ],
+        ids=["pi-read", "codex-exec-command", "antigravity-run-command"],
+    )
+    def test_provider_native_filter_name_matches_canonical_tool(
+        self,
+        native_name,
+        canonical_name,
+        tools,
+    ):
+        message = make_message(*tools)
+        flags = ConversationFlags(show_tools=[parse_tool_spec(native_name)])
+
+        parts = tool_parts_from(message, flags, ID_MAP)
+        names = [dict(part.data.attrs).get("name") for part in parts]
+
+        assert len(parts) == 2, (
+            f"Expected `-t {native_name}` to include the canonical {canonical_name} "
+            f"call and result. Got: {parts!r}"
+        )
+        assert names == [canonical_name, canonical_name], (
+            f"Expected `-t {native_name}` to render canonical name={canonical_name!r}. "
+            f"Got: {names!r}"
+        )
 
     def test_multiple_filters_ored(self):
         """Read:o + Bash:i → Read output and Bash input (2 parts, in message order)."""
