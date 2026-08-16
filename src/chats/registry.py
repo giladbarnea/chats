@@ -87,12 +87,16 @@ TOOL_NAME_ALIASES: dict[str, dict[str, str]] = {
     "codex": {
         "apply_patch": "Patch",
         "exec_command": "Bash",
+        "exec": "Bash",
+        "shell": "Bash",
+        "shell_command": "Bash",
     },
     "antigravitycli": {
         "run_command": "Bash",
         "view_file": "Read",
         "write_to_file": "Write",
         "replace_file_content": "Edit",
+        "multi_replace_file_content": "Edit",
         "grep_search": "Grep",
         "search_web": "WebSearch",
         "read_url_content": "WebFetch",
@@ -163,7 +167,11 @@ def normalize_tool_filter_name(name: str) -> str:
 
 
 def normalize_tool_name(provider: str, name: str | None) -> str:
-    """Map a provider-native tool name to the canonical shared tool name."""
+    """Map a provider-native tool name to the canonical shared tool name.
+
+    >>> normalize_tool_name("codex", "shell_command")
+    'Bash'
+    """
     if not name:
         return "Unknown"
 

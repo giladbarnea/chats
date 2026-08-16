@@ -1817,7 +1817,34 @@ _ANTIGRAVITY_TOOL_RESULT_TYPES = {
 
 _ANTIGRAVITY_ORPHAN_RESULT_NAME_ALIASES: dict[str, tuple[str, ...]] = {
     "CODE_ACTION": ("Write", "Edit"),
+    "LIST_DIRECTORY": ("list_dir",),
 }
+
+_ANTIGRAVITY_TOOL_RESULT_TYPE_BY_CALL_NAME = {
+    "view_file": "VIEW_FILE",
+    "run_command": "RUN_COMMAND",
+    "write_to_file": "CODE_ACTION",
+    "replace_file_content": "CODE_ACTION",
+    "multi_replace_file_content": "CODE_ACTION",
+    "list_dir": "LIST_DIRECTORY",
+    "list_directory": "LIST_DIRECTORY",
+    "grep_search": "GREP_SEARCH",
+    "search_web": "SEARCH_WEB",
+    "read_url_content": "READ_URL_CONTENT",
+    "ask_question": "ASK_QUESTION",
+    "generic": "GENERIC",
+}
+
+
+def _antigravity_tool_result_type(name: object) -> str:
+    """Return the result record type expected for an Antigravity tool call.
+
+    >>> _antigravity_tool_result_type("write_to_file")
+    'CODE_ACTION'
+    """
+    if not isinstance(name, str):
+        return "GENERIC"
+    return _ANTIGRAVITY_TOOL_RESULT_TYPE_BY_CALL_NAME.get(name.lower(), "GENERIC")
 
 
 def _normalize_antigravity_tool_name(name: str | None) -> str:
@@ -1847,7 +1874,7 @@ def _parse_antigravity_jsonl_entries(
 ) -> list[Message]:
     """Parse Antigravity transcript entries."""
     messages: list[Message] = []
-    pending_tool_calls: list[str] = []
+    pending_tool_calls: list[tuple[str, str]] = []
     index = 1
 
     for entry_number, entry in enumerate(entries, 1):
@@ -1876,7 +1903,8 @@ def _parse_antigravity_jsonl_entries(
                 for ordinal, tool_call in enumerate(tool_calls, 1):
                     if not isinstance(tool_call, dict):
                         continue
-                    tool_name = _normalize_antigravity_tool_name(tool_call.get("name"))
+                    native_tool_name = tool_call.get("name")
+                    tool_name = _normalize_antigravity_tool_name(native_tool_name)
                     tool_id = f"antigravity-{entry_number}-{ordinal}"
                     msg.tools.append(
                         {
@@ -1889,7 +1917,9 @@ def _parse_antigravity_jsonl_entries(
                             ),
                         }
                     )
-                    pending_tool_calls.append(tool_id)
+                    pending_tool_calls.append(
+                        (tool_id, _antigravity_tool_result_type(native_tool_name))
+                    )
 
             if msg.has_content():
                 messages.append(msg)
@@ -1902,8 +1932,16 @@ def _parse_antigravity_jsonl_entries(
         content = entry.get("content")
         if content is None:
             continue
-        if pending_tool_calls:
-            tool_id = pending_tool_calls.pop(0)
+        matching_call_index = next(
+            (
+                position
+                for position, (_, result_type) in enumerate(pending_tool_calls)
+                if result_type == entry_type
+            ),
+            None,
+        )
+        if matching_call_index is not None:
+            tool_id, _ = pending_tool_calls.pop(matching_call_index)
             tool_name = None
             tool_name_aliases: tuple[str, ...] = ()
         else:

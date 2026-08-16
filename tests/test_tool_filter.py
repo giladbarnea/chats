@@ -275,9 +275,19 @@ class TestFilterIntegration:
         [
             ("read", "Read", (READ_USE, READ_RESULT)),
             ("exec_command", "Bash", (BASH_USE, BASH_RESULT)),
+            ("exec", "Bash", (BASH_USE, BASH_RESULT)),
+            ("shell", "Bash", (BASH_USE, BASH_RESULT)),
+            ("shell_command", "Bash", (BASH_USE, BASH_RESULT)),
             ("run_command", "Bash", (BASH_USE, BASH_RESULT)),
         ],
-        ids=["pi-read", "codex-exec-command", "antigravity-run-command"],
+        ids=[
+            "pi-read",
+            "codex-exec-command",
+            "codex-exec",
+            "codex-shell",
+            "codex-shell-command",
+            "antigravity-run-command",
+        ],
     )
     def test_provider_native_filter_name_matches_canonical_tool(
         self,

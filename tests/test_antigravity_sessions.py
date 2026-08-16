@@ -215,7 +215,13 @@ def test_cmd_parse_filters_orphan_antigravity_result_by_record_type(
 
 @pytest.mark.parametrize(
     "filter_name",
-    ["Write", "Edit", "write_to_file", "replace_file_content"],
+    [
+        "Write",
+        "Edit",
+        "write_to_file",
+        "replace_file_content",
+        "multi_replace_file_content",
+    ],
 )
 def test_cmd_parse_filters_orphan_antigravity_code_action_by_possible_tool_name(
     tmp_path: Path,
@@ -261,6 +267,110 @@ def test_cmd_parse_filters_orphan_antigravity_code_action_by_possible_tool_name(
     )
     assert "orphan Antigravity code action content" in captured.out, (
         "Expected the filtered orphan CODE_ACTION result to preserve its content. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_pairs_antigravity_result_by_type_after_missing_result(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    home = tmp_path / "home"
+    session_id = "abababab-1111-2222-3333-cdcdcdcdcdcd"
+    transcript_path = _antigravity_log_path(home, session_id, "transcript_full.jsonl")
+    _write_jsonl(
+        transcript_path,
+        [
+            {
+                "step_index": 1,
+                "source": "MODEL",
+                "type": "PLANNER_RESPONSE",
+                "status": "DONE",
+                "created_at": "2026-06-01T10:00:00Z",
+                "tool_calls": [
+                    {"name": "run_command", "args": {"Command": "false"}},
+                    {
+                        "name": "write_to_file",
+                        "args": {"AbsolutePath": "/tmp/a", "Content": "a"},
+                    },
+                ],
+            },
+            {
+                "step_index": 2,
+                "source": "MODEL",
+                "type": "CODE_ACTION",
+                "status": "DONE",
+                "created_at": "2026-06-01T10:00:01Z",
+                "content": "write completed without a Bash result",
+            },
+        ],
+    )
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    cmd_parse(
+        ConversationFlags(
+            show_tools=[ToolFilter(name="Write", direction="output")],
+            color="never",
+            paging=False,
+        ),
+        str(transcript_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert '<tool-output name="Write"' in captured.out, (
+        "Expected CODE_ACTION to pair with Write after a missing Bash result. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "write completed without a Bash result" in captured.out, (
+        "Expected the correctly paired Write result content. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_cmd_parse_filters_orphan_list_directory_by_native_name(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    home = tmp_path / "home"
+    session_id = "cdcdcdcd-1111-2222-3333-abababababab"
+    transcript_path = _antigravity_log_path(home, session_id, "transcript_full.jsonl")
+    _write_jsonl(
+        transcript_path,
+        [
+            {
+                "step_index": 1,
+                "source": "MODEL",
+                "type": "LIST_DIRECTORY",
+                "status": "DONE",
+                "created_at": "2026-06-01T10:00:01Z",
+                "content": "orphan directory listing",
+            }
+        ],
+    )
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    cmd_parse(
+        ConversationFlags(
+            show_tools=[ToolFilter(name="list_dir")],
+            color="never",
+            paging=False,
+        ),
+        str(transcript_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "orphan directory listing" in captured.out, (
+        "Expected `-t list_dir` to include an orphan LIST_DIRECTORY result. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 
