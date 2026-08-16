@@ -3,6 +3,18 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-16] Split Pi inline-skill expansions into Skill tool messages
+
+### Added
+
+- A Pi user message whose text starts with expanded `<skill ...>...</skill>` blocks now splits: each leading block becomes its own synthetic message carrying a `Skill` tool pair (`tool_use` with `skill`/`location` input plus `tool_result` with the skill body, sharing one deterministic id), and the typed remainder stays the visible user message. Stacked sibling blocks split into separate Skill messages in order; a skill-only message leaves no user message behind. Skill messages are hidden by default and obey the shared tool policy (`-t`, `-t Skill`, `-t Skill:i`/`:o`, `-t !Skill`).
+- The splitter peels blocks from the front with a per-block depth counter and stops at the first non-skill text. A `<skill` tag that is not the first non-whitespace text, an unclosed leading tag, and pasted transcripts with unbalanced literal `<skill` tags after the typed text all stay verbatim user text — the tail is never scanned for tags.
+
+### Changed
+
+- `Skill` tool inputs now render through a shared tool schema (`skill`, `location`, `args` as tag attributes) instead of the fenced-JSON unknown-tool fallback. This also applies to Claude `Skill` calls; the static round-trip fixtures were regenerated for the new rendering.
+
+---
 ## [2026-08-09] Show joined Pi user-agent messages by default
 
 ### Changed

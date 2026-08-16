@@ -137,7 +137,10 @@ def test_skill_payload_meta_user_message_counts_as_tool_output():
     tool_id_map = _build_tool_id_map(messages)
     input_output = format_to_xml(messages, input_flags, tool_id_map)
 
-    assert '<tool-input name="Skill" id="018F">' in input_output, (
+    assert (
+        '<tool-input name="Skill" id="018F" skill="instruct-another-ai">'
+        in input_output
+    ), (
         f"Expected the Skill invocation to remain visible under input-only tool filtering. Got:\n{input_output}"
     )
     assert "Base directory for this skill" not in input_output, (
