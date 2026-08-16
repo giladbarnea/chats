@@ -1815,6 +1815,10 @@ _ANTIGRAVITY_TOOL_RESULT_TYPES = {
     "GENERIC",
 }
 
+_ANTIGRAVITY_ORPHAN_RESULT_NAME_ALIASES: dict[str, tuple[str, ...]] = {
+    "CODE_ACTION": ("Write", "Edit"),
+}
+
 
 def _normalize_antigravity_tool_name(name: str | None) -> str:
     """Map Antigravity tool names to shared canonical names where possible."""
@@ -1901,9 +1905,13 @@ def _parse_antigravity_jsonl_entries(
         if pending_tool_calls:
             tool_id = pending_tool_calls.pop(0)
             tool_name = None
+            tool_name_aliases: tuple[str, ...] = ()
         else:
             tool_id = f"antigravity-result-{entry_number}"
             tool_name = _normalize_antigravity_tool_name(entry_type.lower())
+            tool_name_aliases = _ANTIGRAVITY_ORPHAN_RESULT_NAME_ALIASES.get(
+                entry_type, ()
+            )
 
         tool_result = {
             "type": "tool_result",
@@ -1913,6 +1921,8 @@ def _parse_antigravity_jsonl_entries(
         }
         if tool_name is not None:
             tool_result["name"] = tool_name
+        if tool_name_aliases:
+            tool_result["name_aliases"] = tool_name_aliases
         messages.append(
             Message(
                 role="user",

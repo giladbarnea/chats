@@ -55,8 +55,11 @@ class ToolFilter:
         if self.name is None:
             return True
 
-        current_name = _resolve_tool_name(tool, id_map)
-        return _tool_names_match(current_name, self.name)
+        current_names = _resolve_tool_names(tool, id_map)
+        return any(
+            _tool_names_match(current_name, self.name)
+            for current_name in current_names
+        )
 
 
 def parse_tool_spec(spec: str) -> ToolFilter:
@@ -158,9 +161,17 @@ def _is_short_component(candidate: str) -> bool:
     return candidate.isdigit() or candidate.lower() in PROGRESSIVE_SHORT_COMPONENTS
 
 
-def _resolve_tool_name(tool: dict, id_map: dict[str, str]) -> str | None:
-    """Use an explicit tool name, or resolve a linked result through its call."""
-    return tool.get("name") or id_map.get(tool.get("tool_use_id"))
+def _resolve_tool_names(tool: dict, id_map: dict[str, str]) -> tuple[str, ...]:
+    """Use explicit tool names, or resolve a linked result through its call.
+
+    >>> _resolve_tool_names({"name": "code_action", "name_aliases": ("Write", "Edit")}, {})
+    ('code_action', 'Write', 'Edit')
+    """
+    if explicit_name := tool.get("name"):
+        return (explicit_name, *tool.get("name_aliases", ()))
+    if linked_name := id_map.get(tool.get("tool_use_id")):
+        return (linked_name,)
+    return ()
 
 
 def _tool_names_match(actual_name: str | None, requested_name: str) -> bool:

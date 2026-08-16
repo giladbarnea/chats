@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 from chats import ConversationFlags, SessionPool, ToolFilter, cmd_parse
 
 
@@ -207,6 +209,58 @@ def test_cmd_parse_filters_orphan_antigravity_result_by_record_type(
     )
     assert "orphan Antigravity result content" in captured.out, (
         "Expected the filtered orphan Antigravity result to preserve its content. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+@pytest.mark.parametrize(
+    "filter_name",
+    ["Write", "Edit", "write_to_file", "replace_file_content"],
+)
+def test_cmd_parse_filters_orphan_antigravity_code_action_by_possible_tool_name(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+    filter_name: str,
+) -> None:
+    home = tmp_path / "home"
+    session_id = "bbbbbbbb-1111-2222-3333-cccccccccccc"
+    transcript_path = _antigravity_log_path(home, session_id, "transcript_full.jsonl")
+    _write_jsonl(
+        transcript_path,
+        [
+            {
+                "step_index": 1,
+                "source": "MODEL",
+                "type": "CODE_ACTION",
+                "status": "DONE",
+                "created_at": "2026-06-01T10:00:01Z",
+                "content": "orphan Antigravity code action content",
+            }
+        ],
+    )
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    cmd_parse(
+        ConversationFlags(
+            show_tools=[ToolFilter(name=filter_name)],
+            color="never",
+            paging=False,
+        ),
+        str(transcript_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert "<tool-output" in captured.out, (
+        f"Expected `-t {filter_name}` to include an orphan CODE_ACTION result. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "orphan Antigravity code action content" in captured.out, (
+        "Expected the filtered orphan CODE_ACTION result to preserve its content. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 
