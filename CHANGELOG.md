@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-16] Match tool filters by user-facing names
+
+### Fixed
+
+- Tool result filters now prefer explicit parsed names and use the tool ID map only when a result lacks a name.
+- Known provider-native and canonical names now match symmetrically, including current Codex command names.
+- PI derives result names from `toolName`. Antigravity pairs outputs by expected record type and keeps identifiable orphan results name-filterable.
+
+---
 ## [2026-08-09] Show joined Pi user-agent messages by default
 
 ### Changed

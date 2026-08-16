@@ -45,11 +45,21 @@ And:
 
 ## Item kinds
 
-* `NAME := exact tool name`
+* `NAME := canonical tool name | known provider-native tool name | exact unknown tool name`
 * `DIRECTION := i | input | o | output`
 * `ERROR := e | error`
 * `SHORT := s [=SHORT_SPEC] | short [=SHORT_SPEC]`
 * `SHORT_SPEC :=` the grammar in [SHORT_SPEC.md](SHORT_SPEC.md)
+
+## Name equivalence
+
+An exact name always matches. Known provider-native and canonical names also match symmetrically, so `exec_command` and `Bash` select the same Codex command tools.
+
+For Codex, `Bash` matches `exec_command`, `exec`, `shell`, and `shell_command`. `Patch` matches `apply_patch`.
+
+A result's explicit parsed name and candidate aliases take priority. A nameless result inherits its call name through the tool ID map.
+
+Unknown names retain exact matching. Alias normalization does not make all tool names case-insensitive.
 
 ## Distinct-slot rule
 

@@ -105,6 +105,7 @@ For JSONL, provider resolution checks the native file path first. External files
 --no-assistant       # Hide regular assistant messages
 -t, --tools [SPEC]*  # Include tool use/result details. Filter with modifiers:
                      #   Name:    -t Bash, -t Read, -t !Bash (exclude)
+                     #   Aliases: -t exec_command, -t shell_command, -t run_command
                      #   Direction: -t i (inputs), -t o (outputs), -t Bash:i
                      #   Error:   -t e (errors only), -t Bash:e
                      #   Short:   -t s (fixed 500), -t s=p, -t Read:o:s=p=80
@@ -566,7 +567,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - Session identity comes from the `{session_id}` brain directory, not from in-record fields
    - `USER_INPUT.content` renders only the `<USER_REQUEST>...</USER_REQUEST>` body by default, hiding Antigravity metadata wrappers
    - `PLANNER_RESPONSE.content` renders as assistant text; `thinking` and `tool_calls` are opt-in through the standard `--thinking` and `--tools` flags
-   - Tool result records such as `RUN_COMMAND`, `VIEW_FILE`, and `CODE_ACTION` are paired positionally with preceding Antigravity tool calls
+   - Tool result records such as `RUN_COMMAND`, `VIEW_FILE`, and `CODE_ACTION` pair with the earliest pending call that expects their record type. Unmatched results keep a synthetic identity and remain name-filterable when the record type identifies one or more possible tools
 
 **Non-linear structure (Claude):**
 
