@@ -1898,24 +1898,27 @@ def _parse_antigravity_jsonl_entries(
         content = entry.get("content")
         if content is None:
             continue
-        tool_id = (
-            pending_tool_calls.pop(0)
-            if pending_tool_calls
-            else f"antigravity-result-{entry_number}"
-        )
+        if pending_tool_calls:
+            tool_id = pending_tool_calls.pop(0)
+            tool_name = None
+        else:
+            tool_id = f"antigravity-result-{entry_number}"
+            tool_name = _normalize_antigravity_tool_name(entry_type.lower())
+
+        tool_result = {
+            "type": "tool_result",
+            "tool_use_id": tool_id,
+            "content": _antigravity_tool_result_content(content),
+            "is_error": entry.get("status") == "ERROR",
+        }
+        if tool_name is not None:
+            tool_result["name"] = tool_name
         messages.append(
             Message(
                 role="user",
                 index=index,
                 timestamp=timestamp,
-                tools=[
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": tool_id,
-                        "content": _antigravity_tool_result_content(content),
-                        "is_error": entry.get("status") == "ERROR",
-                    }
-                ],
+                tools=[tool_result],
             )
         )
         index += 1

@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from chats import ConversationFlags, SessionPool, cmd_parse
+from chats import ConversationFlags, SessionPool, ToolFilter, cmd_parse
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -161,6 +161,53 @@ def test_cmd_parse_renders_antigravity_thinking_and_tool_roundtrip(
     )
     assert "command failed loudly" in captured.out, (
         f"Expected RUN_COMMAND content to render. stdout:\n{captured.out}"
+    )
+
+
+def test_cmd_parse_filters_orphan_antigravity_result_by_record_type(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    home = tmp_path / "home"
+    session_id = "dddddddd-1111-2222-3333-eeeeeeeeeeee"
+    transcript_path = _antigravity_log_path(home, session_id, "transcript_full.jsonl")
+    _write_jsonl(
+        transcript_path,
+        [
+            {
+                "step_index": 1,
+                "source": "MODEL",
+                "type": "RUN_COMMAND",
+                "status": "DONE",
+                "created_at": "2026-06-01T10:00:01Z",
+                "content": "orphan Antigravity result content",
+            }
+        ],
+    )
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    cmd_parse(
+        ConversationFlags(
+            show_tools=[ToolFilter(name="Bash")],
+            color="never",
+            paging=False,
+        ),
+        str(transcript_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert '<tool-output name="Bash"' in captured.out, (
+        "Expected `-t Bash` to include an orphan RUN_COMMAND result. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "orphan Antigravity result content" in captured.out, (
+        "Expected the filtered orphan Antigravity result to preserve its content. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
 
 

@@ -56,7 +56,7 @@ class ToolFilter:
             return True
 
         current_name = _resolve_tool_name(tool, id_map)
-        return current_name == self.name
+        return _tool_names_match(current_name, self.name)
 
 
 def parse_tool_spec(spec: str) -> ToolFilter:
@@ -94,7 +94,7 @@ def parse_tool_spec(spec: str) -> ToolFilter:
         if action:
             setattr(tf, *action)
         elif tf.name is None or not tf.short:
-            tf.name = normalize_tool_filter_name(token)
+            tf.name = token
         else:
             value = (
                 f"{parsed_short_value}:{token}"
@@ -161,6 +161,19 @@ def _is_short_component(candidate: str) -> bool:
 def _resolve_tool_name(tool: dict, id_map: dict[str, str]) -> str | None:
     """Use an explicit tool name, or resolve a linked result through its call."""
     return tool.get("name") or id_map.get(tool.get("tool_use_id"))
+
+
+def _tool_names_match(actual_name: str | None, requested_name: str) -> bool:
+    """Match exact names or names that share a known provider alias.
+
+    >>> _tool_names_match("apply_patch", "Patch")
+    True
+    """
+    if actual_name is None:
+        return False
+    return actual_name == requested_name or normalize_tool_filter_name(
+        actual_name
+    ) == normalize_tool_filter_name(requested_name)
 
 
 def resolve_tool_visibility(

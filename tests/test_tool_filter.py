@@ -300,6 +300,41 @@ class TestFilterIntegration:
             f"Got: {names!r}"
         )
 
+    @pytest.mark.parametrize(
+        "filter_name, parsed_name",
+        [
+            ("apply_patch", "apply_patch"),
+            ("Patch", "apply_patch"),
+            ("bash", "bash"),
+            ("Bash", "bash"),
+        ],
+        ids=[
+            "native-patch-filter",
+            "canonical-patch-filter",
+            "native-bash-filter",
+            "canonical-bash-filter",
+        ],
+    )
+    def test_filter_alias_matches_tool_name_left_native_by_provider(
+        self,
+        filter_name,
+        parsed_name,
+    ):
+        message = make_message({
+            "type": "tool_use",
+            "id": "toolu_native",
+            "name": parsed_name,
+            "input": {},
+        })
+        flags = ConversationFlags(show_tools=[parse_tool_spec(filter_name)])
+
+        parts = tool_parts_from(message, flags, {})
+
+        assert len(parts) == 1, (
+            f"Expected `-t {filter_name}` to match parsed name={parsed_name!r}. "
+            f"Got: {parts!r}"
+        )
+
     def test_multiple_filters_ored(self):
         """Read:o + Bash:i → Read output and Bash input (2 parts, in message order)."""
         flags = ConversationFlags(
