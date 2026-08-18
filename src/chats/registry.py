@@ -92,16 +92,6 @@ TOOL_NAME_ALIASES: dict[str, dict[str, str]] = {
         "shell": "Bash",
         "shell_command": "Bash",
     },
-    "antigravitycli": {
-        "run_command": "Bash",
-        "view_file": "Read",
-        "write_to_file": "Write",
-        "replace_file_content": "Edit",
-        "multi_replace_file_content": "Edit",
-        "grep_search": "Grep",
-        "search_web": "WebSearch",
-        "read_url_content": "WebFetch",
-    },
 }
 
 TOOL_FILTER_NAME_ALIASES: dict[str, str] = {
@@ -126,38 +116,6 @@ TOOL_INPUT_KEY_ALIASES: dict[str, dict[str, dict[str, str]]] = {
     "codex": {
         "Bash": {
             "cmd": "command",
-        },
-    },
-    "antigravitycli": {
-        "Bash": {
-            "Command": "command",
-            "WorkingDirectory": "workdir",
-            "WaitMsBeforeAsync": "yield_time_ms",
-        },
-        "Read": {
-            "AbsolutePath": "file_path",
-        },
-        "Write": {
-            "AbsolutePath": "file_path",
-            "Content": "content",
-        },
-        "Edit": {
-            "AbsolutePath": "file_path",
-            "OldString": "old_string",
-            "NewString": "new_string",
-        },
-        "Grep": {
-            "Pattern": "pattern",
-            "Path": "path",
-            "IncludePattern": "glob",
-        },
-        "WebSearch": {
-            "Query": "query",
-        },
-        "WebFetch": {
-            "Url": "url",
-            "URL": "url",
-            "Prompt": "prompt",
         },
     },
 }

@@ -55,24 +55,6 @@
       ]
     },
     {
-      "provider_adapter": "antigravitycli",
-      "configuration": "bare",
-      "arguments": [],
-      "session_id": "9ae6e0ea-002e-484b-9f87-19e7de57e1dc",
-      "input_json": "tests/data/parse-round-trip-fixtures/bare/antigravity/9ae6e0ea-002e-484b-9f87-19e7de57e1dc.input.json",
-      "expected_xml": "tests/data/parse-round-trip-fixtures/bare/antigravity/9ae6e0ea-002e-484b-9f87-19e7de57e1dc.expected.xml",
-      "json_command": [
-        "ch",
-        "9ae6e0ea-002e-484b-9f87-19e7de57e1dc",
-        "-f",
-        "json"
-      ],
-      "xml_command": [
-        "ch",
-        "9ae6e0ea-002e-484b-9f87-19e7de57e1dc"
-      ]
-    },
-    {
       "provider_adapter": "claude",
       "configuration": "with-tools",
       "arguments": [
@@ -135,28 +117,6 @@
       "xml_command": [
         "ch",
         "019ecaa9-37d5-7822-9338-bbf5dbfcf5a1",
-        "-t"
-      ]
-    },
-    {
-      "provider_adapter": "antigravitycli",
-      "configuration": "with-tools",
-      "arguments": [
-        "-t"
-      ],
-      "session_id": "0cf82891-bd9c-4bd4-a1e9-ec7e72f41a8e",
-      "input_json": "tests/data/parse-round-trip-fixtures/with-tools/antigravity/0cf82891-bd9c-4bd4-a1e9-ec7e72f41a8e.input.json",
-      "expected_xml": "tests/data/parse-round-trip-fixtures/with-tools/antigravity/0cf82891-bd9c-4bd4-a1e9-ec7e72f41a8e.expected.xml",
-      "json_command": [
-        "ch",
-        "0cf82891-bd9c-4bd4-a1e9-ec7e72f41a8e",
-        "-t",
-        "-f",
-        "json"
-      ],
-      "xml_command": [
-        "ch",
-        "0cf82891-bd9c-4bd4-a1e9-ec7e72f41a8e",
         "-t"
       ]
     },
@@ -227,28 +187,6 @@
       ]
     },
     {
-      "provider_adapter": "antigravitycli",
-      "configuration": "tools-shortened",
-      "arguments": [
-        "-t:s"
-      ],
-      "session_id": "effa57ba-2c57-4723-9f71-001383a592ea",
-      "input_json": "tests/data/parse-round-trip-fixtures/tools-shortened/antigravity/effa57ba-2c57-4723-9f71-001383a592ea.input.json",
-      "expected_xml": "tests/data/parse-round-trip-fixtures/tools-shortened/antigravity/effa57ba-2c57-4723-9f71-001383a592ea.expected.xml",
-      "json_command": [
-        "ch",
-        "-t:s",
-        "effa57ba-2c57-4723-9f71-001383a592ea",
-        "-f",
-        "json"
-      ],
-      "xml_command": [
-        "ch",
-        "-t:s",
-        "effa57ba-2c57-4723-9f71-001383a592ea"
-      ]
-    },
-    {
       "provider_adapter": "claude",
       "configuration": "with-agents",
       "arguments": [
@@ -311,28 +249,6 @@
       "xml_command": [
         "ch",
         "019f6c1d-a807-7c60-86cb-572047567b4a",
-        "--agents"
-      ]
-    },
-    {
-      "provider_adapter": "antigravitycli",
-      "configuration": "with-agents",
-      "arguments": [
-        "--agents"
-      ],
-      "session_id": "7e9f0e05-bb3b-423d-b010-092cf6f237ad",
-      "input_json": "tests/data/parse-round-trip-fixtures/with-agents/antigravity/7e9f0e05-bb3b-423d-b010-092cf6f237ad.input.json",
-      "expected_xml": "tests/data/parse-round-trip-fixtures/with-agents/antigravity/7e9f0e05-bb3b-423d-b010-092cf6f237ad.expected.xml",
-      "json_command": [
-        "ch",
-        "7e9f0e05-bb3b-423d-b010-092cf6f237ad",
-        "--agents",
-        "-f",
-        "json"
-      ],
-      "xml_command": [
-        "ch",
-        "7e9f0e05-bb3b-423d-b010-092cf6f237ad",
         "--agents"
       ]
     },
@@ -407,31 +323,6 @@
       "xml_command": [
         "ch",
         "019eca84-83bd-7900-a142-04833f5ae1c6",
-        "-t",
-        "--agents"
-      ]
-    },
-    {
-      "provider_adapter": "antigravitycli",
-      "configuration": "tools-and-agents",
-      "arguments": [
-        "-t",
-        "--agents"
-      ],
-      "session_id": "7ef36d5f-7c06-4f6d-bffe-4066d4193088",
-      "input_json": "tests/data/parse-round-trip-fixtures/tools-and-agents/antigravity/7ef36d5f-7c06-4f6d-bffe-4066d4193088.input.json",
-      "expected_xml": "tests/data/parse-round-trip-fixtures/tools-and-agents/antigravity/7ef36d5f-7c06-4f6d-bffe-4066d4193088.expected.xml",
-      "json_command": [
-        "ch",
-        "7ef36d5f-7c06-4f6d-bffe-4066d4193088",
-        "-t",
-        "--agents",
-        "-f",
-        "json"
-      ],
-      "xml_command": [
-        "ch",
-        "7ef36d5f-7c06-4f6d-bffe-4066d4193088",
         "-t",
         "--agents"
       ]

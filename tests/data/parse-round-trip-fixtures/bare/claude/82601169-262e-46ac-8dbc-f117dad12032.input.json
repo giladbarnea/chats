@@ -170,7 +170,7 @@
     "role": "assistant",
     "original_index": 18,
     "content": [
-      "A full 20-fixture `input.json` → `expected.xml` corpus exists. Let me diff the smallest pair (antigravity bare, 1.5KB) to see exactly what the JSON carries vs what the XML requires."
+      "A full 20-fixture `input.json` → `expected.xml` corpus exists. Let me diff the smallest pair (provider-specific bare, 1.5KB) to see exactly what the JSON carries vs what the XML requires."
     ],
     "model": "opus-4-8",
     "timestamp": "2026-07-17T11:43:25.958Z"

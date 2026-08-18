@@ -174,7 +174,7 @@ There's a dedicated `parse-round-trip-fixtures` directory. This is exactly the r
 <assistant-response i="17" model="opus-4-8" date="2026-07-17 14:38">
 ## Assistant
 
-A full 20-fixture `input.json` → `expected.xml` corpus exists. Let me diff the smallest pair (antigravity bare, 1.5KB) to see exactly what the JSON carries vs what the XML requires.
+A full 20-fixture `input.json` → `expected.xml` corpus exists. Let me diff the smallest pair (provider-specific bare, 1.5KB) to see exactly what the JSON carries vs what the XML requires.
 </assistant-response>
 
 ---

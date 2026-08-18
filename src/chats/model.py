@@ -16,8 +16,8 @@ from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_input_needs_wrapper, tool_to_json, tool_to_parts
 from .utils import shorten_data, truncate_middle
 
-Provider = Literal["claude", "pi", "codex", "antigravitycli"]
-PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex", "antigravitycli")
+Provider = Literal["claude", "pi", "codex"]
+PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex")
 
 
 def _message_timestamp_datetime(timestamp: str | None) -> datetime | None:

@@ -1440,31 +1440,6 @@ def _is_codex_jsonl_path(source_path: Path | None) -> bool:
     return True
 
 
-def _antigravity_brain_dir() -> Path:
-    """Return the Antigravity CLI brain directory."""
-    return Path.home() / ".gemini" / "antigravity-cli" / "brain"
-
-
-def _is_antigravity_jsonl_path(source_path: Path | None) -> bool:
-    """Return True when the source path is an Antigravity CLI transcript."""
-    if source_path is None:
-        return False
-
-    try:
-        relative_path = source_path.resolve().relative_to(
-            _antigravity_brain_dir().resolve()
-        )
-    except ValueError:
-        return False
-    except OSError:
-        return False
-
-    return relative_path.parts[-3:] in {
-        (".system_generated", "logs", "transcript.jsonl"),
-        (".system_generated", "logs", "transcript_full.jsonl"),
-    }
-
-
 def _extract_pi_session_id(session_file: Path) -> str | None:
     """Extract the PI session id from the file's session entry or filename."""
     try:
@@ -1644,53 +1619,6 @@ def extract_codex_subagent_metadata(transcript: Path) -> SubagentMetadata:
     )
 
 
-def _extract_antigravity_session_id(session_file: Path) -> str | None:
-    """Extract the Antigravity session id from its brain directory."""
-    try:
-        relative_path = session_file.resolve().relative_to(
-            _antigravity_brain_dir().resolve()
-        )
-    except ValueError:
-        return None
-    except OSError:
-        return None
-
-    if len(relative_path.parts) < 4:
-        return None
-    return relative_path.parts[0]
-
-
-def _find_antigravity_session_files() -> list[Path]:
-    """List Antigravity transcript files, preferring full transcripts."""
-    brain_dir = _antigravity_brain_dir()
-    if not brain_dir.exists():
-        return []
-
-    session_files: list[Path] = []
-    for logs_dir in sorted(brain_dir.glob("*/.system_generated/logs")):
-        full_transcript = logs_dir / "transcript_full.jsonl"
-        compact_transcript = logs_dir / "transcript.jsonl"
-        if full_transcript.exists():
-            session_files.append(full_transcript)
-            continue
-        if compact_transcript.exists():
-            session_files.append(compact_transcript)
-    return session_files
-
-
-def _find_antigravity_session_matches(identifier: str) -> list[tuple[Path, str]]:
-    """Find Antigravity transcript files that match a brain session id."""
-    if len(identifier.split()) != 1:
-        return []
-
-    matches: list[tuple[Path, str]] = []
-    for session_file in _find_antigravity_session_files():
-        if _extract_antigravity_session_id(session_file) != identifier:
-            continue
-        matches.append((session_file, f"Antigravity session {identifier}"))
-    return matches
-
-
 def find_all_supported_session_files(*, include_sidechains: bool = True) -> list[Path]:
     """List all known session files across supported JSONL adapters."""
     claude_projects_dir = Path.home() / ".claude" / "projects"
@@ -1788,211 +1716,6 @@ def _build_codex_name_entries(
     ]
 
 
-_ANTIGRAVITY_USER_REQUEST_PATTERN = re.compile(
-    r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>",
-    re.DOTALL,
-)
-
-
-def _extract_antigravity_user_text(content: object) -> str:
-    r"""Extract the user-authored request from Antigravity's XML-ish user content.
-
-    >>> _extract_antigravity_user_text('<USER_REQUEST>\nhello\n</USER_REQUEST><ADDITIONAL_METADATA>x</ADDITIONAL_METADATA>')
-    'hello'
-    """
-    if not isinstance(content, str):
-        return ""
-
-    if match := _ANTIGRAVITY_USER_REQUEST_PATTERN.search(content):
-        return match.group(1).strip()
-    return content.strip()
-
-
-_ANTIGRAVITY_TOOL_RESULT_TYPES = {
-    "VIEW_FILE",
-    "RUN_COMMAND",
-    "CODE_ACTION",
-    "LIST_DIRECTORY",
-    "GREP_SEARCH",
-    "SEARCH_WEB",
-    "READ_URL_CONTENT",
-    "ASK_QUESTION",
-    "GENERIC",
-}
-
-_ANTIGRAVITY_ORPHAN_RESULT_NAME_ALIASES: dict[str, tuple[str, ...]] = {
-    "CODE_ACTION": ("Write", "Edit"),
-    "LIST_DIRECTORY": ("list_dir",),
-}
-
-_ANTIGRAVITY_TOOL_RESULT_TYPE_BY_CALL_NAME = {
-    "view_file": "VIEW_FILE",
-    "run_command": "RUN_COMMAND",
-    "write_to_file": "CODE_ACTION",
-    "replace_file_content": "CODE_ACTION",
-    "multi_replace_file_content": "CODE_ACTION",
-    "list_dir": "LIST_DIRECTORY",
-    "list_directory": "LIST_DIRECTORY",
-    "grep_search": "GREP_SEARCH",
-    "search_web": "SEARCH_WEB",
-    "read_url_content": "READ_URL_CONTENT",
-    "ask_question": "ASK_QUESTION",
-    "generic": "GENERIC",
-}
-
-
-def _antigravity_tool_result_type(name: object) -> str:
-    """Return the result record type expected for an Antigravity tool call.
-
-    >>> _antigravity_tool_result_type("write_to_file")
-    'CODE_ACTION'
-    """
-    if not isinstance(name, str):
-        return "GENERIC"
-    return _ANTIGRAVITY_TOOL_RESULT_TYPE_BY_CALL_NAME.get(name.lower(), "GENERIC")
-
-
-def _normalize_antigravity_tool_name(name: str | None) -> str:
-    """Map Antigravity tool names to shared canonical names where possible."""
-    return normalize_tool_name("antigravitycli", name)
-
-
-def _normalize_antigravity_tool_input(tool_name: str, args: object) -> dict:
-    """Map Antigravity tool inputs to canonical schema keys.
-
-    >>> _normalize_antigravity_tool_input('Bash', {'Command': 'pwd'})
-    {'command': 'pwd'}
-    """
-    if not isinstance(args, dict):
-        return {"input": args}
-    return normalize_tool_input_keys("antigravitycli", tool_name, args)
-
-
-def _antigravity_tool_result_content(content: object) -> object:
-    if isinstance(content, str | list):
-        return content
-    return json.dumps(content, ensure_ascii=False)
-
-
-def _parse_antigravity_jsonl_entries(
-    entries: list[dict], flags: ConversationFlags
-) -> list[Message]:
-    """Parse Antigravity transcript entries."""
-    messages: list[Message] = []
-    pending_tool_calls: list[tuple[str, str]] = []
-    index = 1
-
-    for entry_number, entry in enumerate(entries, 1):
-        entry_type = entry.get("type")
-        timestamp = entry.get("created_at")
-
-        if entry_type == "USER_INPUT" and flags.show_user_messages:
-            text = _extract_antigravity_user_text(entry.get("content"))
-            if text:
-                messages.append(
-                    Message(role="user", index=index, text=text, timestamp=timestamp)
-                )
-                index += 1
-            continue
-
-        if entry_type == "PLANNER_RESPONSE":
-            msg = Message(role="assistant", index=index, timestamp=timestamp)
-            content = entry.get("content")
-            if flags.show_assistant_messages and isinstance(content, str):
-                msg.text = content.strip()
-            if flags.show_thinking and isinstance(entry.get("thinking"), str):
-                msg.thinking = entry["thinking"].strip()
-
-            tool_calls = entry.get("tool_calls")
-            if flags.show_tools and isinstance(tool_calls, list):
-                for ordinal, tool_call in enumerate(tool_calls, 1):
-                    if not isinstance(tool_call, dict):
-                        continue
-                    native_tool_name = tool_call.get("name")
-                    tool_name = _normalize_antigravity_tool_name(native_tool_name)
-                    tool_id = f"antigravity-{entry_number}-{ordinal}"
-                    msg.tools.append(
-                        {
-                            "type": "tool_use",
-                            "id": tool_id,
-                            "name": tool_name,
-                            "input": _normalize_antigravity_tool_input(
-                                tool_name,
-                                tool_call.get("args", {}),
-                            ),
-                        }
-                    )
-                    pending_tool_calls.append(
-                        (tool_id, _antigravity_tool_result_type(native_tool_name))
-                    )
-
-            if msg.has_content():
-                messages.append(msg)
-                index += 1
-            continue
-
-        if entry_type not in _ANTIGRAVITY_TOOL_RESULT_TYPES or not flags.show_tools:
-            continue
-
-        content = entry.get("content")
-        if content is None:
-            continue
-        matching_call_index = next(
-            (
-                position
-                for position, (_, result_type) in enumerate(pending_tool_calls)
-                if result_type == entry_type
-            ),
-            None,
-        )
-        if matching_call_index is not None:
-            tool_id, _ = pending_tool_calls.pop(matching_call_index)
-            tool_name = None
-            tool_name_aliases: tuple[str, ...] = ()
-        else:
-            tool_id = f"antigravity-result-{entry_number}"
-            tool_name = _normalize_antigravity_tool_name(entry_type.lower())
-            tool_name_aliases = _ANTIGRAVITY_ORPHAN_RESULT_NAME_ALIASES.get(
-                entry_type, ()
-            )
-
-        tool_result = {
-            "type": "tool_result",
-            "tool_use_id": tool_id,
-            "content": _antigravity_tool_result_content(content),
-            "is_error": entry.get("status") == "ERROR",
-        }
-        if tool_name is not None:
-            tool_result["name"] = tool_name
-        if tool_name_aliases:
-            tool_result["name_aliases"] = tool_name_aliases
-        messages.append(
-            Message(
-                role="user",
-                index=index,
-                timestamp=timestamp,
-                tools=[tool_result],
-            )
-        )
-        index += 1
-
-    return messages
-
-
-def _parse_antigravity_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
-    """Parse Antigravity transcript JSONL."""
-    return _parse_antigravity_jsonl_entries(_iter_jsonl_entries(content), flags)
-
-
-def _build_antigravity_name_entries(
-    _entries: list[dict],
-    _session_id: str,
-    _new_name: str,
-) -> list[dict]:
-    """Antigravity CLI does not expose a known native rename record yet."""
-    raise ValueError("Antigravity CLI rename is not supported.")
-
-
 JSONL_SESSION_ADAPTERS = [
     JsonlSessionAdapter(
         name="codex",
@@ -2014,15 +1737,6 @@ JSONL_SESSION_ADAPTERS = [
         find_session_matches=_find_pi_session_matches,
         extract_session_id=_extract_pi_session_id,
         matches_first_entry=_is_pi_session_header,
-    ),
-    JsonlSessionAdapter(
-        name="antigravitycli",
-        matches=_is_antigravity_jsonl_path,
-        parse_messages=_parse_antigravity_jsonl,
-        build_name_entries=_build_antigravity_name_entries,
-        find_session_files=_find_antigravity_session_files,
-        find_session_matches=_find_antigravity_session_matches,
-        extract_session_id=_extract_antigravity_session_id,
     ),
     JsonlSessionAdapter(
         name="claude",
@@ -2115,8 +1829,6 @@ def parse_jsonl_entries(
         return _parse_pi_jsonl_entries(entries, flags)
     if adapter.name == "codex":
         return _parse_codex_jsonl_entries(entries, flags)
-    if adapter.name == "antigravitycli":
-        return _parse_antigravity_jsonl_entries(entries, flags)
     return _parse_default_jsonl_entries(entries, flags)
 
 

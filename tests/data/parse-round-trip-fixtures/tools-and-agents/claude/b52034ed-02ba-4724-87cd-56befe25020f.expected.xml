@@ -488,8 +488,8 @@ Date:   Sun Jun 28 10:12:38 2026 +0300
 13	from .tools import tool_to_json, tool_to_parts
 14	from .utils import shorten_data, truncate_middle
 15	
-16	Provider = Literal["claude", "pi", "codex", "antigravitycli"]
-17	PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex", "antigravitycli")
+16	Provider = Literal["claude", "pi", "codex"]
+17	PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex")
 18	
 19	
 20	def _message_timestamp_datetime(timestamp: str | None) -> datetime | None:
@@ -2210,15 +2210,6 @@ with patch(module.function): ...
 86	        "apply_patch": "Patch",
 87	        "exec_command": "Bash",
 88	    },
-89	    "antigravitycli": {
-90	        "run_command": "Bash",
-91	        "view_file": "Read",
-92	        "write_to_file": "Write",
-93	        "replace_file_content": "Edit",
-94	        "grep_search": "Grep",
-95	        "search_web": "WebSearch",
-96	        "read_url_content": "WebFetch",
-97	    },
 98	}
 99	
 100	
@@ -2229,38 +2220,6 @@ with patch(module.function): ...
 105	            "cmd": "command",
 106	        },
 107	    },
-108	    "antigravitycli": {
-109	        "Bash": {
-110	            "Command": "command",
-111	            "WorkingDirectory": "workdir",
-112	            "WaitMsBeforeAsync": "yield_time_ms",
-113	        },
-114	        "Read": {
-115	            "AbsolutePath": "file_path",
-116	        },
-117	        "Write": {
-118	            "AbsolutePath": "file_path",
-119	            "Content": "content",
-120	        },
-121	        "Edit": {
-122	            "AbsolutePath": "file_path",
-123	            "OldString": "old_string",
-124	            "NewString": "new_string",
-125	        },
-126	        "Grep": {
-127	            "Pattern": "pattern",
-128	            "Path": "path",
-129	            "IncludePattern": "glob",
-130	        },
-131	        "WebSearch": {
-132	            "Query": "query",
-133	        },
-134	        "WebFetch": {
-135	            "Url": "url",
-136	            "URL": "url",
-137	            "Prompt": "prompt",
-138	        },
-139	    },
 140	}
 141	
 142	
@@ -2313,7 +2272,6 @@ data
 lib.sh
 run_all.sh
 test_agents.sh
-test_antigravity_sessions.py
 test_basic.sh
 test_branch_marking.py
 test_catalog.py
@@ -5729,7 +5687,7 @@ No plan file or implementation-docs directory exists for this work, so the skill
 46	
 47	### Added
 48	
-49	- `ch info <session>` aggregates and prints one session's statistics: name, file, id, wall-clock and API durations, per-model token usage with cost, message counts (user, assistant, tool calls, tool results), aggregate token totals, and total cost. It resolves a session the same way parse does (id, name, recent negative index, or file path) and is currently scoped to Claude and PI; a Codex or Antigravity session is rejected with a clear error rather than producing a half-filled report. Logic lives in `chats.commands.info`.
+49	- `ch info <session>` aggregates and prints one session's statistics: name, file, id, wall-clock and API durations, per-model token usage with cost, message counts (user, assistant, tool calls, tool results), aggregate token totals, and total cost. It resolves a session the same way parse does (id, name, recent negative index, or file path) and is currently scoped to Claude and PI; a Codex session is rejected with a clear error rather than producing a half-filled report. Logic lives in `chats.commands.info`.
 50	- Wall-clock duration is the span between the first and last in-band timestamps. API duration is shown only when real generation-time data exists — for Claude that is the sum of `system`/`turn_duration` `durationMs` entries (emitted only by recent CLI versions); PI records none, so the line is omitted rather than inferred from timestamp gaps.
 51	- Token usage is grouped by the per-message model, so a session that switched models mid-stream reports each model separately. Claude writes one API response across several JSONL lines that repeat the same `message.id` and `usage`, so usage and the assistant-message count are deduplicated by `message.id`; `<synthetic>` placeholder and API-error lines are excluded. Tool calls are counted by distinct `tool_use` block id and tool results by distinct `tool_result` `tool_use_id`, so the split-line layout never double-counts.
 52	- Where the file states a value, `info` reads it rather than recomputing: PI's per-message `totalTokens` is summed for the token total (Claude has no such field, so there it is the sum of the four categories), and cost comes straight from PI's stored `usage.cost.total`. Claude stores no cost, so it is computed from a per-model price table (cache reads at 0.1x input) that tolerates bare and date-stamped model ids. Cache writes are priced per TTL bucket from the `cache_creation` breakdown Claude records — `ephemeral_1h_input_tokens` at 2x input and `ephemeral_5m_input_tokens` at 1.25x — which matches Claude Code's 1-hour-cache billing; absent the breakdown the aggregate write count falls back to the 5-minute rate.
@@ -5813,16 +5771,6 @@ No plan file or implementation-docs directory exists for this work, so the skill
 130	- Patterns without a bare lowercase `and`/`or` token keep single-regex semantics, so `hello world`, `deploy-(prod|staging)`, and `black AND white` behave as before.
 131	- New `search_query` module owns tokenizing, parsing, and per-term regex/literal compilation; the candidate prefilter now evaluates the same boolean tree over per-term raw-content plausibility with a lazily casefolded haystack.
 132	
-133	---
-134	## [2026-06-07] Add Antigravity CLI adapter
-135	
-136	### Added
-137	
-138	- `ch` now discovers Antigravity CLI transcripts under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`.
-139	- Antigravity discovery prefers `transcript_full.jsonl` when it exists and falls back to `transcript.jsonl` only when the full variant is absent.
-140	- Antigravity `USER_INPUT`, `PLANNER_RESPONSE`, thinking, tool calls, and tool-result records parse into the shared message model; session ids come from the brain directory.
-141	- `--provider antigravitycli` is available anywhere provider-scoped filtering is supported.
-142	
 143	---
 144	## [2026-05-31] Add `rename -n/--dry-run`
 145	
@@ -7908,7 +7856,6 @@ src/chats/theme.py
 src/chats/tool_filter.py
 src/chats/tools.py
 src/chats/utils.py
-tests/test_antigravity_sessions.py
 tests/test_branch_marking.py
 tests/test_catalog.py
 tests/test_claude_agent_detection.py
@@ -10704,8 +10651,8 @@ Classic use cases — *generalize* the principles, this isn't a comprehensive li
   14	from .tools import tool_to_json, tool_to_parts
   15	from .utils import shorten_data, truncate_middle
   16	
-  17	Provider = Literal["claude", "pi", "codex", "antigravitycli"]
-  18	PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex", "antigravitycli")
+  17	Provider = Literal["claude", "pi", "codex"]
+  18	PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex")
   19	
   20	
   21	def _message_timestamp_datetime(timestamp: str | None) -> datetime | None:

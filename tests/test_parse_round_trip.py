@@ -19,7 +19,7 @@ FIXTURE_ROOT = PROJECT_ROOT / "tests" / "data" / "parse-round-trip-fixtures"
 MANIFEST_PATH = FIXTURE_ROOT / "MANIFEST.json"
 CH_EXECUTABLE = Path(sys.executable).with_name("ch")
 
-PROVIDERS = {"claude", "pi", "codex", "antigravitycli"}
+PROVIDERS = {"claude", "pi", "codex"}
 CONFIGURATION_ARGUMENTS = {
     "bare": [],
     "with-tools": ["-t"],
@@ -67,11 +67,11 @@ def test_static_fixtures_cover_the_exact_adapter_configuration_matrix() -> None:
         f"Missing: {expected_matrix - actual_matrix!r}; "
         f"unexpected: {actual_matrix - expected_matrix!r}."
     )
-    assert len(MANIFEST_ROWS) == 20, (
-        f"Expected the 4-adapter x 5-configuration corpus to contain 20 rows. "
+    assert len(MANIFEST_ROWS) == 15, (
+        f"Expected the 3-adapter x 5-configuration corpus to contain 15 rows. "
         f"Got: {len(MANIFEST_ROWS)}."
     )
-    assert len(set(session_ids)) == 20, (
+    assert len(set(session_ids)) == 15, (
         "Expected every stored fixture row to come from a globally distinct session. "
         f"Got session IDs: {session_ids!r}."
     )

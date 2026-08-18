@@ -30,7 +30,7 @@ All notable changes to the `conversations` skill.
 
 - Tool result filters now prefer explicit parsed names and use the tool ID map only when a result lacks a name.
 - Known provider-native and canonical names now match symmetrically, including current Codex command names.
-- PI derives result names from `toolName`. Antigravity pairs outputs by expected record type and keeps identifiable orphan results name-filterable.
+- PI derives result names from `toolName`.
 
 ---
 ## [2026-08-09] Show joined Pi user-agent messages by default
@@ -106,7 +106,7 @@ All notable changes to the `conversations` skill.
 - Structured message JSON now carries the raw timestamp and optional agent name needed to preserve `date=` and agent identity metadata. Ambiguous tool-input dictionaries use an explicit `input` wrapper so serialization remains reversible.
 - Multiple adjacent text values in structured JSON collapse with the formatter's paragraph separator; text split around a typed block fails clearly because the bucketed `Message` model cannot preserve that order.
 - Malformed JSON roots, message objects, typed content blocks, tool structures, and noncanonical XML fail with clear contextual errors rather than producing partial output.
-- Static round-trip fixtures cover Claude, PI, Codex, and Antigravity CLI across bare, tools, shortened tools, agents, and tools-plus-agents configurations—a 4×5 matrix using 20 distinct real session IDs in both conversion directions.
+- Static round-trip fixtures cover Claude, PI, and Codex across bare, tools, shortened tools, agents, and tools-plus-agents configurations—a 3×5 matrix using 15 distinct real session IDs in both conversion directions.
 
 ---
 ## [2026-07-15] Add `NOT` search operator
@@ -232,7 +232,7 @@ All notable changes to the `conversations` skill.
 
 ### Added
 
-- `ch info <session>` aggregates and prints one session's statistics: name, file, id, wall-clock and API durations, per-model token usage with cost, message counts (user, assistant, tool calls, tool results), aggregate token totals, and total cost. It resolves a session the same way parse does (id, name, recent negative index, or file path) and is currently scoped to Claude and PI; a Codex or Antigravity session is rejected with a clear error rather than producing a half-filled report. Logic lives in `chats.commands.info`.
+- `ch info <session>` aggregates and prints one session's statistics: name, file, id, wall-clock and API durations, per-model token usage with cost, message counts (user, assistant, tool calls, tool results), aggregate token totals, and total cost. It resolves a session the same way parse does (id, name, recent negative index, or file path) and is currently scoped to Claude and PI; a Codex session is rejected with a clear error rather than producing a half-filled report. Logic lives in `chats.commands.info`.
 - Wall-clock duration is the span between the first and last in-band timestamps. API duration is shown only when real generation-time data exists — for Claude that is the sum of `system`/`turn_duration` `durationMs` entries (emitted only by recent CLI versions); PI records none, so the line is omitted rather than inferred from timestamp gaps.
 - Token usage is grouped by the per-message model, so a session that switched models mid-stream reports each model separately. Claude writes one API response across several JSONL lines that repeat the same `message.id` and `usage`, so usage and the assistant-message count are deduplicated by `message.id`; `<synthetic>` placeholder and API-error lines are excluded. Tool calls are counted by distinct `tool_use` block id and tool results by distinct `tool_result` `tool_use_id`, so the split-line layout never double-counts.
 - Where the file states a value, `info` reads it rather than recomputing: PI's per-message `totalTokens` is summed for the token total (Claude has no such field, so there it is the sum of the four categories), and cost comes straight from PI's stored `usage.cost.total`. Claude stores no cost, so it is computed from a per-model price table (cache reads at 0.1x input) that tolerates bare and date-stamped model ids. Cache writes are priced per TTL bucket from the `cache_creation` breakdown Claude records — `ephemeral_1h_input_tokens` at 2x input and `ephemeral_5m_input_tokens` at 1.25x — which matches Claude Code's 1-hour-cache billing; absent the breakdown the aggregate write count falls back to the 5-minute rate.
@@ -315,16 +315,6 @@ All notable changes to the `conversations` skill.
 - Multi-word or regex-shaped terms must be quoted once an operator is present (`'"hello world" and foo'`); malformed boolean queries exit with code 2 and a quoting hint.
 - Patterns without a bare lowercase `and`/`or` token keep single-regex semantics, so `hello world`, `deploy-(prod|staging)`, and `black AND white` behave as before.
 - New `search_query` module owns tokenizing, parsing, and per-term regex/literal compilation; the candidate prefilter now evaluates the same boolean tree over per-term raw-content plausibility with a lazily casefolded haystack.
-
----
-## [2026-06-07] Add Antigravity CLI adapter
-
-### Added
-
-- `ch` now discovers Antigravity CLI transcripts under `~/.gemini/antigravity-cli/brain/{session_id}/.system_generated/logs/`.
-- Antigravity discovery prefers `transcript_full.jsonl` when it exists and falls back to `transcript.jsonl` only when the full variant is absent.
-- Antigravity `USER_INPUT`, `PLANNER_RESPONSE`, thinking, tool calls, and tool-result records parse into the shared message model; session ids come from the brain directory.
-- `--provider antigravitycli` is available anywhere provider-scoped filtering is supported.
 
 ---
 ## [2026-05-31] Add `rename -n/--dry-run`

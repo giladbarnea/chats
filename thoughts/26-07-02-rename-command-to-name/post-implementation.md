@@ -11,7 +11,7 @@ Renamed the CLI verb `ch rename` to `ch name` and propagated the change across t
 
 Three layers of "rename" exist here, and only two were changed. I asked the user to pick the depth; they chose **command + write-path builders**:
 
-1. **Renamed** — the CLI verb, `cmd_name` (was `cmd_rename`), the `commands/name.py` module, and the provider write-path builders in `parsing.py` (`build_name_entries`, `NameEntryBuilder`, `_build_{claude,pi,codex,antigravity}_name_entries`), plus help text, README/ARCHITECTURE/CHANGELOG, and the command's tests.
+1. **Renamed** — the CLI verb, `cmd_name` (was `cmd_rename`), the `commands/name.py` module, and the provider write-path builders in `parsing.py` (`build_name_entries`, `NameEntryBuilder`, `_build_{claude,pi,codex}_name_entries`), plus help text, README/ARCHITECTURE/CHANGELOG, and the command's tests.
 2. **Kept on purpose** — the rendered `session-rename` concept (`ContentBlockType.SESSION_RENAME`, the `<session-rename>` XML tag, the `## Renamed Session` header, the theme color key, the `session-rename` role in `model.py`). This names the rename *event* in parsed output and is a rendered-output contract covered by golden-file tests; it is orthogonal to the CLI verb.
 3. **Must not change** — the `/rename` string written to `~/.claude/history.jsonl` and the `<command-name>/rename</command-name>` record in `parsing.py`. These mirror Claude Code's own native `/rename` slash command; Claude has no `/name` command, so changing them would break that integration.
 

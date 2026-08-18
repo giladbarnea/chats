@@ -34,7 +34,6 @@ from ..model import (
     assign_progressive_shortening,
 )
 from ..parsing import (
-    _extract_antigravity_user_text,
     _extract_codex_text_blocks,
     _extract_custom_title_from_entry,
     _extract_text_blocks,
@@ -632,8 +631,6 @@ def _entry_has_default_visible_search_facet(entry: dict, provider: Provider) -> 
         return _pi_entry_has_default_visible_text(entry)
     if provider == "codex":
         return _codex_entry_has_default_visible_text(entry)
-    if provider == "antigravitycli":
-        return _antigravity_entry_has_default_visible_text(entry)
     return False
 
 
@@ -668,16 +665,6 @@ def _codex_entry_has_default_visible_text(entry: dict) -> bool:
         return any(
             text.strip() for text in _extract_codex_text_blocks(payload.get("content"))
         )
-    return False
-
-
-def _antigravity_entry_has_default_visible_text(entry: dict) -> bool:
-    entry_type = entry.get("type")
-    if entry_type == "USER_INPUT":
-        return bool(_extract_antigravity_user_text(entry.get("content")).strip())
-    if entry_type == "PLANNER_RESPONSE":
-        content = entry.get("content")
-        return isinstance(content, str) and bool(content.strip())
     return False
 
 
