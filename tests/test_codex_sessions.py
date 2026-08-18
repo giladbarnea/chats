@@ -1171,3 +1171,219 @@ def test_cmd_parse_treats_native_codex_thread_name_as_custom_title(
         "Expected native Codex thread names not to render through the session-rename XML tag anymore. "
         f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
+
+
+def test_codex_custom_exec_script_renders_bash_command_and_array_result(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Latest Codex exec scripts should render their shell command and result text."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "08"
+        / "11"
+        / "rollout-2026-08-11T11-05-31-019fefda-f11c-7e32-bc25-codexexecscript.jsonl"
+    )
+    script = """const results = await Promise.all([
+  tools.exec_command({
+    cmd: "cat README.md",
+    workdir: "/tmp/codex-project",
+    yield_time_ms: 10000,
+    max_output_tokens: 20000
+  }),
+  tools.exec_command({
+    cmd: "git status --short",
+    workdir: "/tmp/codex-project",
+    yield_time_ms: 10000,
+    max_output_tokens: 20000
+  })
+]);
+text(results.map((result) => result.output).join("\\n"));
+"""
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-08-11T08:05:31.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": "019fefda-f11c-7e32-bc25-codexexecscript",
+                    "cwd": "/tmp/codex-project",
+                },
+            },
+            {
+                "timestamp": "2026-08-11T08:05:32.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call",
+                    "id": "ctc_exec_1",
+                    "status": "completed",
+                    "call_id": "call_exec_1",
+                    "name": "exec",
+                    "input": script,
+                },
+            },
+            {
+                "timestamp": "2026-08-11T08:05:33.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call_output",
+                    "id": "ctco_exec_1",
+                    "call_id": "call_exec_1",
+                    "output": [
+                        {
+                            "type": "input_text",
+                            "text": "Script completed\nWall time 0.1 seconds\nOutput:\n",
+                        },
+                        {
+                            "type": "input_text",
+                            "text": "Codex fixture README body\n",
+                        },
+                    ],
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(show_tools=True, color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert (
+        '<tool-input name="Bash" id="exec" '
+        'workdir="/tmp/codex-project" yield_time_ms="10000" '
+        'max_output_tokens="20000">' in captured.out
+    ), (
+        "Expected the latest Codex custom exec envelope to normalize into a canonical "
+        f"Bash input. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "```sh\ncat README.md\n\ngit status --short\n```" in captured.out, (
+        "Expected every shell command inside the Codex exec script to remain visible. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert '<tool-output name="Bash" id="exec">' in captured.out, (
+        "Expected the latest Codex custom result to stay paired with its Bash call. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "Codex fixture README body" in captured.out, (
+        "Expected every input_text block in the latest Codex result array to render. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "tools.exec_command" not in captured.out, (
+        "Expected the adapter to remove the Codex JavaScript transport wrapper. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+
+
+def test_codex_custom_exec_apply_patch_script_renders_canonical_patch(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Latest Codex apply_patch scripts should render the patch, not an empty Bash call."""
+    temp_home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: temp_home)
+
+    session_path = (
+        temp_home
+        / ".codex"
+        / "sessions"
+        / "2026"
+        / "08"
+        / "11"
+        / "rollout-2026-08-11T11-06-31-019fefda-f11c-7e32-bc25-codexpatchscript.jsonl"
+    )
+    patch_text = (
+        "*** Begin Patch\n"
+        "*** Update File: app.py\n"
+        "@@\n"
+        "-print('old')\n"
+        "+print('new')\n"
+        "*** End Patch"
+    )
+    script = (
+        f"const patch = {json.dumps(patch_text)};\n"
+        "const result = await tools.apply_patch(patch);\n"
+        "text(result);\n"
+    )
+    _write_codex_session(
+        session_path,
+        [
+            {
+                "timestamp": "2026-08-11T08:06:31.000Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": "019fefda-f11c-7e32-bc25-codexpatchscript",
+                    "cwd": "/tmp/codex-project",
+                },
+            },
+            {
+                "timestamp": "2026-08-11T08:06:32.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call",
+                    "id": "ctc_patch_1",
+                    "status": "completed",
+                    "call_id": "call_patch_1",
+                    "name": "exec",
+                    "input": script,
+                },
+            },
+            {
+                "timestamp": "2026-08-11T08:06:33.000Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call_output",
+                    "id": "ctco_patch_1",
+                    "call_id": "call_patch_1",
+                    "output": [
+                        {"type": "input_text", "text": "Done!\n"},
+                    ],
+                },
+            },
+        ],
+    )
+
+    cmd_parse(
+        ConversationFlags(show_tools=True, color="never", paging=False),
+        str(session_path),
+        slice_str=None,
+        output_file=None,
+        output_format="xml",
+        emit_metadata=False,
+    )
+
+    captured = capsys.readouterr()
+    assert '<tool-input name="Patch" id="patc">' in captured.out, (
+        "Expected tools.apply_patch inside the latest Codex exec envelope to normalize "
+        f"to Patch. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert f"```diff\n{patch_text}\n```" in captured.out, (
+        "Expected the patch body to remain visible in canonical diff form. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert '<tool-output name="Patch" id="patc">' in captured.out, (
+        "Expected the latest Codex patch result to stay paired with its Patch call. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "Done!" in captured.out, (
+        "Expected the patch result array text to remain visible. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert "tools.apply_patch" not in captured.out, (
+        "Expected the adapter to remove the Codex JavaScript transport wrapper. "
+        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )

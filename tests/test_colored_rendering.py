@@ -34,6 +34,17 @@ def _write_claude_session(home: Path, session_id: str, entries: list[dict]) -> s
     return session_id
 
 
+def _write_pi_session(home: Path, session_id: str, entries: list[dict]) -> str:
+    path = home / ".pi" / "agent" / "sessions" / "proj" / f"{session_id}.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    session = {"type": "session", "version": 3, "id": session_id}
+    path.write_text(
+        "\n".join(json.dumps(entry) for entry in [session, *entries]) + "\n",
+        encoding="utf-8",
+    )
+    return session_id
+
+
 def _assistant(*, text: str | None = None, content: list | None = None,
                model: str = "claude-opus-4-8", ts: str = "2026-06-16T11:00:00Z") -> dict:
     body = content if content is not None else [{"type": "text", "text": text}]
@@ -438,6 +449,78 @@ def test_plain_claude_read_path_is_preserved(tmp_path, monkeypatch, capsys):
     assert 'file_path="/tmp/snippet.py"' in out, (
         "Expected Claude Read.input.path to render through the canonical file_path "
         f"attribute. Got:\n{out}"
+    )
+
+
+def test_plain_pi_read_path_is_preserved(tmp_path, monkeypatch, capsys):
+    """A current Pi Read path survives in canonical plain XML output."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_pi_session(
+        home, "44444444-aaaa-bbbb-cccc-000000000003",
+        [{
+            "type": "message",
+            "message": {
+                "role": "assistant",
+                "content": [{
+                    "type": "toolCall",
+                    "id": "call_pi_read",
+                    "name": "read",
+                    "arguments": {
+                        "path": "/tmp/pi-snippet.py",
+                        "offset": 1,
+                        "limit": 20,
+                        "forceFull": True,
+                    },
+                }],
+            },
+        }],
+    )
+
+    cmd_parse(
+        ConversationFlags(color="never", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    )
+    out = capsys.readouterr().out
+
+    assert 'file_path="/tmp/pi-snippet.py"' in out, (
+        "Expected Pi Read.arguments.path to render through the canonical file_path "
+        f"attribute. Got:\n{out}"
+    )
+
+
+def test_colored_pi_read_shows_target_path(tmp_path, monkeypatch):
+    """A current Pi Read call shows its target path in the colored view."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _write_pi_session(
+        home, "44444444-aaaa-bbbb-cccc-000000000004",
+        [{
+            "type": "message",
+            "message": {
+                "role": "assistant",
+                "content": [{
+                    "type": "toolCall",
+                    "id": "call_pi_read",
+                    "name": "read",
+                    "arguments": {
+                        "path": "/tmp/pi-snippet.py",
+                        "forceFull": True,
+                    },
+                }],
+            },
+        }],
+    )
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+    )
+
+    assert "⏺ Read" in out, f"Expected the Pi Read call marker. Got:\n{out}"
+    assert "/tmp/pi-snippet.py" in out, (
+        f"Expected the Pi Read target path beside its colored call. Got:\n{out}"
     )
 
 

@@ -1341,12 +1341,14 @@ def _parse_codex_jsonl_entries(
 
         if payload_type == "custom_tool_call" and flags.show_tools:
             assistant = ensure_assistant(timestamp)
-            tool_name = _normalize_codex_tool_name(payload.get("name"))
+            tool_name, tool_input = _normalize_codex_custom_tool_call(
+                payload.get("name"), payload.get("input")
+            )
             assistant.tools.append({
                 "type": "tool_use",
                 "id": payload.get("call_id"),
                 "name": tool_name,
-                "input": _normalize_codex_tool_input(tool_name, payload.get("input")),
+                "input": tool_input,
             })
             continue
 
@@ -2543,13 +2545,16 @@ def _parse_pi_message_entry(
                     thinking_blocks.append(thinking)
             elif item_type == "toolCall" and flags.show_tools:
                 native_tool_call_id = item.get("id")
+                tool_name = _normalize_pi_tool_name(item.get("name"))
                 msg.tools.append({
                     "type": "tool_use",
                     "id": native_tool_call_id,
                     "native_tool_call_id": native_tool_call_id,
                     "native_content_index": native_content_index,
-                    "name": _normalize_pi_tool_name(item.get("name")),
-                    "input": item.get("arguments", {}),
+                    "name": tool_name,
+                    "input": normalize_tool_input_keys(
+                        "pi", tool_name, item.get("arguments", {})
+                    ),
                 })
 
         if thinking_blocks:
@@ -2593,7 +2598,224 @@ def _extract_codex_reasoning_text(payload: dict) -> str:
     return "\n\n".join(text_blocks)
 
 
-def _parse_codex_tool_input(raw_input: object) -> dict:
+_CODEX_SCRIPT_TOOL_CALL_PATTERN = re.compile(
+    r"\btools\.(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\("
+)
+_CODEX_SCRIPT_STRING_BINDING_PATTERN = re.compile(
+    r"\bconst\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+    r"(?P<value>\"(?:\\.|[^\"\\])*\")\s*;"
+)
+
+
+def _find_codex_script_call_end(script: str, opening_index: int) -> int | None:
+    """Find a tool call's closing parenthesis without counting quoted text."""
+    depth = 1
+    quote: str | None = None
+    escaped = False
+
+    for index in range(opening_index + 1, len(script)):
+        character = script[index]
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            continue
+        if character in {'"', "'", "`"}:
+            quote = character
+            continue
+        if character == "(":
+            depth += 1
+            continue
+        if character != ")":
+            continue
+        depth -= 1
+        if depth == 0:
+            return index
+
+    return None
+
+
+def _split_codex_script_items(source: str) -> list[str]:
+    """Split comma-separated JavaScript items without splitting nested values."""
+    items: list[str] = []
+    item_start = 0
+    nested_depth = 0
+    quote: str | None = None
+    escaped = False
+
+    for index, character in enumerate(source):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            continue
+        if character in {'"', "'", "`"}:
+            quote = character
+            continue
+        if character in "([{":
+            nested_depth += 1
+            continue
+        if character in ")]}":
+            nested_depth -= 1
+            continue
+        if character != "," or nested_depth:
+            continue
+        items.append(source[item_start:index].strip())
+        item_start = index + 1
+
+    items.append(source[item_start:].strip())
+    return [item for item in items if item]
+
+
+def _parse_codex_script_scalar(value: str) -> object:
+    """Parse a generated JavaScript scalar while keeping dynamic expressions visible."""
+    stripped = value.strip()
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        pass
+    if stripped.startswith("`") and stripped.endswith("`"):
+        return stripped[1:-1]
+    return stripped
+
+
+def _parse_codex_script_object(argument: str) -> dict[str, object] | None:
+    """Parse the object literals generated for Codex tool calls."""
+    stripped = argument.strip()
+    if not stripped.startswith("{") or not stripped.endswith("}"):
+        return None
+
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, dict):
+        return parsed
+
+    input_data: dict[str, object] = {}
+    for item in _split_codex_script_items(stripped[1:-1]):
+        property_match = re.fullmatch(
+            r"\s*(?P<key>[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?P<value>.+)\s*",
+            item,
+            re.DOTALL,
+        )
+        if property_match is None:
+            return None
+        input_data[property_match.group("key")] = _parse_codex_script_scalar(
+            property_match.group("value")
+        )
+    return input_data or None
+
+
+def _parse_codex_script_call(
+    script: str,
+    match: re.Match[str],
+    string_bindings: dict[str, str],
+) -> tuple[str, dict[str, object]] | None:
+    """Parse one matched inner tool call from a generated Codex script."""
+    closing_index = _find_codex_script_call_end(script, match.end() - 1)
+    if closing_index is None:
+        return None
+
+    tool_name = match.group("name")
+    argument = script[match.end() : closing_index].strip()
+    if input_data := _parse_codex_script_object(argument):
+        return tool_name, input_data
+    if tool_name != "apply_patch":
+        return None
+
+    patch = string_bindings.get(argument)
+    if patch is None:
+        try:
+            patch = json.loads(argument)
+        except json.JSONDecodeError:
+            return None
+    if not isinstance(patch, str):
+        return None
+    return tool_name, {"input": patch}
+
+
+def _merge_codex_script_tool_calls(
+    tool_calls: list[tuple[str, dict[str, object]]],
+) -> tuple[str, dict[str, object]] | None:
+    """Represent one outer Codex exec envelope as one canonical tool call."""
+    if len(tool_calls) == 1:
+        return tool_calls[0]
+
+    tool_names = {tool_name for tool_name, _ in tool_calls}
+    if tool_names == {"apply_patch"}:
+        patches: list[str] = []
+        for _, input_data in tool_calls:
+            patch = input_data.get("input")
+            if not isinstance(patch, str):
+                return None
+            patches.append(patch)
+        return "apply_patch", {"input": "\n\n".join(patches)}
+    if tool_names != {"exec_command"}:
+        return None
+
+    input_blocks = [input_data for _, input_data in tool_calls]
+    commands: list[str] = []
+    for input_data in input_blocks:
+        command = input_data.get("cmd")
+        if not isinstance(command, str):
+            return None
+        commands.append(command)
+
+    merged_input: dict[str, object] = {"cmd": "\n\n".join(commands)}
+    for key in ("workdir", "yield_time_ms", "max_output_tokens"):
+        values = [input_data.get(key) for input_data in input_blocks]
+        if values[0] is not None and all(value == values[0] for value in values):
+            merged_input[key] = values[0]
+    return "exec_command", merged_input
+
+
+def _parse_codex_exec_script_tool(
+    script: str,
+) -> tuple[str, dict[str, object]] | None:
+    """Extract native tool calls from Codex's generated exec script.
+
+    >>> _parse_codex_exec_script_tool('await tools.exec_command({cmd: "pwd"});')
+    ('exec_command', {'cmd': 'pwd'})
+    """
+    matches = list(_CODEX_SCRIPT_TOOL_CALL_PATTERN.finditer(script))
+    string_bindings = {
+        binding.group("name"): json.loads(binding.group("value"))
+        for binding in _CODEX_SCRIPT_STRING_BINDING_PATTERN.finditer(script)
+    }
+    tool_calls: list[tuple[str, dict[str, object]]] = []
+    for match in matches:
+        tool_call = _parse_codex_script_call(script, match, string_bindings)
+        if tool_call is None:
+            return None
+        tool_calls.append(tool_call)
+    return _merge_codex_script_tool_calls(tool_calls) if tool_calls else None
+
+
+def _normalize_codex_custom_tool_call(
+    native_name: str | None,
+    raw_input: object,
+) -> tuple[str, dict[str, object]]:
+    """Normalize a direct custom call or Codex's generated exec envelope."""
+    parsed_script_tool = (
+        _parse_codex_exec_script_tool(raw_input)
+        if native_name == "exec" and isinstance(raw_input, str)
+        else None
+    )
+    if parsed_script_tool is not None:
+        native_name, raw_input = parsed_script_tool
+
+    tool_name = _normalize_codex_tool_name(native_name)
+    return tool_name, _normalize_codex_tool_input(tool_name, raw_input)
+
+
+def _parse_codex_tool_input(raw_input: object) -> dict[str, object]:
     """Normalize Codex tool input into a dict for the shared tool renderer."""
     if isinstance(raw_input, dict):
         return raw_input
@@ -2620,14 +2842,25 @@ def _parse_codex_tool_input(raw_input: object) -> dict:
     return {"input": raw_input}
 
 
-def _normalize_codex_tool_input(tool_name: str, raw_input: object) -> dict:
+def _normalize_codex_tool_input(
+    tool_name: str,
+    raw_input: object,
+) -> dict[str, object]:
     """Normalize Codex tool argument keys for canonical shared tool schemas."""
     input_data = _parse_codex_tool_input(raw_input)
     return normalize_tool_input_keys("codex", tool_name, input_data)
 
 
 def _parse_codex_tool_output(raw_output: object) -> object:
-    """Unwrap Codex JSON-string tool outputs when the wrapper only carries display text."""
+    """Normalize Codex tool outputs into shared text content blocks."""
+    if isinstance(raw_output, list):
+        return [
+            {**block, "type": "text"}
+            if isinstance(block, dict)
+            and block.get("type") in {"input_text", "output_text"}
+            else block
+            for block in raw_output
+        ]
     if not isinstance(raw_output, str):
         return raw_output
 

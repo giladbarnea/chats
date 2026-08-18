@@ -113,6 +113,11 @@ TOOL_FILTER_NAME_ALIASES: dict[str, str] = {
 
 # Provider-native input keys mapped to canonical schema keys after name aliasing.
 TOOL_INPUT_KEY_ALIASES: dict[str, dict[str, dict[str, str]]] = {
+    "pi": {
+        "Read": {
+            "path": "file_path",
+        },
+    },
     "claude": {
         "Read": {
             "path": "file_path",

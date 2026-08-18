@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-18] Normalize current Pi and Codex tool envelopes
+
+### Fixed
+
+- Current Pi `read.arguments.path` now normalizes to canonical `Read.file_path`, so plain XML and Rich output both show the target path.
+- Current Codex `custom_tool_call` JavaScript envelopes now expose inner `exec_command` and `apply_patch` calls through the canonical Bash and Patch schemas. One outer call can contain one or several same-kind inner calls; unknown inner tools keep generic rendering.
+- Codex `input_text` and `output_text` result blocks now normalize to canonical `text`, restoring paired tool output bodies without changing older direct-call records.
+
+---
 ## [2026-08-16] Split Pi inline-skill expansions into Skill tool messages
 
 ### Added
