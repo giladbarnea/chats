@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
 import textwrap
 import uuid
@@ -14,7 +13,7 @@ from pathlib import Path
 
 import orjson
 
-from ._native import classify_native_session_path
+from ._native import classify_native_session_path, find_last_jsonl_timestamp
 from .model import ConversationFlags, Message, Provider, SubagentMetadata
 from .registry import (
     ContentBlockType,
@@ -65,7 +64,9 @@ def get_jsonl_first_timestamp(file_path: Path) -> datetime | None:
 
 def get_jsonl_last_timestamp(file_path: Path) -> datetime | None:
     """Stream a JSONL file backward for the last in-band timestamp, falling back to filesystem mtime."""
-    if last_ts := _find_last_timestamp(file_path):
+    if last_ts := find_last_jsonl_timestamp(
+        str(file_path), _jsonl_line_timestamp, json.JSONDecodeError
+    ):
         if parsed := _parse_iso_timestamp(last_ts):
             return parsed
     try:
@@ -77,6 +78,10 @@ def get_jsonl_last_timestamp(file_path: Path) -> datetime | None:
 def _entry_timestamp(entry: dict) -> str | None:
     timestamp = entry.get("timestamp") or entry.get("created_at")
     return timestamp if isinstance(timestamp, str) and timestamp else None
+
+
+def _jsonl_line_timestamp(line: str) -> str | None:
+    return _entry_timestamp(json.loads(line))
 
 
 def _find_first_timestamp(file_path: Path) -> str | None:
@@ -93,53 +98,6 @@ def _find_first_timestamp(file_path: Path) -> str | None:
                         return timestamp
                 except json.JSONDecodeError:
                     continue
-    except Exception:
-        pass
-    return None
-
-
-def _find_last_timestamp(file_path: Path, chunk_size: int = 4096) -> str | None:
-    """Finds the last timestamp by reading from the end (backwards)."""
-    try:
-        with open(file_path, "rb") as f:
-            f.seek(0, os.SEEK_END)
-            file_size = f.tell()
-            remaining_bytes = file_size
-            buffer = b""
-
-            while remaining_bytes > 0:
-                read_size = min(chunk_size, remaining_bytes)
-                f.seek(-read_size, os.SEEK_CUR)
-                chunk = f.read(read_size)
-                # Reset cursor to before this read for the next iteration
-                f.seek(-read_size, os.SEEK_CUR)
-
-                remaining_bytes -= read_size
-
-                # Prepend whatever was left from the previous (later) chunk
-                chunk += buffer
-                lines = chunk.split(b"\n")
-
-                # The first element is likely a partial line from the *previous* (earlier) chunk
-                # so we keep it in the buffer for the next iteration, unless we are at the start of the file.
-                if remaining_bytes > 0:
-                    buffer = lines.pop(0)
-                else:
-                    buffer = b""  # We are at start, process everything
-
-                # Iterate lines in reverse
-                for line in reversed(lines):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        # Decode utf-8 safely
-                        entry = json.loads(line.decode("utf-8"))
-                        if timestamp := _entry_timestamp(entry):
-                            return timestamp
-                    except (json.JSONDecodeError, UnicodeDecodeError):
-                        continue
-
     except Exception:
         pass
     return None

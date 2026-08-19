@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-19] Move backward last-timestamp scanning to Rust
+
+### Changed
+
+- Pool-wide last-timestamp probes now use a linear backward file scanner in the existing ABI3 PyO3 extension. Python keeps its JSON, datetime, and filesystem-fallback behavior, so recent selectors, date filters, metadata, CLI arguments, and output stay unchanged.
+- The scanner no longer repeatedly copies multi-megabyte final JSONL lines. Repeated real-launcher measurements improved date-filtered search by about 31% and recent date-filtered lookup by about 49% to 51%.
+
+---
 ## [2026-08-19] Move native provider-path classification to Rust
 
 ### Changed

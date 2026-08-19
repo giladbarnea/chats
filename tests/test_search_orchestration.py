@@ -1008,14 +1008,14 @@ def test_cmd_search_skips_last_timestamp_probe_when_only_cafter_is_active(
     )
 
     last_ts_calls: list[Path] = []
-    real_find_last_timestamp = parsing._find_last_timestamp
+    real_find_last_timestamp = parsing.find_last_jsonl_timestamp
 
-    def tracked_find_last_timestamp(path: Path, *args, **kwargs):
-        last_ts_calls.append(path)
-        return real_find_last_timestamp(path, *args, **kwargs)
+    def tracked_find_last_timestamp(path: str, *parser_args: object) -> str | None:
+        last_ts_calls.append(Path(path))
+        return real_find_last_timestamp(path, *parser_args)
 
     monkeypatch.setattr(
-        parsing, "_find_last_timestamp", tracked_find_last_timestamp
+        parsing, "find_last_jsonl_timestamp", tracked_find_last_timestamp
     )
 
     with pytest.raises(SystemExit) as exc_info:

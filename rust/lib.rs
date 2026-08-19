@@ -1,6 +1,7 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::{OsStr, OsString};
-use std::io::ErrorKind;
+use std::io::{ErrorKind, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -157,14 +158,153 @@ fn classify_native_session_path_impl(path: &Path, home: &Path) -> Option<Provide
     provider_for_canonical_path(&canonical_path, canonical_roots.as_ref())
 }
 
+const JSONL_SCAN_CHUNK_SIZE: usize = 4096;
+
+enum TimestampLine {
+    Found(Py<PyAny>),
+    Continue,
+    Abort,
+}
+
+fn trim_python_byte_whitespace(line: &[u8]) -> &[u8] {
+    let start = line
+        .iter()
+        .position(|byte| !matches!(*byte, b'\t' | b'\n' | 0x0b | 0x0c | b'\r' | b' '))
+        .unwrap_or(line.len());
+    let end = line
+        .iter()
+        .rposition(|byte| !matches!(*byte, b'\t' | b'\n' | 0x0b | 0x0c | b'\r' | b' '))
+        .map(|index| index + 1)
+        .unwrap_or(start);
+    &line[start..end]
+}
+
+fn timestamp_from_jsonl_line(
+    py: Python<'_>,
+    line: &[u8],
+    line_timestamp: &Bound<'_, PyAny>,
+    json_decode_error: &Bound<'_, PyAny>,
+) -> TimestampLine {
+    let line = trim_python_byte_whitespace(line);
+    if line.is_empty() {
+        return TimestampLine::Continue;
+    }
+    let Ok(decoded_line) = std::str::from_utf8(line) else {
+        return TimestampLine::Continue;
+    };
+    let timestamp = match line_timestamp.call1((decoded_line,)) {
+        Ok(timestamp) => timestamp,
+        Err(error) if error.is_instance(py, json_decode_error) => {
+            return TimestampLine::Continue;
+        }
+        Err(_) => return TimestampLine::Abort,
+    };
+    if timestamp.is_none() {
+        return TimestampLine::Continue;
+    }
+    TimestampLine::Found(timestamp.unbind())
+}
+
+fn timestamp_from_fragmented_line(
+    py: Python<'_>,
+    earlier_fragment: &[u8],
+    later_fragments: &[Vec<u8>],
+    line_timestamp: &Bound<'_, PyAny>,
+    json_decode_error: &Bound<'_, PyAny>,
+) -> TimestampLine {
+    let line = if later_fragments.is_empty() {
+        Cow::Borrowed(earlier_fragment)
+    } else {
+        let line_length =
+            earlier_fragment.len() + later_fragments.iter().map(Vec::len).sum::<usize>();
+        let mut line = Vec::with_capacity(line_length);
+        line.extend_from_slice(earlier_fragment);
+        for fragment in later_fragments.iter().rev() {
+            line.extend_from_slice(fragment);
+        }
+        Cow::Owned(line)
+    };
+    timestamp_from_jsonl_line(py, &line, line_timestamp, json_decode_error)
+}
+
+fn find_last_jsonl_timestamp_impl(
+    py: Python<'_>,
+    path: &Path,
+    line_timestamp: &Bound<'_, PyAny>,
+    json_decode_error: &Bound<'_, PyAny>,
+) -> Option<Py<PyAny>> {
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut remaining_bytes = file.seek(SeekFrom::End(0)).ok()?;
+    let mut later_fragments: Vec<Vec<u8>> = Vec::new();
+
+    while remaining_bytes > 0 {
+        let read_size = JSONL_SCAN_CHUNK_SIZE.min(remaining_bytes as usize);
+        remaining_bytes -= read_size as u64;
+        file.seek(SeekFrom::Start(remaining_bytes)).ok()?;
+        let mut block = vec![0; read_size];
+        file.read_exact(&mut block).ok()?;
+
+        let mut line_end = block.len();
+        while let Some(newline_index) = block[..line_end]
+            .iter()
+            .rposition(|byte| *byte == b'\n')
+        {
+            match timestamp_from_fragmented_line(
+                py,
+                &block[newline_index + 1..line_end],
+                &later_fragments,
+                line_timestamp,
+                json_decode_error,
+            ) {
+                TimestampLine::Found(timestamp) => return Some(timestamp),
+                TimestampLine::Abort => return None,
+                TimestampLine::Continue => {}
+            }
+            later_fragments.clear();
+            line_end = newline_index;
+        }
+
+        if line_end > 0 {
+            later_fragments.push(block[..line_end].to_vec());
+        }
+    }
+
+    match timestamp_from_fragmented_line(
+        py,
+        &[],
+        &later_fragments,
+        line_timestamp,
+        json_decode_error,
+    ) {
+        TimestampLine::Found(timestamp) => Some(timestamp),
+        TimestampLine::Continue | TimestampLine::Abort => None,
+    }
+}
+
 #[pyfunction]
 fn classify_native_session_path(path: &str, home: &str) -> Option<&'static str> {
     classify_native_session_path_impl(Path::new(path), Path::new(home)).map(Provider::as_str)
 }
 
+#[pyfunction]
+fn find_last_jsonl_timestamp(
+    py: Python<'_>,
+    path: &str,
+    line_timestamp: &Bound<'_, PyAny>,
+    json_decode_error: &Bound<'_, PyAny>,
+) -> Option<Py<PyAny>> {
+    find_last_jsonl_timestamp_impl(
+        py,
+        Path::new(path),
+        line_timestamp,
+        json_decode_error,
+    )
+}
+
 #[pymodule]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    module.add_function(wrap_pyfunction!(classify_native_session_path, module)?)
+    module.add_function(wrap_pyfunction!(classify_native_session_path, module)?)?;
+    module.add_function(wrap_pyfunction!(find_last_jsonl_timestamp, module)?)
 }
 
 #[cfg(test)]
