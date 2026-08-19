@@ -16,7 +16,7 @@ All notable changes to the `conversations` skill.
 ### Changed
 
 - Native Codex, Pi, and Claude storage paths now classify through one PyO3 extension. The Python adapter registry keeps external first-entry detection but no longer contains native path matchers.
-- Source, editable, wheel, and source-distribution builds now use Maturin for the mixed Python and Rust package. PyO3 targets the Python 3.13 stable ABI, so the shared editable native artifact loads from both the project’s Python 3.13 environment and the global `ch` launcher’s Python 3.14 environment. The `ch` command and provider behavior stay unchanged.
+- Source, editable, wheel, and source-distribution builds now use Maturin for the mixed Python and Rust package. PyO3 targets the Python 3.14 stable ABI, matching the package’s Python 3.14-only runtime. The `ch` command and provider behavior stay unchanged.
 
 ---
 ## [2026-08-18] Normalize current Pi and Codex tool envelopes

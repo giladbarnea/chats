@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Gilad Barnea", email = "gilad@hear.ai" }
 ]
-requires-python = ">=3.13"
+requires-python = "==3.14.*"
 dependencies = [
     "nltk>=3.9.4",
     "orjson>=3.11.5",

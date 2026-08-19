@@ -9,7 +9,7 @@ Slice one is accepted. Rust now owns native Codex, Pi, and Claude path classific
 
 The Rust boundary preserves Python 3.13 `Path.resolve(strict=False)` behavior. It covers existing and missing leaves, parent components, roots and later symlinks, dangling absolute and relative targets, and bounded symlink loops. A per-home cache stores only canonical provider roots. Every candidate source path still resolves on each call.
 
-The first acceptance missed the real editable launcher. The project environment uses Python 3.13, while `~/.local/bin/ch` uses Python 3.14 and imports this checkout through a shared source path. Interpreter-specific extensions made the 3.14 launcher fail after a normal 3.13 build. PyO3 now targets the Python 3.13 stable ABI, and normal setup force-reinstalls the editable project. One `_native.abi3.so` now loads through both interpreters without a Python fallback or a global-tool reinstall.
+The first acceptance missed the real editable launcher. At that time, the project environment used Python 3.13, while `~/.local/bin/ch` used Python 3.14. Interpreter-specific extensions made the launcher fail after a Python 3.13 project build. Slice One then targeted the Python 3.13 stable ABI so one `_native.abi3.so` could load through both interpreters. The launcher worked only after the user ran `uv tool install -e .`. Normal project setup did not establish that global editable install.
 
 On the live 4,911-file pool, median classification time fell from 281.2 ms for the Python reference to 39.7 ms for Rust. This is an 86% reduction. Warm serial performance runs pass all four budgets without changing their limits.
 

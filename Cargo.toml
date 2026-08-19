@@ -11,7 +11,7 @@ path = "rust/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-extension-module = ["pyo3/abi3-py313", "pyo3/extension-module"]
+extension-module = ["pyo3/abi3-py314", "pyo3/extension-module"]
 
 [dependencies]
 libc = "0.2"

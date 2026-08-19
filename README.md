@@ -592,10 +592,10 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 
 ## Technical Reference
 
-**Location:** `~/dev/chats` (installed globally as `ch` via `uv tool install -e . --force`)
+**Location:** `~/dev/chats` (installed globally as `ch` after the user ran `uv tool install -e .`)
 
 **Dependencies:**
-- Python 3.13+
+- Python 3.14 only
 - Rust 1.85+ when building from source
 - Rich library (for formatting)
 - PyYAML (for catalog/sessions.yaml handling)
