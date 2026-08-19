@@ -134,9 +134,6 @@ from .rm import (
     _human_size as _human_size,
 )
 from .rm import (
-    _is_claude_session_path as _is_claude_session_path,
-)
-from .rm import (
     _line_count as _line_count,
 )
 from .rm import (

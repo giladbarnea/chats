@@ -18,8 +18,13 @@ dependencies = [
 ch = "chats.cli:main"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.14,<2"]
+build-backend = "maturin"
+
+[tool.maturin]
+module-name = "chats._native"
+python-source = "src"
+features = ["extension-module"]
 
 [dependency-groups]
 dev = [

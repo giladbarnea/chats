@@ -14,11 +14,11 @@ skip() { printf '  \033[33m⊘\033[0m %s (already done)\n' "$1"; }
 
 if [[ ! -d .venv ]]; then
   uv venv
-  uv sync --dev
+  uv sync --dev --reinstall-package chats
   ok "venv created and dependencies installed"
 else
-  uv sync --dev
-  ok "dependencies synced"
+  uv sync --dev --reinstall-package chats
+  ok "dependencies and native extension synced"
 fi
 
 # ── 2. pre-commit hooks ──────────────────────────────────────────────────────

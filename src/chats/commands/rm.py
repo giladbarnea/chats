@@ -6,19 +6,9 @@ import sys
 from pathlib import Path
 
 from ..console import get_console, print_error
-from ..parsing import get_display_session_id
+from ..parsing import get_display_session_id, get_jsonl_session_adapter
 from ..utils import collapse_home
 from . import resolve
-
-
-def _is_claude_session_path(conv_file: Path) -> bool:
-    """Return True when conv_file is under ~/.claude/."""
-    claude_dir = Path.home() / ".claude"
-    try:
-        conv_file.resolve().relative_to(claude_dir.resolve())
-        return True
-    except (ValueError, OSError):
-        return False
 
 
 def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
@@ -31,7 +21,7 @@ def cmd_rm(session_id: str, *, dry_run: bool = False) -> None:
         sys.exit(1)
     project_dir_name = conv_file.parent.name
     claude_dir = Path.home() / ".claude"
-    is_claude = _is_claude_session_path(conv_file)
+    is_claude = get_jsonl_session_adapter(conv_file).name == "claude"
 
     if is_claude:
         files_to_remove = _collect_session_files(conv_file, session_uuid, claude_dir)

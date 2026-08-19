@@ -1,0 +1,18 @@
+[package]
+name = "chats-native"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+
+[lib]
+name = "_native"
+path = "rust/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+extension-module = ["pyo3/abi3-py313", "pyo3/extension-module"]
+
+[dependencies]
+libc = "0.2"
+pyo3 = "0.27.2"

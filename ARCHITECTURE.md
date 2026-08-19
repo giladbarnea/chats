@@ -1,7 +1,7 @@
 ---
 name: architecture
 description: Document the architecture of the `ch` CLI tool.
-last_updated: 2026/08/18
+last_updated: 2026/08/19
 ---
 
 # ARCHITECTURE.md
@@ -12,7 +12,8 @@ last_updated: 2026/08/18
 - `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, the current latest custom title, and already-visible messages.
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery`/`NotQuery` tree over terms. Owns tokenizing, uppercase `AND`/`OR`/`NOT` grammar, and per-term regex/literal compilation under the selected case-sensitivity mode.
-- `JsonlSessionAdapter` (`parsing.py`): the provider-owned matcher, parser, and native-to-canonical normalization boundary. Adapter choice uses native paths first, then exact Codex and PI first-entry signatures. Known tool envelopes, names, input keys, and result blocks normalize here before the shared model and renderers run.
+- Native provider-path classifier (`rust/lib.rs`, exposed as `chats._native`): the Rust-owned canonical containment boundary for native Codex, Pi, and Claude storage paths. PyO3 targets the Python 3.13 stable ABI so one editable artifact loads under the project’s Python 3.13 environment and the global launcher’s Python 3.14 environment.
+- `JsonlSessionAdapter` (`parsing.py`): the provider-owned parser and native-to-canonical normalization boundary. Adapter choice uses the Rust path classifier first, then exact Codex and Pi first-entry signatures. Known tool envelopes, names, input keys, and result blocks normalize here before the shared model and renderers run.
 - `ShortSpec` / `ShortPolicy` (`shortening.py`): the shared global and tool-local short-value parser plus its resolved fixed or progressive policy. [SHORT_SPEC.md](SHORT_SPEC.md) owns the behavior contract.
 - Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`, `xml_transport.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
 
@@ -752,7 +753,7 @@ cli.py
 │   └── common.py     → model
 ├── catalog/          → commands, console, model
 ├── formatting.py     → model, parsing, console, tools, utils, xml_transport
-├── parsing.py        → model, utils
+├── parsing.py        → chats._native (Rust), model, utils
 ├── tools.py          → parts, registry, utils, xml_transport
 ├── xmlmd.py          → model, registry, xml_transport
 ├── xml_transport.py  → registry

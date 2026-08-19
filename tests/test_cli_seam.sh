@@ -95,4 +95,37 @@ if [[ "$MATCHED_TAG_COUNT" != "1" ]]; then
 fi
 assert_contains "$OUTPUT" "<${ASSISTANT_RESPONSE_TAG} i=\"1\""
 
+# Test 10: The installed editable launcher can load the cross-version native module
+# without an interpreter-specific build artifact.
+echo "Test 10: Real editable launcher loads the stable native module..."
+ABI3_EXTENSIONS=(src/chats/_native.abi3.so(N))
+if [[ ${#ABI3_EXTENSIONS} -ne 1 ]]; then
+  echo "❌ Expected one source-built _native.abi3.so artifact"
+  exit 1
+fi
+REAL_CH="$CH_ORIGINAL_HOME/.local/bin/ch"
+if [[ -x "$REAL_CH" ]]; then
+  (
+    NATIVE_BACKUP=$(mktemp -d)
+    restore_native_extensions() {
+      for extension in "$NATIVE_BACKUP"/*(N); do
+        mv "$extension" src/chats/
+      done
+      rm -rf "$NATIVE_BACKUP"
+    }
+    trap restore_native_extensions EXIT INT TERM
+
+    for extension in src/chats/_native.cpython-*.so(N); do
+      mv "$extension" "$NATIVE_BACKUP/"
+    done
+
+    OUTPUT=$("$REAL_CH" "$DATA_FILE_STDIN" --color=never --no-metadata 2>/dev/null)
+    assert_success
+    assert_contains "$OUTPUT" "stdin response"
+  )
+  assert_success
+else
+  echo "  ⊘ Test 10 skipped: $REAL_CH is not installed"
+fi
+
 echo "✅ CLI seam tests passed"

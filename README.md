@@ -596,6 +596,7 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 
 **Dependencies:**
 - Python 3.13+
+- Rust 1.85+ when building from source
 - Rich library (for formatting)
 - PyYAML (for catalog/sessions.yaml handling)
 

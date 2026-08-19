@@ -14,6 +14,7 @@ from pathlib import Path
 
 import orjson
 
+from ._native import classify_native_session_path
 from .model import ConversationFlags, Message, Provider, SubagentMetadata
 from .registry import (
     ContentBlockType,
@@ -31,7 +32,6 @@ class JsonlSessionAdapter:
     """A parser adapter for one JSONL session shape."""
 
     name: Provider
-    matches: Callable[[Path | None], bool]
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
     build_name_entries: NameEntryBuilder
     find_session_files: Callable[[], list[Path]] | None = None
@@ -1371,20 +1371,6 @@ def _parse_codex_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
     return _parse_codex_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
-def _is_claude_jsonl_path(source_path: Path | None) -> bool:
-    """Return True when the source path is inside ~/.claude/projects/."""
-    if source_path is None:
-        return False
-
-    try:
-        source_path.resolve().relative_to(
-            (Path.home() / ".claude" / "projects").resolve()
-        )
-    except (ValueError, OSError):
-        return False
-    return True
-
-
 def _is_codex_session_header(first_entry: dict) -> bool:
     """Return whether a first JSONL entry has Codex's native session header.
 
@@ -1406,38 +1392,6 @@ def _is_pi_session_header(first_entry: dict) -> bool:
         first_entry.get("type") == "session"
         and type(first_entry.get("version")) is int
     )
-
-
-def _is_pi_jsonl_path(source_path: Path | None) -> bool:
-    """Return True when the source path is inside ~/.pi/."""
-    if source_path is None:
-        return False
-
-    try:
-        source_path.resolve().relative_to((Path.home() / ".pi").resolve())
-    except ValueError:
-        return False
-    except OSError:
-        return False
-
-    return True
-
-
-def _is_codex_jsonl_path(source_path: Path | None) -> bool:
-    """Return True when the source path is inside ~/.codex/sessions/."""
-    if source_path is None:
-        return False
-
-    try:
-        source_path.resolve().relative_to(
-            (Path.home() / ".codex" / "sessions").resolve()
-        )
-    except ValueError:
-        return False
-    except OSError:
-        return False
-
-    return True
 
 
 def _extract_pi_session_id(session_file: Path) -> str | None:
@@ -1719,7 +1673,6 @@ def _build_codex_name_entries(
 JSONL_SESSION_ADAPTERS = [
     JsonlSessionAdapter(
         name="codex",
-        matches=_is_codex_jsonl_path,
         parse_messages=_parse_codex_jsonl,
         build_name_entries=_build_codex_name_entries,
         find_session_files=_find_codex_session_files,
@@ -1730,7 +1683,6 @@ JSONL_SESSION_ADAPTERS = [
     ),
     JsonlSessionAdapter(
         name="pi",
-        matches=_is_pi_jsonl_path,
         parse_messages=_parse_pi_jsonl,
         build_name_entries=_build_pi_name_entries,
         find_session_files=_find_pi_session_files,
@@ -1740,7 +1692,6 @@ JSONL_SESSION_ADAPTERS = [
     ),
     JsonlSessionAdapter(
         name="claude",
-        matches=_is_claude_jsonl_path,
         parse_messages=_parse_default_jsonl,
         build_name_entries=_build_claude_name_entries,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),
@@ -1770,12 +1721,17 @@ def _select_jsonl_session_adapter(
     first_entry: dict | None = None,
 ) -> JsonlSessionAdapter:
     """Select a JSONL adapter by native path, then by first-entry signature."""
-    path_match = next(
-        (adapter for adapter in JSONL_SESSION_ADAPTERS if adapter.matches(source_path)),
-        None,
+    native_provider: Provider | None = (
+        classify_native_session_path(str(source_path), str(Path.home()))
+        if source_path is not None
+        else None
     )
-    if path_match is not None:
-        return path_match
+    if native_provider is not None:
+        return next(
+            adapter
+            for adapter in JSONL_SESSION_ADAPTERS
+            if adapter.name == native_provider
+        )
 
     first_entry = first_entry or _read_first_jsonl_entry(source_path)
     content_match = next(
