@@ -1,6 +1,10 @@
 # Search and parse Rust rewrite state
 
 - [Charter and completion contract](approach.md)
+- [Accepted cycle 02 integrated result](cycle-02-smp.md)
+- [Cycle 02 changed product journey scout](cycle-02-scout.md)
+- [Cycle 02 changed production authority map](cycle-02-map.md)
+- [Cycle 02 changed measured-cost profile](cycle-02-profile.md)
 - [Accepted cycle 01 integrated result](cycle-01-smp.md)
 - [Accepted cycle 01 native conversion rewrite](cycle-01-rewrite.md)
 - [Cycle 01 native conversion contract](cycle-01-contract.md)
