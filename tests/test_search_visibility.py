@@ -313,7 +313,7 @@ def test_cmd_search_render_dependent_plan_tag_query_still_works(
     )
 
 
-def test_cmd_search_xml_transport_entity_does_not_bypass_prefilter(
+def test_cmd_search_xml_transport_entity_reaches_semantic_confirmation(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -369,16 +369,16 @@ def test_cmd_search_xml_transport_entity_does_not_bypass_prefilter(
         f"Got exit code: {exc_info.value.code}\n"
         f"stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert session_reads == [], (
-        "Expected an XML-only entity miss to stop at the byte prefilter. "
-        f"Got reads: {session_reads!r}."
+    assert session_reads == [session_path], (
+        "Expected non-default thinking visibility to bypass native rejection and "
+        f"reach semantic confirmation. Got reads: {session_reads!r}."
     )
     assert "Error processing conversation file" not in captured.err, (
-        f"Expected a clean prefilter miss. stderr: {captured.err!r}."
+        f"Expected a clean semantic miss. stderr: {captured.err!r}."
     )
 
 
-def test_cmd_search_pi_agent_literal_miss_keeps_candidate_gates(
+def test_cmd_search_pi_agent_literal_miss_reaches_semantic_confirmation(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -450,7 +450,7 @@ def test_cmd_search_pi_agent_literal_miss_keeps_candidate_gates(
         f"Got exit code: {exc_info.value.code}\n"
         f"stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
-    assert session_reads == [], (
-        "Expected a stable Pi agent literal miss to stop at the byte prefilter. "
-        f"Got reads: {session_reads!r}."
+    assert session_reads == [session_path], (
+        "Expected non-default agent visibility to bypass native rejection and "
+        f"reach semantic confirmation. Got reads: {session_reads!r}."
     )

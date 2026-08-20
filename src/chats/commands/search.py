@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import json
 import os
 import re
@@ -799,27 +798,16 @@ def _search_hit_for_file(
         conv_file
     ):
         return None
-    pi_normalization_visible = (
-        (flags.show_custom or flags.show_agents)
-        and get_jsonl_session_adapter(conv_file).name == "pi"
-    )
+    pi_session = get_jsonl_session_adapter(conv_file).name == "pi"
     if not _search_path_candidate_matches(
         conv_file,
         query,
         flags,
-        pi_normalization_visible=pi_normalization_visible,
+        pi_session=pi_session,
     ):
         return None
 
     content = conv_file.read_text(encoding="utf-8")
-    if not _search_candidate_matches(
-        content,
-        query,
-        flags,
-        pi_normalization_visible=pi_normalization_visible,
-    ):
-        return None
-
     result = _search_conversation_content(conv_file, content, query, flags, pool_filter)
     if result is None:
         return None
@@ -933,7 +921,7 @@ def _search_path_candidate_matches(
     query: SearchQuery,
     flags: ConversationFlags,
     *,
-    pi_normalization_visible: bool = False,
+    pi_session: bool = False,
 ) -> bool:
     """Return True when a file's bytes could plausibly satisfy the query."""
     return _evaluate_prefilter(
@@ -942,7 +930,7 @@ def _search_path_candidate_matches(
             path,
             term,
             flags,
-            pi_normalization_visible=pi_normalization_visible,
+            pi_session=pi_session,
         ),
     )
 
@@ -952,7 +940,7 @@ def _term_path_candidate_matches(
     term: SearchTerm,
     flags: ConversationFlags,
     *,
-    pi_normalization_visible: bool,
+    pi_session: bool,
 ) -> bool:
     """Conservatively reject ASCII literal terms absent from raw file bytes."""
     if _term_can_match_generated_marker(term, flags):
@@ -960,11 +948,30 @@ def _term_path_candidate_matches(
     needle = _ascii_literal_needle(term)
     if needle is None:
         return True
-    evidence_groups = (
-        _pi_normalization_evidence_groups(term, flags)
-        if pi_normalization_visible
-        else ()
+
+    case_insensitive_gate_bypassed = not term.case_sensitive and (
+        flags.show_thinking
+        or bool(flags.show_tools)
+        or flags.show_agents
+        or flags.show_custom
+        or flags.show_branches
+        or flags.show_plans
+        or flags.shorten
+        or flags.shorten_progressive
+        or flags.shorten_thinking
+        or _term_can_change_under_json_decoding(term)
     )
+    if case_insensitive_gate_bypassed:
+        return True
+
+    if not term.case_sensitive:
+        evidence_groups = ((_JSON_UNICODE_ESCAPE_EVIDENCE,),)
+        if pi_session:
+            evidence_groups += ((_PI_USER_AGENT_EVIDENCE,),)
+    else:
+        evidence_groups = (
+            _pi_normalization_evidence_groups(term, flags) if pi_session else ()
+        )
     return _file_contains_ascii(
         path,
         needle,
@@ -998,64 +1005,6 @@ def _file_contains_ascii(
         case_sensitive,
         evidence_groups,
     )
-
-
-def _content_has_evidence_groups(
-    content: str,
-    evidence_groups: tuple[tuple[bytes, ...], ...],
-) -> bool:
-    """Return whether decoded content contains one complete evidence group."""
-    return any(
-        all(evidence.decode("ascii") in content for evidence in group)
-        for group in evidence_groups
-    )
-
-
-def _search_candidate_matches(
-    content: str,
-    query: SearchQuery,
-    flags: ConversationFlags,
-    *,
-    pi_normalization_visible: bool = False,
-) -> bool:
-    """Return True when raw content is a plausible superset match candidate."""
-    content_casefolded = functools.cache(content.casefold)
-    return _evaluate_prefilter(
-        query,
-        lambda term: _term_candidate_matches(
-            content,
-            content_casefolded,
-            term,
-            flags,
-            pi_normalization_visible=pi_normalization_visible,
-        ),
-    )
-
-
-def _term_candidate_matches(
-    content: str,
-    content_casefolded: Callable[[], str],
-    term: SearchTerm,
-    flags: ConversationFlags,
-    *,
-    pi_normalization_visible: bool,
-) -> bool:
-    """Return True when raw content could plausibly satisfy one search term."""
-    if any(token in term.pattern for token in _RENDER_DEPENDENT_SEARCH_TOKENS):
-        return True
-    if term.literal_candidate is None:
-        return True
-    if not term.pattern.isascii():
-        return True
-    searchable_content = content if term.case_sensitive else content_casefolded()
-    if term.literal_candidate in searchable_content:
-        return True
-    if _term_can_match_generated_marker(term, flags):
-        return True
-    if not pi_normalization_visible:
-        return False
-    evidence_groups = _pi_normalization_evidence_groups(term, flags)
-    return _content_has_evidence_groups(content, evidence_groups)
 
 
 def _term_can_match_generated_marker(term: SearchTerm, flags: ConversationFlags) -> bool:

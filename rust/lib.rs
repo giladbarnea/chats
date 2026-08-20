@@ -561,13 +561,37 @@ impl CandidateMatcher {
     }
 }
 
-fn validate_utf8_chunk(chunk: &[u8], incomplete_code_point: &mut Vec<u8>) -> bool {
+const PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS: [char; 20] = [
+    '\u{00df}', '\u{0130}', '\u{0131}', '\u{0149}', '\u{017f}', '\u{01f0}', '\u{1e96}',
+    '\u{1e97}', '\u{1e98}', '\u{1e99}', '\u{1e9a}', '\u{1e9e}', '\u{212a}', '\u{fb00}',
+    '\u{fb01}', '\u{fb02}', '\u{fb03}', '\u{fb04}', '\u{fb05}', '\u{fb06}',
+];
+
+fn validate_candidate_utf8_chunk(
+    chunk: &[u8],
+    incomplete_code_point: &mut Vec<u8>,
+    case_sensitive: bool,
+) -> bool {
+    let decoded_text_is_safe = |text: &str| {
+        case_sensitive
+            || text.chars().all(|character| {
+                character.is_ascii()
+                    || PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS
+                        .binary_search(&character)
+                        .is_err()
+            })
+    };
     let mut cursor = 0;
     while !incomplete_code_point.is_empty() && cursor < chunk.len() {
         incomplete_code_point.push(chunk[cursor]);
         cursor += 1;
         match std::str::from_utf8(incomplete_code_point) {
-            Ok(_) => incomplete_code_point.clear(),
+            Ok(text) => {
+                if !decoded_text_is_safe(text) {
+                    return false;
+                }
+                incomplete_code_point.clear();
+            }
             Err(error) if error.error_len().is_some() => return false,
             Err(_) => continue,
         }
@@ -577,10 +601,16 @@ fn validate_utf8_chunk(chunk: &[u8], incomplete_code_point: &mut Vec<u8>) -> boo
     }
 
     match std::str::from_utf8(&chunk[cursor..]) {
-        Ok(_) => true,
+        Ok(text) => decoded_text_is_safe(text),
         Err(error) if error.error_len().is_some() => false,
         Err(error) => {
-            incomplete_code_point.extend_from_slice(&chunk[cursor + error.valid_up_to()..]);
+            let valid_length = error.valid_up_to();
+            let valid_text = std::str::from_utf8(&chunk[cursor..cursor + valid_length])
+                .expect("valid UTF-8 prefix");
+            if !decoded_text_is_safe(valid_text) {
+                return false;
+            }
+            incomplete_code_point.extend_from_slice(&chunk[cursor + valid_length..]);
             true
         }
     }
@@ -629,10 +659,13 @@ fn file_contains_ascii_impl(
             break;
         }
         let chunk = &block[..read_size];
-        if !case_sensitive && !chunk.is_ascii() {
-            return Ok(true);
-        }
-        if case_sensitive && !validate_utf8_chunk(chunk, &mut incomplete_code_point) {
+        if (!chunk.is_ascii() || !incomplete_code_point.is_empty())
+            && !validate_candidate_utf8_chunk(
+                chunk,
+                &mut incomplete_code_point,
+                case_sensitive,
+            )
+        {
             return Ok(true);
         }
 
@@ -664,7 +697,7 @@ fn file_contains_ascii_impl(
         previous.drain(..retained_start);
     }
 
-    if case_sensitive && !incomplete_code_point.is_empty() {
+    if !incomplete_code_point.is_empty() {
         return Ok(true);
     }
     Ok(evidence_matches.iter().any(|group| group.iter().all(|found| *found)))

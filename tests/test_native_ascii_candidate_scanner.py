@@ -15,9 +15,25 @@ from chats.commands.search import _file_contains_ascii
         pytest.param(b"prefix Exact suffix", b"exact", True, (), False, id="case-sensitive-miss"),
         pytest.param(b"prefix EXACT suffix", b"exact", False, (), True, id="ascii-lowercase"),
         pytest.param("unrelated café".encode(), b"absent", True, (), False, id="valid-unicode"),
-        pytest.param("unrelated café".encode(), b"absent", False, (), True, id="unicode-defer"),
+        pytest.param(
+            "unrelated café".encode(),
+            b"absent",
+            False,
+            (),
+            False,
+            id="safe-unicode-continues",
+        ),
         pytest.param(b"unrelated \xff bytes", b"absent", True, (), True, id="invalid-utf8"),
+        pytest.param(b"unrelated \xff bytes", b"absent", False, (), True, id="invalid-utf8-insensitive"),
         pytest.param(b"incomplete \xf0\x9f\x98", b"absent", True, (), True, id="incomplete-utf8"),
+        pytest.param(
+            b"incomplete \xf0\x9f\x98",
+            b"absent",
+            False,
+            (),
+            True,
+            id="incomplete-utf8-insensitive",
+        ),
         pytest.param(
             b"first marker and later second marker",
             b"absent",
@@ -74,6 +90,66 @@ def test_native_ascii_candidate_scan_contract(
         "Expected the native ASCII candidate scan to preserve the locked contract. "
         f"Got: {actual=!r}, {expected=!r}, {case_sensitive=!r}, "
         f"{needle=!r}, {evidence_groups=!r}"
+    )
+
+
+_PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS = (
+    "\u00df\u0130\u0131\u0149\u017f\u01f0"
+    "\u1e96\u1e97\u1e98\u1e99\u1e9a\u1e9e\u212a"
+    "\ufb00\ufb01\ufb02\ufb03\ufb04\ufb05\ufb06"
+)
+
+
+@pytest.mark.parametrize(
+    "risk_character",
+    _PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS,
+    ids=lambda character: f"U+{ord(character):04X}",
+)
+def test_case_insensitive_scan_defers_python_ascii_match_risk_characters(
+    tmp_path: Path,
+    risk_character: str,
+) -> None:
+    path = tmp_path / "risk-character.jsonl"
+    path.write_text(f"unrelated {risk_character} text", encoding="utf-8")
+
+    actual = _file_contains_ascii(
+        path,
+        b"absent",
+        case_sensitive=False,
+    )
+
+    assert actual is True, (
+        "Expected Python 3.14 casefold or regex risk characters to require "
+        f"semantic confirmation. Got: {actual=!r}, U+{ord(risk_character):04X}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("character", "expected"),
+    [
+        pytest.param("é", False, id="safe-unicode"),
+        pytest.param("\u212a", True, id="casefold-risk"),
+        pytest.param("\u0131", True, id="regex-risk"),
+    ],
+)
+def test_unicode_risk_decision_survives_a_split_utf8_code_point(
+    tmp_path: Path,
+    character: str,
+    expected: bool,
+) -> None:
+    path = tmp_path / "split-unicode.jsonl"
+    path.write_bytes(b"x" * (1024 * 1024 - 1) + character.encode("utf-8"))
+
+    actual = _file_contains_ascii(
+        path,
+        b"absent",
+        case_sensitive=False,
+    )
+
+    assert actual is expected, (
+        "Expected incremental UTF-8 classification to preserve the Python risk "
+        f"decision across a read boundary. Got: {actual=!r}, {expected=!r}, "
+        f"U+{ord(character):04X}"
     )
 
 

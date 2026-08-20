@@ -149,9 +149,6 @@ from .search import (
     SearchHit as SearchHit,
 )
 from .search import (
-    _search_candidate_matches as _search_candidate_matches,
-)
-from .search import (
     _search_conversation_content as _search_conversation_content,
 )
 from .search import (

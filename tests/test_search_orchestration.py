@@ -1043,14 +1043,19 @@ def test_cmd_search_skips_last_timestamp_probe_when_only_cafter_is_active(
 _KELVIN_SIGN = "\u212a"
 
 
-def _write_unicode_session(path: Path, text: str) -> None:
-    """Write a Claude session storing raw UTF-8 (like real sessions), not \\uXXXX escapes."""
+def _write_unicode_session(
+    path: Path,
+    text: str,
+    *,
+    ensure_ascii: bool = False,
+) -> None:
+    """Write a Claude session with literal Unicode or JSON Unicode escapes."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "\n".join([
             json.dumps(
                 {"type": "summary", "summary": text, "leafUuid": f"{path.stem}-leaf"},
-                ensure_ascii=False,
+                ensure_ascii=ensure_ascii,
             ),
             json.dumps(
                 {
@@ -1059,7 +1064,7 @@ def _write_unicode_session(path: Path, text: str) -> None:
                     "cwd": "/tmp/search-orchestration",
                     "message": {"role": "user", "content": text},
                 },
-                ensure_ascii=False,
+                ensure_ascii=ensure_ascii,
             ),
         ])
         + "\n",
@@ -1178,9 +1183,8 @@ def test_ascii_literal_search_finds_unicode_casefold_match(
 ) -> None:
     """An ASCII literal must match content that equals it only under Unicode case folding.
 
-    The byte candidate gate folds ASCII only; the content gate and the real
-    `re.IGNORECASE` confirmation fold Unicode (U+212A KELVIN SIGN -> 'k'). The gate
-    must defer to them, not reject the file before `read_text`.
+    The native candidate gate folds ASCII only. It must defer U+212A KELVIN SIGN
+    so the authoritative `re.IGNORECASE` confirmation can match it to ASCII `k`.
     """
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
@@ -1197,8 +1201,8 @@ def test_ascii_literal_search_finds_unicode_casefold_match(
 
     captured = capsys.readouterr()
     assert exc_info.value.code == 0, (
-        "ASCII query 'ktown' must match U+212A content via case folding (content "
-        f"gate and real regex do). Got exit {exc_info.value.code}, "
+        "ASCII query 'ktown' must match U+212A content through the authoritative "
+        f"regex. Got exit {exc_info.value.code}, "
         f"stdout:\n{captured.out}\nstderr:\n{captured.err}"
     )
     assert captured.out.strip() == path.stem, (
@@ -1207,30 +1211,235 @@ def test_ascii_literal_search_finds_unicode_casefold_match(
     )
 
 
-def test_byte_prefilter_never_rejects_a_content_gate_candidate(
-    tmp_path: Path, monkeypatch
+def test_ascii_literal_search_finds_json_escaped_unicode_casefold_match(
+    tmp_path: Path, monkeypatch, capsys
 ) -> None:
-    """Falsifying guardrail: the byte prefilter must be a superset of the content gate.
-
-    If the prefilter rejects a file the decode-based content gate accepts, a real
-    hit is silently dropped before `read_text`. U+212A case folding is the
-    falsifying input.
-    """
+    """JSON Unicode escapes must reach the decoded semantic confirmation path."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
-    path = home / ".claude" / "projects" / "proj" / "kelvin.jsonl"
-    _write_unicode_session(path, f"the {_KELVIN_SIGN}town status report")
+    path = home / ".claude" / "projects" / "proj" / "escaped-kelvin.jsonl"
+    _write_unicode_session(
+        path,
+        f"the {_KELVIN_SIGN}town status report",
+        ensure_ascii=True,
+    )
 
-    query = search_commands.parse_search_query("ktown")
-    flags = ConversationFlags(color="never", paging=False)
-    content = path.read_text(encoding="utf-8")
-    content_gate = search_commands._search_candidate_matches(content, query, flags)
-    byte_prefilter = search_commands._search_path_candidate_matches(path, query, flags)
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "ktown",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
 
-    assert not (content_gate and not byte_prefilter), (
-        "Byte prefilter rejected a file the content gate accepts — a real hit is "
-        f"dropped before read_text. content_gate={content_gate}, "
-        f"byte_prefilter={byte_prefilter}"
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected JSON-escaped Unicode to reach semantic search confirmation. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == path.stem, (
+        "Expected the escaped Unicode session id. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
+@pytest.mark.parametrize(
+    "flag_kwargs",
+    [
+        pytest.param({"show_thinking": True}, id="thinking"),
+        pytest.param({"show_tools": True}, id="tools"),
+        pytest.param({"show_agents": True}, id="agents"),
+        pytest.param({"show_custom": True}, id="custom"),
+        pytest.param({"show_branches": True}, id="branches"),
+        pytest.param({"show_plans": True}, id="plans"),
+        pytest.param({"shorten": True}, id="fixed-shortening"),
+        pytest.param(
+            {"shorten": True, "shorten_progressive": True},
+            id="progressive-shortening",
+        ),
+        pytest.param(
+            {"show_thinking": True, "shorten_thinking": True},
+            id="thinking-shortening",
+        ),
+    ],
+)
+def test_case_insensitive_native_rejection_requires_default_unshortened_visibility(
+    tmp_path: Path,
+    monkeypatch,
+    flag_kwargs: dict[str, bool],
+) -> None:
+    """Generated or shortened content must bypass the raw native rejection gate."""
+    path = tmp_path / "candidate.jsonl"
+    path.write_text("unrelated café text", encoding="utf-8")
+    query = search_commands.parse_search_query("absent-ascii-needle")
+
+    def fail_native_scan(*_args, **_kwargs) -> bool:
+        raise AssertionError(
+            "Expected non-default or shortened visibility to bypass native rejection."
+        )
+
+    monkeypatch.setattr(search_commands, "_file_contains_ascii", fail_native_scan)
+
+    actual = search_commands._search_path_candidate_matches(
+        path,
+        query,
+        ConversationFlags(color="never", paging=False, **flag_kwargs),
+    )
+
+    assert actual is True, (
+        "Expected uncertain generated content to require semantic confirmation. "
+        f"Got: {actual=!r}, {flag_kwargs=!r}"
+    )
+
+
+def test_ascii_literal_search_preserves_python_dotless_i_regex_match(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Python `re.IGNORECASE` treats U+0131 as an ASCII `i` equivalent."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "dotless-i.jsonl"
+    _write_unicode_session(path, "the \u0131town status report")
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "itown",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected U+0131 to reach Python regex confirmation. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == path.stem, (
+        f"Expected the dotless-i session id. Got stdout:\n{captured.out}"
+    )
+
+
+def test_json_decode_unstable_query_bypasses_native_rejection(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """A query containing a decoded newline must not be searched as raw JSON bytes."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "escaped-newline.jsonl"
+    _write_unicode_session(path, "alpha\nbeta")
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "alpha\nbeta",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected a JSON-decode-unstable query to reach semantic confirmation. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == path.stem, (
+        f"Expected the escaped-newline session id. Got stdout:\n{captured.out}"
+    )
+
+
+def test_nondefault_tool_visibility_bypasses_native_rejection(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Codex tool normalization may create the visible name `Bash` absent raw."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".codex" / "sessions" / "2026" / "01" / "codex-tools.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        "\n".join([
+            json.dumps({
+                "type": "session_meta",
+                "payload": {"id": "codex-tools-id", "cwd": "/tmp/codex"},
+            }),
+            json.dumps({
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "name": "exec_command",
+                    "arguments": json.dumps({"cmd": "pwd"}),
+                    "call_id": "call-1",
+                },
+            }),
+        ])
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "Bash",
+            ConversationFlags(show_tools=True, color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected non-default tool visibility to bypass native rejection. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == "codex-tools-id", (
+        f"Expected the Codex tool session id. Got stdout:\n{captured.out}"
+    )
+
+
+def test_default_pi_joined_agent_evidence_reaches_semantic_confirmation(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """A joined Pi failure generates visible `Bash` text absent from raw values."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".pi" / "agent" / "sessions" / "project" / "pi-agent.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        "\n".join([
+            json.dumps({
+                "type": "session",
+                "version": 3,
+                "id": "pi-agent-id",
+                "cwd": "/tmp/pi",
+            }),
+            json.dumps({
+                "type": "custom_message",
+                "customType": "pi-user-agents",
+                "display": False,
+                "content": "<user_agent_error></user_agent_error>",
+                "details": {
+                    "mainContextState": "joined",
+                    "ok": False,
+                    "task": "inspect the failure",
+                    "error": "native failure text",
+                },
+            }),
+        ])
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "Bash",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected default Pi joined-agent evidence to reach semantic confirmation. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == "pi-agent-id", (
+        f"Expected the joined Pi agent session id. Got stdout:\n{captured.out}"
     )
 
 

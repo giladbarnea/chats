@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-20] Sharpen native case-insensitive candidate scanning
+
+### Changed
+
+- Default, unshortened case-insensitive ASCII searches now continue through valid Unicode that cannot create an ASCII match under Python 3.14. The native scan defers on the 20 casefold or regex risk scalars, invalid UTF-8, JSON Unicode escapes, and default joined-Pi agent evidence.
+- Non-default generated-content modes still bypass native rejection. The redundant decoded-content candidate gate is gone, leaving `SessionScan` and rendered regex matching as the sole semantic confirmation.
+
+---
 ## [2026-08-20] Move raw ASCII search candidate scanning to Rust
 
 ### Changed
