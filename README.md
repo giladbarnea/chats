@@ -602,7 +602,7 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 
 **Key Functions:**
 - `extract_summaries_from_jsonl()` - Extract all summary fields from file
-- `SessionPool.discover()` - Build the unified supported-session inventory for one invocation
+- `SessionPool.discover()` - Build the unified pool from Rust-supplied path, provider, and mtime inventory rows
 - `SessionScan.from_content()` - Decode one session once into search facets and visible messages
 - `get_input_content()` - Resolve input from CLI arg, stdin, or conversation/session ID
 - `detect_format()` - Deterministic format detection (first line only)
@@ -612,7 +612,7 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 - `render_message_panels()` - Colored per-message panel rendering (parse color path)
 - `print_metadata()` - Unified metadata output to stderr
 - `parse_slice_notation()` - Convert slice strings to indices
-- `find_all_supported_session_files()` - Find all supported Claude, PI, and Codex session files
+- `find_all_supported_session_files()` - Project the native Claude, PI, and Codex inventory as public `Path` values
 - `sort_by_modified()` / `sort_by_modified_descending()` - Shared modified-time ordering helpers for recency-aware flows
 - `extract_cwd_from_jsonl()` / `extract_cwd_from_entries()` - Extract working directory from JSONL
 - `cmd_search()` - Search with rich display

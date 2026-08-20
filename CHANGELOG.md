@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-20] Move native session inventory to Rust
+
+### Changed
+
+- Unified Claude, Codex, and Pi session discovery now runs once in the existing PyO3 extension. Rust supplies byte-preserving paths, canonical provider labels, and mtimes while the public Python `Path` and `SessionPool` interfaces stay unchanged.
+- The discovery path preserves the existing provider order, Python path-component sorting, sidechain modes, symlink rules, external Python first-entry provider detection, stable mtime ties, and stat fallback.
+- On the live 4.8k-session pool, the `SessionPool.discover(False)` last-five median improved by 53.5%. Repeated exact-launcher warm measurements improved date-filtered search by 17.6%, with no material control regression. Cold filesystem I/O remains variable.
+
+---
 ## [2026-08-19] Move backward last-timestamp scanning to Rust
 
 ### Changed

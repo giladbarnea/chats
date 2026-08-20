@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .model import PROVIDERS, Provider
 from .parsing import (
-    find_all_supported_session_files,
+    _discover_session_file_rows,
     get_jsonl_session_adapter,
     get_native_session_id,
 )
@@ -33,34 +33,62 @@ class SessionPool:
     @classmethod
     def discover(cls, *, include_sidechains: bool = True) -> SessionPool:
         """Build a pool from the current supported-session universe."""
-        return cls.from_files(
-            find_all_supported_session_files(include_sidechains=include_sidechains)
-        )
+        rows = [
+            (
+                session_file,
+                native_provider
+                or get_jsonl_session_adapter(session_file).name,
+                stat_mtime,
+            )
+            for session_file, native_provider, stat_mtime in _discover_session_file_rows(
+                include_sidechains=include_sidechains
+            )
+        ]
+        return cls._from_rows(rows)
 
     @classmethod
     def from_files(cls, files: Sequence[Path]) -> SessionPool:
         """Build a pool from a known supported-session sequence."""
-        normalized_files = tuple(files)
+        return cls._from_rows([
+            (
+                session_file,
+                get_jsonl_session_adapter(session_file).name,
+                _safe_stat_mtime(session_file),
+            )
+            for session_file in files
+        ])
+
+    @classmethod
+    def _from_rows(
+        cls,
+        rows: Sequence[tuple[Path, Provider, float]],
+    ) -> SessionPool:
+        """Build every pool projection from ordered provider and stat rows."""
         provider_groups: dict[Provider, list[Path]] = {
             provider: [] for provider in PROVIDERS
         }
         by_stem: dict[str, Path] = {}
         by_filename: dict[str, Path] = {}
 
-        for session_file in normalized_files:
-            provider = get_jsonl_session_adapter(session_file).name
+        for session_file, provider, _stat_mtime in rows:
             provider_groups[provider].append(session_file)
             by_stem[session_file.stem] = session_file
             by_filename[session_file.name] = session_file
 
         return cls(
-            files=normalized_files,
+            files=tuple(session_file for session_file, _provider, _mtime in rows),
             by_provider={
                 provider: tuple(provider_groups[provider]) for provider in PROVIDERS
             },
             by_stem=by_stem,
             by_filename=by_filename,
-            stat_mtime_sorted=tuple(sorted(normalized_files, key=_safe_stat_mtime)),
+            stat_mtime_sorted=tuple(
+                session_file
+                for session_file, _provider, _mtime in sorted(
+                    rows,
+                    key=lambda row: row[2],
+                )
+            ),
         )
 
     def resolve_exact_identifier(self, identifier: str) -> Path | None:

@@ -1,18 +1,18 @@
 ---
 name: architecture
 description: Document the architecture of the `ch` CLI tool.
-last_updated: 2026/08/19
+last_updated: 2026/08/20
 ---
 
 # ARCHITECTURE.md
 
 ## Core Runtime Concepts
 
-- `SessionPool` (`session_pool.py`): the per-invocation inventory of all supported session files. It owns the "one big pool" mental model for exact-id resolution and provider-aware search routing.
+- `SessionPool` (`session_pool.py`): the per-invocation inventory of all supported session files. Rust supplies ordered path, canonical provider, and mtime rows; Python keeps the public pool and exact-id lookup interfaces.
 - `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, the current latest custom title, and already-visible messages.
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery`/`NotQuery` tree over terms. Owns tokenizing, uppercase `AND`/`OR`/`NOT` grammar, and per-term regex/literal compilation under the selected case-sensitivity mode.
-- Native hot-path helpers (`rust/lib.rs`, exposed as `chats._native`): Rust owns canonical native-provider path containment and linear backward JSONL line reads for last-timestamp probes. Python keeps provider content rules, JSON timestamp selection, datetime conversion, and stat fallback. PyO3 targets the Python 3.14 stable ABI. The global launcher uses the editable install that the user established with `uv tool install -e .`.
+- Native hot-path helpers (`rust/lib.rs`, exposed as `chats._native`): Rust owns unified native session inventory, canonical provider-path containment, inventory mtimes, and linear backward JSONL line reads for last-timestamp probes. Python keeps the public `Path` and `SessionPool` interfaces, external first-entry provider detection, JSON timestamp selection, datetime conversion, and timestamp fallback. PyO3 targets the Python 3.14 stable ABI. The global launcher uses the editable install that the user established with `uv tool install -e .`.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned parser and native-to-canonical normalization boundary. Adapter choice uses the Rust path classifier first, then exact Codex and Pi first-entry signatures. Known tool envelopes, names, input keys, and result blocks normalize here before the shared model and renderers run.
 - `ShortSpec` / `ShortPolicy` (`shortening.py`): the shared global and tool-local short-value parser plus its resolved fixed or progressive policy. [SHORT_SPEC.md](SHORT_SPEC.md) owns the behavior contract.
 - Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`, `xml_transport.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
@@ -776,7 +776,7 @@ cli.py
 ## Architecture Notes & Edge Cases (Shared Invariants / Non-obvious Behaviors)
 
 1. **Adapter Selection Fails Closed**: `parse_jsonl_entries()` first checks native provider paths. For unknown paths or stdin, it recognizes Codex through a first `session_meta` object and PI through a first `session` object with an integer `version`. Claude has no content signature, so external Claude-shaped JSONL and all other unknown JSONL fail instead of reaching a default adapter.
-2. **`SessionPool` Owns Inventory, Not Full Truth**: `SessionPool` is the unified inventory/routing layer for exact-id resolution and provider-aware search. It does not currently replace every metadata-heavy path.
+2. **Native Discovery Supplies `SessionPool` Rows**: Rust traverses the exact Claude, Codex, and Pi layouts once and returns byte-preserving paths, canonical native-provider labels or no match, and mtimes. Python projects public `Path` values and builds the unchanged `SessionPool` fields directly. A no-match row still enters first-entry provider detection, and `SessionPool.from_files()` remains the separate constructor for caller-supplied sequences. Rust preserves Python `Path` component ordering, stable mtime ties, symlink traversal rules, and the negative-infinity stat fallback.
 3. **Recent Negative Indices Use JSONL Mtime With Cheap Predicates**: `_resolve_recent_conversation_file()` excludes sidechains, applies the cwd probe before timestamp sorting, then orders survivors newest-first by `get_jsonl_last_timestamp()`. Date filters reuse that modified-time value for `mafter` and probe first timestamp only when `cafter` is active. Rust reads physical lines backward with bounded linear assembly, while a Python callback preserves the existing `json.loads` and timestamp-selection semantics. Python also keeps datetime conversion and filesystem-mtime fallback. This keeps recent-index resolution tied to transcript content while still avoiding full metadata construction for the pool.
 4. **Parse Resolves Input Once**: `_resolve_input_content()` returns `(content, source_path)` so parse mode does not perform a second full resolution pass after reading stdin/path input.
 5. **Search Semantics Are Visibility-Dependent**: `cmd_search` matches summaries, the current latest custom title, and the semantic inner XML of visible message content before transport-only escaping. If tools, thinking, agents, plans, or regular user/assistant roles are hidden by flags, they do not count as message matches. Summary and current-title facets intentionally stay outside role selection.

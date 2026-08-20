@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import textwrap
 import uuid
@@ -13,7 +14,11 @@ from pathlib import Path
 
 import orjson
 
-from ._native import classify_native_session_path, find_last_jsonl_timestamp
+from ._native import (
+    classify_native_session_path,
+    discover_session_files,
+    find_last_jsonl_timestamp,
+)
 from .model import ConversationFlags, Message, Provider, SubagentMetadata
 from .registry import (
     ContentBlockType,
@@ -33,7 +38,6 @@ class JsonlSessionAdapter:
     name: Provider
     parse_messages: Callable[[str, ConversationFlags], list[Message]]
     build_name_entries: NameEntryBuilder
-    find_session_files: Callable[[], list[Path]] | None = None
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
     is_sidechain_path: Callable[[Path], bool] = lambda _path: False
     extract_session_id: Callable[[Path], str | None] = lambda path: path.stem
@@ -1453,14 +1457,6 @@ def _find_pi_session_matches(identifier: str) -> list[tuple[Path, str]]:
     return matches
 
 
-def _find_pi_session_files() -> list[Path]:
-    """List PI session JSONL files."""
-    sessions_dir = Path.home() / ".pi" / "agent" / "sessions"
-    if not sessions_dir.exists():
-        return []
-    return sorted(sessions_dir.rglob("*.jsonl"))
-
-
 def _find_codex_session_matches(identifier: str) -> list[tuple[Path, str]]:
     """Find Codex session files that match a Codex session id."""
     if len(identifier.split()) != 1:
@@ -1531,26 +1527,38 @@ def extract_codex_subagent_metadata(transcript: Path) -> SubagentMetadata:
     )
 
 
+NativeInventoryRow = tuple[Path, Provider | None, float]
+
+
+def _discover_session_file_rows(
+    *, include_sidechains: bool = True
+) -> list[NativeInventoryRow]:
+    """Return the native ordered inventory with provider and stat projections."""
+    rows = [
+        (Path(os.fsdecode(raw_path)), provider, mtime)
+        for raw_path, provider, mtime in discover_session_files(
+            os.fsencode(Path.home()), include_sidechains
+        )
+    ]
+    if include_sidechains:
+        return rows
+
+    return [
+        row
+        for row in rows
+        if row[1] is not None
+        or not _select_jsonl_session_adapter(row[0]).is_sidechain_path(row[0])
+    ]
+
+
 def find_all_supported_session_files(*, include_sidechains: bool = True) -> list[Path]:
     """List all known session files across supported JSONL adapters."""
-    claude_projects_dir = Path.home() / ".claude" / "projects"
-    claude_files: list[Path] = []
-    if claude_projects_dir.exists():
-        claude_files.extend(claude_projects_dir.glob("*/*.jsonl"))
-        claude_files.extend(claude_projects_dir.glob("*/*/subagents/agent-*.jsonl"))
-        claude_files = sorted(claude_files)
-
-    adapter_files: list[Path] = []
-    for adapter in JSONL_SESSION_ADAPTERS:
-        if adapter.find_session_files is None:
-            continue
-        adapter_files.extend(adapter.find_session_files())
-
-    session_files = claude_files + adapter_files
-    if include_sidechains:
-        return session_files
-
-    return [path for path in session_files if not is_sidechain_session_file(path)]
+    return [
+        path
+        for path, _provider, _mtime in _discover_session_file_rows(
+            include_sidechains=include_sidechains
+        )
+    ]
 
 
 def _jsonl_timestamp_now() -> str:
@@ -1633,7 +1641,6 @@ JSONL_SESSION_ADAPTERS = [
         name="codex",
         parse_messages=_parse_codex_jsonl,
         build_name_entries=_build_codex_name_entries,
-        find_session_files=_find_codex_session_files,
         find_session_matches=_find_codex_session_matches,
         extract_session_id=_extract_codex_session_id,
         extract_forked_from=_extract_codex_forked_from_id,
@@ -1643,7 +1650,6 @@ JSONL_SESSION_ADAPTERS = [
         name="pi",
         parse_messages=_parse_pi_jsonl,
         build_name_entries=_build_pi_name_entries,
-        find_session_files=_find_pi_session_files,
         find_session_matches=_find_pi_session_matches,
         extract_session_id=_extract_pi_session_id,
         matches_first_entry=_is_pi_session_header,

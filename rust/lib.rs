@@ -2,10 +2,15 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::{OsStr, OsString};
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 
+#[cfg(unix)]
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Provider {
@@ -158,6 +163,183 @@ fn classify_native_session_path_impl(path: &Path, home: &Path) -> Option<Provide
     provider_for_canonical_path(&canonical_path, canonical_roots.as_ref())
 }
 
+fn filename_ends_with(path: &Path, suffix: &[u8]) -> bool {
+    path.file_name()
+        .map(os_string_bytes)
+        .is_some_and(|filename| filename.ends_with(suffix))
+}
+
+fn filename_starts_with(path: &Path, prefix: &[u8]) -> bool {
+    path.file_name()
+        .map(os_string_bytes)
+        .is_some_and(|filename| filename.starts_with(prefix))
+}
+
+#[cfg(unix)]
+fn os_string_bytes(value: &OsStr) -> &[u8] {
+    value.as_bytes()
+}
+
+#[cfg(not(unix))]
+fn os_string_bytes(value: &OsStr) -> &[u8] {
+    value.to_str().unwrap_or_default().as_bytes()
+}
+
+fn python_filesystem_codepoints(value: &OsStr) -> Vec<u32> {
+    let mut bytes = os_string_bytes(value);
+    let mut codepoints = Vec::new();
+    while !bytes.is_empty() {
+        match std::str::from_utf8(bytes) {
+            Ok(text) => {
+                codepoints.extend(text.chars().map(u32::from));
+                break;
+            }
+            Err(error) => {
+                let valid_length = error.valid_up_to();
+                let valid_text = std::str::from_utf8(&bytes[..valid_length])
+                    .expect("valid UTF-8 prefix");
+                codepoints.extend(valid_text.chars().map(u32::from));
+                let invalid_length = error
+                    .error_len()
+                    .unwrap_or(bytes.len() - valid_length);
+                codepoints.extend(
+                    bytes[valid_length..valid_length + invalid_length]
+                        .iter()
+                        .map(|byte| 0xdc00 + u32::from(*byte)),
+                );
+                bytes = &bytes[valid_length + invalid_length..];
+            }
+        }
+    }
+    codepoints
+}
+
+fn python_filesystem_component_codepoints(component: Component<'_>) -> Vec<u32> {
+    match component {
+        Component::Prefix(prefix) => python_filesystem_codepoints(prefix.as_os_str()),
+        Component::RootDir => {
+            python_filesystem_codepoints(OsStr::new(std::path::MAIN_SEPARATOR_STR))
+        }
+        Component::CurDir => vec![u32::from('.')],
+        Component::ParentDir => vec![u32::from('.'), u32::from('.')],
+        Component::Normal(value) => python_filesystem_codepoints(value),
+    }
+}
+
+fn python_filesystem_path_key(path: &Path) -> Vec<Vec<u32>> {
+    path.components()
+        .map(python_filesystem_component_codepoints)
+        .collect()
+}
+
+fn read_recursive_jsonl_paths(root: &Path, paths: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if filename_ends_with(&path, b".jsonl") {
+            paths.push(path.clone());
+        }
+        if entry.file_type().is_ok_and(|file_type| file_type.is_dir()) {
+            read_recursive_jsonl_paths(&path, paths);
+        }
+    }
+}
+
+fn read_claude_jsonl_paths(root: &Path) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    let Ok(projects) = std::fs::read_dir(root) else {
+        return paths;
+    };
+    for project in projects.flatten() {
+        let project_path = project.path();
+        if !project_path.is_dir() {
+            continue;
+        }
+        let Ok(children) = std::fs::read_dir(&project_path) else {
+            continue;
+        };
+        for child in children.flatten() {
+            let child_path = child.path();
+            if filename_ends_with(&child_path, b".jsonl") {
+                paths.push(child_path.clone());
+            }
+            if !child_path.is_dir() {
+                continue;
+            }
+            let Ok(agents) = std::fs::read_dir(child_path.join("subagents")) else {
+                continue;
+            };
+            for agent in agents.flatten() {
+                let agent_path = agent.path();
+                if filename_starts_with(&agent_path, b"agent-")
+                    && filename_ends_with(&agent_path, b".jsonl")
+                {
+                    paths.push(agent_path);
+                }
+            }
+        }
+    }
+    paths.sort_by_cached_key(|path| python_filesystem_path_key(path));
+    paths
+}
+
+fn read_recursive_provider_paths(root: &Path) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    read_recursive_jsonl_paths(root, &mut paths);
+    paths.sort_by_cached_key(|path| python_filesystem_path_key(path));
+    paths
+}
+
+#[cfg(unix)]
+fn stat_mtime(path: &Path) -> f64 {
+    let Ok(metadata) = std::fs::metadata(path) else {
+        return f64::NEG_INFINITY;
+    };
+    metadata.mtime() as f64 + metadata.mtime_nsec() as f64 / 1_000_000_000.0
+}
+
+#[cfg(not(unix))]
+fn stat_mtime(path: &Path) -> f64 {
+    use std::time::UNIX_EPOCH;
+
+    let Ok(modified) = std::fs::metadata(path).and_then(|metadata| metadata.modified()) else {
+        return f64::NEG_INFINITY;
+    };
+    match modified.duration_since(UNIX_EPOCH) {
+        Ok(duration) => duration.as_secs_f64(),
+        Err(error) => -error.duration().as_secs_f64(),
+    }
+}
+
+fn discover_session_files_impl(
+    home: &Path,
+    include_sidechains: bool,
+) -> Vec<(PathBuf, Option<Provider>, f64)> {
+    let groups = [
+        read_claude_jsonl_paths(&home.join(".claude").join("projects")),
+        read_recursive_provider_paths(&home.join(".codex").join("sessions")),
+        read_recursive_provider_paths(
+            &home.join(".pi").join("agent").join("sessions"),
+        ),
+    ];
+    groups
+        .into_iter()
+        .flatten()
+        .filter_map(|path| {
+            let provider = classify_native_session_path_impl(&path, home);
+            let excluded_sidechain = !include_sidechains
+                && provider == Some(Provider::Claude)
+                && filename_starts_with(&path, b"agent-");
+            (!excluded_sidechain).then(|| {
+                let mtime = stat_mtime(&path);
+                (path, provider, mtime)
+            })
+        })
+        .collect()
+}
+
 const JSONL_SCAN_CHUNK_SIZE: usize = 4096;
 
 enum TimestampLine {
@@ -301,15 +483,39 @@ fn find_last_jsonl_timestamp(
     )
 }
 
+#[pyfunction]
+fn discover_session_files(
+    py: Python<'_>,
+    home: &Bound<'_, PyBytes>,
+    include_sidechains: bool,
+) -> Vec<(Py<PyBytes>, Option<&'static str>, f64)> {
+    #[cfg(unix)]
+    let home = PathBuf::from(OsString::from_vec(home.as_bytes().to_vec()));
+    #[cfg(not(unix))]
+    let home = PathBuf::from(String::from_utf8_lossy(home.as_bytes()).into_owned());
+
+    discover_session_files_impl(&home, include_sidechains)
+        .into_iter()
+        .map(|(path, provider, mtime)| {
+            let path = PyBytes::new(py, os_string_bytes(path.as_os_str())).unbind();
+            (path, provider.map(Provider::as_str), mtime)
+        })
+        .collect()
+}
+
 #[pymodule]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(classify_native_session_path, module)?)?;
-    module.add_function(wrap_pyfunction!(find_last_jsonl_timestamp, module)?)
+    module.add_function(wrap_pyfunction!(find_last_jsonl_timestamp, module)?)?;
+    module.add_function(wrap_pyfunction!(discover_session_files, module)?)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_native_session_path_impl, provider_for_canonical_path, Provider};
+    use super::{
+        classify_native_session_path_impl, provider_for_canonical_path,
+        python_filesystem_path_key, Provider,
+    };
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -334,6 +540,31 @@ mod tests {
         fn drop(&mut self) {
             fs::remove_dir_all(&self.0).expect("remove temporary directory");
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn filesystem_path_order_matches_python_surrogate_escape_order() {
+        use std::cmp::Ordering;
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+
+        let unicode_path = PathBuf::from("é.jsonl");
+        let surrogate_escaped_path = PathBuf::from(OsString::from_vec(b"\x80.jsonl".to_vec()));
+
+        assert_eq!(
+            python_filesystem_path_key(&surrogate_escaped_path)
+                .cmp(&python_filesystem_path_key(&unicode_path)),
+            Ordering::Greater,
+            "Python orders U+00E9 before the surrogate-escaped U+DC80.",
+        );
+        assert_eq!(
+            python_filesystem_path_key(Path::new("/root/agents/z.jsonl")).cmp(
+                &python_filesystem_path_key(Path::new("/root/agents-plugins/a.jsonl")),
+            ),
+            Ordering::Less,
+            "Python compares path components before later separators.",
+        );
     }
 
     #[test]
