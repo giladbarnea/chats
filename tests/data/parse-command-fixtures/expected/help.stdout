@@ -1,0 +1,11 @@
+usage: ch parse [-h] [-f {xml,json}] [input_file]
+
+Convert between structured ch JSON and XML-tagged Markdown
+
+positional arguments:
+  input_file            Input file (reads stdin when omitted)
+
+options:
+  -h, --help            show this help message and exit
+  -f, --format {xml,json}
+                        Output format: xml or json (default: xml)

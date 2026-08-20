@@ -7,17 +7,16 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import sys
 
 import pytest
 
-from chats.formatting import format_to_json, format_to_xml
-from chats.model import ConversationFlags, Message, messages_from_json_data
+from chats.formatting import format_to_json
+from chats.model import ConversationFlags, Message
 
 PROJECT_ROOT = Path(__file__).parent.parent
 FIXTURE_ROOT = PROJECT_ROOT / "tests" / "data" / "parse-round-trip-fixtures"
 MANIFEST_PATH = FIXTURE_ROOT / "MANIFEST.json"
-CH_EXECUTABLE = Path(sys.executable).with_name("ch")
+CH_EXECUTABLE = Path.home() / ".local" / "bin" / "ch"
 
 PROVIDERS = {"claude", "pi", "codex"}
 CONFIGURATION_ARGUMENTS = {
@@ -105,25 +104,32 @@ def test_static_fixtures_cover_the_exact_adapter_configuration_matrix() -> None:
         )
 
         input_path = (PROJECT_ROOT / row["input_json"]).resolve()
-        expected_path = (PROJECT_ROOT / row["expected_xml"]).resolve()
-        assert input_path.is_relative_to(FIXTURE_ROOT.resolve()), (
-            f"Expected manifest input paths to stay inside the static corpus. "
-            f"Got: {input_path}."
-        )
-        assert expected_path.is_relative_to(FIXTURE_ROOT.resolve()), (
-            f"Expected manifest oracle paths to stay inside the static corpus. "
-            f"Got: {expected_path}."
-        )
-        assert input_path.is_file() and input_path.suffix == ".json", (
+        expected_xml_path = (PROJECT_ROOT / row["expected_xml"]).resolve()
+        expected_json_path = (PROJECT_ROOT / row["expected_json"]).resolve()
+        for fixture_path in (input_path, expected_xml_path, expected_json_path):
+            assert fixture_path.is_relative_to(FIXTURE_ROOT.resolve()), (
+                "Expected manifest paths to stay inside the static corpus. "
+                f"Got: {fixture_path}."
+            )
+        assert input_path.is_file() and input_path.name.endswith(".input.json"), (
             f"Expected a stored `ch ... -f json` input file. Got: {input_path}."
         )
-        assert expected_path.is_file() and expected_path.suffix == ".xml", (
-            f"Expected a stored plain XML-tagged Markdown file. Got: {expected_path}."
+        assert expected_xml_path.is_file() and expected_xml_path.name.endswith(
+            ".expected.xml"
+        ), (
+            "Expected a stored plain XML-tagged Markdown oracle. "
+            f"Got: {expected_xml_path}."
         )
-        assert expected_path.read_bytes(), (
-            f"Expected a substantive stored Markdown oracle. Got empty: {expected_path}."
+        assert expected_json_path.is_file() and expected_json_path.name.endswith(
+            ".expected.json"
+        ), (
+            "Expected a stored canonical JSON oracle from the accepted legacy command. "
+            f"Got: {expected_json_path}."
         )
-        for fixture_path in (input_path, expected_path):
+        for fixture_path in (input_path, expected_xml_path, expected_json_path):
+            assert fixture_path.read_bytes(), (
+                f"Expected a substantive stored conversion fixture. Got empty: {fixture_path}."
+            )
             assert b"sk-or-v1-" not in fixture_path.read_bytes(), (
                 "Expected committed round-trip fixtures to redact OpenRouter credentials. "
                 f"Found a credential prefix in: {fixture_path}."
@@ -173,8 +179,7 @@ def test_parse_reconstructs_stored_markdown_byte_for_byte(
     input_path = (PROJECT_ROOT / row["input_json"]).resolve()
     expected_path = (PROJECT_ROOT / row["expected_xml"]).resolve()
     assert CH_EXECUTABLE.is_file(), (
-        f"Expected the installed public `ch` executable beside pytest's Python. "
-        f"Got: {CH_EXECUTABLE}."
+        f"Expected the real installed public `ch` executable. Got: {CH_EXECUTABLE}."
     )
     assert input_path.is_file() and expected_path.is_file(), (
         f"Expected committed static fixture files for {_fixture_id(row)}. "
@@ -204,15 +209,24 @@ def test_parse_reconstructs_stored_markdown_byte_for_byte(
         f"Expected {_byte_summary(expected)}; got {_byte_summary(completed.stdout)}. "
         f"stderr: {completed.stderr[:500]!r}."
     )
+    assert completed.stderr == b"", (
+        "Expected successful JSON-to-XML conversion to keep stderr empty. "
+        f"Got: {completed.stderr[:500]!r}."
+    )
+    assert completed.stdout.endswith(b"\n") and not completed.stdout.endswith(b"\n\n"), (
+        "Expected each non-empty conversion body to have exactly one final newline. "
+        f"Got tail: {completed.stdout[-20:]!r}."
+    )
 
 
 @pytest.mark.parametrize("row", MANIFEST_ROWS, ids=_fixture_id)
-def test_parse_format_json_stabilizes_static_xml_fixtures(
+def test_parse_format_json_matches_legacy_bytes_and_stabilizes_static_xml_fixtures(
     row: dict[str, object],
 ) -> None:
-    expected_path = (PROJECT_ROOT / row["expected_xml"]).resolve()
+    expected_xml_path = (PROJECT_ROOT / row["expected_xml"]).resolve()
+    expected_json_path = (PROJECT_ROOT / row["expected_json"]).resolve()
     json_result = subprocess.run(
-        [str(CH_EXECUTABLE), "parse", "-f", "json", str(expected_path)],
+        [str(CH_EXECUTABLE), "parse", "-f", "json", str(expected_xml_path)],
         cwd=PROJECT_ROOT,
         capture_output=True,
         check=False,
@@ -220,6 +234,20 @@ def test_parse_format_json_stabilizes_static_xml_fixtures(
     assert json_result.returncode == 0, (
         f"Expected XML fixture {_fixture_id(row)} to convert to JSON. "
         f"stderr: {json_result.stderr[:500]!r}."
+    )
+    expected_json = expected_json_path.read_bytes()
+    assert json_result.stdout == expected_json, (
+        "Expected XML-to-JSON stdout to match the accepted legacy command byte-for-byte "
+        f"for {_fixture_id(row)}. Expected {_byte_summary(expected_json)}; "
+        f"got {_byte_summary(json_result.stdout)}."
+    )
+    assert json_result.stderr == b"", (
+        "Expected successful XML-to-JSON conversion to keep stderr empty. "
+        f"Got: {json_result.stderr[:500]!r}."
+    )
+    assert json_result.stdout.endswith(b"\n") and not json_result.stdout.endswith(b"\n\n"), (
+        "Expected each non-empty conversion body to have exactly one final newline. "
+        f"Got tail: {json_result.stdout[-20:]!r}."
     )
 
     stabilized_xml = subprocess.run(
@@ -229,11 +257,15 @@ def test_parse_format_json_stabilizes_static_xml_fixtures(
         capture_output=True,
         check=False,
     )
-    expected = expected_path.read_bytes()
+    expected_xml = expected_xml_path.read_bytes()
     assert stabilized_xml.returncode == 0, stabilized_xml.stderr[:500]
-    assert stabilized_xml.stdout == expected, (
+    assert stabilized_xml.stdout == expected_xml, (
         f"Expected XML -> JSON -> XML to stabilize byte-for-byte for {_fixture_id(row)}. "
-        f"Expected {_byte_summary(expected)}; got {_byte_summary(stabilized_xml.stdout)}."
+        f"Expected {_byte_summary(expected_xml)}; "
+        f"got {_byte_summary(stabilized_xml.stdout)}."
+    )
+    assert stabilized_xml.stderr == b"", (
+        f"Expected stabilized XML stderr to stay empty. Got: {stabilized_xml.stderr[:500]!r}."
     )
 
     stabilized_json = subprocess.run(
@@ -244,10 +276,13 @@ def test_parse_format_json_stabilizes_static_xml_fixtures(
         check=False,
     )
     assert stabilized_json.returncode == 0, stabilized_json.stderr[:500]
-    assert stabilized_json.stdout == json_result.stdout, (
+    assert stabilized_json.stdout == expected_json, (
         f"Expected JSON -> XML -> JSON to stabilize byte-for-byte for {_fixture_id(row)}. "
-        f"Expected {_byte_summary(json_result.stdout)}; "
+        f"Expected {_byte_summary(expected_json)}; "
         f"got {_byte_summary(stabilized_json.stdout)}."
+    )
+    assert stabilized_json.stderr == b"", (
+        f"Expected stabilized JSON stderr to stay empty. Got: {stabilized_json.stderr[:500]!r}."
     )
 
     canonical_json = json.loads(json_result.stdout)
@@ -483,33 +518,55 @@ def test_json_messages_preserve_metadata_required_to_rebuild_xml_wrappers() -> N
 
 
 @pytest.mark.parametrize(
-    ("tool_name", "tool_input"),
+    ("tool_name", "tool_input", "expected_xml"),
     [
         pytest.param(
-            "Unknown", {"content": "value"}, id="unknown-content-field"
+            "Unknown",
+            {"content": "value"},
+            '<assistant-response i="1">\n'
+            "## Assistant\n\n"
+            '<tool-input name="Unknown">\n'
+            "```json\n"
+            '{\n  "content": "value"\n}\n'
+            "```\n"
+            "</tool-input>\n"
+            "</assistant-response>\n",
+            id="unknown-content-field",
         ),
         pytest.param(
-            "Patch", {"input": {"type": "inner"}}, id="nested-input-field"
+            "Patch",
+            {"input": {"type": "inner"}},
+            '<assistant-response i="1">\n'
+            "## Assistant\n\n"
+            '<tool-input name="Patch">\n'
+            "```diff\n"
+            "{'type': 'inner'}\n"
+            "```\n"
+            "</tool-input>\n"
+            "</assistant-response>\n",
+            id="nested-input-field",
         ),
         pytest.param(
-            "Unknown", {"id": "inner-id"}, id="body-id-without-tool-id"
+            "Unknown",
+            {"id": "inner-id"},
+            '<assistant-response i="1">\n'
+            "## Assistant\n\n"
+            '<tool-input name="Unknown">\n'
+            "```json\n"
+            '{\n  "id": "inner-id"\n}\n'
+            "```\n"
+            "</tool-input>\n"
+            "</assistant-response>\n",
+            id="body-id-without-tool-id",
         ),
     ],
 )
-def test_structured_json_round_trip_preserves_ambiguous_tool_input_dicts(
+def test_public_parse_preserves_ambiguous_tool_input_dicts(
     tool_name: str,
     tool_input: dict[str, object],
+    expected_xml: str,
 ) -> None:
-    flags = ConversationFlags(show_tools=True, color="never", paging=False)
-    message = Message(
-        role="assistant",
-        index=1,
-        tools=[{"type": "tool_use", "name": tool_name, "input": tool_input}],
-    )
-    expected_xml = format_to_xml([message], flags)
-
-    json_data = json.loads(format_to_json([message], flags))
-    assert json_data == [
+    json_data = [
         {
             "type": "assistant-response",
             "role": "assistant",
@@ -522,18 +579,23 @@ def test_structured_json_round_trip_preserves_ambiguous_tool_input_dicts(
                 }
             ],
         }
-    ], (
-        "Expected ambiguous tool-input dictionaries to use an explicit nested input "
-        f"wrapper. Input: {tool_input!r}; serialized: {json_data!r}."
+    ]
+    xml_result = subprocess.run(
+        [str(CH_EXECUTABLE), "parse"],
+        cwd=PROJECT_ROOT,
+        input=json.dumps(json_data).encode(),
+        capture_output=True,
+        check=False,
     )
-
-    reconstructed = messages_from_json_data(json_data)
-    actual_xml = format_to_xml(reconstructed, flags)
-
-    assert actual_xml == expected_xml, (
-        "Expected structured JSON serialization and inversion to preserve the complete "
-        f"tool-input dictionary. Input: {tool_input!r}; serialized: {json_data!r}; "
-        f"expected XML: {expected_xml!r}; actual XML: {actual_xml!r}."
+    assert xml_result.returncode == 0 and xml_result.stderr == b"", (
+        "Expected public JSON-to-XML conversion to accept an ambiguous tool input. "
+        f"Input: {tool_input!r}; exit status: {xml_result.returncode}; "
+        f"stderr: {xml_result.stderr[:500]!r}."
+    )
+    assert xml_result.stdout == expected_xml.encode(), (
+        "Expected public JSON-to-XML conversion to preserve the complete ambiguous input "
+        f"dictionary using the accepted legacy projection. Input: {tool_input!r}; "
+        f"expected: {expected_xml!r}; got: {xml_result.stdout.decode(errors='replace')!r}."
     )
 
 

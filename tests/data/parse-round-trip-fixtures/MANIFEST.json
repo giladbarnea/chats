@@ -16,7 +16,8 @@
       "xml_command": [
         "ch",
         "82601169-262e-46ac-8dbc-f117dad12032"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/bare/claude/82601169-262e-46ac-8dbc-f117dad12032.expected.json"
     },
     {
       "provider_adapter": "pi",
@@ -34,7 +35,8 @@
       "xml_command": [
         "ch",
         "019f6fdb-0b33-7578-a49f-140ec5b6a580"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/bare/pi/019f6fdb-0b33-7578-a49f-140ec5b6a580.expected.json"
     },
     {
       "provider_adapter": "codex",
@@ -52,7 +54,8 @@
       "xml_command": [
         "ch",
         "019f6c1d-d49b-7bc1-808b-91ce660febcb"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/bare/codex/019f6c1d-d49b-7bc1-808b-91ce660febcb.expected.json"
     },
     {
       "provider_adapter": "claude",
@@ -74,7 +77,8 @@
         "ch",
         "1ae10a41-f0d4-4c93-a416-cd0bc52d7e5d",
         "-t"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/with-tools/claude/1ae10a41-f0d4-4c93-a416-cd0bc52d7e5d.expected.json"
     },
     {
       "provider_adapter": "pi",
@@ -96,7 +100,8 @@
         "ch",
         "019f6b0f-ba29-74e0-9afb-6556d09dc7c8",
         "-t"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/with-tools/pi/019f6b0f-ba29-74e0-9afb-6556d09dc7c8.expected.json"
     },
     {
       "provider_adapter": "codex",
@@ -118,7 +123,8 @@
         "ch",
         "019ecaa9-37d5-7822-9338-bbf5dbfcf5a1",
         "-t"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/with-tools/codex/019ecaa9-37d5-7822-9338-bbf5dbfcf5a1.expected.json"
     },
     {
       "provider_adapter": "claude",
@@ -140,7 +146,8 @@
         "ch",
         "-t:s",
         "769979e0-154e-46cd-8a40-3a6969a7f088"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/tools-shortened/claude/769979e0-154e-46cd-8a40-3a6969a7f088.expected.json"
     },
     {
       "provider_adapter": "pi",
@@ -162,7 +169,8 @@
         "ch",
         "-t:s",
         "019f6b0f-ba17-728a-a591-88c865eecfd6"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/tools-shortened/pi/019f6b0f-ba17-728a-a591-88c865eecfd6.expected.json"
     },
     {
       "provider_adapter": "codex",
@@ -184,7 +192,8 @@
         "ch",
         "-t:s",
         "019f6be6-35d2-7e92-bee5-358193d04a6f"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/tools-shortened/codex/019f6be6-35d2-7e92-bee5-358193d04a6f.expected.json"
     },
     {
       "provider_adapter": "claude",
@@ -206,7 +215,8 @@
         "ch",
         "528197f2-591e-48db-b117-f28da1f24cfa",
         "--agents"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/with-agents/claude/528197f2-591e-48db-b117-f28da1f24cfa.expected.json"
     },
     {
       "provider_adapter": "pi",
@@ -228,7 +238,8 @@
         "ch",
         "019f6af2-972a-7326-a78b-2c2500aceea2",
         "--agents"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/with-agents/pi/019f6af2-972a-7326-a78b-2c2500aceea2.expected.json"
     },
     {
       "provider_adapter": "codex",
@@ -250,7 +261,8 @@
         "ch",
         "019f6c1d-a807-7c60-86cb-572047567b4a",
         "--agents"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/with-agents/codex/019f6c1d-a807-7c60-86cb-572047567b4a.expected.json"
     },
     {
       "provider_adapter": "claude",
@@ -275,7 +287,8 @@
         "b52034ed-02ba-4724-87cd-56befe25020f",
         "-t",
         "--agents"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/tools-and-agents/claude/b52034ed-02ba-4724-87cd-56befe25020f.expected.json"
     },
     {
       "provider_adapter": "pi",
@@ -300,7 +313,8 @@
         "019f6b0f-ba17-716e-b6fe-72f709d51bd2",
         "-t",
         "--agents"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/tools-and-agents/pi/019f6b0f-ba17-716e-b6fe-72f709d51bd2.expected.json"
     },
     {
       "provider_adapter": "codex",
@@ -325,7 +339,8 @@
         "019eca84-83bd-7900-a142-04833f5ae1c6",
         "-t",
         "--agents"
-      ]
+      ],
+      "expected_json": "tests/data/parse-round-trip-fixtures/tools-and-agents/codex/019eca84-83bd-7900-a142-04833f5ae1c6.expected.json"
     }
   ]
 }

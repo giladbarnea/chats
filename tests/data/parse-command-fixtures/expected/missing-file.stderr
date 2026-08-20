@@ -1,0 +1,2 @@
+Error parsing structured JSON: [Errno 2] No such file or directory: 
+'tests/data/parse-command-fixtures/inputs/missing.json'

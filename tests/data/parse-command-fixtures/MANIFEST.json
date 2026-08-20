@@ -1,0 +1,142 @@
+{
+  "cases": [
+    {
+      "id": "help",
+      "arguments": [
+        "parse",
+        "--help"
+      ],
+      "exit_status": 0,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/help.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/help.stderr"
+    },
+    {
+      "id": "invalid-choice",
+      "arguments": [
+        "parse",
+        "--format",
+        "yaml"
+      ],
+      "exit_status": 2,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/invalid-choice.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/invalid-choice.stderr"
+    },
+    {
+      "id": "missing-format-value",
+      "arguments": [
+        "parse",
+        "-f"
+      ],
+      "exit_status": 2,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/missing-format-value.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/missing-format-value.stderr"
+    },
+    {
+      "id": "extra-argument",
+      "arguments": [
+        "parse",
+        "first.json",
+        "second.json"
+      ],
+      "exit_status": 2,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/extra-argument.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/extra-argument.stderr"
+    },
+    {
+      "id": "malformed-json-file",
+      "arguments": [
+        "parse",
+        "tests/data/parse-command-fixtures/inputs/malformed.json"
+      ],
+      "exit_status": 1,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/malformed-json-file.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/malformed-json-file.stderr"
+    },
+    {
+      "id": "wrong-json-root-file",
+      "arguments": [
+        "parse",
+        "tests/data/parse-command-fixtures/inputs/wrong-root.json"
+      ],
+      "exit_status": 1,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/wrong-json-root-file.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/wrong-json-root-file.stderr"
+    },
+    {
+      "id": "noncanonical-xml-file",
+      "arguments": [
+        "parse",
+        "tests/data/parse-command-fixtures/inputs/noncanonical.xml",
+        "-f",
+        "json"
+      ],
+      "exit_status": 1,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/noncanonical-xml-file.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/noncanonical-xml-file.stderr"
+    },
+    {
+      "id": "invalid-utf8-file",
+      "arguments": [
+        "parse",
+        "tests/data/parse-command-fixtures/inputs/invalid-utf8.json"
+      ],
+      "exit_status": 1,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/invalid-utf8-file.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/invalid-utf8-file.stderr"
+    },
+    {
+      "id": "missing-file",
+      "arguments": [
+        "parse",
+        "tests/data/parse-command-fixtures/inputs/missing.json"
+      ],
+      "exit_status": 1,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/missing-file.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/missing-file.stderr"
+    },
+    {
+      "id": "empty-json-file",
+      "arguments": [
+        "parse",
+        "tests/data/parse-command-fixtures/inputs/empty.json"
+      ],
+      "exit_status": 0,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/empty-json-file.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/empty-json-file.stderr"
+    },
+    {
+      "id": "empty-json-stdin",
+      "arguments": [
+        "parse"
+      ],
+      "stdin": "tests/data/parse-command-fixtures/inputs/empty.json",
+      "exit_status": 0,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/empty-json-stdin.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/empty-json-stdin.stderr"
+    },
+    {
+      "id": "empty-xml-file",
+      "arguments": [
+        "parse",
+        "-f",
+        "json",
+        "tests/data/parse-command-fixtures/inputs/empty.xml"
+      ],
+      "exit_status": 0,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/empty-xml-file.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/empty-xml-file.stderr"
+    },
+    {
+      "id": "empty-xml-stdin",
+      "arguments": [
+        "parse",
+        "-f",
+        "json"
+      ],
+      "stdin": "tests/data/parse-command-fixtures/inputs/empty.xml",
+      "exit_status": 0,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/empty-xml-stdin.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/empty-xml-stdin.stderr"
+    }
+  ]
+}

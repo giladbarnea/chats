@@ -1,0 +1,2 @@
+usage: ch parse [-h] [-f {xml,json}] [input_file]
+ch parse: error: unrecognized arguments: second.json
