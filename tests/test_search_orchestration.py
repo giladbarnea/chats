@@ -824,6 +824,102 @@ def test_regex_search_falls_back_to_full_confirmation(
     )
 
 
+def test_eligible_ascii_literal_scans_fixed_windows_before_ordered_confirmation(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Eligible literals batch native work but confirm survivors newest-first."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    window_size = search_commands.ASCII_LITERAL_CANDIDATE_WINDOW_SIZE
+    paths = [
+        home / ".claude" / "projects" / "proj" / f"session-{index:03}.jsonl"
+        for index in range(window_size + 2)
+    ]
+    for index, path in enumerate(paths):
+        _write_session(path, "fixed-window-search-needle")
+        modified_time = 1_700_000_000 + index
+        os.utime(path, (modified_time, modified_time))
+
+    search_order = list(reversed(paths))
+    survivor_paths = set(search_order[::2])
+    native_batches: list[list[Path]] = []
+
+    def batch_candidate_matches(
+        batch_paths: list[Path],
+        needle: bytes,
+        *,
+        pi_sessions: list[bool],
+    ) -> list[bool]:
+        native_batches.append(batch_paths)
+        assert needle == b"fixed-window-search-needle", (
+            "Expected the native batch to receive the eligible normalized needle. "
+            f"Got: {needle=!r}"
+        )
+        assert pi_sessions == [False] * len(batch_paths), (
+            "Expected provider evidence to stay aligned with batch input paths. "
+            f"Got: {pi_sessions=!r}"
+        )
+        return [path in survivor_paths for path in batch_paths]
+
+    confirmed_paths: list[Path] = []
+    real_search_conversation_content = search_commands._search_conversation_content
+
+    def tracked_search_conversation_content(
+        conv_file: Path,
+        content: str,
+        query,
+        flags: ConversationFlags,
+        pool_filter: PoolFilter,
+    ):
+        confirmed_paths.append(conv_file)
+        return real_search_conversation_content(
+            conv_file, content, query, flags, pool_filter
+        )
+
+    monkeypatch.setattr(
+        search_commands,
+        "_files_contain_ascii_json_strings",
+        batch_candidate_matches,
+    )
+    monkeypatch.setattr(
+        search_commands,
+        "_search_conversation_content",
+        tracked_search_conversation_content,
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "fixed-window-search-needle",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    expected_survivors = [path for path in search_order if path in survivor_paths]
+    assert exc_info.value.code == 0, (
+        "Expected semantically matching native survivors to produce hits. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}stderr:\n{captured.err}"
+    )
+    assert native_batches == [
+        search_order[:window_size],
+        search_order[window_size:],
+    ], (
+        "Expected fixed, bounded newest-first native windows. "
+        f"Got: {native_batches=!r}"
+    )
+    assert confirmed_paths == expected_survivors, (
+        "Expected every survivor to enter semantic confirmation sequentially in "
+        f"input order. Got: {confirmed_paths=!r}"
+    )
+    assert captured.out.splitlines() == [path.stem for path in expected_survivors], (
+        "Expected semantic survivor IDs to stream in exact newest-first order. "
+        f"Got stdout:\n{captured.out}"
+    )
+
+
 def test_cmd_search_scans_candidate_sessions_newest_first(
     tmp_path: Path,
     monkeypatch,
@@ -844,7 +940,7 @@ def test_cmd_search_scans_candidate_sessions_newest_first(
 
     scanned_paths: list[Path] = []
 
-    def search_hit_for_file(
+    def confirm_search_hit(
         conv_file: Path,
         query,
         flags: ConversationFlags,
@@ -852,7 +948,7 @@ def test_cmd_search_scans_candidate_sessions_newest_first(
     ):
         scanned_paths.append(conv_file)
 
-    monkeypatch.setattr(search_commands, "_search_hit_for_file", search_hit_for_file)
+    monkeypatch.setattr(search_commands, "_confirm_search_hit", confirm_search_hit)
 
     with pytest.raises(SystemExit) as exc_info:
         commands.cmd_search(
@@ -1429,6 +1525,63 @@ def test_native_candidate_read_errors_keep_semantic_error_text(
     assert "[Errno 21] Is a directory:" in optimized[2], (
         "Expected Python Path.read_text to remain the public error authority. "
         f"Got stderr:\n{optimized[2]}"
+    )
+
+
+def test_batched_search_preserves_serial_error_order(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Path-filter errors must not pass earlier semantic read errors."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    first_path = home / ".claude" / "projects" / "proj" / "first.jsonl"
+    second_path = home / ".claude" / "projects" / "proj" / "second.jsonl"
+    first_path.parent.mkdir(parents=True)
+    first_path.write_text(
+        json.dumps({
+            "type": "user",
+            "cwd": "/tmp/error-order",
+            "message": {"role": "user", "content": "error-order-probe"},
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+    second_path.write_bytes(
+        b'{"type":"user","cwd":"/tmp/error-order","message":"\xff"}\n'
+    )
+    os.utime(second_path, (1_700_000_000, 1_700_000_000))
+    os.utime(first_path, (1_700_000_001, 1_700_000_001))
+
+    real_read_text = Path.read_text
+
+    def fail_first_confirmation(path: Path, *args, **kwargs):
+        if path == first_path:
+            raise OSError("first semantic read failed")
+        return real_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", fail_first_confirmation)
+
+    def run(pattern: str) -> tuple[int, str, str]:
+        with pytest.raises(SystemExit) as exc_info:
+            commands.cmd_search(
+                pattern,
+                ConversationFlags(color="never", paging=False),
+                pool_filter=PoolFilter(dir="/tmp/error-order"),
+                output_mode=SearchOutputMode.ONLY_ID,
+                emit_metadata=False,
+            )
+        captured = capsys.readouterr()
+        return exc_info.value.code, captured.out, captured.err
+
+    optimized = run("error-order-probe")
+    semantic_reference = run("error-order-prob[e]")
+
+    assert optimized == semantic_reference, (
+        "Expected batching to preserve serial stdout, status, stderr bytes, and "
+        f"error order. Got {optimized=!r}, {semantic_reference=!r}"
     )
 
 

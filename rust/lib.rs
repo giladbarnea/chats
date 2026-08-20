@@ -9,9 +9,11 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedBytes;
 use pyo3::types::PyBytes;
+use rayon::prelude::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Provider {
@@ -464,7 +466,7 @@ fn find_last_jsonl_timestamp_impl(
     }
 }
 
-const ASCII_CANDIDATE_SCAN_CHUNK_SIZE: usize = 1024 * 1024;
+const ASCII_CANDIDATE_SCAN_CHUNK_SIZE: usize = 128 * 1024;
 
 // Darwin memmem wins on short needles but regresses long literal misses.
 const LIBC_MEMMEM_MAX_NEEDLE_LENGTH: usize = 8;
@@ -905,102 +907,125 @@ fn file_contains_ascii_impl(
     Ok(evidence_matches.iter().any(|group| group.iter().all(|found| *found)))
 }
 
+struct LogicalJsonStringCandidateMatchers {
+    logical_matcher: regex::bytes::Regex,
+    evidence_matchers: Vec<Vec<regex::bytes::Regex>>,
+    overlap_width: usize,
+}
+
+impl LogicalJsonStringCandidateMatchers {
+    fn new(needle: &[u8], evidence_groups: &[Vec<Vec<u8>>]) -> Self {
+        let normalized_needle = needle
+            .iter()
+            .map(|byte| byte.to_ascii_lowercase())
+            .collect::<Vec<_>>();
+        Self {
+            logical_matcher: logical_ascii_regex(&normalized_needle, false),
+            evidence_matchers: evidence_groups
+                .iter()
+                .map(|group| {
+                    group
+                        .iter()
+                        .map(|evidence| logical_ascii_regex(evidence, true))
+                        .collect()
+                })
+                .collect(),
+            overlap_width: evidence_groups
+                .iter()
+                .flatten()
+                .map(|evidence| evidence.len() * 6)
+                .chain(std::iter::once(normalized_needle.len() * 6))
+                .max()
+                .expect("needle supplies one candidate")
+                .saturating_sub(1),
+        }
+    }
+
+    fn file_contains(
+        &self,
+        path: &Path,
+        block: &mut [u8],
+    ) -> std::io::Result<bool> {
+        let mut evidence_matches = self
+            .evidence_matchers
+            .iter()
+            .map(|group| vec![false; group.len()])
+            .collect::<Vec<_>>();
+        let mut previous = Vec::with_capacity(self.overlap_width);
+        let mut boundary = Vec::with_capacity(self.overlap_width * 2);
+        let mut incomplete_code_point = Vec::with_capacity(4);
+        let mut escape_validator = JsonEscapeValidator::new();
+        let mut file = std::fs::File::open(path)?;
+
+        loop {
+            let read_size = file.read(block)?;
+            if read_size == 0 {
+                break;
+            }
+            let chunk = &block[..read_size];
+            let boundary_prefix = &chunk[..self.overlap_width.min(chunk.len())];
+            boundary.clear();
+            boundary.extend_from_slice(&previous);
+            boundary.extend_from_slice(boundary_prefix);
+            if self.logical_matcher.is_match(&boundary)
+                || self.logical_matcher.is_match(chunk)
+            {
+                return Ok(true);
+            }
+            if (!chunk.is_ascii() || !incomplete_code_point.is_empty())
+                && !validate_candidate_utf8_chunk(
+                    chunk,
+                    &mut incomplete_code_point,
+                    false,
+                )
+            {
+                return Ok(true);
+            }
+            if !validate_json_escapes_chunk(chunk, &mut escape_validator) {
+                return Ok(true);
+            }
+            for (group_index, group) in self.evidence_matchers.iter().enumerate() {
+                for (evidence_index, evidence) in group.iter().enumerate() {
+                    if evidence.is_match(&boundary) || evidence.is_match(chunk) {
+                        evidence_matches[group_index][evidence_index] = true;
+                    }
+                }
+            }
+            if evidence_matches
+                .iter()
+                .any(|group| group.iter().all(|found| *found))
+            {
+                return Ok(true);
+            }
+            if self.overlap_width == 0 {
+                continue;
+            }
+            if chunk.len() >= self.overlap_width {
+                previous.clear();
+                previous.extend_from_slice(
+                    &chunk[chunk.len() - self.overlap_width..],
+                );
+                continue;
+            }
+            previous.extend_from_slice(chunk);
+            let retained_start = previous.len().saturating_sub(self.overlap_width);
+            previous.drain(..retained_start);
+        }
+        Ok(!incomplete_code_point.is_empty() || escape_validator.is_incomplete())
+    }
+}
+
 fn file_contains_ascii_json_strings_impl(
     path: &Path,
     needle: &[u8],
-    evidence_groups: &[Vec<PyBackedBytes>],
+    evidence_groups: &[Vec<Vec<u8>>],
 ) -> std::io::Result<bool> {
     if needle.is_empty() {
         return Ok(true);
     }
-
-    let normalized_needle = needle
-        .iter()
-        .map(|byte| byte.to_ascii_lowercase())
-        .collect::<Vec<_>>();
-    let logical_matcher = logical_ascii_regex(&normalized_needle, false);
-    let evidence_matchers = evidence_groups
-        .iter()
-        .map(|group| {
-            group
-                .iter()
-                .map(|evidence| logical_ascii_regex(evidence, true))
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-    let mut evidence_matches = evidence_groups
-        .iter()
-        .map(|group| vec![false; group.len()])
-        .collect::<Vec<_>>();
-    let overlap_width = evidence_groups
-        .iter()
-        .flatten()
-        .map(|evidence| evidence.len() * 6)
-        .chain(std::iter::once(normalized_needle.len() * 6))
-        .max()
-        .expect("needle supplies one candidate")
-        .saturating_sub(1);
-    let mut previous = Vec::new();
-    let mut incomplete_code_point = Vec::with_capacity(4);
-    let mut escape_validator = JsonEscapeValidator::new();
-    let mut block = vec![0; ASCII_CANDIDATE_SCAN_CHUNK_SIZE];
-    let mut file = std::fs::File::open(path)?;
-
-    loop {
-        let read_size = file.read(&mut block)?;
-        if read_size == 0 {
-            break;
-        }
-        let chunk = &block[..read_size];
-        let boundary_prefix = &chunk[..overlap_width.min(chunk.len())];
-        let mut boundary = Vec::with_capacity(previous.len() + boundary_prefix.len());
-        boundary.extend_from_slice(&previous);
-        boundary.extend_from_slice(boundary_prefix);
-        if logical_matcher.is_match(&boundary) || logical_matcher.is_match(chunk) {
-            return Ok(true);
-        }
-        if (!chunk.is_ascii() || !incomplete_code_point.is_empty())
-            && !validate_candidate_utf8_chunk(
-                chunk,
-                &mut incomplete_code_point,
-                false,
-            )
-        {
-            return Ok(true);
-        }
-        if !validate_json_escapes_chunk(chunk, &mut escape_validator) {
-            return Ok(true);
-        }
-        for (group_index, group) in evidence_matchers.iter().enumerate() {
-            for (evidence_index, evidence) in group.iter().enumerate() {
-                if evidence.is_match(&boundary) || evidence.is_match(chunk) {
-                    evidence_matches[group_index][evidence_index] = true;
-                }
-            }
-        }
-        if evidence_matches
-            .iter()
-            .any(|group| group.iter().all(|found| *found))
-        {
-            return Ok(true);
-        }
-
-        if overlap_width == 0 {
-            continue;
-        }
-        if chunk.len() >= overlap_width {
-            previous.clear();
-            previous.extend_from_slice(&chunk[chunk.len() - overlap_width..]);
-            continue;
-        }
-        previous.extend_from_slice(chunk);
-        let retained_start = previous.len().saturating_sub(overlap_width);
-        previous.drain(..retained_start);
-    }
-
-    Ok(
-        !incomplete_code_point.is_empty()
-            || escape_validator.is_incomplete()
+    LogicalJsonStringCandidateMatchers::new(needle, evidence_groups).file_contains(
+        path,
+        &mut vec![0; ASCII_CANDIDATE_SCAN_CHUNK_SIZE],
     )
 }
 
@@ -1142,22 +1167,81 @@ fn file_contains_ascii(
     )?)
 }
 
+fn owned_evidence_groups(
+    evidence_groups: Vec<Vec<PyBackedBytes>>,
+) -> Vec<Vec<Vec<u8>>> {
+    evidence_groups
+        .into_iter()
+        .map(|group| {
+            group
+                .into_iter()
+                .map(|evidence| evidence.as_ref().to_vec())
+                .collect()
+        })
+        .collect()
+}
+
+#[cfg(unix)]
+fn path_from_python_bytes(path: &[u8]) -> PathBuf {
+    PathBuf::from(OsString::from_vec(path.to_vec()))
+}
+
+#[cfg(not(unix))]
+fn path_from_python_bytes(path: &[u8]) -> PathBuf {
+    PathBuf::from(String::from_utf8_lossy(path).into_owned())
+}
+
 #[pyfunction]
 fn file_contains_ascii_json_strings(
     path: PyBackedBytes,
     needle: PyBackedBytes,
     evidence_groups: Vec<Vec<PyBackedBytes>>,
 ) -> PyResult<bool> {
-    #[cfg(unix)]
-    let path = PathBuf::from(OsString::from_vec(path.as_ref().to_vec()));
-    #[cfg(not(unix))]
-    let path = PathBuf::from(String::from_utf8_lossy(path.as_ref()).into_owned());
-
     Ok(file_contains_ascii_json_strings_impl(
-        &path,
+        &path_from_python_bytes(path.as_ref()),
         needle.as_ref(),
-        &evidence_groups,
+        &owned_evidence_groups(evidence_groups),
     )?)
+}
+
+#[pyfunction]
+fn files_contain_ascii_json_strings(
+    paths: Vec<PyBackedBytes>,
+    needle: PyBackedBytes,
+    pi_sessions: Vec<bool>,
+) -> PyResult<Vec<bool>> {
+    if paths.len() != pi_sessions.len() {
+        return Err(PyValueError::new_err(
+            "paths and pi_sessions must have equal lengths",
+        ));
+    }
+
+    let paths = paths
+        .into_iter()
+        .map(|path| path_from_python_bytes(path.as_ref()))
+        .collect::<Vec<_>>();
+    if needle.is_empty() {
+        return Ok(vec![true; paths.len()]);
+    }
+    let matchers = [
+        LogicalJsonStringCandidateMatchers::new(needle.as_ref(), &[]),
+        LogicalJsonStringCandidateMatchers::new(
+            needle.as_ref(),
+            &[vec![b"\"pi-user-agents\"".to_vec()]],
+        ),
+    ];
+    Ok(paths
+        .into_par_iter()
+        .zip(pi_sessions)
+        .map_init(
+            || vec![0; ASCII_CANDIDATE_SCAN_CHUNK_SIZE],
+            |block, (path, pi_session)| {
+                matchers[usize::from(pi_session)]
+                    .file_contains(&path, block)
+                    .unwrap_or(true)
+            },
+        )
+        .collect())
 }
 
 #[pyfunction]
@@ -1219,6 +1303,7 @@ fn discover_session_files(
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(file_contains_ascii, module)?)?;
     module.add_function(wrap_pyfunction!(file_contains_ascii_json_strings, module)?)?;
+    module.add_function(wrap_pyfunction!(files_contain_ascii_json_strings, module)?)?;
     module.add_function(wrap_pyfunction!(classify_native_session_path, module)?)?;
     module.add_function(wrap_pyfunction!(find_last_jsonl_timestamp, module)?)?;
     module.add_function(wrap_pyfunction!(scan_resolution_facets, module)?)?;

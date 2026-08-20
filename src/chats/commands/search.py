@@ -18,6 +18,7 @@ from rich.text import Text
 from .._native import (
     file_contains_ascii,
     file_contains_ascii_json_strings as native_file_contains_ascii_json_strings,
+    files_contain_ascii_json_strings as native_files_contain_ascii_json_strings,
 )
 from ..console import StreamingPager, get_console, print_error, print_hint
 from ..formatting import (
@@ -98,6 +99,7 @@ _PI_USER_AGENT_EVIDENCE = b'"pi-user-agents"'
 _JSON_UNICODE_ESCAPE_EVIDENCE = b"\\u"
 _JSON_DECODE_UNSTABLE_CHARACTERS = frozenset('"\\/')
 _LOGICAL_JSON_STRING_INELIGIBLE_CHARACTERS = frozenset('"\\')
+ASCII_LITERAL_CANDIDATE_WINDOW_SIZE = 256
 
 
 def _is_json_control_character(character: str) -> bool:
@@ -504,17 +506,16 @@ def cmd_search(
     if _can_project_dot_only_id(query, flags, pool_filter, output_mode, output_format):
         _stream_dot_only_id_projection(search_files, query, flags, pool_filter)
 
+    pi_file_set = set(pool.by_provider["pi"])
+
     def iter_hits() -> Iterable[SearchHit]:
-        for conv_file in search_files:
-            try:
-                hit = _search_hit_for_file(conv_file, query, flags, pool_filter)
-            except Exception as error:
-                print_error(
-                    f"Error processing conversation file {conv_file}: {error}"
-                )
-                continue
-            if hit is not None:
-                yield hit
+        yield from _iter_search_hits(
+            search_files,
+            query,
+            flags,
+            pool_filter,
+            pi_file_set=pi_file_set,
+        )
 
     if output_format == "raw":
         hits = list(iter_hits())
@@ -791,6 +792,112 @@ def _format_search_hits_to_raw(
     )
 
 
+def _iter_search_hits(
+    search_files: Iterable[Path],
+    query: SearchQuery,
+    flags: ConversationFlags,
+    pool_filter: PoolFilter,
+    *,
+    pi_file_set: set[Path],
+) -> Iterable[SearchHit]:
+    """Yield hits through the eligible batch path or the unchanged serial path."""
+    if isinstance(query, SearchTerm) and _can_use_logical_json_string_gate(
+        query, flags
+    ):
+        yield from _iter_batched_ascii_literal_hits(
+            search_files,
+            query,
+            flags,
+            pool_filter,
+            pi_file_set=pi_file_set,
+        )
+        return
+
+    for conv_file in search_files:
+        try:
+            hit = _search_hit_for_file(conv_file, query, flags, pool_filter)
+        except Exception as error:
+            print_error(f"Error processing conversation file {conv_file}: {error}")
+            continue
+        if hit is not None:
+            yield hit
+
+
+def _iter_batched_ascii_literal_hits(
+    search_files: Iterable[Path],
+    query: SearchTerm,
+    flags: ConversationFlags,
+    pool_filter: PoolFilter,
+    *,
+    pi_file_set: set[Path],
+) -> Iterable[SearchHit]:
+    """Scan eligible paths in fixed windows and confirm survivors in input order."""
+    window: list[tuple[Path, bool]] = []
+    for conv_file in search_files:
+        try:
+            if not _search_path_filters_match(conv_file, pool_filter):
+                continue
+            pi_session = conv_file in pi_file_set
+        except Exception as error:
+            if window:
+                yield from _confirm_ascii_literal_window(
+                    window, query, flags, pool_filter
+                )
+                window.clear()
+            print_error(f"Error processing conversation file {conv_file}: {error}")
+            continue
+        window.append((conv_file, pi_session))
+        if len(window) < ASCII_LITERAL_CANDIDATE_WINDOW_SIZE:
+            continue
+        yield from _confirm_ascii_literal_window(
+            window, query, flags, pool_filter
+        )
+        window.clear()
+
+    if window:
+        yield from _confirm_ascii_literal_window(window, query, flags, pool_filter)
+
+
+def _confirm_ascii_literal_window(
+    window: list[tuple[Path, bool]],
+    query: SearchTerm,
+    flags: ConversationFlags,
+    pool_filter: PoolFilter,
+) -> Iterable[SearchHit]:
+    paths = [path for path, _pi_session in window]
+    decisions = _files_contain_ascii_json_strings(
+        paths,
+        query.literal_candidate.encode("ascii"),
+        pi_sessions=[pi_session for _path, pi_session in window],
+    )
+    if len(decisions) != len(window):
+        raise RuntimeError("native candidate decision count differs from input count")
+
+    for (conv_file, _pi_session), candidate_matches in zip(
+        window, decisions, strict=True
+    ):
+        if not candidate_matches:
+            continue
+        try:
+            hit = _confirm_search_hit(conv_file, query, flags, pool_filter)
+        except Exception as error:
+            print_error(f"Error processing conversation file {conv_file}: {error}")
+            continue
+        if hit is not None:
+            yield hit
+
+
+def _search_path_filters_match(conv_file: Path, pool_filter: PoolFilter) -> bool:
+    if pool_filter.has_date_filters() and not pool_filter.passes_path_for_date(
+        conv_file
+    ):
+        return False
+    return not (
+        pool_filter.needs_content_for_dir()
+        and not pool_filter.passes_path_for_index(conv_file)
+    )
+
+
 def _search_hit_for_file(
     conv_file: Path,
     query: SearchQuery,
@@ -798,13 +905,7 @@ def _search_hit_for_file(
     pool_filter: PoolFilter,
 ) -> SearchHit | None:
     """Return one search hit with metadata, or None when the file should not be shown."""
-    if pool_filter.has_date_filters() and not pool_filter.passes_path_for_date(
-        conv_file
-    ):
-        return None
-    if pool_filter.needs_content_for_dir() and not pool_filter.passes_path_for_index(
-        conv_file
-    ):
+    if not _search_path_filters_match(conv_file, pool_filter):
         return None
     pi_session = get_jsonl_session_adapter(conv_file).name == "pi"
     if not _search_path_candidate_matches(
@@ -814,7 +915,16 @@ def _search_hit_for_file(
         pi_session=pi_session,
     ):
         return None
+    return _confirm_search_hit(conv_file, query, flags, pool_filter)
 
+
+def _confirm_search_hit(
+    conv_file: Path,
+    query: SearchQuery,
+    flags: ConversationFlags,
+    pool_filter: PoolFilter,
+) -> SearchHit | None:
+    """Confirm one candidate through the authoritative semantic search path."""
     content = conv_file.read_text(encoding="utf-8")
     result = _search_conversation_content(conv_file, content, query, flags, pool_filter)
     if result is None:
@@ -987,6 +1097,22 @@ def _file_contains_ascii_json_strings(
         )
     except OSError:
         return True
+
+
+def _files_contain_ascii_json_strings(
+    paths: Iterable[Path],
+    needle: bytes,
+    *,
+    pi_sessions: Iterable[bool],
+) -> list[bool]:
+    """Search one ordered path batch for a decoded JSON-string literal."""
+    path_list = list(paths)
+    pi_session_list = list(pi_sessions)
+    return native_files_contain_ascii_json_strings(
+        [os.fsencode(path) for path in path_list],
+        needle,
+        pi_session_list,
+    )
 
 
 def _file_contains_ascii(

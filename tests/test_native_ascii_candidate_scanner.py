@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+import chats.commands.search as search_commands
 from chats.commands.search import (
     _file_contains_ascii,
     _file_contains_ascii_json_strings,
@@ -120,6 +121,55 @@ def test_logical_json_string_scan_matches_raw_and_escaped_characters(
     assert actual is True, (
         "Expected raw and escaped query characters to form one logical JSON "
         f"string match. Got: {actual=!r}, {content=!r}"
+    )
+
+
+def test_logical_json_string_batch_returns_decisions_in_input_order(
+    tmp_path: Path,
+) -> None:
+    paths = [tmp_path / f"candidate-{index}.jsonl" for index in range(4)]
+    contents = [
+        b'{"content":"CLIENT_ID/CARD"}\n',
+        b'{"content":"unrelated text"}\n',
+        b'{"content":"CLIENT_ID\\u002fCARD"}\n',
+        b'{"content":"invalid \xff bytes"}\n',
+    ]
+    for path, content in zip(paths, contents, strict=True):
+        path.write_bytes(content)
+
+    actual = search_commands._files_contain_ascii_json_strings(
+        paths,
+        b"client_id/card",
+        pi_sessions=[False, False, False, False],
+    )
+
+    assert actual == [True, False, True, True], (
+        "Expected one native batch decision per input path in input order, with "
+        f"encoding uncertainty preserved as a survivor. Got: {actual=!r}"
+    )
+
+
+def test_logical_json_string_batch_keeps_pi_evidence_exact_and_per_path(
+    tmp_path: Path,
+) -> None:
+    paths = [tmp_path / f"pi-evidence-{index}.jsonl" for index in range(3)]
+    contents = [
+        b'{"customType":"not-pi-user-agents"}\n',
+        b'{"customType":"pi-user-agents"}\n',
+        b'{"customType":"pi-user-agents"}\n',
+    ]
+    for path, content in zip(paths, contents, strict=True):
+        path.write_bytes(content)
+
+    actual = search_commands._files_contain_ascii_json_strings(
+        paths,
+        b"absent-query",
+        pi_sessions=[True, True, False],
+    )
+
+    assert actual == [False, True, False], (
+        "Expected the exact joined-Pi marker to defer only its aligned Pi path. "
+        f"Got: {actual=!r}"
     )
 
 
