@@ -1243,6 +1243,40 @@ def test_ascii_literal_search_finds_json_escaped_unicode_casefold_match(
     )
 
 
+def test_case_sensitive_ascii_search_finds_json_escaped_visible_text(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """JSON Unicode escapes must not hide case-sensitive ASCII matches."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "escaped-ascii.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        '{"type":"user","timestamp":"2025-01-01T00:00:00Z",'
+        '"cwd":"/tmp/search-orchestration","message":{"role":"user",'
+        '"content":"\\u0042ash"}}\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "Bash",
+            ConversationFlags(color="never", paging=False),
+            case_sensitive=True,
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected a case-sensitive search to confirm JSON-escaped visible text. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}\nstderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == path.stem, (
+        f"Expected the JSON-escaped session id. Got stdout:\n{captured.out}"
+    )
+
+
 @pytest.mark.parametrize(
     "flag_kwargs",
     [
@@ -1346,8 +1380,11 @@ def test_json_decode_unstable_query_bypasses_native_rejection(
     )
 
 
+@pytest.mark.parametrize(
+    "case_sensitive", [False, True], ids=["insensitive", "sensitive"]
+)
 def test_nondefault_tool_visibility_bypasses_native_rejection(
-    tmp_path: Path, monkeypatch, capsys
+    tmp_path: Path, monkeypatch, capsys, case_sensitive: bool
 ) -> None:
     """Codex tool normalization may create the visible name `Bash` absent raw."""
     home = tmp_path / "home"
@@ -1378,6 +1415,7 @@ def test_nondefault_tool_visibility_bypasses_native_rejection(
         commands.cmd_search(
             "Bash",
             ConversationFlags(show_tools=True, color="never", paging=False),
+            case_sensitive=case_sensitive,
             output_mode=SearchOutputMode.ONLY_ID,
             emit_metadata=False,
         )
@@ -1392,8 +1430,11 @@ def test_nondefault_tool_visibility_bypasses_native_rejection(
     )
 
 
+@pytest.mark.parametrize(
+    "case_sensitive", [False, True], ids=["insensitive", "sensitive"]
+)
 def test_default_pi_joined_agent_evidence_reaches_semantic_confirmation(
-    tmp_path: Path, monkeypatch, capsys
+    tmp_path: Path, monkeypatch, capsys, case_sensitive: bool
 ) -> None:
     """A joined Pi failure generates visible `Bash` text absent from raw values."""
     home = tmp_path / "home"
@@ -1429,6 +1470,7 @@ def test_default_pi_joined_agent_evidence_reaches_semantic_confirmation(
         commands.cmd_search(
             "Bash",
             ConversationFlags(color="never", paging=False),
+            case_sensitive=case_sensitive,
             output_mode=SearchOutputMode.ONLY_ID,
             emit_metadata=False,
         )

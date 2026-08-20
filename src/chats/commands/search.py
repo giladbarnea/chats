@@ -91,20 +91,9 @@ _RENDER_DEPENDENT_SEARCH_TOKENS = (
     "old_string:",
     "new_string:",
 )
-_PI_CUSTOM_ENTRY_EVIDENCE = b'"customType"'
 _PI_USER_AGENT_EVIDENCE = b'"pi-user-agents"'
-_PI_SUBAGENT_RECORD_EVIDENCE = b'"subagents:record"'
 _JSON_UNICODE_ESCAPE_EVIDENCE = b"\\u"
-_PI_CUSTOM_GENERATED_TEXT = ("```json", "null")
-_PI_AGENT_GENERATED_TEXT = (
-    "<subagent-task>",
-    "</subagent-task>",
-    '<tool-output name="Bash" is_error="true">',
-    "</tool-output>",
-    "```",
-)
 _JSON_DECODE_UNSTABLE_CHARACTERS = frozenset('"\\/\t\r\n\b\f')
-_JSON_RENDER_UNSTABLE_CHARACTERS = frozenset("{}[],:\"\\/ \t\r\n\b\f")
 
 
 class _ProjectionResult(Enum):
@@ -848,72 +837,12 @@ def _evaluate_prefilter(
     return term_matches(query)
 
 
-def _term_literal_matches_generated_text(
-    term: SearchTerm,
-    generated_texts: tuple[str, ...],
-) -> bool:
-    """Return whether a literal term can match renderer-generated text."""
-    literal = term.literal_candidate
-    if literal is None:
-        return False
-    return any(
-        literal in (text if term.case_sensitive else text.casefold())
-        for text in generated_texts
-    )
-
-
 def _term_can_change_under_json_decoding(term: SearchTerm) -> bool:
     """Return whether JSON string decoding can create the literal term."""
     return any(
         character in _JSON_DECODE_UNSTABLE_CHARACTERS
         for character in term.pattern
     )
-
-
-def _pi_custom_json_render_can_generate(term: SearchTerm) -> bool:
-    """Return whether pretty JSON rendering can create a raw-missing literal."""
-    return (
-        _term_literal_matches_generated_text(term, _PI_CUSTOM_GENERATED_TEXT)
-        or any(
-            character in _JSON_RENDER_UNSTABLE_CHARACTERS
-            for character in term.pattern
-        )
-        or term.pattern.removeprefix("-").isdigit()
-    )
-
-
-def _pi_normalization_evidence_groups(
-    term: SearchTerm,
-    flags: ConversationFlags,
-) -> tuple[tuple[bytes, ...], ...]:
-    """Return raw evidence that Pi normalization could create a literal term."""
-    groups: list[tuple[bytes, ...]] = []
-
-    if flags.show_custom:
-        custom_evidence = (
-            (_PI_CUSTOM_ENTRY_EVIDENCE,)
-            if _pi_custom_json_render_can_generate(term)
-            else (_PI_CUSTOM_ENTRY_EVIDENCE, _JSON_UNICODE_ESCAPE_EVIDENCE)
-        )
-        groups.append(custom_evidence)
-
-    if flags.show_agents:
-        agent_can_generate = _term_literal_matches_generated_text(
-            term,
-            _PI_AGENT_GENERATED_TEXT,
-        ) or _term_can_change_under_json_decoding(term)
-        if agent_can_generate:
-            groups.extend((
-                (_PI_USER_AGENT_EVIDENCE,),
-                (_PI_SUBAGENT_RECORD_EVIDENCE,),
-            ))
-        else:
-            groups.extend((
-                (_PI_USER_AGENT_EVIDENCE, _JSON_UNICODE_ESCAPE_EVIDENCE),
-                (_PI_SUBAGENT_RECORD_EVIDENCE, _JSON_UNICODE_ESCAPE_EVIDENCE),
-            ))
-
-    return tuple(groups)
 
 
 def _search_path_candidate_matches(
@@ -949,7 +878,7 @@ def _term_path_candidate_matches(
     if needle is None:
         return True
 
-    case_insensitive_gate_bypassed = not term.case_sensitive and (
+    native_gate_bypassed = (
         flags.show_thinking
         or bool(flags.show_tools)
         or flags.show_agents
@@ -961,17 +890,12 @@ def _term_path_candidate_matches(
         or flags.shorten_thinking
         or _term_can_change_under_json_decoding(term)
     )
-    if case_insensitive_gate_bypassed:
+    if native_gate_bypassed:
         return True
 
-    if not term.case_sensitive:
-        evidence_groups = ((_JSON_UNICODE_ESCAPE_EVIDENCE,),)
-        if pi_session:
-            evidence_groups += ((_PI_USER_AGENT_EVIDENCE,),)
-    else:
-        evidence_groups = (
-            _pi_normalization_evidence_groups(term, flags) if pi_session else ()
-        )
+    evidence_groups = ((_JSON_UNICODE_ESCAPE_EVIDENCE,),)
+    if pi_session:
+        evidence_groups += ((_PI_USER_AGENT_EVIDENCE,),)
     return _file_contains_ascii(
         path,
         needle,

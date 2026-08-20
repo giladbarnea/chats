@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-20] Preserve case-sensitive native candidate parity
+
+### Fixed
+
+- Case-sensitive ASCII literal searches now defer to semantic confirmation for JSON Unicode escapes, generated content, and default joined Pi agents. These cases previously caused silent false negatives when the visible rendered text was absent from raw file bytes.
+- Raw escape and normalization evidence no longer depends on the selected case mode. The generated-content eligibility gate now follows the same conservative rule in both modes.
+
+---
 ## [2026-08-20] Sharpen native case-insensitive candidate scanning
 
 ### Changed
