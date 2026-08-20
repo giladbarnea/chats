@@ -309,7 +309,7 @@ ch search -p codex "TODO"              # Search only Codex sessions
 - Visibility flags affect search semantics: hidden thinking/tools/agents/plans and non-selected regular-message roles do not count as message matches
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)
-- Plain-literal queries get a cheap candidate prefilter before the normal rendered-content confirmation pass
+- Plain ASCII literal queries get a native raw-file candidate scan before the normal rendered-content confirmation pass. Case-sensitive scans continue across valid non-ASCII UTF-8; case-insensitive scans still defer to Python when Unicode case folding could change the result
 - Results stream to the terminal as each match is confirmed, so the first hit appears in well under a second instead of after the whole pool is scanned. Colored, paged output is streamed through `less -r` (quit early with `q` to stop the scan)
 - Results are displayed newest first by filesystem mtime (scan order) across Claude, PI, and Codex sessions. `-r/--raw` is the exception and stays buffered, since its single-message formatting needs every hit first. In the colored `-l` view, the `N sessions · newest first` count prints as a trailing summary
 - Extracts working directory from conversation files
@@ -629,7 +629,7 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 **Known Edge Cases:**
 - Message content with markdown (backticks, etc.) renders differently in display vs source
 - Searching rendered text won't match source formatting
-- Search candidate prefiltering only applies to plain-literal queries; render-dependent queries still fall through to the full rendered-content matcher
+- Native search candidate scanning applies only to plain ASCII literal queries. Render-dependent queries and uncertain Unicode cases still fall through to the full rendered-content matcher
 - No current solution (complexity vs benefit trade-off)
 
 ---

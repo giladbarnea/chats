@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import json
+import os
 import re
 import sys
 from collections.abc import Callable, Iterable
@@ -15,6 +16,7 @@ from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
 
+from .._native import file_contains_ascii
 from ..console import StreamingPager, get_console, print_error, print_hint
 from ..formatting import (
     build_messages_group,
@@ -90,7 +92,6 @@ _RENDER_DEPENDENT_SEARCH_TOKENS = (
     "old_string:",
     "new_string:",
 )
-_ASCII_SCAN_CHUNK_SIZE = 1024 * 1024
 _PI_CUSTOM_ENTRY_EVIDENCE = b'"customType"'
 _PI_USER_AGENT_EVIDENCE = b'"pi-user-agents"'
 _PI_SUBAGENT_RECORD_EVIDENCE = b'"subagents:record"'
@@ -990,40 +991,13 @@ def _file_contains_ascii(
     case_sensitive: bool,
     evidence_groups: tuple[tuple[bytes, ...], ...] = (),
 ) -> bool:
-    """Search a file for an ASCII literal or normalization evidence.
-
-    For insensitive search this is sound only over ASCII bytes: a non-ASCII source
-    character can case-fold to the ASCII needle (U+212A KELVIN SIGN -> 'k'), which
-    `bytes.lower()` would not catch. Any non-ASCII byte therefore makes this gate
-    defer to the decode-based content gate rather than risk rejecting a real hit.
-    """
-    if not needle:
-        return True
-
-    all_needles = [
+    """Search a file for an ASCII literal or normalization evidence."""
+    return file_contains_ascii(
+        os.fsencode(path),
         needle,
-        *(evidence for group in evidence_groups for evidence in group),
-    ]
-    overlap_width = max(len(candidate) for candidate in all_needles) - 1
-    evidence_matches = [
-        [False for _evidence in group]
-        for group in evidence_groups
-    ]
-    previous = b""
-    with open(path, "rb") as handle:
-        while chunk := handle.read(_ASCII_SCAN_CHUNK_SIZE):
-            if not chunk.isascii():
-                return True
-            haystack = previous + chunk
-            searchable_haystack = haystack if case_sensitive else haystack.lower()
-            if needle in searchable_haystack:
-                return True
-            for group_index, group in enumerate(evidence_groups):
-                for evidence_index, evidence in enumerate(group):
-                    if evidence in haystack:
-                        evidence_matches[group_index][evidence_index] = True
-            previous = haystack[-overlap_width:] if overlap_width else b""
-    return any(all(group_matches) for group_matches in evidence_matches)
+        case_sensitive,
+        evidence_groups,
+    )
 
 
 def _content_has_evidence_groups(

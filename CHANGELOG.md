@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-20] Move raw ASCII search candidate scanning to Rust
+
+### Changed
+
+- Plain ASCII literal searches now scan candidate file bytes through the existing PyO3 extension before full decoding and semantic confirmation.
+- Case-sensitive scans continue across valid non-ASCII UTF-8 instead of forcing a full decoded read. Invalid UTF-8 and case-insensitive Unicode still defer to Python, which keeps query, matching, and rendering semantics.
+
+---
 ## [2026-08-20] Move resolution-facet file scanning to Rust
 
 ### Changed

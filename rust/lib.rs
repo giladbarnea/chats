@@ -10,6 +10,7 @@ use std::os::unix::ffi::{OsStrExt, OsStringExt};
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedBytes;
 use pyo3::types::PyBytes;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -463,6 +464,212 @@ fn find_last_jsonl_timestamp_impl(
     }
 }
 
+const ASCII_CANDIDATE_SCAN_CHUNK_SIZE: usize = 1024 * 1024;
+
+// Darwin memmem wins on short needles but regresses long literal misses.
+const LIBC_MEMMEM_MAX_NEEDLE_LENGTH: usize = 8;
+
+#[cfg(unix)]
+fn contains_exact(haystack: &[u8], needle: &[u8]) -> bool {
+    // SAFETY: both pointers stay valid for the supplied slice lengths during this call.
+    unsafe {
+        !libc::memmem(
+            haystack.as_ptr().cast(),
+            haystack.len(),
+            needle.as_ptr().cast(),
+            needle.len(),
+        )
+        .is_null()
+    }
+}
+
+#[cfg(not(unix))]
+fn contains_exact(haystack: &[u8], needle: &[u8]) -> bool {
+    haystack.windows(needle.len()).any(|window| window == needle)
+}
+
+struct CandidateMatcher {
+    needle: Vec<u8>,
+    shifts: [usize; 256],
+    case_sensitive: bool,
+}
+
+impl CandidateMatcher {
+    fn new(needle: &[u8], case_sensitive: bool) -> Self {
+        let mut shifts = [needle.len(); 256];
+        for (index, byte) in needle[..needle.len().saturating_sub(1)].iter().enumerate() {
+            shifts[usize::from(*byte)] = needle.len() - index - 1;
+        }
+        Self {
+            needle: needle.to_vec(),
+            shifts,
+            case_sensitive,
+        }
+    }
+
+    fn normalized_haystack_byte(&self, byte: u8) -> u8 {
+        if self.case_sensitive {
+            byte
+        } else {
+            byte.to_ascii_lowercase()
+        }
+    }
+
+    fn contains(&self, haystack: &[u8]) -> bool {
+        if self.case_sensitive && self.needle.len() <= LIBC_MEMMEM_MAX_NEEDLE_LENGTH {
+            return contains_exact(haystack, &self.needle);
+        }
+        self.contains_with(haystack.len(), |index| haystack[index])
+    }
+
+    fn contains_split(&self, first: &[u8], second: &[u8]) -> bool {
+        self.contains_with(first.len() + second.len(), |index| {
+            if index < first.len() {
+                first[index]
+            } else {
+                second[index - first.len()]
+            }
+        })
+    }
+
+    fn contains_with(
+        &self,
+        haystack_length: usize,
+        byte_at: impl Fn(usize) -> u8,
+    ) -> bool {
+        let mut start = 0;
+        while start + self.needle.len() <= haystack_length {
+            let mut index = self.needle.len();
+            while index > 0 {
+                index -= 1;
+                let actual = self.normalized_haystack_byte(byte_at(start + index));
+                if actual != self.needle[index] {
+                    break;
+                }
+            }
+            if index == 0
+                && self.normalized_haystack_byte(byte_at(start)) == self.needle[0]
+            {
+                return true;
+            }
+            let last = self.normalized_haystack_byte(
+                byte_at(start + self.needle.len() - 1),
+            );
+            start += self.shifts[usize::from(last)];
+        }
+        false
+    }
+}
+
+fn validate_utf8_chunk(chunk: &[u8], incomplete_code_point: &mut Vec<u8>) -> bool {
+    let mut cursor = 0;
+    while !incomplete_code_point.is_empty() && cursor < chunk.len() {
+        incomplete_code_point.push(chunk[cursor]);
+        cursor += 1;
+        match std::str::from_utf8(incomplete_code_point) {
+            Ok(_) => incomplete_code_point.clear(),
+            Err(error) if error.error_len().is_some() => return false,
+            Err(_) => continue,
+        }
+    }
+    if !incomplete_code_point.is_empty() {
+        return true;
+    }
+
+    match std::str::from_utf8(&chunk[cursor..]) {
+        Ok(_) => true,
+        Err(error) if error.error_len().is_some() => false,
+        Err(error) => {
+            incomplete_code_point.extend_from_slice(&chunk[cursor + error.valid_up_to()..]);
+            true
+        }
+    }
+}
+
+fn file_contains_ascii_impl(
+    path: &Path,
+    needle: &[u8],
+    case_sensitive: bool,
+    evidence_groups: &[Vec<PyBackedBytes>],
+) -> std::io::Result<bool> {
+    if needle.is_empty() {
+        return Ok(true);
+    }
+
+    let mut file = std::fs::File::open(path)?;
+    let overlap_width = evidence_groups
+        .iter()
+        .flatten()
+        .map(|evidence| evidence.len())
+        .chain(std::iter::once(needle.len()))
+        .max()
+        .expect("needle supplies one candidate")
+        - 1;
+    let needle_matcher = CandidateMatcher::new(needle, case_sensitive);
+    let evidence_matchers = evidence_groups
+        .iter()
+        .map(|group| {
+            group
+                .iter()
+                .map(|evidence| CandidateMatcher::new(evidence, true))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let mut evidence_matches = evidence_groups
+        .iter()
+        .map(|group| vec![false; group.len()])
+        .collect::<Vec<_>>();
+    let mut previous = Vec::new();
+    let mut incomplete_code_point = Vec::with_capacity(4);
+    let mut block = vec![0; ASCII_CANDIDATE_SCAN_CHUNK_SIZE];
+
+    loop {
+        let read_size = file.read(&mut block)?;
+        if read_size == 0 {
+            break;
+        }
+        let chunk = &block[..read_size];
+        if !case_sensitive && !chunk.is_ascii() {
+            return Ok(true);
+        }
+        if case_sensitive && !validate_utf8_chunk(chunk, &mut incomplete_code_point) {
+            return Ok(true);
+        }
+
+        let boundary_prefix = &chunk[..overlap_width.min(chunk.len())];
+        if needle_matcher.contains_split(&previous, boundary_prefix)
+            || needle_matcher.contains(chunk)
+        {
+            return Ok(true);
+        }
+        for (group_index, group) in evidence_matchers.iter().enumerate() {
+            for (evidence_index, evidence) in group.iter().enumerate() {
+                if evidence.contains_split(&previous, boundary_prefix)
+                    || evidence.contains(chunk)
+                {
+                    evidence_matches[group_index][evidence_index] = true;
+                }
+            }
+        }
+        if overlap_width == 0 {
+            continue;
+        }
+        if chunk.len() >= overlap_width {
+            previous.clear();
+            previous.extend_from_slice(&chunk[chunk.len() - overlap_width..]);
+            continue;
+        }
+        previous.extend_from_slice(chunk);
+        let retained_start = previous.len().saturating_sub(overlap_width);
+        previous.drain(..retained_start);
+    }
+
+    if case_sensitive && !incomplete_code_point.is_empty() {
+        return Ok(true);
+    }
+    Ok(evidence_matches.iter().any(|group| group.iter().all(|found| *found)))
+}
+
 const RESOLUTION_FACET_MARKERS: [&str; 4] = [
     "\"summary\"",
     "\"custom-title\"",
@@ -582,6 +789,26 @@ fn scan_resolution_facets_impl(
 }
 
 #[pyfunction]
+fn file_contains_ascii(
+    path: PyBackedBytes,
+    needle: PyBackedBytes,
+    case_sensitive: bool,
+    evidence_groups: Vec<Vec<PyBackedBytes>>,
+) -> PyResult<bool> {
+    #[cfg(unix)]
+    let path = PathBuf::from(OsString::from_vec(path.as_ref().to_vec()));
+    #[cfg(not(unix))]
+    let path = PathBuf::from(String::from_utf8_lossy(path.as_ref()).into_owned());
+
+    Ok(file_contains_ascii_impl(
+        &path,
+        needle.as_ref(),
+        case_sensitive,
+        &evidence_groups,
+    )?)
+}
+
+#[pyfunction]
 fn classify_native_session_path(path: &str, home: &str) -> Option<&'static str> {
     classify_native_session_path_impl(Path::new(path), Path::new(home)).map(Provider::as_str)
 }
@@ -638,6 +865,7 @@ fn discover_session_files(
 
 #[pymodule]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(file_contains_ascii, module)?)?;
     module.add_function(wrap_pyfunction!(classify_native_session_path, module)?)?;
     module.add_function(wrap_pyfunction!(find_last_jsonl_timestamp, module)?)?;
     module.add_function(wrap_pyfunction!(scan_resolution_facets, module)?)?;

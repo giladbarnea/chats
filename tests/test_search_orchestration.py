@@ -1089,6 +1089,90 @@ def _write_compact_meta_session(path: Path) -> None:
     )
 
 
+def test_case_sensitive_ascii_miss_skips_decoded_read_for_valid_unicode(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """A valid non-ASCII character cannot create a case-sensitive ASCII match."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "unicode-miss.jsonl"
+    _write_unicode_session(path, "unrelated café text")
+
+    real_read_text = Path.read_text
+
+    def fail_if_session_text_read(candidate: Path, *args, **kwargs):
+        if candidate == path:
+            raise AssertionError(
+                "Expected the case-sensitive byte gate to reject valid Unicode "
+                "content without a decoded file read."
+            )
+        return real_read_text(candidate, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", fail_if_session_text_read)
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "absent-ascii-needle",
+            ConversationFlags(color="never", paging=False),
+            case_sensitive=True,
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1, (
+        "Expected the case-sensitive miss to exit 1 after the byte gate rejected it. "
+        f"Got exit code: {exc_info.value.code}"
+    )
+    assert "Error processing conversation file" not in captured.err, (
+        "Expected a clean byte-gate miss without a decoded file read. "
+        f"Got stderr:\n{captured.err}"
+    )
+
+
+def test_case_sensitive_ascii_miss_accepts_unicode_split_across_read_boundary(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Incremental UTF-8 validation must carry a split code point between reads."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".claude" / "projects" / "proj" / "split-unicode.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    prefix = b'{"type":"summary","summary":"'
+    padding = b"x" * (1024 * 1024 - len(prefix) - 1)
+    path.write_bytes(prefix + padding + "é unrelated".encode() + b'"}\n')
+
+    real_read_text = Path.read_text
+
+    def fail_if_session_text_read(candidate: Path, *args, **kwargs):
+        if candidate == path:
+            raise AssertionError(
+                "Expected split valid UTF-8 to remain a clean case-sensitive miss."
+            )
+        return real_read_text(candidate, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", fail_if_session_text_read)
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "absent-ascii-needle",
+            ConversationFlags(color="never", paging=False),
+            case_sensitive=True,
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1, (
+        "Expected the case-sensitive miss to exit 1. "
+        f"Got exit code: {exc_info.value.code}"
+    )
+    assert "Error processing conversation file" not in captured.err, (
+        "Expected the byte gate to accept a code point split at its read boundary. "
+        f"Got stderr:\n{captured.err}"
+    )
+
+
 def test_ascii_literal_search_finds_unicode_casefold_match(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
