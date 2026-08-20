@@ -3,6 +3,14 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-08-20] Move resolution-facet file scanning to Rust
+
+### Changed
+
+- Title and summary fallback resolution now reads session files through the existing PyO3 extension. Rust owns bounded forward file I/O, universal newline framing, UTF-8 validation, and raw facet-marker filtering.
+- Python keeps its existing JSON and provider-title semantics, title-before-summary precedence, ambiguity handling, and `extract_resolution_facets_from_jsonl()` interface. The production Python forward file loop is gone.
+
+---
 ## [2026-08-20] Move native session inventory to Rust
 
 ### Changed

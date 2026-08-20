@@ -602,6 +602,7 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 
 **Key Functions:**
 - `extract_summaries_from_jsonl()` - Extract all summary fields from file
+- `extract_resolution_facets_from_jsonl()` - Get the latest title and ordered summaries through the native forward file scan
 - `SessionPool.discover()` - Build the unified pool from Rust-supplied path, provider, and mtime inventory rows
 - `SessionScan.from_content()` - Decode one session once into search facets and visible messages
 - `get_input_content()` - Resolve input from CLI arg, stdin, or conversation/session ID

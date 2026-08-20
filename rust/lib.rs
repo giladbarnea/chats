@@ -463,6 +463,124 @@ fn find_last_jsonl_timestamp_impl(
     }
 }
 
+const RESOLUTION_FACET_MARKERS: [&str; 4] = [
+    "\"summary\"",
+    "\"custom-title\"",
+    "\"session_info\"",
+    "\"thread_name_updated\"",
+];
+
+fn accumulate_resolution_line(
+    py: Python<'_>,
+    line: &[u8],
+    line_facets: &Bound<'_, PyAny>,
+    json_decode_error: &Bound<'_, PyAny>,
+    latest_title: &mut Option<Py<PyAny>>,
+    summaries: &mut Vec<Py<PyAny>>,
+) -> PyResult<()> {
+    let decoded_line = match std::str::from_utf8(line) {
+        Ok(decoded_line) => decoded_line,
+        Err(_) => {
+            PyBytes::new(py, line).call_method1("decode", ("utf-8",))?;
+            unreachable!("invalid UTF-8 decode must raise")
+        }
+    };
+    if !RESOLUTION_FACET_MARKERS
+        .iter()
+        .any(|marker| decoded_line.contains(marker))
+    {
+        return Ok(());
+    }
+
+    let facets = match line_facets.call1((decoded_line,)) {
+        Ok(facets) => facets,
+        Err(error) if error.is_instance(py, json_decode_error) => return Ok(()),
+        Err(error) => return Err(error),
+    };
+    let (title, summary): (Option<Py<PyAny>>, Option<Py<PyAny>>) = facets.extract()?;
+    if title.is_some() {
+        *latest_title = title;
+    }
+    if let Some(summary) = summary {
+        summaries.push(summary);
+    }
+    Ok(())
+}
+
+fn scan_resolution_facets_impl(
+    py: Python<'_>,
+    path: &Path,
+    line_facets: &Bound<'_, PyAny>,
+    json_decode_error: &Bound<'_, PyAny>,
+) -> PyResult<(Option<Py<PyAny>>, Vec<Py<PyAny>>)> {
+    let mut file = match std::fs::File::open(path) {
+        Ok(file) => file,
+        Err(_) => return Ok((None, Vec::new())),
+    };
+    let mut latest_title = None;
+    let mut summaries = Vec::new();
+    let mut line = Vec::new();
+    let mut block = [0; JSONL_SCAN_CHUNK_SIZE];
+    let mut skip_leading_line_feed = false;
+
+    loop {
+        let read_size = match file.read(&mut block) {
+            Ok(read_size) => read_size,
+            Err(_) => return Ok((None, Vec::new())),
+        };
+        if read_size == 0 {
+            break;
+        }
+
+        let mut cursor = usize::from(skip_leading_line_feed && block[0] == b'\n');
+        skip_leading_line_feed = false;
+        while cursor < read_size {
+            let Some(relative_delimiter) = block[cursor..read_size]
+                .iter()
+                .position(|byte| matches!(*byte, b'\r' | b'\n'))
+            else {
+                line.extend_from_slice(&block[cursor..read_size]);
+                break;
+            };
+            let delimiter = cursor + relative_delimiter;
+            line.extend_from_slice(&block[cursor..delimiter]);
+            accumulate_resolution_line(
+                py,
+                &line,
+                line_facets,
+                json_decode_error,
+                &mut latest_title,
+                &mut summaries,
+            )?;
+            line.clear();
+
+            cursor = delimiter + 1;
+            if block[delimiter] != b'\r' {
+                continue;
+            }
+            if cursor == read_size {
+                skip_leading_line_feed = true;
+                continue;
+            }
+            if block[cursor] == b'\n' {
+                cursor += 1;
+            }
+        }
+    }
+
+    if !line.is_empty() {
+        accumulate_resolution_line(
+            py,
+            &line,
+            line_facets,
+            json_decode_error,
+            &mut latest_title,
+            &mut summaries,
+        )?;
+    }
+    Ok((latest_title, summaries))
+}
+
 #[pyfunction]
 fn classify_native_session_path(path: &str, home: &str) -> Option<&'static str> {
     classify_native_session_path_impl(Path::new(path), Path::new(home)).map(Provider::as_str)
@@ -481,6 +599,21 @@ fn find_last_jsonl_timestamp(
         line_timestamp,
         json_decode_error,
     )
+}
+
+#[pyfunction]
+fn scan_resolution_facets(
+    py: Python<'_>,
+    path: &Bound<'_, PyBytes>,
+    line_facets: &Bound<'_, PyAny>,
+    json_decode_error: &Bound<'_, PyAny>,
+) -> PyResult<(Option<Py<PyAny>>, Vec<Py<PyAny>>)> {
+    #[cfg(unix)]
+    let path = PathBuf::from(OsString::from_vec(path.as_bytes().to_vec()));
+    #[cfg(not(unix))]
+    let path = PathBuf::from(String::from_utf8_lossy(path.as_bytes()).into_owned());
+
+    scan_resolution_facets_impl(py, &path, line_facets, json_decode_error)
 }
 
 #[pyfunction]
@@ -507,6 +640,7 @@ fn discover_session_files(
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(classify_native_session_path, module)?)?;
     module.add_function(wrap_pyfunction!(find_last_jsonl_timestamp, module)?)?;
+    module.add_function(wrap_pyfunction!(scan_resolution_facets, module)?)?;
     module.add_function(wrap_pyfunction!(discover_session_files, module)?)
 }
 

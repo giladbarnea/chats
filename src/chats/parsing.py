@@ -18,6 +18,7 @@ from ._native import (
     classify_native_session_path,
     discover_session_files,
     find_last_jsonl_timestamp,
+    scan_resolution_facets,
 )
 from .model import ConversationFlags, Message, Provider, SubagentMetadata
 from .registry import (
@@ -410,50 +411,33 @@ def extract_latest_custom_title_from_jsonl(file_path: Path) -> str | None:
     return latest_custom_title
 
 
-_RESOLUTION_FACET_MARKERS = (
-    '"summary"',
-    '"custom-title"',
-    '"session_info"',
-    '"thread_name_updated"',
-)
+def _jsonl_line_resolution_facets(line: str) -> tuple[str | None, str | None]:
+    """Extract a possible current title and summary from one marker-positive line.
 
+    >>> _jsonl_line_resolution_facets('{"type":"summary","summary":"keep"}')
+    (None, 'keep')
+    """
+    stripped = line.strip()
+    if not stripped or not stripped.startswith("{"):
+        return None, None
 
-def _could_contain_resolution_facet(line: str) -> bool:
-    """Return True when a JSONL line may carry a title/summary resolution facet."""
-    return any(marker in line for marker in _RESOLUTION_FACET_MARKERS)
+    entry = json.loads(stripped)
+    if not isinstance(entry, dict):
+        return None, None
+
+    summary = entry.get("summary") if entry.get("type") == "summary" else None
+    if not isinstance(summary, str) or not summary:
+        summary = None
+    return _extract_custom_title_from_entry(entry), summary
 
 
 def extract_resolution_facets_from_jsonl(file_path: Path) -> tuple[str | None, list[str]]:
     """Extract the current title and summaries needed for identifier fallback resolution."""
-    latest_custom_title: str | None = None
-    summaries: list[str] = []
-
-    try:
-        with open(file_path, "r", encoding="utf-8") as handle:
-            for line in handle:
-                stripped = line.strip()
-                if not stripped or not stripped.startswith("{"):
-                    continue
-                if not _could_contain_resolution_facet(stripped):
-                    continue
-                try:
-                    entry = json.loads(stripped)
-                except json.JSONDecodeError:
-                    continue
-                if not isinstance(entry, dict):
-                    continue
-
-                if entry.get("type") == "summary":
-                    summary = entry.get("summary")
-                    if isinstance(summary, str) and summary:
-                        summaries.append(summary)
-
-                if custom_title := _extract_custom_title_from_entry(entry):
-                    latest_custom_title = custom_title
-    except OSError:
-        return None, []
-
-    return latest_custom_title, summaries
+    return scan_resolution_facets(
+        os.fsencode(file_path),
+        _jsonl_line_resolution_facets,
+        json.JSONDecodeError,
+    )
 
 
 def detect_format(content: str) -> str:
