@@ -567,6 +567,208 @@ const PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS: [char; 20] = [
     '\u{fb01}', '\u{fb02}', '\u{fb03}', '\u{fb04}', '\u{fb05}', '\u{fb06}',
 ];
 
+#[derive(Clone, Copy)]
+enum JsonEscapeState {
+    Plain,
+    AfterBackslash,
+    Unicode { value: u16, digits: u8 },
+    ExpectLowBackslash { high: u16 },
+    ExpectLowU { high: u16 },
+    LowUnicode { high: u16, value: u16, digits: u8 },
+}
+
+struct JsonEscapeValidator {
+    state: JsonEscapeState,
+}
+
+impl JsonEscapeValidator {
+    fn new() -> Self {
+        Self {
+            state: JsonEscapeState::Plain,
+        }
+    }
+
+    fn push(&mut self, byte: u8) -> bool {
+        match self.state {
+            JsonEscapeState::Plain => {
+                if byte == b'\\' {
+                    self.state = JsonEscapeState::AfterBackslash;
+                }
+                true
+            }
+            JsonEscapeState::AfterBackslash => {
+                self.state = JsonEscapeState::Plain;
+                match byte {
+                    b'"' | b'\\' | b'/' | b'b' | b'f' | b'n' | b'r' | b't' => true,
+                    b'u' => {
+                        self.state = JsonEscapeState::Unicode {
+                            value: 0,
+                            digits: 0,
+                        };
+                        true
+                    }
+                    _ => false,
+                }
+            }
+            JsonEscapeState::Unicode { value, digits } => {
+                let Some(digit) = hex_digit(byte) else {
+                    return false;
+                };
+                let value = value * 16 + digit;
+                let digits = digits + 1;
+                if digits < 4 {
+                    self.state = JsonEscapeState::Unicode { value, digits };
+                    return true;
+                }
+                self.state = JsonEscapeState::Plain;
+                if (0xd800..=0xdbff).contains(&value) {
+                    self.state = JsonEscapeState::ExpectLowBackslash { high: value };
+                    return true;
+                }
+                if (0xdc00..=0xdfff).contains(&value) {
+                    return false;
+                }
+                let character = char::from_u32(u32::from(value))
+                    .expect("non-surrogate BMP scalar");
+                PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS
+                    .binary_search(&character)
+                    .is_err()
+            }
+            JsonEscapeState::ExpectLowBackslash { high } => {
+                if byte != b'\\' {
+                    return false;
+                }
+                self.state = JsonEscapeState::ExpectLowU { high };
+                true
+            }
+            JsonEscapeState::ExpectLowU { high } => {
+                if byte != b'u' {
+                    return false;
+                }
+                self.state = JsonEscapeState::LowUnicode {
+                    high,
+                    value: 0,
+                    digits: 0,
+                };
+                true
+            }
+            JsonEscapeState::LowUnicode {
+                high,
+                value,
+                digits,
+            } => {
+                let Some(digit) = hex_digit(byte) else {
+                    return false;
+                };
+                let value = value * 16 + digit;
+                let digits = digits + 1;
+                if digits < 4 {
+                    self.state = JsonEscapeState::LowUnicode {
+                        high,
+                        value,
+                        digits,
+                    };
+                    return true;
+                }
+                if !(0xdc00..=0xdfff).contains(&value) {
+                    return false;
+                }
+                self.state = JsonEscapeState::Plain;
+                true
+            }
+        }
+    }
+
+    fn is_incomplete(&self) -> bool {
+        !matches!(self.state, JsonEscapeState::Plain)
+    }
+}
+
+fn hex_digit(byte: u8) -> Option<u16> {
+    match byte {
+        b'0'..=b'9' => Some(u16::from(byte - b'0')),
+        b'a'..=b'f' => Some(u16::from(byte - b'a' + 10)),
+        b'A'..=b'F' => Some(u16::from(byte - b'A' + 10)),
+        _ => None,
+    }
+}
+
+#[cfg(unix)]
+fn find_byte(haystack: &[u8], needle: u8) -> Option<usize> {
+    // SAFETY: the pointer stays valid for the supplied slice length during this call.
+    let pointer = unsafe {
+        libc::memchr(
+            haystack.as_ptr().cast(),
+            i32::from(needle),
+            haystack.len(),
+        )
+    };
+    (!pointer.is_null()).then(|| pointer as usize - haystack.as_ptr() as usize)
+}
+
+#[cfg(not(unix))]
+fn find_byte(haystack: &[u8], needle: u8) -> Option<usize> {
+    haystack.iter().position(|byte| *byte == needle)
+}
+
+fn validate_json_escapes_chunk(
+    chunk: &[u8],
+    validator: &mut JsonEscapeValidator,
+) -> bool {
+    let mut cursor = 0;
+    while cursor < chunk.len() {
+        if matches!(validator.state, JsonEscapeState::Plain) {
+            let Some(relative_backslash) = find_byte(&chunk[cursor..], b'\\') else {
+                return true;
+            };
+            cursor += relative_backslash;
+        }
+        if !validator.push(chunk[cursor]) {
+            return false;
+        }
+        cursor += 1;
+    }
+    true
+}
+
+fn regex_hex_scalar(value: u8) -> String {
+    format!("{value:04x}")
+        .chars()
+        .map(|character| match character {
+            'a'..='f' => format!("[{character}{}]", character.to_ascii_uppercase()),
+            _ => character.to_string(),
+        })
+        .collect()
+}
+
+fn logical_ascii_regex(needle: &[u8], case_sensitive: bool) -> regex::bytes::Regex {
+    let pattern = needle
+        .iter()
+        .map(|byte| {
+            let lowercase = byte.to_ascii_lowercase();
+            let uppercase = byte.to_ascii_uppercase();
+            let raw = if !case_sensitive && lowercase != uppercase {
+                format!("[{}{}]", char::from(lowercase), char::from(uppercase))
+            } else {
+                regex::escape(&char::from(*byte).to_string())
+            };
+            let mut alternatives = vec![raw];
+            if *byte == b'/' {
+                alternatives.push(r"\\/".to_string());
+            }
+            alternatives.push(format!(r"\\u{}", regex_hex_scalar(*byte)));
+            if !case_sensitive && lowercase != *byte {
+                alternatives.push(format!(r"\\u{}", regex_hex_scalar(lowercase)));
+            }
+            if !case_sensitive && uppercase != *byte {
+                alternatives.push(format!(r"\\u{}", regex_hex_scalar(uppercase)));
+            }
+            format!("(?:{})", alternatives.join("|"))
+        })
+        .collect::<String>();
+    regex::bytes::Regex::new(&pattern).expect("generated logical ASCII regex")
+}
+
 fn validate_candidate_utf8_chunk(
     chunk: &[u8],
     incomplete_code_point: &mut Vec<u8>,
@@ -701,6 +903,105 @@ fn file_contains_ascii_impl(
         return Ok(true);
     }
     Ok(evidence_matches.iter().any(|group| group.iter().all(|found| *found)))
+}
+
+fn file_contains_ascii_json_strings_impl(
+    path: &Path,
+    needle: &[u8],
+    evidence_groups: &[Vec<PyBackedBytes>],
+) -> std::io::Result<bool> {
+    if needle.is_empty() {
+        return Ok(true);
+    }
+
+    let normalized_needle = needle
+        .iter()
+        .map(|byte| byte.to_ascii_lowercase())
+        .collect::<Vec<_>>();
+    let logical_matcher = logical_ascii_regex(&normalized_needle, false);
+    let evidence_matchers = evidence_groups
+        .iter()
+        .map(|group| {
+            group
+                .iter()
+                .map(|evidence| logical_ascii_regex(evidence, true))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let mut evidence_matches = evidence_groups
+        .iter()
+        .map(|group| vec![false; group.len()])
+        .collect::<Vec<_>>();
+    let overlap_width = evidence_groups
+        .iter()
+        .flatten()
+        .map(|evidence| evidence.len() * 6)
+        .chain(std::iter::once(normalized_needle.len() * 6))
+        .max()
+        .expect("needle supplies one candidate")
+        .saturating_sub(1);
+    let mut previous = Vec::new();
+    let mut incomplete_code_point = Vec::with_capacity(4);
+    let mut escape_validator = JsonEscapeValidator::new();
+    let mut block = vec![0; ASCII_CANDIDATE_SCAN_CHUNK_SIZE];
+    let mut file = std::fs::File::open(path)?;
+
+    loop {
+        let read_size = file.read(&mut block)?;
+        if read_size == 0 {
+            break;
+        }
+        let chunk = &block[..read_size];
+        let boundary_prefix = &chunk[..overlap_width.min(chunk.len())];
+        let mut boundary = Vec::with_capacity(previous.len() + boundary_prefix.len());
+        boundary.extend_from_slice(&previous);
+        boundary.extend_from_slice(boundary_prefix);
+        if logical_matcher.is_match(&boundary) || logical_matcher.is_match(chunk) {
+            return Ok(true);
+        }
+        if (!chunk.is_ascii() || !incomplete_code_point.is_empty())
+            && !validate_candidate_utf8_chunk(
+                chunk,
+                &mut incomplete_code_point,
+                false,
+            )
+        {
+            return Ok(true);
+        }
+        if !validate_json_escapes_chunk(chunk, &mut escape_validator) {
+            return Ok(true);
+        }
+        for (group_index, group) in evidence_matchers.iter().enumerate() {
+            for (evidence_index, evidence) in group.iter().enumerate() {
+                if evidence.is_match(&boundary) || evidence.is_match(chunk) {
+                    evidence_matches[group_index][evidence_index] = true;
+                }
+            }
+        }
+        if evidence_matches
+            .iter()
+            .any(|group| group.iter().all(|found| *found))
+        {
+            return Ok(true);
+        }
+
+        if overlap_width == 0 {
+            continue;
+        }
+        if chunk.len() >= overlap_width {
+            previous.clear();
+            previous.extend_from_slice(&chunk[chunk.len() - overlap_width..]);
+            continue;
+        }
+        previous.extend_from_slice(chunk);
+        let retained_start = previous.len().saturating_sub(overlap_width);
+        previous.drain(..retained_start);
+    }
+
+    Ok(
+        !incomplete_code_point.is_empty()
+            || escape_validator.is_incomplete()
+    )
 }
 
 const RESOLUTION_FACET_MARKERS: [&str; 4] = [
@@ -842,6 +1143,24 @@ fn file_contains_ascii(
 }
 
 #[pyfunction]
+fn file_contains_ascii_json_strings(
+    path: PyBackedBytes,
+    needle: PyBackedBytes,
+    evidence_groups: Vec<Vec<PyBackedBytes>>,
+) -> PyResult<bool> {
+    #[cfg(unix)]
+    let path = PathBuf::from(OsString::from_vec(path.as_ref().to_vec()));
+    #[cfg(not(unix))]
+    let path = PathBuf::from(String::from_utf8_lossy(path.as_ref()).into_owned());
+
+    Ok(file_contains_ascii_json_strings_impl(
+        &path,
+        needle.as_ref(),
+        &evidence_groups,
+    )?)
+}
+
+#[pyfunction]
 fn classify_native_session_path(path: &str, home: &str) -> Option<&'static str> {
     classify_native_session_path_impl(Path::new(path), Path::new(home)).map(Provider::as_str)
 }
@@ -899,6 +1218,7 @@ fn discover_session_files(
 #[pymodule]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(file_contains_ascii, module)?)?;
+    module.add_function(wrap_pyfunction!(file_contains_ascii_json_strings, module)?)?;
     module.add_function(wrap_pyfunction!(classify_native_session_path, module)?)?;
     module.add_function(wrap_pyfunction!(find_last_jsonl_timestamp, module)?)?;
     module.add_function(wrap_pyfunction!(scan_resolution_facets, module)?)?;

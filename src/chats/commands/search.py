@@ -15,7 +15,10 @@ from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
 
-from .._native import file_contains_ascii
+from .._native import (
+    file_contains_ascii,
+    file_contains_ascii_json_strings as native_file_contains_ascii_json_strings,
+)
 from ..console import StreamingPager, get_console, print_error, print_hint
 from ..formatting import (
     build_messages_group,
@@ -93,7 +96,19 @@ _RENDER_DEPENDENT_SEARCH_TOKENS = (
 )
 _PI_USER_AGENT_EVIDENCE = b'"pi-user-agents"'
 _JSON_UNICODE_ESCAPE_EVIDENCE = b"\\u"
-_JSON_DECODE_UNSTABLE_CHARACTERS = frozenset('"\\/\t\r\n\b\f')
+_JSON_DECODE_UNSTABLE_CHARACTERS = frozenset('"\\/')
+_LOGICAL_JSON_STRING_INELIGIBLE_CHARACTERS = frozenset('"\\')
+
+
+def _is_json_control_character(character: str) -> bool:
+    """Return whether JSON must escape the character.
+
+    >>> _is_json_control_character("\\x00")
+    True
+    >>> _is_json_control_character(" ")
+    False
+    """
+    return ord(character) < 0x20
 
 
 class _ProjectionResult(Enum):
@@ -329,6 +344,10 @@ def _render_conversation_panel(
     )
 
 
+def _print_session_id(path: Path) -> None:
+    print(resolve.get_display_session_id(path), flush=True)
+
+
 def _display_hit(
     hit: SearchHit,
     flags: ConversationFlags,
@@ -343,7 +362,7 @@ def _display_hit(
     """Render one search hit to the module console: id, colored row, or rule+body."""
     metadata = hit.metadata
     if output_mode == SearchOutputMode.ONLY_ID:
-        print(resolve.get_display_session_id(metadata.path))
+        _print_session_id(metadata.path)
         return
 
     if output_mode == SearchOutputMode.LIST and flags.color:
@@ -409,7 +428,7 @@ def display_search_result(
 ) -> None:
     """Display a single search result in unified XML format."""
     if output_mode == SearchOutputMode.ONLY_ID:
-        print(resolve.get_display_session_id(conv_file))
+        _print_session_id(conv_file)
         return
 
     if emit_metadata:
@@ -560,7 +579,7 @@ def _stream_dot_only_id_projection(
     for session_file in search_files:
         result = _project_default_dot_match(session_file)
         if result == _ProjectionResult.MATCH:
-            print(resolve.get_display_session_id(session_file))
+            _print_session_id(session_file)
             found = True
             continue
         if result == _ProjectionResult.NO_MATCH:
@@ -573,7 +592,7 @@ def _stream_dot_only_id_projection(
             continue
         if hit is None:
             continue
-        print(resolve.get_display_session_id(hit.metadata.path))
+        _print_session_id(hit.metadata.path)
         found = True
 
     sys.exit(0 if found else 1)
@@ -841,6 +860,7 @@ def _term_can_change_under_json_decoding(term: SearchTerm) -> bool:
     """Return whether JSON string decoding can create the literal term."""
     return any(
         character in _JSON_DECODE_UNSTABLE_CHARACTERS
+        or _is_json_control_character(character)
         for character in term.pattern
     )
 
@@ -853,6 +873,15 @@ def _search_path_candidate_matches(
     pi_session: bool = False,
 ) -> bool:
     """Return True when a file's bytes could plausibly satisfy the query."""
+    if isinstance(query, SearchTerm) and _can_use_logical_json_string_gate(
+        query, flags
+    ):
+        evidence_groups = ((_PI_USER_AGENT_EVIDENCE,),) if pi_session else ()
+        return _file_contains_ascii_json_strings(
+            path,
+            query.literal_candidate.encode("ascii"),
+            evidence_groups=evidence_groups,
+        )
     return _evaluate_prefilter(
         query,
         lambda term: _term_path_candidate_matches(
@@ -861,6 +890,34 @@ def _search_path_candidate_matches(
             flags,
             pi_session=pi_session,
         ),
+    )
+
+
+def _can_use_logical_json_string_gate(
+    term: SearchTerm,
+    flags: ConversationFlags,
+) -> bool:
+    """Whether one term can use decoded JSON-string candidate rejection."""
+    return (
+        not term.case_sensitive
+        and term.literal_candidate is not None
+        and term.pattern.isascii()
+        and not any(
+            character in _LOGICAL_JSON_STRING_INELIGIBLE_CHARACTERS
+            or _is_json_control_character(character)
+            for character in term.pattern
+        )
+        and not any(token in term.pattern for token in _RENDER_DEPENDENT_SEARCH_TOKENS)
+        and flags.message_selection == MessageSelection.ALL
+        and not flags.show_thinking
+        and not flags.show_tools
+        and not flags.show_agents
+        and not flags.show_custom
+        and not flags.show_branches
+        and not flags.show_plans
+        and not flags.shorten
+        and not flags.shorten_progressive
+        and not flags.shorten_thinking
     )
 
 
@@ -913,6 +970,23 @@ def _ascii_literal_needle(term: SearchTerm) -> bytes | None:
     if not term.pattern.isascii():
         return None
     return term.literal_candidate.encode("ascii")
+
+
+def _file_contains_ascii_json_strings(
+    path: Path,
+    needle: bytes,
+    *,
+    evidence_groups: tuple[tuple[bytes, ...], ...] = (),
+) -> bool:
+    """Search decoded JSON string content for a case-insensitive ASCII literal."""
+    try:
+        return native_file_contains_ascii_json_strings(
+            os.fsencode(path),
+            needle,
+            evidence_groups,
+        )
+    except OSError:
+        return True
 
 
 def _file_contains_ascii(

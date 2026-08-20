@@ -16,3 +16,4 @@ extension-module = ["pyo3/abi3-py314", "pyo3/extension-module"]
 [dependencies]
 libc = "0.2"
 pyo3 = "0.27.2"
+regex = "1"

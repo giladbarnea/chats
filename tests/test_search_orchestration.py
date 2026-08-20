@@ -1326,6 +1326,44 @@ def test_case_insensitive_native_rejection_requires_default_unshortened_visibili
     )
 
 
+@pytest.mark.parametrize(
+    "control_character",
+    [chr(codepoint) for codepoint in range(0x20)],
+    ids=lambda character: f"U+{ord(character):04X}",
+)
+def test_control_character_literals_bypass_native_candidate_rejection(
+    tmp_path: Path,
+    monkeypatch,
+    control_character: str,
+) -> None:
+    """Every JSON control character stays on the full semantic fallback path."""
+    path = tmp_path / "missing.jsonl"
+    query = search_commands.parse_search_query(f"alpha{control_character}beta")
+
+    def fail_native_scan(*_args, **_kwargs) -> bool:
+        raise AssertionError(
+            "Expected a control-character query to bypass both native gates."
+        )
+
+    monkeypatch.setattr(
+        search_commands,
+        "_file_contains_ascii_json_strings",
+        fail_native_scan,
+    )
+    monkeypatch.setattr(search_commands, "_file_contains_ascii", fail_native_scan)
+
+    actual = search_commands._search_path_candidate_matches(
+        path,
+        query,
+        ConversationFlags(color="never", paging=False),
+    )
+
+    assert actual is True, (
+        "Expected every U+0000 through U+001F query to require semantic "
+        f"confirmation. Got: {actual=!r}, U+{ord(control_character):04X}"
+    )
+
+
 def test_ascii_literal_search_preserves_python_dotless_i_regex_match(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
@@ -1350,6 +1388,176 @@ def test_ascii_literal_search_preserves_python_dotless_i_regex_match(
     )
     assert captured.out.strip() == path.stem, (
         f"Expected the dotless-i session id. Got stdout:\n{captured.out}"
+    )
+
+
+def test_native_candidate_read_errors_keep_semantic_error_text(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """A native read failure must defer to the existing Python read error path."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    directory_path = (
+        home / ".claude" / "projects" / "proj" / "directory-session.jsonl"
+    )
+    directory_path.mkdir(parents=True)
+
+    def run_search(pattern: str) -> tuple[int, str, str]:
+        with pytest.raises(SystemExit) as exc_info:
+            commands.cmd_search(
+                pattern,
+                ConversationFlags(color="never", paging=False),
+                output_mode=SearchOutputMode.ONLY_ID,
+                emit_metadata=False,
+            )
+        captured = capsys.readouterr()
+        return exc_info.value.code, captured.out, captured.err
+
+    optimized = run_search("directory-error-probe")
+    semantic_reference = run_search("directory-error-prob[e]")
+
+    assert optimized == semantic_reference, (
+        "Expected native candidate read uncertainty to preserve the full semantic "
+        f"stdout, exit status, and stderr. Got {optimized=!r}, {semantic_reference=!r}"
+    )
+    assert optimized[0] == 1 and optimized[1] == "", (
+        "Expected the unreadable-only search to remain a no-hit exit. "
+        f"Got: {optimized=!r}"
+    )
+    assert "[Errno 21] Is a directory:" in optimized[2], (
+        "Expected Python Path.read_text to remain the public error authority. "
+        f"Got stderr:\n{optimized[2]}"
+    )
+
+
+def test_slash_literal_gate_decodes_json_escapes_without_deferring_unrelated_unicode_escapes(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """An escaped slash can match while unrelated Unicode escapes reject cheaply."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    matching_path = home / ".claude" / "projects" / "proj" / "matching.jsonl"
+    unrelated_path = home / ".claude" / "projects" / "proj" / "unrelated.jsonl"
+    matching_path.parent.mkdir(parents=True, exist_ok=True)
+    matching_path.write_text(
+        '{"type":"user","timestamp":"2025-01-01T00:00:00Z",'
+        '"cwd":"/tmp/search-orchestration","message":{"role":"user",'
+        '"content":"CLIENT_ID\\/CARD"}}\n',
+        encoding="utf-8",
+    )
+    unrelated_path.write_text(
+        '{"type":"user","timestamp":"2025-01-01T00:00:00Z",'
+        '"cwd":"/tmp/search-orchestration","message":{"role":"user",'
+        '"content":"unrelated \\u263A text"}}\n',
+        encoding="utf-8",
+    )
+
+    real_read_text = Path.read_text
+
+    def fail_if_unrelated_text_is_read(path: Path, *args, **kwargs):
+        if path == unrelated_path:
+            raise AssertionError(
+                "Expected local JSON escape matching to reject an unrelated "
+                "Unicode escape without semantic parsing."
+            )
+        return real_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", fail_if_unrelated_text_is_read)
+
+    with pytest.raises(SystemExit) as exc_info:
+        commands.cmd_search(
+            "CLIENT_ID/CARD",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 0, (
+        "Expected the escaped-slash session to remain a semantic hit. "
+        f"Got exit {exc_info.value.code}, stdout:\n{captured.out}stderr:\n{captured.err}"
+    )
+    assert captured.out.strip() == matching_path.stem, (
+        "Expected the logical JSON string match to preserve the visible session ID. "
+        f"Got stdout:\n{captured.out}"
+    )
+    assert "Error processing conversation file" not in captured.err, (
+        "Expected the unrelated Unicode escape to be a clean candidate rejection. "
+        f"Got stderr:\n{captured.err}"
+    )
+
+
+def test_logical_gate_ids_match_full_semantic_scan_across_providers(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """Candidate rejection must not change cross-provider IDs or newest-first order."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    claude_path = home / ".claude" / "projects" / "proj" / "claude.jsonl"
+    pi_path = home / ".pi" / "agent" / "sessions" / "proj" / "pi.jsonl"
+    codex_path = home / ".codex" / "sessions" / "2026" / "codex.jsonl"
+    hidden_path = home / ".claude" / "projects" / "proj" / "hidden.jsonl"
+    claude_path.parent.mkdir(parents=True, exist_ok=True)
+    claude_path.write_text(
+        '{"type":"user","message":{"role":"user",'
+        '"content":"CLIENT_ID\\/CARD"}}\n',
+        encoding="utf-8",
+    )
+    _write_pi_visible_session(pi_path, "pi-logical-id", "client_id/card")
+    codex_path.parent.mkdir(parents=True, exist_ok=True)
+    codex_path.write_text(
+        '{"type":"session_meta","payload":{"id":"codex-logical-id",'
+        '"cwd":"/tmp/codex"}}\n'
+        '{"type":"response_item","payload":{"type":"message",'
+        '"role":"assistant","content":[{"type":"output_text",'
+        '"text":"CL\\u0049ENT_ID\\u002fCARD"}]}}\n',
+        encoding="utf-8",
+    )
+    _write_hidden_thinking_session(hidden_path, "CLIENT_ID/CARD")
+    for modified_time, path in enumerate(
+        (hidden_path, claude_path, pi_path, codex_path),
+        start=1_700_000_000,
+    ):
+        os.utime(path, (modified_time, modified_time))
+
+    def search_ids() -> list[str]:
+        with pytest.raises(SystemExit) as exc_info:
+            commands.cmd_search(
+                "CLIENT_ID/CARD",
+                ConversationFlags(color="never", paging=False),
+                output_mode=SearchOutputMode.ONLY_ID,
+                emit_metadata=False,
+            )
+        captured = capsys.readouterr()
+        assert exc_info.value.code == 0, (
+            "Expected the parity corpus to contain visible matches. "
+            f"Got exit {exc_info.value.code}, stdout:\n{captured.out}stderr:\n{captured.err}"
+        )
+        return captured.out.splitlines()
+
+    optimized_ids = search_ids()
+    monkeypatch.setattr(
+        search_commands,
+        "_can_use_logical_json_string_gate",
+        lambda *_args, **_kwargs: False,
+    )
+    semantic_ids = search_ids()
+
+    assert optimized_ids == semantic_ids == [
+        "codex-logical-id",
+        "pi-logical-id",
+        "claude",
+    ], (
+        "Expected the logical gate to preserve full semantic IDs and order while "
+        f"excluding the hidden-only session. Got {optimized_ids=!r}, {semantic_ids=!r}"
     )
 
 
@@ -1482,6 +1690,50 @@ def test_default_pi_joined_agent_evidence_reaches_semantic_confirmation(
     )
     assert captured.out.strip() == "pi-agent-id", (
         f"Expected the joined Pi agent session id. Got stdout:\n{captured.out}"
+    )
+
+
+def test_escaped_joined_pi_evidence_matches_full_semantic_search(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """JSON escapes in the Pi marker must not hide generated visible content."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    path = home / ".pi" / "agent" / "sessions" / "project" / "escaped-marker.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        json.dumps({
+            "type": "session",
+            "version": 3,
+            "id": "escaped-marker-id",
+            "cwd": "/tmp/pi",
+        })
+        + "\n"
+        + '{"type":"custom_message","customType":"pi-user-\\u0061gents",'
+        '"display":false,"content":"<user_agent_error></user_agent_error>",'
+        '"details":{"mainContextState":"joined","ok":false,'
+        '"task":"inspect the failure","error":"native failure text"}}\n',
+        encoding="utf-8",
+    )
+
+    def search_id(pattern: str) -> tuple[int, str]:
+        with pytest.raises(SystemExit) as exc_info:
+            commands.cmd_search(
+                pattern,
+                ConversationFlags(color="never", paging=False),
+                output_mode=SearchOutputMode.ONLY_ID,
+                emit_metadata=False,
+            )
+        return exc_info.value.code, capsys.readouterr().out.strip()
+
+    optimized = search_id("Bash")
+    semantic_reference = search_id("B[a]sh")
+
+    assert optimized == semantic_reference == (0, "escaped-marker-id"), (
+        "Expected escaped joined-Pi evidence to preserve generated-content parity. "
+        f"Got {optimized=!r}, {semantic_reference=!r}"
     )
 
 

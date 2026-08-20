@@ -4,11 +4,138 @@
 from __future__ import annotations
 
 import json
+import os
+from contextlib import redirect_stdout
 from pathlib import Path
 
 import pytest
 
 from chats import ConversationFlags, SearchOutputMode, cmd_search
+
+
+class _FlushRecordingStream:
+    def __init__(self) -> None:
+        self.content = ""
+        self.flush_snapshots: list[str] = []
+
+    def write(self, content: str) -> int:
+        self.content += content
+        return len(content)
+
+    def flush(self) -> None:
+        self.flush_snapshots.append(self.content)
+
+
+def test_cmd_search_only_id_flushes_each_id_as_it_streams(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """Each matching ID must become visible before the remaining scan completes."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    older_path = home / ".codex" / "sessions" / "older.jsonl"
+    newer_path = home / ".codex" / "sessions" / "newer.jsonl"
+    for path, session_id in (
+        (older_path, "older-id"),
+        (newer_path, "newer-id"),
+    ):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"type": "session_meta", "payload": {"id": session_id}})
+            + "\n"
+            + json.dumps({
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "flush-streamed-id"}
+                    ],
+                },
+            })
+            + "\n",
+            encoding="utf-8",
+        )
+    os.utime(older_path, (1_700_000_000, 1_700_000_000))
+    os.utime(newer_path, (1_700_001_000, 1_700_001_000))
+
+    stream = _FlushRecordingStream()
+    with redirect_stdout(stream), pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            "flush-streamed-id",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    assert exc_info.value.code == 0, (
+        "Expected the streamed ID search to succeed. "
+        f"Got exit code: {exc_info.value.code}, stdout: {stream.content!r}"
+    )
+    assert stream.content == "newer-id\nolder-id\n", (
+        "Expected flushing to preserve the exact newest-first stdout bytes. "
+        f"Got: {stream.content!r}"
+    )
+    assert stream.flush_snapshots == [
+        "newer-id\n",
+        "newer-id\nolder-id\n",
+    ], (
+        "Expected stdout to flush after each ID, not only after the full scan. "
+        f"Got flush snapshots: {stream.flush_snapshots!r}"
+    )
+
+
+def test_dot_projection_flushes_each_id_as_it_streams(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """The narrow dot projection must use the same flushed ID output contract."""
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+
+    session_path = home / ".pi" / "agent" / "sessions" / "project" / "pi.jsonl"
+    session_path.parent.mkdir(parents=True, exist_ok=True)
+    session_path.write_text(
+        json.dumps({
+            "type": "session",
+            "version": 3,
+            "id": "pi-projection-id",
+            "cwd": "/tmp/pi",
+        })
+        + "\n"
+        + json.dumps({
+            "type": "message",
+            "message": {
+                "role": "user",
+                "content": [{"type": "text", "text": "visible projection text"}],
+            },
+        })
+        + "\n",
+        encoding="utf-8",
+    )
+
+    stream = _FlushRecordingStream()
+    with redirect_stdout(stream), pytest.raises(SystemExit) as exc_info:
+        cmd_search(
+            ".",
+            ConversationFlags(color="never", paging=False),
+            output_mode=SearchOutputMode.ONLY_ID,
+            emit_metadata=False,
+        )
+
+    assert exc_info.value.code == 0, (
+        "Expected the dot projection to find the visible Pi session. "
+        f"Got exit code: {exc_info.value.code}, stdout: {stream.content!r}"
+    )
+    assert stream.content == "pi-projection-id\n", (
+        "Expected dot projection flushing to preserve exact stdout bytes. "
+        f"Got: {stream.content!r}"
+    )
+    assert stream.flush_snapshots == ["pi-projection-id\n"], (
+        "Expected the dot projection to flush its ID immediately. "
+        f"Got flush snapshots: {stream.flush_snapshots!r}"
+    )
 
 
 def test_cmd_search_only_id_mode_prints_plain_session_id(

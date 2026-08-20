@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from chats.commands.search import _file_contains_ascii
+from chats.commands.search import (
+    _file_contains_ascii,
+    _file_contains_ascii_json_strings,
+)
 
 
 @pytest.mark.parametrize(
@@ -90,6 +93,143 @@ def test_native_ascii_candidate_scan_contract(
         "Expected the native ASCII candidate scan to preserve the locked contract. "
         f"Got: {actual=!r}, {expected=!r}, {case_sensitive=!r}, "
         f"{needle=!r}, {evidence_groups=!r}"
+    )
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        pytest.param(b'{"content":"CLIENT_ID/CARD"}\n', id="raw-solidus"),
+        pytest.param(b'{"content":"CLIENT_ID\\/CARD"}\n', id="short-escaped-solidus"),
+        pytest.param(b'{"content":"CLIENT_ID\\u002fCARD"}\n', id="unicode-escaped-solidus"),
+        pytest.param(
+            b'{"content":"CL\\u0049ENT_ID\\u002fCA\\u0052D"}\n',
+            id="mixed-query-character-escapes",
+        ),
+    ],
+)
+def test_logical_json_string_scan_matches_raw_and_escaped_characters(
+    tmp_path: Path,
+    content: bytes,
+) -> None:
+    path = tmp_path / "logical-match.jsonl"
+    path.write_bytes(content)
+
+    actual = _file_contains_ascii_json_strings(path, b"client_id/card")
+
+    assert actual is True, (
+        "Expected raw and escaped query characters to form one logical JSON "
+        f"string match. Got: {actual=!r}, {content=!r}"
+    )
+
+
+def test_logical_json_escape_may_cross_the_one_mibibyte_read_boundary(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "split-logical-escape.jsonl"
+    prefix = b'{"content":"'
+    padding = b"x" * (1024 * 1024 - len(prefix) - 1)
+    path.write_bytes(prefix + padding + b"\\u0043LIENT_ID/CARD\"}\n")
+
+    actual = _file_contains_ascii_json_strings(path, b"client_id/card")
+
+    assert actual is True, (
+        "Expected an escape split after its backslash at the native read boundary "
+        f"to remain one logical match. Got: {actual=!r}"
+    )
+
+
+def test_valid_surrogate_pair_may_cross_the_one_mibibyte_read_boundary(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "split-surrogate-pair.jsonl"
+    prefix = b'{"content":"'
+    padding = b"x" * (1024 * 1024 - len(prefix) - len(b"\\ud83d"))
+    path.write_bytes(prefix + padding + b"\\ud83d\\ude00\"}\n")
+
+    actual = _file_contains_ascii_json_strings(path, b"client_id/card")
+
+    assert actual is False, (
+        "Expected a valid surrogate pair split between native reads to remain "
+        f"safe and unrelated. Got: {actual=!r}"
+    )
+
+
+def test_logical_match_does_not_cross_json_string_boundaries(tmp_path: Path) -> None:
+    path = tmp_path / "separate-strings.jsonl"
+    path.write_text(
+        '{"first":"CLIENT_ID/","second":"CARD"}\n',
+        encoding="utf-8",
+    )
+
+    actual = _file_contains_ascii_json_strings(path, b"client_id/card")
+
+    assert actual is False, (
+        "Expected the logical matcher to reset between JSON strings. "
+        f"Got: {actual=!r}"
+    )
+
+
+def test_valid_surrogate_pair_does_not_defer_an_unrelated_file(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "valid-surrogate-pair.jsonl"
+    path.write_text('{"content":"unrelated \\ud83d\\ude00 text"}\n', encoding="utf-8")
+
+    actual = _file_contains_ascii_json_strings(path, b"client_id/card")
+
+    assert actual is False, (
+        "Expected a valid surrogate pair to decode as one safe non-ASCII scalar, "
+        f"not force semantic confirmation. Got: {actual=!r}"
+    )
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        pytest.param(b'{"content":"bad \\x escape"}\n', id="malformed-escape"),
+        pytest.param(b'{"content":"bad \\ud83d scalar"}\n', id="unpaired-high-surrogate"),
+        pytest.param(b'{"content":"bad \\ude00 scalar"}\n', id="unpaired-low-surrogate"),
+        pytest.param(
+            b'{"content":"invalid ' + b"\xff" + b' bytes"}\n',
+            id="invalid-utf8",
+        ),
+    ],
+)
+def test_logical_json_uncertainty_defers_to_semantic_confirmation(
+    tmp_path: Path,
+    content: bytes,
+) -> None:
+    path = tmp_path / "uncertain.jsonl"
+    path.write_bytes(content)
+
+    actual = _file_contains_ascii_json_strings(path, b"client_id/card")
+
+    assert actual is True, (
+        "Expected malformed JSON-string encoding or invalid UTF-8 to defer safely. "
+        f"Got: {actual=!r}, {content=!r}"
+    )
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        pytest.param('{"content":"unrelated K text"}\n'.encode(), id="raw"),
+        pytest.param(b'{"content":"unrelated \\u212A text"}\n', id="unicode-escape"),
+    ],
+)
+def test_logical_json_scan_defers_python_case_insensitive_risk_scalars(
+    tmp_path: Path,
+    content: bytes,
+) -> None:
+    path = tmp_path / "unicode-risk.jsonl"
+    path.write_bytes(content)
+
+    actual = _file_contains_ascii_json_strings(path, b"absent-ascii-needle")
+
+    assert actual is True, (
+        "Expected raw and escaped Python 3.14 case-insensitive risk scalars "
+        f"to defer safely. Got: {actual=!r}, {content=!r}"
     )
 
 
@@ -215,6 +355,19 @@ def test_empty_needle_does_not_open_the_path(tmp_path: Path) -> None:
     assert actual is True, (
         "Expected an empty needle to pass without opening a missing path. "
         f"Got: {actual=!r}"
+    )
+
+
+def test_logical_json_candidate_file_errors_defer_to_semantic_reads(
+    tmp_path: Path,
+) -> None:
+    missing_path = tmp_path / "missing.jsonl"
+
+    actual = _file_contains_ascii_json_strings(missing_path, b"needle")
+
+    assert actual is True, (
+        "Expected native read errors to remain candidates so Path.read_text keeps "
+        f"the public error contract. Got: {actual=!r}"
     )
 
 
