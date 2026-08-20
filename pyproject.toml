@@ -15,16 +15,25 @@ dependencies = [
 ]
 
 [project.scripts]
-ch = "chats.cli:main"
+ch-legacy = "chats.cli:main"
 
 [build-system]
-requires = ["maturin>=1.14,<2"]
-build-backend = "maturin"
+requires = ["setuptools>=77", "setuptools-rust>=1.13"]
+build-backend = "setuptools.build_meta"
 
-[tool.maturin]
-module-name = "chats._native"
-python-source = "src"
+[tool.setuptools.packages]
+find = { where = ["src"] }
+
+[[tool.setuptools-rust.ext-modules]]
+target = "chats._native"
 features = ["extension-module"]
+py-limited-api = true
+debug = false
+
+[[tool.setuptools-rust.bins]]
+target = "ch"
+args = ["--no-default-features"]
+debug = false
 
 [dependency-groups]
 dev = [

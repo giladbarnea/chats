@@ -10,11 +10,27 @@ name = "_native"
 path = "rust/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "ch"
+path = "rust/main.rs"
+
 [features]
+default = ["python-bindings"]
+python-bindings = ["pyo3"]
 extension-module = ["pyo3/abi3-py314", "pyo3/extension-module"]
 
 [dependencies]
+chrono = "0.4"
+html-escape = "0.2"
+indexmap = "2"
 libc = "0.2"
-pyo3 = "0.27.2"
+num-bigint = "0.4"
+pyo3 = { version = "0.27.2", optional = true }
 rayon = "1"
 regex = "1"
+ryu = "1"
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+unicode-general-category = "1"
+
+[build-dependencies]
+pyo3-build-config = "0.27.2"

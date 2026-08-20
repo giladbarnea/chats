@@ -12,10 +12,11 @@ last_updated: 2026/08/20
 - `SessionScan` (`session_scan.py`): the one-pass per-file scan object used by search. It decodes one session once into `cwd`, summaries, the current latest custom title, and already-visible messages.
 - `SearchHit` (`commands/search.py`): the unit of successful search work. It carries the matched conversation's lazily loaded metadata plus the already-scanned messages and match facets needed for display.
 - `SearchQuery` (`search_query.py`): the parsed search pattern — a single `SearchTerm` or a boolean `AndQuery`/`OrQuery`/`NotQuery` tree over terms. Owns tokenizing, uppercase `AND`/`OR`/`NOT` grammar, and per-term regex/literal compilation under the selected case-sensitivity mode.
-- Native hot-path helpers (`rust/lib.rs`, exposed as `chats._native`): Rust owns unified native session inventory, canonical provider-path containment, inventory mtimes, linear backward JSONL reads for last-timestamp probes, bounded forward resolution-facet scans, and raw ASCII search candidate file scans. Python keeps the public `Path` and `SessionPool` interfaces, external first-entry provider detection, JSON timestamp and resolution-facet semantics, datetime conversion, timestamp fallback, search query rules, and semantic search confirmation. PyO3 targets the Python 3.14 stable ABI. The global launcher uses the editable install that the user established with `uv tool install -e .`.
+- Native launcher and conversion (`rust/main.rs`, `rust/model.rs`, `rust/codecs.rs`): the package-owned `ch` Mach-O executable routes exact `ch parse` conversion inside one Rust process. The reusable Rust model owns strict structured JSON, canonical XML, tool schemas, transport escaping, exact errors, and both projections. Every other public shape replaces the launcher process with the private package-owned `ch-legacy` Python entry.
+- Native hot-path helpers (`rust/python_extension.rs`, exposed as `chats._native`): Rust owns unified native session inventory, canonical provider-path containment, inventory mtimes, linear backward JSONL reads for last-timestamp probes, bounded forward resolution-facet scans, and raw ASCII search candidate file scans. Python keeps the public `Path` and `SessionPool` interfaces, external first-entry provider detection, JSON timestamp and resolution-facet semantics, datetime conversion, timestamp fallback, search query rules, and semantic search confirmation. PyO3 targets the Python 3.14 stable ABI. `setuptools-rust` installs both the native launcher and the extension; optional PyO3 features keep Python outside the launcher.
 - `JsonlSessionAdapter` (`parsing.py`): the provider-owned parser and native-to-canonical normalization boundary. Adapter choice uses the Rust path classifier first, then exact Codex and Pi first-entry signatures. Known tool envelopes, names, input keys, and result blocks normalize here before the shared model and renderers run.
 - `ShortSpec` / `ShortPolicy` (`shortening.py`): the shared global and tool-local short-value parser plus its resolved fixed or progressive policy. [SHORT_SPEC.md](SHORT_SPEC.md) owns the behavior contract.
-- Bidirectional parse transport (`ch parse`, `commands/parse.py`, `xmlmd.py`, `xml_transport.py`): a provider-free boundary that reconstructs `Message` objects from structured JSON or canonical XML-tagged Markdown, then feeds the opposite existing formatter without session discovery or provider parsing.
+- Bidirectional parse transport (`ch parse`, `rust/model.rs`, `rust/codecs.rs`): a provider-free native boundary that reconstructs reusable Rust `Message` objects from structured JSON or canonical XML-tagged Markdown, then renders the opposite representation without Python, session discovery, or provider parsing.
 
 ## Architecture Diagram (Space)
 
@@ -34,14 +35,18 @@ last_updated: 2026/08/20
 │  Chats (System Boundary)          │                                         │
 │                                   ▼                                         │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                      CLI ROUTER (cli.py:main)                        │   │
-│  │   argparse, visibility normalization, ConversationFlags builder      │   │
-│  └──────────────────────────────────────┬───────────────────────────────┘   │
-│                                         │                                   │
-│  ┌──────────────────────────────────────▼────────────────────────────────┐  │
+│  │                  NATIVE LAUNCHER (rust/main.rs)                      │   │
+│  │  `parse` → Rust model/codecs   other shapes → exec `ch-legacy`       │   │
+│  └──────────────────────┬────────────────────────┬──────────────────────┘   │
+│                         │                        │                          │
+│  ┌──────────────────────▼────────────┐  ┌────────▼──────────────────────┐  │
+│  │ NATIVE CONVERSION                │  │ LEGACY CLI ROUTER (cli.py)    │  │
+│  │ rust/model.rs + rust/codecs.rs   │  │ argparse + command flags      │  │
+│  └───────────────────────────────────┘  └───────────────┬───────────────┘  │
+│                                                        │                  │
+│  ┌─────────────────────────────────────────────────────▼────────────────┐  │
 │  │                  COMMAND ORCHESTRATION (commands/)                    │  │
-│  │ cmd_parse  cmd_parse_json  cmd_search  cmd_name  cmd_rm              │  │
-│  │ cmd_catalog                                                          │  │
+│  │ cmd_parse  cmd_search  cmd_name  cmd_rm  cmd_catalog                 │  │
 │  └──────────────┬───────────────────────────────┬────────────────────────┘  │
 │                 │                               │                           │
 │  ┌──────────────▼─────────────┐   ┌─────────────▼────────────────────────┐  │
@@ -54,17 +59,17 @@ last_updated: 2026/08/20
 │  └──────────────┬─────────────┘   └─────────────┬────────────────────────┘  │
 │                 │                               │                           │
 │  ┌──────────────▼────────────────────────────────▼────────────────────────┐  │
-│  │                        PARSING LAYER (parsing.py)                      │  │
+│  │                 LEGACY SESSION PARSING (parsing.py)                   │  │
 │  │  detect_format  decode_jsonl_entries  parse_jsonl_entries             │  │
 │  │  extract_*_from_entries  parse_raw_cli_transcript                     │  │
 │  │  JSONL session adapters: Claude / PI / Codex                           │  │
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
-│  │       MODEL + TRANSPORT (model.py, formatting.py, xmlmd.py,          │  │
-│  │                          xml_transport.py)                            │  │
-│  │  Message / structured JSON / canonical XML / reversible encoding     │  │
-│  │  (provider parse and both transport directions converge here)         │  │
+│  │       LEGACY MODEL + OUTPUT (model.py, formatting.py, tools.py,      │  │
+│  │                              xml_transport.py)                        │  │
+│  │  Provider messages / session output / search semantic rendering      │  │
+│  │  (uncompleted default session parse and search remain here)           │  │
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
 │  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
@@ -94,21 +99,23 @@ last_updated: 2026/08/20
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch <input> [slice ...] [flags]`     ──► cli.py:main()
+├───►  User                     Runs `ch <input> [slice ...] [flags]`     ──► native `ch`
 │
-├───►  main()                   Detects no subcommand keyword              ──► argparse (default parse)
+├───►  rust/main.rs             Does not match exact `parse`               ──► exec sibling `ch-legacy`
+│
+├───►  cli.py:main()            Detects no subcommand keyword              ──► argparse (default parse)
 │      argparse                 Parses flags; handles edge cases:          ──► args namespace
 │                               negative-index swap, tool/slice
 │                               disambiguation, provider-scoped
 │                               recent indices, nargs='?' fixups
 │
-├───►  main()                   _normalize_role_visibility_args(args)      ──► Resolves --only-user,
+├───►  cli.py:main()            _normalize_role_visibility_args(args)      ──► Resolves --only-user,
 │                               Warns on contradictions                        --only-assistant, --no-*
 │
-├───►  main()                   _build_parse_flags(args)                   ──► ConversationFlags
+├───►  cli.py:main()            _build_parse_flags(args)                   ──► ConversationFlags
 │                               Parses global/tool short values            ──► ShortSpec / ShortPolicy
 │
-├───►  main()                   cmd_parse(flags, input, slice, out, fmt,   ──► commands/
+├───►  cli.py:main()            cmd_parse(flags, input, slice, out, fmt,   ──► commands/
 │                               only_metadata, only_id)
 │
 ├───►  cmd_parse                _resolve_input_content(input_arg)          ──► commands/resolve.py
@@ -174,25 +181,24 @@ TIME   ACTOR                    ACTION                                         T
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch parse [-f xml|json] [file]`        ──► cli.py:main()
+├───►  User                     Runs `ch parse [-f xml|json] [file]`        ──► native `ch`
 │                               (file omitted → stdin)
 │
-├───►  main()                   Detects explicit `parse` subcommand        ──► argparse
-│      main()                   cmd_parse_json(input_file, output_format)  ──► commands/parse.py
+├───►  rust/main.rs             Parses the exact public argument grammar   ──► ParseArguments
+│      rust/main.rs             Reads and UTF-8 decodes file or stdin      ──► normalized text
 │
-├───►  cmd_parse_json           [xml output] json.loads +                  ──► list[Message]
-│                               messages_from_json_data()
+├───►  rust/codecs.rs           [xml output] strict JSON decode            ──► Rust list<Message>
+│                               + rust/model.rs schema reconstruction
 │                               OR
-│      cmd_parse_json           [json output] messages_from_xmlmd()        ──► list[Message]
-│                               Canonical outer/inner blocks and tool
-│                               schemas are validated and reconstructed
+│      rust/codecs.rs           [json output] canonical XML decode         ──► Rust list<Message>
+│                               Outer/inner blocks, transport encoding,
+│                               and tool schemas validate here
 │
-├───►  cmd_parse_json           _build_tool_id_map(messages)               ──► {tool_id: tool_name}
-│      cmd_parse_json           format_to_xml() or format_to_json()        ──► opposite representation
+├───►  rust/codecs.rs           format_xml() or messages_to_json()         ──► opposite representation
 │
-└───►  cmd_parse_json           Write conversation body only               ──► stdout
+└───►  rust/main.rs             Writes one body and final newline          ──► stdout
 
-This route does not enter `SessionPool`, provider adapters, agent discovery, visibility filtering, shortening, or metadata/frontmatter output. XML-to-JSON canonicalizes only what XML represents: minute-precision dates, shortened IDs, string attributes, schema-visible tool inputs, and rendered-string tool outputs. Both compositions are byte-stable after that canonicalization.
+This route stays in one Rust process. It does not load Python or PyO3, and it does not enter `SessionPool`, provider adapters, agent discovery, visibility filtering, shortening, or metadata output. XML-to-JSON canonicalizes only what XML represents: minute-precision dates, shortened IDs, string attributes, schema-visible tool inputs, and rendered-string tool outputs. Both compositions are byte-stable after that canonicalization.
 ```
 
 ### Feature 2: Search (`ch search <pattern>`)
@@ -200,7 +206,8 @@ This route does not enter `SessionPool`, provider adapters, agent discovery, vis
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch search <pattern> [flags]`        ──► cli.py:main()
+├───►  User                     Runs `ch search <pattern> [flags]`        ──► native `ch`
+│      rust/main.rs             Replaces itself with `ch-legacy`          ──► cli.py:main()
 │
 ├───►  main()                   Detects sys.argv[1] == "search"            ──► argparse (search parser)
 │      argparse                 Parses: pattern, -l, -ll, -d, -ma,        ──► args namespace
@@ -267,8 +274,9 @@ TIME   ACTOR                    ACTION                                         T
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch name <id> <new_name>`            ──► cli.py:main()
+├───►  User                     Runs `ch name <id> <new_name>`            ──► native `ch`
 │                               or `ch name <id> --auto [-n]`
+│      rust/main.rs             Replaces itself with `ch-legacy`          ──► cli.py:main()
 │
 ├───►  main()                   Detects sys.argv[1] == "name"              ──► argparse (name parser)
 │
@@ -304,7 +312,8 @@ TIME   ACTOR                    ACTION                                         T
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch rm <session> [--dry-run]`        ──► cli.py:main()
+├───►  User                     Runs `ch rm <session> [--dry-run]`        ──► native `ch`
+│      rust/main.rs             Replaces itself with `ch-legacy`          ──► cli.py:main()
 │
 ├───►  main()                   Detects sys.argv[1] == "rm"                ──► argparse (rm parser)
 │
@@ -350,8 +359,9 @@ TIME   ACTOR                    ACTION                                         T
 ```
 TIME   ACTOR                    ACTION                                         TARGET
 │
-├───►  User                     Runs `ch catalog <session_ids|greppable>` ──► cli.py:main()
+├───►  User                     Runs `ch catalog <session_ids|greppable>` ──► native `ch`
 │                               (may also pipe content via stdin)
+│      rust/main.rs             Replaces itself with `ch-legacy`          ──► cli.py:main()
 │
 ├───►  main()                   Detects sys.argv[1] == "catalog"           ──► cmd_catalog(argv[2:])
 │      cmd_catalog              catalog_sessions(args)                     ──► catalog/__init__.py
@@ -459,13 +469,19 @@ Summary prefix ─────────────► │ extract_summaries_
                                          │
                           catalog path ──┴────► cmd_parse capture -> pi CLI
 
-Structured ch JSON ───────────────────► messages_from_json_data()
+Structured ch JSON ───────────────────► rust/codecs.rs::json_to_xml()
                                                 │
-                                                ├── strict schema validation
-                                                ├── tool-id map
-                                                └── format_to_xml() ──► stdout body
+                                                ├── strict JSON + schema validation
+                                                ├── reusable Rust Message/Tool model
+                                                └── canonical XML ──► stdout body
 
-The structured JSON branch bypasses inventory, resolution, format detection, provider adapters, and session metadata.
+Canonical XML ─────────────────────────► rust/codecs.rs::xml_to_json()
+                                                │
+                                                ├── outer/inner block validation
+                                                ├── reversible transport decoding
+                                                └── canonical JSON ──► stdout body
+
+Both native conversion branches bypass Python, inventory, resolution, provider adapters, and session metadata.
 ```
 
 ---
@@ -548,13 +564,13 @@ The structured JSON branch bypasses inventory, resolution, format detection, pro
 
 ```
                          ┌────────────────────┐      ┌────────────────────┐
-  JSON or XML ──────────►│ DECODE & VALIDATE  │─────►│ RECONSTRUCT        │
-                         │ selected grammar /  │      │ Message objects    │
+  JSON or XML ──────────►│ RUST DECODE &      │─────►│ RECONSTRUCT        │
+                         │ VALIDATE grammar /  │      │ Rust Message model │
                          │ blocks / tools      │      └─────────┬──────────┘
                          └─────────┬──────────┘                │
                                    │ malformed                  ▼
                                    └──────────► clear error   ┌────────────────────┐
-                                                           │ MAP TOOLS & FORMAT │
+                                                           │ RUST FORMAT       │
                                                            │ opposite transport │
                                                            └─────────┬──────────┘
                                                                      ▼
@@ -683,21 +699,24 @@ The structured JSON branch bypasses inventory, resolution, format detection, pro
 ## Call Graph (Logic)
 
 ```
-cli.py:main()
+rust/main.rs
 │
-├── [subcommand dispatch]
-│   ├── "parse"  → argparse → cmd_parse_json()
-│   ├── "search" → argparse → cmd_search()
-│   ├── "name"   → argparse → cmd_name()
-│   ├── "rm"     → argparse → cmd_rm()
-│   ├── "catalog"→ cmd_catalog(argv[2:])
-│   └── default  → argparse → cmd_parse()
+├── [exact native conversion]
+│   └── `parse` → native argument parser → rust/codecs.rs
+│       JSON → validate → rust/model.rs → format_xml()
+│       OR XML → validate → rust/model.rs → messages_to_json()
+│       → stdout body (one Rust process; no Python/PyO3)
 │
-├── [bidirectional parse transport]
-│   └── cmd_parse_json(input_file, output_format)
-│       JSON → messages_from_json_data() → format_to_xml()
-│       OR XML → messages_from_xmlmd() → format_to_json()
-│       → stdout body (no resolution/provider/metadata path)
+└── [temporary legacy route]
+    └── every other shape → exec sibling package entry `ch-legacy`
+        └── cli.py:main()
+            ├── "search" → argparse → cmd_search()
+            ├── "name"   → argparse → cmd_name()
+            ├── "rm"     → argparse → cmd_rm()
+            ├── "catalog"→ cmd_catalog(argv[2:])
+            └── default   → argparse → cmd_parse()
+
+cli.py:main() after native legacy routing
 │
 ├── [default parse mode]
 │   ├── Build ConversationFlags (visibility, thinking, tools, agents, plans)
@@ -743,6 +762,15 @@ cli.py:main()
 ## Module Dependency Map
 
 ```
+rust/main.rs
+├── rust/model.rs
+├── rust/codecs.rs
+└── package sibling `ch-legacy` → cli.py
+
+rust/lib.rs
+├── rust/model.rs + rust/codecs.rs
+└── [PyO3 feature only] rust/python_extension.rs → chats._native
+
 cli.py
 ├── commands/
 │   ├── parse.py      → model, parsing, formatting, console, ordering, utils
@@ -755,8 +783,7 @@ cli.py
 ├── formatting.py     → model, parsing, console, tools, utils, xml_transport
 ├── parsing.py        → chats._native (Rust), model, utils
 ├── tools.py          → parts, registry, utils, xml_transport
-├── xmlmd.py          → model, registry, xml_transport
-├── xml_transport.py  → registry
+├── xml_transport.py  → registry (legacy XML output encoding only)
 ├── search_query.py
 ├── session_pool.py   → model, parsing
 ├── session_scan.py   → model, parsing, ordering, pool_filter
@@ -798,7 +825,7 @@ cli.py
 22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL/raw transcript content as content, not a possible identifier, so stdin and pasted transcripts do not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
 23. **Search Has a Native Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`. Rust scans raw files with bounded 1 MiB reads, preserves cross-chunk needles and evidence groups, and lowercases only ASCII haystack bytes for insensitive terms. Case-sensitive scans continue across all valid non-ASCII scalars. Under default unshortened visibility, case-insensitive scans continue across valid non-ASCII scalars that cannot create an ASCII match under Python 3.14. The 20 casefold or regex risks defer to semantic confirmation. Both case modes also defer on invalid or incomplete UTF-8, raw JSON Unicode escapes, and default joined-Pi agent evidence. Non-default generated content, shortening, JSON-unstable queries, non-ASCII literals, regex terms, and render-dependent terms bypass native rejection. Every survivor goes directly to `_search_conversation_content()` and its sole `SessionScan` rendered-message authority.
 24. **`search . -ll` Projection Is Deliberately Narrow**: `_can_project_dot_only_id()` is the eligibility boundary for the only projection fast path: exact dot query, `ONLY_ID`, default visibility, no role/extras, no dir/date filters, and non-raw output. `_project_default_dot_match()` is tri-state; branchable Claude transcripts, read errors, or uncertain cases fall back to `SessionScan`. The projection mirrors default-hidden protocol/tool/thinking/task-notification behavior and should not be broadened without equivalence tests against the full search path.
-25. **`ch parse` Is a Provider-Free, Post-Visibility Boundary**: default output follows `messages_from_json_data → format_to_xml`; `-f json` follows `messages_from_xmlmd → format_to_json`. Neither performs session lookup, provider parsing, agent discovery, visibility filtering, or shortening. XML-to-JSON preserves all XML-represented semantics but canonicalizes its intentional losses: dates have minute precision, tool IDs remain shortened, attributes are strings, only schema-visible tool input fields exist, and tool outputs are rendered strings. After that projection, both command compositions are byte-stable. Canonical XML escapes wrapper attributes on messages with `custom_type` metadata. It applies reversible HTML transport encoding when message text resembles an inner block or a typed-block body contains its closing delimiter.
+25. **`ch parse` Is a Native Provider-Free, Post-Visibility Boundary**: the package-owned Rust launcher routes exact `ch parse` to `rust/codecs.rs`. Default output follows strict JSON validation → reusable Rust model → canonical XML. `-f json` follows canonical XML validation → the same Rust model → structured JSON. Neither direction starts or loads Python, calls PyO3, performs session lookup, parses a provider session, discovers agents, filters visibility, or shortens content. XML-to-JSON preserves represented semantics but canonicalizes intentional losses: dates have minute precision, tool IDs remain shortened, attributes are strings, only schema-visible tool input fields exist, and tool outputs are rendered strings. Canonical XML escapes wrapper attributes on messages with `custom_type` metadata and applies reversible HTML transport encoding at delimiter collisions. Both compositions are byte-stable after projection.
 26. **Pi Inline-Skill Expansions Split Inside the Pi Adapter**: `_parse_pi_message_entry` returns a list of messages. When a user entry's text starts with expanded `<skill ...>` blocks, `_split_pi_inline_skills` peels the leading run — one block at a time, with a per-block depth counter, stopping at the first non-skill text — and each block becomes a synthetic user-role message carrying a Claude-shaped `Skill` tool pair (built only when tools are visible), followed by the typed remainder as the regular user message. The tail after the leading run is never scanned, so pasted transcripts with literal (even unbalanced) `<skill` tags stay verbatim user text; an unclosed leading tag keeps the whole message untouched. The shared `Skill` tool schema renders `skill`/`location`/`args` as attributes for every provider, including Claude's native Skill calls.
 27. **Pi Custom Messages Normalize Inside the Pi Adapter**: generic `type == "custom"` records use the shared `custom` wrapper only under `--all`; valid `pi-user-agents` `custom` records and `subagents:record` records become shared agent messages under `--agents`; joined `pi-user-agents` `custom_message` records become shared agent messages by default when `details.mainContextState == "joined"`. Other `custom_message`, `subagent-notification`, and `display:false` custom records stay hidden. Special `type == "custom"` records that cannot normalize fall back to generic data under `--all`. Successful `pi-user-agents` metadata comes from `details`, while only the native `<response>` body supplies response text. A failure requires `details.ok is False`, takes its task and error from `details`, and marks its synthetic Bash result always visible without requiring `--tools`. Search and every formatter reuse the same visible messages without provider-specific rendering branches.
 29. **Provider Adapters Own Tool Normalization**: each adapter converts known native tool envelopes, names, input keys, and result content into canonical tool dictionaries before the shared model and renderers run. Declarative aliases stay in `registry.py`; provider-specific envelope parsing stays inside its adapter. Results retain content, error state, and an optional name, while the call ID links input metadata without duplicating it. Unknown native tools keep generic rendering. Pi maps current `read.arguments.path` to canonical `Read.file_path`. Codex decodes current `custom_tool_call` JavaScript envelopes before mapping inner `exec_command` or `apply_patch` calls, combines repeated same-kind calls under the outer call ID, and converts `input_text`/`output_text` result blocks to canonical `text`. The effort history and rejected alternatives are in [thoughts/adapter-rendering/post-implementation.md](thoughts/adapter-rendering/post-implementation.md).

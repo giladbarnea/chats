@@ -62,9 +62,6 @@ from .parse import (
     cmd_parse as cmd_parse,
 )
 from .parse import (
-    cmd_parse_json as cmd_parse_json,
-)
-from .parse import (
     parse_slice_notation as parse_slice_notation,
 )
 from .name import (

@@ -17,14 +17,6 @@ _INNER_XML_BLOCK_OPENING_PATTERN = re.compile(
     r'(?:\s+[\w-]+="[^"]*")*>',
     re.MULTILINE,
 )
-INNER_XML_BLOCK_PATTERN = re.compile(
-    rf"^<(?P<tag>{_INNER_BLOCK_TAG_PATTERN})"
-    r'(?P<attrs>(?:\s+[\w-]+="[^"]*")*)>'
-    r"(?P<body>.*?)</(?P=tag)>$",
-    re.DOTALL | re.MULTILINE,
-)
-
-
 def encode_xml_text(text: str) -> tuple[str, str | None]:
     """Encode message text that would collide with a canonical inner block.
 
@@ -62,16 +54,3 @@ def render_inner_xml_block(
     attribute_text = " ".join(f'{name}="{value}"' for name, value in block_attributes)
     opening_tag = f"<{tag} {attribute_text}>" if attribute_text else f"<{tag}>"
     return f"{opening_tag}\n{body}\n</{tag}>"
-
-
-def decode_xml_transport_body(body: str, encoding: str | None) -> str:
-    """Decode a body produced by the shared XML transport.
-
-    >>> decode_xml_transport_body("keep &lt;/thinking&gt; literal", "html")
-    'keep </thinking> literal'
-    """
-    if encoding is None:
-        return body
-    if encoding != _INNER_BLOCK_ENCODING:
-        raise ValueError(f"Unsupported XML transport encoding: {encoding!r}.")
-    return html.unescape(body)

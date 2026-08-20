@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sys
 from collections.abc import Sequence
 from contextlib import nullcontext
@@ -22,7 +21,6 @@ from ..model import (
     ParseOutputMode,
     SubagentMetadata,
     assign_progressive_shortening,
-    messages_from_json_data,
 )
 from ..parsing import (
     detect_format,
@@ -33,7 +31,6 @@ from ..parsing import (
     parse_raw_cli_transcript,
 )
 from ..pool_filter import PoolFilter
-from ..xmlmd import messages_from_xmlmd
 from . import resolve
 from .common import _build_tool_id_map
 
@@ -114,36 +111,6 @@ def _apply_slice_selectors(
         for position, message in enumerate(messages)
         if position in selected_positions
     ]
-
-
-def cmd_parse_json(input_file: Path | None, *, output_format: str = "xml") -> None:
-    """Convert between structured parse JSON and XML-tagged Markdown."""
-    input_description = "structured JSON" if output_format == "xml" else "XML-tagged Markdown"
-    try:
-        content = (
-            input_file.read_text(encoding="utf-8") if input_file is not None else sys.stdin.read()
-        )
-        messages = (
-            messages_from_json_data(json.loads(content))
-            if output_format == "xml"
-            else messages_from_xmlmd(content.rstrip("\n"))
-        )
-        flags = ConversationFlags(
-            show_thinking=True,
-            show_tools=True,
-            show_plans=True,
-            color="never",
-            paging=False,
-        )
-        formatter = format_to_xml if output_format == "xml" else format_to_json
-        formatted = formatter(messages, flags, _build_tool_id_map(messages))
-    except (OSError, TypeError, ValueError) as error:
-        print_error(f"Error parsing {input_description}: {error}")
-        sys.exit(1)
-
-    if not formatted:
-        return
-    resolve._write_parse_output(formatted, None)
 
 
 def cmd_parse(
