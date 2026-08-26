@@ -935,6 +935,21 @@ fn parse_document_message(
         .name("attrs")
         .map_or("", |attributes| attributes.as_str());
     let mut attributes = parse_attributes(raw_attributes, true);
+    for name in [
+        "branch",
+        "sourceToolUserId",
+        "agent_id",
+        "subagent_type",
+        "name",
+        "model",
+        "custom_type",
+        "status",
+        "date",
+    ] {
+        if attributes.get(name).is_some_and(|value| value.is_empty()) {
+            attributes.shift_remove(name);
+        }
+    }
     let expected_header = expected_header(message_type, &attributes);
     if header != expected_header {
         return Err(format!(

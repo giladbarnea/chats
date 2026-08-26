@@ -1,0 +1,13 @@
+[
+  {
+    "type": "user-message",
+    "role": "user",
+    "original_index": 1,
+    "content": [
+      "Empty optionals."
+    ],
+    "branch": "",
+    "status": "",
+    "agent_id": ""
+  }
+]

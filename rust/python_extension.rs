@@ -569,121 +569,89 @@ const PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS: [char; 20] = [
     '\u{fb01}', '\u{fb02}', '\u{fb03}', '\u{fb04}', '\u{fb05}', '\u{fb06}',
 ];
 
-#[derive(Clone, Copy)]
-enum JsonEscapeState {
-    Plain,
+/// Tracks `\uXXXX` escapes so a completed scalar that Python folds onto an ASCII
+/// byte (e.g. U+212A KELVIN SIGN folding to "k") defers to semantic confirmation.
+/// Structurally invalid escapes are ignored: their lines cannot parse, so they
+/// carry no decodable content to protect.
+#[derive(Default)]
+struct EscapedRiskScalarTracker {
+    progress: EscapedRiskScalarProgress,
+}
+
+#[derive(Default)]
+enum EscapedRiskScalarProgress {
+    #[default]
+    DecodedText,
     AfterBackslash,
-    Unicode { value: u16, digits: u8 },
-    ExpectLowBackslash { high: u16 },
-    ExpectLowU { high: u16 },
-    LowUnicode { high: u16, value: u16, digits: u8 },
+    UnicodeHexDigits { value: u16, count: u8 },
 }
 
-struct JsonEscapeValidator {
-    state: JsonEscapeState,
-}
-
-impl JsonEscapeValidator {
-    fn new() -> Self {
-        Self {
-            state: JsonEscapeState::Plain,
+impl EscapedRiskScalarTracker {
+    /// Returns false when a completed risk scalar demands semantic confirmation.
+    fn scan(&mut self, chunk: &[u8]) -> bool {
+        let mut cursor = 0;
+        while cursor < chunk.len() {
+            if matches!(
+                self.progress,
+                EscapedRiskScalarProgress::DecodedText
+            ) {
+                let Some(relative_backslash) = find_byte(&chunk[cursor..], b'\\') else {
+                    return true;
+                };
+                cursor += relative_backslash;
+            }
+            if !self.feed(chunk[cursor]) {
+                return false;
+            }
+            cursor += 1;
         }
+        true
     }
 
-    fn push(&mut self, byte: u8) -> bool {
-        match self.state {
-            JsonEscapeState::Plain => {
+    fn feed(&mut self, byte: u8) -> bool {
+        match &mut self.progress {
+            EscapedRiskScalarProgress::DecodedText => {
                 if byte == b'\\' {
-                    self.state = JsonEscapeState::AfterBackslash;
+                    self.progress = EscapedRiskScalarProgress::AfterBackslash;
                 }
                 true
             }
-            JsonEscapeState::AfterBackslash => {
-                self.state = JsonEscapeState::Plain;
-                match byte {
-                    b'"' | b'\\' | b'/' | b'b' | b'f' | b'n' | b'r' | b't' => true,
-                    b'u' => {
-                        self.state = JsonEscapeState::Unicode {
-                            value: 0,
-                            digits: 0,
-                        };
-                        true
+            EscapedRiskScalarProgress::AfterBackslash => {
+                self.progress = if byte == b'u' {
+                    EscapedRiskScalarProgress::UnicodeHexDigits {
+                        value: 0,
+                        count: 0,
                     }
-                    _ => false,
-                }
+                } else {
+                    EscapedRiskScalarProgress::DecodedText
+                };
+                true
             }
-            JsonEscapeState::Unicode { value, digits } => {
+            EscapedRiskScalarProgress::UnicodeHexDigits { value, count } => {
                 let Some(digit) = hex_digit(byte) else {
-                    return false;
+                    self.progress = EscapedRiskScalarProgress::DecodedText;
+                    return true;
                 };
-                let value = value * 16 + digit;
-                let digits = digits + 1;
-                if digits < 4 {
-                    self.state = JsonEscapeState::Unicode { value, digits };
+                *value = *value * 16 + digit;
+                *count += 1;
+                if *count < 4 {
                     return true;
                 }
-                self.state = JsonEscapeState::Plain;
-                if (0xd800..=0xdbff).contains(&value) {
-                    self.state = JsonEscapeState::ExpectLowBackslash { high: value };
-                    return true;
-                }
-                if (0xdc00..=0xdfff).contains(&value) {
-                    return false;
-                }
-                let character = char::from_u32(u32::from(value))
-                    .expect("non-surrogate BMP scalar");
-                PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS
-                    .binary_search(&character)
-                    .is_err()
-            }
-            JsonEscapeState::ExpectLowBackslash { high } => {
-                if byte != b'\\' {
-                    return false;
-                }
-                self.state = JsonEscapeState::ExpectLowU { high };
-                true
-            }
-            JsonEscapeState::ExpectLowU { high } => {
-                if byte != b'u' {
-                    return false;
-                }
-                self.state = JsonEscapeState::LowUnicode {
-                    high,
-                    value: 0,
-                    digits: 0,
-                };
-                true
-            }
-            JsonEscapeState::LowUnicode {
-                high,
-                value,
-                digits,
-            } => {
-                let Some(digit) = hex_digit(byte) else {
-                    return false;
-                };
-                let value = value * 16 + digit;
-                let digits = digits + 1;
-                if digits < 4 {
-                    self.state = JsonEscapeState::LowUnicode {
-                        high,
-                        value,
-                        digits,
-                    };
-                    return true;
-                }
-                if !(0xdc00..=0xdfff).contains(&value) {
-                    return false;
-                }
-                self.state = JsonEscapeState::Plain;
-                true
+                let folds_onto_ascii = completed_scalar_folds_onto_ascii(*value);
+                self.progress = EscapedRiskScalarProgress::DecodedText;
+                !folds_onto_ascii
             }
         }
     }
+}
 
-    fn is_incomplete(&self) -> bool {
-        !matches!(self.state, JsonEscapeState::Plain)
-    }
+fn completed_scalar_folds_onto_ascii(value: u16) -> bool {
+    let Some(scalar) = char::from_u32(u32::from(value)) else {
+        return false;
+    };
+    PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS
+        .binary_search(&scalar)
+        .is_ok()
 }
 
 fn hex_digit(byte: u8) -> Option<u16> {
@@ -711,26 +679,6 @@ fn find_byte(haystack: &[u8], needle: u8) -> Option<usize> {
 #[cfg(not(unix))]
 fn find_byte(haystack: &[u8], needle: u8) -> Option<usize> {
     haystack.iter().position(|byte| *byte == needle)
-}
-
-fn validate_json_escapes_chunk(
-    chunk: &[u8],
-    validator: &mut JsonEscapeValidator,
-) -> bool {
-    let mut cursor = 0;
-    while cursor < chunk.len() {
-        if matches!(validator.state, JsonEscapeState::Plain) {
-            let Some(relative_backslash) = find_byte(&chunk[cursor..], b'\\') else {
-                return true;
-            };
-            cursor += relative_backslash;
-        }
-        if !validator.push(chunk[cursor]) {
-            return false;
-        }
-        cursor += 1;
-    }
-    true
 }
 
 fn regex_hex_scalar(value: u8) -> String {
@@ -954,7 +902,7 @@ impl LogicalJsonStringCandidateMatchers {
         let mut previous = Vec::with_capacity(self.overlap_width);
         let mut boundary = Vec::with_capacity(self.overlap_width * 2);
         let mut incomplete_code_point = Vec::with_capacity(4);
-        let mut escape_validator = JsonEscapeValidator::new();
+        let mut escaped_risk_tracker = EscapedRiskScalarTracker::default();
         let mut file = std::fs::File::open(path)?;
 
         loop {
@@ -981,7 +929,7 @@ impl LogicalJsonStringCandidateMatchers {
             {
                 return Ok(true);
             }
-            if !validate_json_escapes_chunk(chunk, &mut escape_validator) {
+            if !escaped_risk_tracker.scan(chunk) {
                 return Ok(true);
             }
             for (group_index, group) in self.evidence_matchers.iter().enumerate() {
@@ -1011,7 +959,7 @@ impl LogicalJsonStringCandidateMatchers {
             let retained_start = previous.len().saturating_sub(self.overlap_width);
             previous.drain(..retained_start);
         }
-        Ok(!incomplete_code_point.is_empty() || escape_validator.is_incomplete())
+        Ok(!incomplete_code_point.is_empty())
     }
 }
 

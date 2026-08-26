@@ -87,4 +87,31 @@ rm "$METADATA_FILE"
 assert_contains "$METADATA" "session_id:"
 assert_not_contains "$METADATA" "<${USER_MESSAGE_TAG}"
 
+# 4. Native parse exits cleanly when the output consumer closes the pipe
+NATIVE_CH="target/release/ch"
+if [[ ! -x "$NATIVE_CH" ]]; then
+  echo "❌ Expected checkout-built native launcher at $NATIVE_CH"
+  exit 1
+fi
+
+echo "Testing native parse broken-pipe handling..."
+BROKEN_PIPE_STDERR=$(mktemp)
+cat tests/data/parse-round-trip-fixtures/tools-and-agents/pi/019f6b0f-ba17-716e-b6fe-72f709d51bd2.input.json \
+  | "$NATIVE_CH" parse /dev/stdin 2>"$BROKEN_PIPE_STDERR" \
+  | head -c200 >/dev/null
+BROKEN_PIPE_STATUSES=("${pipestatus[@]}")
+BROKEN_PIPE_ERROR=$(<"$BROKEN_PIPE_STDERR")
+rm "$BROKEN_PIPE_STDERR"
+
+if [[ "${BROKEN_PIPE_STATUSES[2]}" -ne 0 ]]; then
+  echo "❌ Native parse exited ${BROKEN_PIPE_STATUSES[2]} after the output pipe closed"
+  echo "$BROKEN_PIPE_ERROR"
+  exit 1
+fi
+if [[ -n "$BROKEN_PIPE_ERROR" ]]; then
+  echo "❌ Native parse wrote stderr after the output pipe closed"
+  echo "$BROKEN_PIPE_ERROR"
+  exit 1
+fi
+
 echo "✅ Basic tests passed"

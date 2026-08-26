@@ -207,14 +207,18 @@ fn convert(arguments: ParseArguments) -> ExitCode {
     }
     let mut stdout = std::io::stdout().lock();
     if let Err(error) = writeln!(stdout, "{output}") {
-        if error.kind() == std::io::ErrorKind::BrokenPipe {
-            print_broken_pipe_traceback();
-        } else {
-            eprintln!("{error}");
-        }
-        return ExitCode::FAILURE;
+        let mut stderr = std::io::stderr().lock();
+        return handle_output_write_error(&error, &mut stderr);
     }
     ExitCode::SUCCESS
+}
+
+fn handle_output_write_error(error: &std::io::Error, error_output: &mut impl Write) -> ExitCode {
+    if error.kind() == std::io::ErrorKind::BrokenPipe {
+        return ExitCode::SUCCESS;
+    }
+    let _ = writeln!(error_output, "{error}");
+    ExitCode::FAILURE
 }
 
 fn read_input(path: Option<&PathBuf>) -> Result<Vec<u8>, String> {
@@ -313,21 +317,6 @@ fn error_color_enabled() -> bool {
     false
 }
 
-fn print_broken_pipe_traceback() {
-    let launcher = std::env::args_os()
-        .next()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("ch"));
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    eprint!(
-        "Traceback (most recent call last):\n  File \"{}\", line 10, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"{}/src/chats/cli.py\", line 368, in main\n    cmd_parse_json(args.input_file, output_format=args.format)\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"{}/src/chats/commands/parse.py\", line 146, in cmd_parse_json\n    resolve._write_parse_output(formatted, None)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"{}/src/chats/commands/resolve.py\", line 405, in _write_parse_output\n    print(output)\n    ~~~~~^^^^^^^^\nBrokenPipeError: [Errno 32] Broken pipe\n",
-        launcher.display(),
-        root.display(),
-        root.display(),
-        root.display(),
-    );
-}
-
 fn wrap_preserving_spaces(message: &str, width: usize) -> String {
     let mut output = String::new();
     let mut line_width = 0;
@@ -400,5 +389,29 @@ fn run_legacy(arguments: &[OsString]) -> ExitCode {
             eprintln!("Error: Cannot start the private ch legacy entry: {error}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn broken_pipe_exits_successfully_without_error_output() {
+        let error = std::io::Error::new(std::io::ErrorKind::BrokenPipe, "closed pipe");
+        let mut error_output = Vec::new();
+
+        let exit_code = handle_output_write_error(&error, &mut error_output);
+
+        assert_eq!(
+            exit_code,
+            ExitCode::SUCCESS,
+            "Broken pipe handling must exit successfully"
+        );
+        assert_eq!(
+            error_output,
+            Vec::<u8>::new(),
+            "Broken pipe handling must not write stderr"
+        );
     }
 }

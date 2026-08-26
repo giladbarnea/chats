@@ -105,6 +105,28 @@
       "expected_stderr": "tests/data/parse-command-fixtures/expected/empty-json-file.stderr"
     },
     {
+      "id": "empty-optionals-json",
+      "arguments": [
+        "parse",
+        "tests/data/parse-command-fixtures/inputs/empty-optionals.json"
+      ],
+      "exit_status": 0,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/empty-optionals-json.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/empty-optionals-json.stderr"
+    },
+    {
+      "id": "empty-optionals-xml",
+      "arguments": [
+        "parse",
+        "-f",
+        "json",
+        "tests/data/parse-command-fixtures/inputs/empty-optionals.xml"
+      ],
+      "exit_status": 0,
+      "expected_stdout": "tests/data/parse-command-fixtures/expected/empty-optionals-xml.stdout",
+      "expected_stderr": "tests/data/parse-command-fixtures/expected/empty-optionals-xml.stderr"
+    },
+    {
       "id": "empty-json-stdin",
       "arguments": [
         "parse"

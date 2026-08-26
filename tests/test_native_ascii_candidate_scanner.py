@@ -238,26 +238,40 @@ def test_valid_surrogate_pair_does_not_defer_an_unrelated_file(
     "content",
     [
         pytest.param(b'{"content":"bad \\x escape"}\n', id="malformed-escape"),
-        pytest.param(b'{"content":"bad \\ud83d scalar"}\n', id="unpaired-high-surrogate"),
-        pytest.param(b'{"content":"bad \\ude00 scalar"}\n', id="unpaired-low-surrogate"),
         pytest.param(
-            b'{"content":"invalid ' + b"\xff" + b' bytes"}\n',
-            id="invalid-utf8",
+            b'{"content":"bad \\ud83d scalar"}\n', id="unpaired-high-surrogate"
+        ),
+        pytest.param(
+            b'{"content":"bad \\ude00 scalar"}\n', id="unpaired-low-surrogate"
         ),
     ],
 )
-def test_logical_json_uncertainty_defers_to_semantic_confirmation(
+def test_logical_json_malformed_escapes_reject_without_deferring(
     tmp_path: Path,
     content: bytes,
 ) -> None:
-    path = tmp_path / "uncertain.jsonl"
+    path = tmp_path / "malformed-escape.jsonl"
     path.write_bytes(content)
 
     actual = _file_contains_ascii_json_strings(path, b"client_id/card")
 
+    assert actual is False, (
+        "Expected structurally invalid JSON-string escapes, whose lines cannot "
+        f"parse into content, to fast-reject instead of deferring. Got: {actual=!r}, {content=!r}"
+    )
+
+
+def test_logical_json_invalid_utf8_still_defers_to_semantic_confirmation(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "invalid-utf8.jsonl"
+    path.write_bytes(b'{"content":"invalid \xff bytes"}\n')
+
+    actual = _file_contains_ascii_json_strings(path, b"client_id/card")
+
     assert actual is True, (
-        "Expected malformed JSON-string encoding or invalid UTF-8 to defer safely. "
-        f"Got: {actual=!r}, {content=!r}"
+        "Expected undecodable byte sequences to preserve encoding uncertainty for "
+        f"semantic confirmation. Got: {actual=!r}"
     )
 
 

@@ -282,7 +282,7 @@ pub fn optional_string(
 ) -> Result<Option<String>, String> {
     match payload.get(key) {
         None | Some(Value::Null) => Ok(None),
-        Some(Value::String(value)) => Ok(Some(value.clone())),
+        Some(Value::String(value)) => Ok((!value.is_empty()).then(|| value.clone())),
         Some(_) => Err(format!("Expected {context}.{key} to be a string.")),
     }
 }

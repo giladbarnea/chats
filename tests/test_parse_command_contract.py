@@ -25,8 +25,9 @@ ROUND_TRIP_ROOT = PROJECT_ROOT / "tests" / "data" / "parse-round-trip-fixtures"
 ROUND_TRIP_MANIFEST = json.loads(
     (ROUND_TRIP_ROOT / "MANIFEST.json").read_text(encoding="utf-8")
 )["fixtures"]
-REAL_INSTALLED_CH = Path.home() / ".local" / "bin" / "ch"
 CHECKOUT_INSTALLED_CH = PROJECT_ROOT / ".venv" / "bin" / "ch"
+CHECKOUT_BUILT_CH = PROJECT_ROOT / "target" / "release" / "ch"
+HEAD_ABSENT_LAUNCHER_MARKERS = (b"logicalParentUuid",)
 MACH_O_MAGICS = {
     b"\xca\xfe\xba\xbe",
     b"\xcf\xfa\xed\xfe",
@@ -75,8 +76,65 @@ def _representative_round_trip_row() -> dict[str, object]:
     )
 
 
+def _reject_foreign_launcher(launcher: Path) -> None:
+    if not launcher.is_file():
+        return
+    launcher_bytes = launcher.read_bytes()
+    found = [
+        marker.decode()
+        for marker in HEAD_ABSENT_LAUNCHER_MARKERS
+        if marker in launcher_bytes
+    ]
+    assert not found, (
+        f"Launcher provenance cannot be proven fresh: {launcher} embeds HEAD-absent strings {found}. "
+        "A stale or foreign artifact occupies the checkout build path."
+    )
+
+
+def _ensure_private_legacy_sibling() -> None:
+    legacy_entry = PROJECT_ROOT / ".venv" / "bin" / "ch-legacy"
+    assert legacy_entry.is_file(), (
+        f"Expected the checkout virtualenv to own {legacy_entry} "
+        "so the freshly built launcher can route uncompleted journeys."
+    )
+    sibling = CHECKOUT_BUILT_CH.parent / "ch-legacy"
+    if sibling.is_symlink() and sibling.resolve() == legacy_entry.resolve():
+        return
+    staged = CHECKOUT_BUILT_CH.parent / ".ch-legacy.staged"
+    staged.unlink(missing_ok=True)
+    os.symlink(os.path.relpath(legacy_entry, CHECKOUT_BUILT_CH.parent), staged)
+    os.replace(staged, sibling)
+
+
+@pytest.fixture(scope="session")
+def checkout_built_ch() -> Path:
+    cargo = shutil.which("cargo")
+    assert cargo is not None, "Expected `cargo` on PATH to build the checkout-owned launcher."
+    _reject_foreign_launcher(CHECKOUT_BUILT_CH)
+    CHECKOUT_BUILT_CH.unlink(missing_ok=True)
+    completed = subprocess.run(
+        # Mirror [[tool.setuptools-rust.bins]] so the validated artifact matches
+        # what the packaging pipeline ships for public `ch`.
+        [cargo, "build", "--release", "--bin", "ch", "--no-default-features"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, (
+        "Expected `cargo build --release --bin ch --no-default-features` to produce the contract-suite launcher. "
+        f"stderr tail: {completed.stderr[-1000:]!r}."
+    )
+    assert CHECKOUT_BUILT_CH.is_file(), (
+        f"Expected the release build to produce {CHECKOUT_BUILT_CH}."
+    )
+    _reject_foreign_launcher(CHECKOUT_BUILT_CH)
+    _ensure_private_legacy_sibling()
+    return CHECKOUT_BUILT_CH
+
+
 @pytest.mark.parametrize("case", COMMAND_MANIFEST, ids=_case_id)
-def test_real_installed_parse_matches_accepted_legacy_command_bytes(
+def test_checkout_built_parse_matches_accepted_legacy_command_bytes(
+    checkout_built_ch: Path,
     case: dict[str, object],
 ) -> None:
     arguments = [str(argument) for argument in case["arguments"]]
@@ -84,7 +142,7 @@ def test_real_installed_parse_matches_accepted_legacy_command_bytes(
     input_bytes = (
         (PROJECT_ROOT / str(stdin_path)).read_bytes() if stdin_path is not None else None
     )
-    completed = _run_ch(REAL_INSTALLED_CH, arguments, input_bytes=input_bytes)
+    completed = _run_ch(checkout_built_ch, arguments, input_bytes=input_bytes)
     expected_stdout = (PROJECT_ROOT / str(case["expected_stdout"])).read_bytes()
     expected_stderr = (PROJECT_ROOT / str(case["expected_stderr"])).read_bytes()
 
@@ -102,7 +160,9 @@ def test_real_installed_parse_matches_accepted_legacy_command_bytes(
     )
 
 
-def test_real_installed_parse_accepts_file_and_stdin_in_both_argument_orders() -> None:
+def test_checkout_built_parse_accepts_file_and_stdin_in_both_argument_orders(
+    checkout_built_ch: Path,
+) -> None:
     row = _representative_round_trip_row()
     input_json_path = PROJECT_ROOT / str(row["input_json"])
     expected_xml_path = PROJECT_ROOT / str(row["expected_xml"])
@@ -122,7 +182,7 @@ def test_real_installed_parse_accepts_file_and_stdin_in_both_argument_orders() -
     ]
 
     for case_id, arguments, input_bytes, expected_stdout in cases:
-        completed = _run_ch(REAL_INSTALLED_CH, arguments, input_bytes=input_bytes)
+        completed = _run_ch(checkout_built_ch, arguments, input_bytes=input_bytes)
         assert completed.returncode == 0, (
             f"Expected {case_id} conversion to succeed. "
             f"Exit status: {completed.returncode}; stderr: {completed.stderr[:500]!r}."
@@ -159,6 +219,7 @@ def test_package_ownership_built_wheel_contains_all_runtime_assets(
     completed = subprocess.run(
         ["uv", "build", "--wheel", "--out-dir", str(tmp_path)],
         cwd=PROJECT_ROOT,
+        env={**os.environ, "CARGO_TARGET_DIR": str(tmp_path / "cargo-target")},
         capture_output=True,
         check=False,
     )
@@ -235,7 +296,6 @@ def test_package_ownership_built_wheel_contains_all_runtime_assets(
     "executable",
     [
         pytest.param(CHECKOUT_INSTALLED_CH, id="checkout-install"),
-        pytest.param(REAL_INSTALLED_CH, id="real-uv-tool-install"),
     ],
 )
 def test_package_ownership_installed_record_hashes_public_and_private_launchers(
@@ -276,16 +336,10 @@ def test_package_ownership_installed_record_hashes_public_and_private_launchers(
     )
 
 
-@pytest.mark.parametrize(
-    "executable",
-    [
-        pytest.param(CHECKOUT_INSTALLED_CH, id="checkout-install"),
-        pytest.param(REAL_INSTALLED_CH, id="real-uv-tool-install"),
-    ],
-)
-def test_installed_parse_is_one_native_process_with_no_python_authority(
-    executable: Path,
+def test_checkout_built_parse_is_one_native_process_with_no_python_authority(
+    checkout_built_ch: Path,
 ) -> None:
+    executable = checkout_built_ch
     row = _representative_round_trip_row()
     input_json = (PROJECT_ROOT / str(row["input_json"])).read_bytes()
     expected_xml = (PROJECT_ROOT / str(row["expected_xml"])).read_bytes()
@@ -347,7 +401,10 @@ def _controlled_legacy_session(home: Path) -> Path:
     return destination
 
 
-def test_uncompleted_public_journeys_keep_exact_legacy_behavior(tmp_path: Path) -> None:
+def test_uncompleted_public_journeys_keep_exact_legacy_behavior(
+    tmp_path: Path,
+    checkout_built_ch: Path,
+) -> None:
     session_path = _controlled_legacy_session(tmp_path)
     cases = [
         (
@@ -374,7 +431,7 @@ def test_uncompleted_public_journeys_keep_exact_legacy_behavior(tmp_path: Path) 
         expected_stderr = (
             COMMAND_FIXTURE_ROOT / "expected" / f"{expected_name}.stderr"
         ).read_bytes()
-        completed = _run_ch(REAL_INSTALLED_CH, arguments, home=tmp_path)
+        completed = _run_ch(checkout_built_ch, arguments, home=tmp_path)
         assert completed.returncode == 0, (
             f"Expected unchanged {case_id} route to succeed. "
             f"Exit status: {completed.returncode}; stderr: {completed.stderr[:500]!r}."
@@ -389,7 +446,7 @@ def test_uncompleted_public_journeys_keep_exact_legacy_behavior(tmp_path: Path) 
         )
 
         traced = _run_ch(
-            REAL_INSTALLED_CH,
+            checkout_built_ch,
             arguments,
             home=tmp_path,
             loader_trace=True,
