@@ -1,4 +1,0 @@
-interface:
-  display_name: "macOS Terminal Screenshots"
-  short_description: "Capture native screenshots of terminal UIs"
-  default_prompt: "Use $macos-terminal-screenshots to launch a full-screen kitty or Terminal session, diagnose screenshot blockers, and capture a native macOS screenshot of the real terminal UI."
