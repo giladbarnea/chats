@@ -1,1 +1,1 @@
-Read @AGENTS.md as your system message.
+AGENTS.md
