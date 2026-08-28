@@ -934,3 +934,79 @@ def test_module_doctests(module_name):
     assert results.failed == 0, (
         f"{module_name}: {results.failed} of {results.attempted} doctest(s) failed."
     )
+
+
+_LONG_TOOL_PATH = "/srv/workspace/service/internal/handlers/very_long_module_name.py"
+
+
+def _read_call_session(home: Path, session_id: str) -> str:
+    """A one-message session whose only content is a Read call on a long path."""
+    return _write_claude_session(
+        home, session_id,
+        [_assistant(content=[{
+            "type": "tool_use",
+            "id": "toolu_longpath",
+            "name": "Read",
+            "input": {"file_path": _LONG_TOOL_PATH},
+        }])],
+    )
+
+
+def _tool_header_line(rendered: str) -> str:
+    """The single rendered line carrying the ⏺ tool-call marker."""
+    marked = [line for line in rendered.splitlines() if "⏺ Read" in line]
+    assert len(marked) == 1, (
+        f"Expected exactly one ⏺ Read header line. Got {len(marked)}:\n{rendered}"
+    )
+    return marked[0]
+
+
+def test_wide_console_shows_the_whole_tool_path(tmp_path, monkeypatch):
+    """A wide terminal spends its columns on the tool path instead of clipping it.
+
+    The path is elided against the width actually available, so a console with
+    room to spare shows it whole rather than cutting it to a constant.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _read_call_session(home, "55555555-aaaa-bbbb-cccc-000000000001")
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+        width=200,
+    )
+
+    header = _tool_header_line(out)
+    assert _LONG_TOOL_PATH in header, (
+        f"A 200-column console has room for the whole {len(_LONG_TOOL_PATH)}-character "
+        f"path. Got header:\n{header}"
+    )
+
+
+def test_narrow_console_keeps_the_tool_header_on_one_line(tmp_path, monkeypatch):
+    """A narrow terminal elides the tool path instead of wrapping the header.
+
+    A path clipped to a constant width overflows a narrow panel and pushes the
+    header onto extra lines; the elided tail must stay on the marker's line.
+    """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
+    sid = _read_call_session(home, "55555555-aaaa-bbbb-cccc-000000000002")
+
+    out = _render_colored(
+        monkeypatch, cmd_parse,
+        ConversationFlags(color="always", paging=False, show_tools=True),
+        sid, None, None, output_format="xml", emit_metadata=False,
+        width=44,
+    )
+
+    header = _tool_header_line(out)
+    assert "…" in header, (
+        f"A 44-column console must elide the path. Got header:\n{header}"
+    )
+    assert "_name.py" in header, (
+        "Middle elision must keep the path's tail on the header line, not wrap it "
+        f"onto the next one. Got header:\n{header}"
+    )

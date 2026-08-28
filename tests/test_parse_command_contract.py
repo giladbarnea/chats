@@ -2,15 +2,20 @@ from __future__ import annotations
 
 import base64
 import configparser
+import contextlib
 import csv
+import fcntl
 import hashlib
 import io
 import json
 import os
 from pathlib import Path
+import pty
 import re
 import shutil
+import struct
 import subprocess
+import termios
 import zipfile
 
 import pytest
@@ -459,3 +464,107 @@ def test_uncompleted_public_journeys_keep_exact_legacy_behavior(
             f"Expected uncompleted {case_id} to remain on the private Python legacy route. "
             f"Loader trace tail: {traced.stderr[-500:]!r}."
         )
+
+
+_ANSI_SEQUENCE = re.compile(r"\x1b\[[0-9;]*m")
+_MISSING_INPUT_PATH = "/nonexistent/" + "/".join(["deeply_nested_directory"] * 4) + "/input.json"
+
+
+def _run_attached_to_terminal(
+    arguments: list[str],
+    *,
+    columns: int,
+    rows: int = 40,
+    capture_to: Path | None = None,
+) -> list[str]:
+    """Run a command on a pseudo-terminal of the given size; return its plain lines.
+
+    ``capture_to`` redirects stdout and stderr to that file, leaving only stdin
+    on the terminal — the shape a shell produces for ``ch ... > out.txt 2>&1``.
+    """
+    controller, terminal = pty.openpty()
+    fcntl.ioctl(terminal, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, 0, 0))
+    environment = os.environ.copy()
+    environment.pop("COLUMNS", None)
+    environment.pop("LINES", None)
+    environment["TERM"] = "xterm-256color"
+    with (capture_to.open("wb") if capture_to else contextlib.nullcontext()) as sink:
+        process = subprocess.Popen(
+            arguments,
+            stdin=terminal,
+            stdout=sink or terminal,
+            stderr=sink or terminal,
+            env=environment,
+        )
+        os.close(terminal)
+        chunks: list[bytes] = []
+        while True:
+            try:
+                data = os.read(controller, 65536)
+            except OSError:
+                break
+            if not data:
+                break
+            chunks.append(data)
+        process.wait()
+    os.close(controller)
+    raw = capture_to.read_bytes() if capture_to else b"".join(chunks)
+    return [
+        _ANSI_SEQUENCE.sub("", line).rstrip()
+        for line in raw.decode("utf-8", "replace").splitlines()
+        if line.strip()
+    ]
+
+
+def test_parse_error_wraps_to_a_narrow_terminal(checkout_built_ch):
+    """`ch parse` wraps its error to the terminal it prints into.
+
+    The width must come from the terminal itself. A shell does not export
+    COLUMNS, so reading only that variable pins the wrap at 80 columns, which
+    spills past every narrower terminal.
+    """
+    printed = _run_attached_to_terminal(
+        [str(checkout_built_ch), "parse", _MISSING_INPUT_PATH], columns=70
+    )
+
+    assert printed, "Expected `ch parse` to report the missing input file."
+    widest = max(len(line) for line in printed)
+    assert widest <= 70, (
+        f"A 70-column terminal must wrap the error at 70 columns. Widest line is "
+        f"{widest}:\n" + "\n".join(printed)
+    )
+
+
+def test_parse_error_uses_the_room_a_wide_terminal_gives(checkout_built_ch):
+    """A wide terminal keeps the whole error on one line instead of wrapping at 80."""
+    printed = _run_attached_to_terminal(
+        [str(checkout_built_ch), "parse", _MISSING_INPUT_PATH], columns=200
+    )
+
+    assert len(printed) == 1, (
+        "A 200-column terminal has room for the whole error on one line. "
+        f"Got {len(printed)} lines:\n" + "\n".join(printed)
+    )
+
+
+def test_parse_error_wraps_to_the_terminal_when_output_is_redirected(
+    checkout_built_ch, tmp_path
+):
+    """Redirecting stdout and stderr must not lose the terminal's width.
+
+    A shell redirect leaves the terminal on stdin alone. Probing only stderr
+    finds a plain file there and falls back to the fixed width, so the wrap has
+    to consider every standard stream, as Rich does on the Python side.
+    """
+    printed = _run_attached_to_terminal(
+        [str(checkout_built_ch), "parse", _MISSING_INPUT_PATH],
+        columns=70,
+        capture_to=tmp_path / "redirected.txt",
+    )
+
+    assert printed, "Expected `ch parse` to report the missing input file."
+    widest = max(len(line) for line in printed)
+    assert widest <= 70, (
+        f"A 70-column terminal must wrap the error at 70 columns even when output "
+        f"is redirected. Widest line is {widest}:\n" + "\n".join(printed)
+    )

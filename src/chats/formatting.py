@@ -116,16 +116,43 @@ class LeftRail:
             yield Segment.line()
 
 
+_TOOL_KEY_ARG_SEPARATOR = "  ·  "
+
+
 def _tool_key_arg(attrs: list[tuple[str, str]]) -> str | None:
     """The first display-worthy tool argument (path / pattern / url), collapsed."""
     for key, value in attrs:
         if key in ("name", "id", "is_error"):
             continue
-        collapsed = collapse_home(value)
-        if "/" in collapsed:
-            collapsed = elide_to_width(collapsed, 44, where="middle")
-        return collapsed
+        return collapse_home(value)
     return None
+
+
+class ToolHeader:
+    """A tool header line whose key argument is fitted to the width it renders at.
+
+    Panels and rails claim their columns before this renders, so the room left
+    for the argument is only known here. Eliding it any earlier fixes the
+    header's width, which then overflows narrow terminals and wastes wide ones.
+    """
+
+    def __init__(self, marker: Text, key_arg: str) -> None:
+        self.marker = marker
+        self.key_arg = key_arg
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        budget = (
+            options.max_width - self.marker.cell_len - len(_TOOL_KEY_ARG_SEPARATOR)
+        )
+        line = self.marker.copy()
+        line.append(_TOOL_KEY_ARG_SEPARATOR, style="message.meta")
+        line.append(
+            elide_to_width(self.key_arg, budget, where="middle"),
+            style="message.meta",
+        )
+        yield line
 
 
 def _edit_diff_renderable(input_data: dict, accent: str) -> LeftRail | None:
@@ -213,15 +240,14 @@ def render_tool_rich(
         if is_result
         else _TOOL_INPUT_ACCENT_BY_NAME.get(name, "tool.call")
     )
-    header = Text()
-    header.append(f"{'⎿' if is_result else '⏺'} ", style=accent)
-    header.append(result_label if is_result and result_label else name, style=accent)
+    marker = Text()
+    marker.append(f"{'⎿' if is_result else '⏺'} ", style=accent)
+    marker.append(result_label if is_result and result_label else name, style=accent)
     if is_error:
-        header.append("  ·  error", style="tool.error")
-    if key_arg := _tool_key_arg(parts.attrs):
-        header.append(f"  ·  {key_arg}", style="message.meta")
+        marker.append("  ·  error", style="tool.error")
+    key_arg = _tool_key_arg(parts.attrs)
 
-    out: list = [header]
+    out: list = [ToolHeader(marker, key_arg) if key_arg else marker]
     out.append(
         _tool_body_renderable(parts, name, is_error, is_result, accent, input_by_id)
     )

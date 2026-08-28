@@ -289,12 +289,43 @@ fn normalize_newlines(content: String) -> String {
     content.replace("\r\n", "\n").replace('\r', "\n")
 }
 
-fn print_wrapped_error(message: &str) {
-    let width = std::env::var("COLUMNS")
+const FALLBACK_TERMINAL_WIDTH: usize = 80;
+
+/// The width to wrap error output at: the terminal's own, overridden by COLUMNS.
+///
+/// A shell sets COLUMNS without exporting it, so the variable alone resolves to
+/// nothing and pins the width to the fallback. Asking the terminal is what makes
+/// the wrap follow the window. The precedence matches the one Rich applies on the
+/// Python side, so both halves of `ch` wrap alike.
+fn terminal_width() -> usize {
+    std::env::var("COLUMNS")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
-        .unwrap_or(80);
-    let wrapped = wrap_preserving_spaces(message, width);
+        .or_else(measured_terminal_width)
+        .filter(|width| *width > 0)
+        .unwrap_or(FALLBACK_TERMINAL_WIDTH)
+}
+
+#[cfg(unix)]
+fn measured_terminal_width() -> Option<usize> {
+    [libc::STDIN_FILENO, libc::STDOUT_FILENO, libc::STDERR_FILENO]
+        .into_iter()
+        .find_map(|descriptor| {
+            let mut size: libc::winsize = unsafe { std::mem::zeroed() };
+            let measured = unsafe {
+                libc::ioctl(descriptor, libc::TIOCGWINSZ, &mut size as *mut libc::winsize)
+            };
+            (measured == 0).then_some(size.ws_col as usize)
+        })
+}
+
+#[cfg(not(unix))]
+fn measured_terminal_width() -> Option<usize> {
+    None
+}
+
+fn print_wrapped_error(message: &str) {
+    let wrapped = wrap_preserving_spaces(message, terminal_width());
     if error_color_enabled() {
         for line in wrapped.lines() {
             eprintln!("\x1b[31m{line}\x1b[0m");
