@@ -1,1 +1,2 @@
 2026-08-25/26 chats: 5-scope post-Rust-rewrite review done, desk thoughts/2026-08-25-post-rust-rewrite-project-review/ holds reviews + tasks-criteria.md; rust-fix-ship overseer drives fix DAG via own crews; lessons: RPC teammates need kickoff, boomerang loop for checkups.               
+2026-08-26/27 Rust fix DAG T1-T4 shipped green after ox-alpha crews failed and were swapped for gpt-5.6-sol; JsonEscapeValidator only partly deletable (case-fold risk). Then fixed colored tool header's hard-coded 44-col elision, hidden by tests pinning one console width.                
