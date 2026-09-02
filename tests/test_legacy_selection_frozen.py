@@ -40,6 +40,17 @@ from pathlib import Path
 import pytest
 
 import query_pattern_corpus
+
+# **Imported, never restated.** `tests/deliberate_divergences.py` is the single
+# authority for the cases no suite may assert byte-parity on, and for the shape of
+# each difference. A second copy of either is the defect that module exists to
+# prevent — the launcher guard was fixed in one of two files that held it, and 21
+# errors followed.
+from deliberate_divergences import (
+    SELECTION_WARNING_DIVERGENCES,
+    WARNING_PREFIX,
+    WARNING_SOURCE_ECHO,
+)
 from test_search_columns_sweep import COLUMNS_VALUES, SHAPES, _run
 from test_search_command_contract import (
     GENERATED_PATTERN_COUNT,
@@ -81,19 +92,74 @@ def _recorded(group: str) -> dict[str, dict]:
     }
 
 
-def _compare(actual, expected: dict, what: str) -> None:
-    """All three streams, in one place, so no caller can compare half of them."""
+def _compare(actual, expected: dict, home: Path, what: str) -> None:
+    """All three streams, in one place, so no caller can compare half of them.
+
+    **Both sides go through `_normalize`, because the recording stores normalised
+    bytes.** Paths, the launcher directory, wall-clock age and the
+    `search_query.py` location are replaced with placeholders at capture time —
+    `posix_class_future_warning`'s stderr is stored as
+    `{SEARCH_QUERY_SOURCE}:96: FutureWarning: …`. Comparing raw output against it
+    fails on a byte-perfect route.
+
+    Normalising the recorded side too is a no-op — it holds no home path to
+    replace — and it is done anyway so the two sides are visibly treated alike.
+    **The first version normalised neither and failed on the one row that carries
+    a placeholder; the fault predates the re-recording, and the previous recording
+    in git carries the identical bytes.**
+    """
     assert actual.returncode == expected["returncode"], (
         f"{what}: exit {actual.returncode} where `ch-legacy` recorded "
         f"{expected['returncode']}."
     )
-    assert actual.stdout == expected["stdout"], (
-        f"{what}: stdout differs from the recording.\n"
-        f"  recorded: {expected['stdout'][:400]!r}\n  native:   {actual.stdout[:400]!r}"
+    for stream in ("stdout", "stderr"):
+        got = _normalize(getattr(actual, stream), home)
+        want = _normalize(expected[stream], home)
+        assert got == want, (
+            f"{what}: {stream} differs from the recording.\n"
+            f"  recorded: {want[:400]!r}\n  native:   {got[:400]!r}"
+        )
+
+
+def _assert_only_the_missing_warning_decoration(
+    actual, expected: dict, home: Path, name: str
+) -> None:
+    """A ruled divergence is exempt from byte-parity here — and must still be a divergence.
+
+    The frozen successor of `test_a_warning_divergence_is_only_the_missing_decoration`,
+    which asserts this bound against the live route and dies with it. **Not a skip.**
+    Stdout and the exit status still have to reproduce the recording, the difference still
+    has to be exactly CPython's `warnings` decoration, and a row that stops diverging fails
+    below as an inert allowance.
+
+    **Both directions run off the authority's membership, so neither can go quiet.**
+    Removing the name from `deliberate_divergences.SELECTION_WARNING_DIVERGENCES` puts this
+    row back on byte-parity by itself; a name that stops diverging fails here.
+    """
+    assert actual.returncode == expected["returncode"], (
+        f"defect pattern {name}: exit {actual.returncode} where `ch-legacy` recorded "
+        f"{expected['returncode']}. The ruled divergence is CPython's warning decoration "
+        "on stderr and nothing else."
     )
-    assert actual.stderr == expected["stderr"], (
-        f"{what}: stderr differs from the recording.\n"
-        f"  recorded: {expected['stderr'][:400]!r}\n  native:   {actual.stderr[:400]!r}"
+    assert _normalize(actual.stdout, home) == _normalize(expected["stdout"], home), (
+        f"defect pattern {name}: stdout differs from the recording. The ruled divergence "
+        "is CPython's warning decoration on stderr and nothing else."
+    )
+    native = _normalize(actual.stderr, home)
+    recorded = _normalize(expected["stderr"], home)
+    assert native != recorded, (
+        f"{name} is listed in `SELECTION_WARNING_DIVERGENCES` but now reproduces the "
+        "recording exactly. **An exempt case that has stopped diverging is not a pass** — "
+        "drop it from `tests/deliberate_divergences.py` and this gate asserts byte-parity "
+        "on it again on its own."
+    )
+    assert recorded == WARNING_PREFIX + native + WARNING_SOURCE_ECHO, (
+        f"{name}'s difference is no longer exactly CPython's warning decoration.\n"
+        f"  recorded: {recorded!r}\n  native:   {native!r}\n"
+        "Reproducing the decoration is ruled against — it means emitting a path to a "
+        "`search_query.py` the cutover deletes and echoing a line of Python that will not "
+        "exist. The warning **text**, its stream and its ordering are not covered by that "
+        "ruling, and this says one of them has moved."
     )
 
 
@@ -111,6 +177,9 @@ def test_named_defect_patterns_match_the_recording(
     Held by name rather than by seed, exactly as the live gate was: these came
     from enumerating Unicode and from reading engines, not from generation, so a
     seed change must not be able to drop them.
+
+    One row is a **ruled** divergence and defers to the shared authority rather
+    than asserting byte-parity. See `_assert_only_the_missing_warning_decoration`.
     """
     recorded = _recorded("defect-patterns")
     assert name in recorded, (
@@ -125,7 +194,12 @@ def test_named_defect_patterns_match_the_recording(
         "color": False,
     }
     actual = _run_search(checkout_built_ch, case, contract_home)
-    _compare(actual, recorded[name], f"defect pattern {name}")
+    if name in SELECTION_WARNING_DIVERGENCES:
+        _assert_only_the_missing_warning_decoration(
+            actual, recorded[name], contract_home, name
+        )
+        return
+    _compare(actual, recorded[name], contract_home, f"defect pattern {name}")
 
 
 def test_generated_patterns_match_the_recording(
@@ -140,6 +214,31 @@ def test_generated_patterns_match_the_recording(
     **The width is regenerated from the same constants, not read from the
     recording.** Reading it back would make the gate agree with itself about which
     width each pattern was taken at, which is the one thing it must not do.
+
+    ⚠ **This gate compares `returncode` and `stdout` only**, faithfully reproducing
+    the live gate it replaced. Strengthening it to compare stderr is a genuine
+    improvement and **it turns rows red for reasons that are already known**, so
+    they are named here rather than rediscovered. Measured 2026-09-02 at oracle
+    `sha256:dd6ab701…`, rust tree `7b3267a6a22e1f7c`, with both routes alive:
+    **7 of 60 rows differ on stderr.**
+
+    - `generated-17` and `generated-58` carry the **ruled** warning divergence —
+      the same one `deliberate_divergences.SELECTION_WARNING_DIVERGENCES` names for
+      `posix_class_future_warning`, arrived at by generation rather than by name.
+    - `generated-51` (`[a&&b]`) is **not** covered by that ruling: `ch-legacy`
+      warns `Possible set intersection`, and the port emits **nothing at all**, so
+      the whole warning is absent rather than only its decoration.
+    - `generated-15`, `generated-32`, `generated-42` and `generated-59` differ for
+      an **unruled** reason, reported to `search-firstmate` on 2026-09-02 and
+      **verified live rather than read off the recording**: `console.print_hint`
+      passes the user's pattern through Rich console markup, so a bracket
+      expression that parses as a style tag is **deleted** from
+      `No sessions match "…"`. `ch-legacy` prints `No sessions match "+".` for the
+      pattern `[z-a]+`; the port prints the pattern. `[-a]` and `[123]` survive
+      because they do not parse as tags. **The port is the better output, which is
+      the direction `preserve-because-wrong` exists for.**
+
+    **Do not strengthen this gate without a ruling on those five rows.**
     """
     recorded = _recorded("generated-patterns")
     patterns = query_pattern_corpus.generate_patterns(
@@ -174,6 +273,8 @@ def test_generated_patterns_match_the_recording(
         if actual.returncode != expected["returncode"] or _normalize(
             actual.stdout, contract_home
         ) != _normalize(expected["stdout"], contract_home):
+            # (already normalised both sides here; `_compare` now does the same
+            # for the other two gates.)
             divergences.append(f"{pattern!r} at {columns} columns")
 
     assert not divergences, (
@@ -182,7 +283,7 @@ def test_generated_patterns_match_the_recording(
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def fixed_length_sweep_home(sweep_home: Path) -> Iterator[Path]:
     """The sweep corpus at a home of **exactly** the recorded length.
 
@@ -266,7 +367,12 @@ def test_columns_sweep_matches_the_recording(
         "points move with it, so a byte-perfect route would fail here."
     )
     actual = _run(checkout_built_ch, arguments, columns, fixed_length_sweep_home)
-    _compare(actual, recorded[key], f"`ch {' '.join(arguments)}` at COLUMNS={columns!r}")
+    _compare(
+        actual,
+        recorded[key],
+        fixed_length_sweep_home,
+        f"`ch {' '.join(arguments)}` at COLUMNS={columns!r}",
+    )
 
 
 # ── The falsifiers ───────────────────────────────────────────────────────────

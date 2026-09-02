@@ -52,10 +52,9 @@ from deliberate_divergences import (  # noqa: E402
     FENCE_CONTROLS,
     FENCE_DIVERGENCES,
     WARNING_DIVERGENCES,
+    WARNING_PREFIX,
+    WARNING_SOURCE_ECHO,
 )
-
-WARNING_PREFIX = b"{SEARCH_QUERY_SOURCE}:96: "
-WARNING_SOURCE_ECHO = b"  regex = re.compile(pattern, flags)\n"
 
 
 def _normalize_source_path(content: bytes) -> bytes:

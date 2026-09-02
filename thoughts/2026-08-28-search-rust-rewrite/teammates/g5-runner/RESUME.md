@@ -17,7 +17,24 @@ nothing under `.optmem/`. Runs the runbook and reports. Defects go to
 > a cold reader meets. Found by re-reading this file whole, which is the practice
 > that has caught the same fault five times on this mission.
 
-## ⏸ SOFT-PAUSED — 2026-09-01, admiral. STOP POINT IS CLEAN.
+## ▶ RESUMED 2026-09-02. Both digests unchanged across the pause.
+
+**`dd6ab701…` and `63a34f4f…` both re-derived and identical.** The recording is
+untouched (630,008 B → 631,188 B after the provenance correction below, answers
+unchanged).
+
+**⚠ THE TREE IS NOW COMMITTED.** `git status` went 117 paths → 0.
+**`67d60532bb0d` — "Checkpoint native search Rust rewrite WIP", Gilad Barnea,
+2026-09-02 12:18, 1,464 files.** Not the first mate's and not mine — **this seat
+commits nothing.** The deletion has NOT happened: `src/chats/commands/search.py`
+and `.venv/bin/ch-legacy` are both present.
+
+**Waiting on `parity-finisher`'s re-run. That is the only thing before the second
+checkpoint.**
+
+---
+
+## ⏸ (superseded) SOFT-PAUSED — 2026-09-01, admiral. STOP POINT IS CLEAN.
 
 **Nothing is mid-run. No capture, gate, build or install was interrupted.**
 
@@ -1620,16 +1637,112 @@ something the instrument cannot do again.
 
 ## What is on disk from this seat
 
-| file | lines / size | state |
+**⚠ Inventory refreshed 2026-09-02 after the disk cleanup. `evidence/` is new.**
+
+| file | size | state |
 | --- | --- | --- |
-| `RESUME.md` | 1554+ | current |
-| `deletion-enumeration.md` | 116 | complete |
-| `final-live-consultation.md` | 107 | **the stored consultation, 373 comparisons** |
-| `perf-gate-absolutes.md` | 96 | landed by `parity-finisher` |
-| `perf-gate-rederivation.md` | 118 | superseded by the absolutes, kept |
-| `check-10-baseline.md` | 51 | promoted verbatim into the runbook |
-| `probes/capture_selection_baseline.py` | — | complete, refusals falsified |
-| `tests/data/legacy-selection-baseline/` | 630,008 B | **complete, 150 answers** |
+| `RESUME.md` | 83 KB | current |
+| `evidence/final-live-pass.log` | 1,690 B | **⚠ raw output of a run that can never be re-taken** |
+| `evidence/README.md` | 798 B | says why that one log was kept and the rest deleted |
+| `deletion-enumeration.md` | 6.8 KB | complete |
+| `final-live-consultation.md` | 4.9 KB | **the stored consultation, 373 comparisons** |
+| `perf-gate-absolutes.md` | 4.9 KB | landed by `parity-finisher` |
+| `perf-gate-rederivation.md` | 5.6 KB | superseded by the absolutes, kept |
+| `check-10-baseline.md` | 2.3 KB | promoted verbatim into the runbook |
+| `probes/capture_selection_baseline.py` | 10 KB | complete, refusals falsified |
+| `tests/data/legacy-selection-baseline/` | 631,188 B | **complete, 150 answers, revision corrected** |
+| `tests/data/oracle-route-inputs/` | 1,383 B + README | **⚠ DO NOT DELETE — makes `dd6ab701` re-derivable** |
 
 **Nothing half-written. Nothing uncommitted that is mine to commit — this seat
 commits nothing.**
+
+---
+
+# ⚠ `dd6ab701` WAS NOT RE-DERIVABLE FROM THE COMMIT — found, fixed, proved
+
+**I was told to record `67d6053` as the revision. I verified before writing and
+the claim was false.** *Writing a provenance claim I have not verified is the one
+thing this seat exists to prevent.*
+
+## The finding — the deepest thing about decision 3, and nobody had noticed
+
+**`oracle_route_digest` has THREE inputs and git holds ONE.**
+
+    1. src/chats/**/*.py    31 files   IN THE COMMIT
+    2. .venv/bin/ch-legacy    321 B    NOT IN GIT — .gitignore:13 ignores .venv
+    3. dist-info/RECORD     1,062 B    NOT IN GIT
+
+**Checking out `67d6053` gives 31 Python files and no venv.**
+
+**⚠ AND THE REASON IS DECISION 3'S OWN ARGUMENT.** The route digest exists
+*because* a source-only digest is insufficient — *"a `git diff` digest cannot see
+the launcher or the installed RECORD, so a concurrent `uv sync` moves the oracle
+invisibly."* ***The property that makes it a good pin is the property that makes
+it unrecoverable from a commit.*** **Every artifact pinned that way has this
+shape.**
+
+## The cure — 1,383 bytes, and the procedure EXECUTED not asserted
+
+**`tests/data/oracle-route-inputs/`** — `ch-legacy`, `RECORD`, and a `README.md`
+opening **"⚠ DO NOT DELETE. These are not stray virtualenv artifacts."** *Two
+small files in a test directory look exactly like leftovers.* It carries the
+reason, not just the instruction.
+
+**The procedure is beside them because `oracle_digest.py` reads the LIVE venv** —
+a reader with the files and no instructions still cannot do it.
+
+**Executed 2026-09-02, using the STORED copies rather than the live ones, which is
+what proves the stored copies work:**
+
+    reconstructed  sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0
+    recorded       sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0
+
+## How the field was written in each artifact, and why they differ
+
+**`frozen_reference.json` — DERIVED.** The field went into
+`freeze_references.py` and the file was re-frozen. **82 stored, 0 drifted, 0 new.**
+***Hand-patching would have reintroduced exactly what I deleted from this file
+yesterday — a field nobody derived.***
+
+**`legacy-selection-baseline.json` — PATCHED, because re-recording was ruled out.**
+**Proved the answers were untouched: 0 of 3 groups changed**, by hashing each
+group before and after. **The capture script now derives it**, with a comment at
+the site saying `git rev-parse HEAD` was the wrong source and was used once — *a
+one-time exception that documents itself out of existence.*
+
+**Why the old value was worse than nothing: `8cb4c5f79cf6` predates every line of
+this mission.** Captured by `git rev-parse HEAD` against an uncommitted tree, so
+**no revision could have reproduced it — honest and useless in the same breath.**
+**A reader tries it and concludes the record is wrong.**
+
+## Not mine, recorded as a stated gap by the first mate
+
+The contract corpora and the stderr baseline are closed seats' artifacts: they
+carry `dd6ab701` and name no revision. **The revision is `67d6053`.** *A gap
+written down is navigable; one that is not is a dead end.* **`final-change-log.md`
+does not exist yet — it is a phase-5 deliverable, written after the deletion and
+the re-proof.**
+
+
+---
+
+## Disk cleanup — 2026-09-02, admiral's policy
+
+**35 MB of my own scratch removed, nothing that changes a resume instruction.**
+Binary copies (re-copied), timing logs (re-run), superseded probe scripts, the
+pre-fix recording, and backups of files whose fixes are verified and re-frozen.
+
+**One judgement made rather than escalated: the `dd6ab701` reconstruction tree is
+disposable**, because the procedure regenerates it from `git archive` in four
+steps — ***and that it regenerates is the whole point of having written the
+procedure down.***
+
+**One thing promoted rather than deleted: `evidence/final-live-pass.log`.** The
+final live consultation can never be re-run. `final-live-consultation.md`
+transcribes its counts; **this is the output they were transcribed from.** *A
+number in a document and the run that produced it are two different records, and
+only one of them stops being obtainable.*
+
+**Preserved and spot-checked untouched:** `oracle-route-inputs/`,
+`legacy-selection-baseline/`, `launcher-provenance/ch-0ffde41`,
+`target/release/ch` at `1f76081c`, `/private/tmp/ch-pool-snapshot`.

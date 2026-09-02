@@ -352,6 +352,21 @@ def main() -> int:
             + ", ".join(sorted(INSTRUMENT_MODULES) + [GENERATOR.name])
         ),
         "provenance": PROVENANCE,
+        "revision": subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True
+        ).stdout.strip(),
+        "revision_note": (
+            "The revision the oracle route digest is re-derivable FROM, together with "
+            "tests/data/oracle-route-inputs/. **A revision alone cannot reproduce it.** "
+            "`oracle_route_digest` covers three things and git holds one: `src/chats/**/"
+            "*.py` is committed, `.venv/bin/ch-legacy` and the installed dist-info "
+            "RECORD are not, because `.gitignore` excludes `.venv`. That is not an "
+            "oversight — the route digest exists BECAUSE a source-only digest is "
+            "insufficient, so the property that makes it a good pin is the property "
+            "that makes it unrecoverable from a commit. Re-derivation verified by "
+            "execution on 2026-09-02: the commit plus the two stored inputs yields "
+            "sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0."
+        ),
         "reference_route_identity": hashlib.sha256(Path(REFERENCE).read_bytes()).hexdigest()[:16],
         "note": "Reference-side outputs only. Contract fixture home; no user session content.",
         "entries": entries,

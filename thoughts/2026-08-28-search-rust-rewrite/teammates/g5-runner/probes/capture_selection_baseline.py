@@ -173,8 +173,19 @@ def main() -> int:
         "oracle_route_digest_recipe": "tests/oracle_digest.py::oracle_route_digest",
         "reference": str(LEGACY),
         "reference_identity": hashlib.sha256(LEGACY.read_bytes()).hexdigest()[:16],
+        # ⚠ `git rev-parse HEAD` is the WRONG source here and was used once.
+        # Recorded against an uncommitted tree it names a revision that cannot
+        # reproduce anything — 8cb4c5f predated every line of this mission. What a
+        # reader needs is the revision the ROUTE is re-derivable from, together with
+        # the two digest inputs git cannot hold. See tests/data/oracle-route-inputs/.
         "revision": subprocess.run(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT,
                                    capture_output=True, text=True).stdout.strip(),
+        "revision_note": (
+            "The revision the oracle route digest is re-derivable FROM, together with "
+            "tests/data/oracle-route-inputs/. A revision alone cannot reproduce it: "
+            "the digest covers .venv/bin/ch-legacy and the installed RECORD, and git "
+            "holds neither."
+        ),
         "columns_sweep_home": str(SWEEP_HOME),
         "columns_sweep_home_length": len(str(SWEEP_HOME)),
         "columns_sweep_home_note": (

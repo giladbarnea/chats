@@ -14053,3 +14053,356 @@ unchanged through the pause.**
 understated**, with the consequence: **had only the reported fifteen been fixed, the
 re-run would have gone green against a recording that was still broken, and the
 assertion that would have caught it was the one being repaired.**
+
+## ▶▶ L362. RESUMED — digests unchanged, and the checkpoint commit already exists
+
+**Nothing moved across the pause. Verified by `search-firstmate` rather than taken
+on report.**
+
+    oracle route digest  sha256:dd6ab701…badcee0   UNCHANGED
+    rust tree digest     63a34f4f26451d0c…         UNCHANGED
+    .venv/bin/ch-legacy  c1821a3a86ee9a88
+    target/release/ch    1f76081cd87a2808
+    ~/.local/bin/ch      1f76081cd87a2808          byte-identical to the build
+
+**`legacy-selection-baseline.json` untouched: 630,008 bytes, sha `4b69da31902febb1`,
+counts 18/60/72, home length 31, 0 rows carrying a raw temp path.**
+
+**⚠ THE TREE IS COMMITTED — `67d60532bb0d`, "Checkpoint native search Rust rewrite
+WIP", 2026-09-02 12:18 +0300, 1,464 files, 890,358 insertions. Not by
+`search-firstmate` and not by any seat.** `git status --short` went 117 → **0**.
+**The deletion has NOT happened: `src/chats/commands/search.py` is present at 39,652
+bytes, `.venv/bin/ch-legacy` is present, and the oracle digest proves the route is
+intact.**
+
+**Ruling 2 is discharged by that commit.** *It captured
+`test_legacy_selection_frozen.py`, the baseline and the consultation record — the
+gates are captured but not green, so ONE MORE checkpoint follows the re-run, for a
+different purpose.*
+
+## ⚠⚠ L363. NO ARTIFACT NAMES THE REVISION THAT MAKES `dd6ab701` RE-DERIVABLE
+
+**The recording states `revision: 8cb4c5f79cf6` — and `8cb4c5f` predates every line
+of this mission.** It was captured by `git rev-parse HEAD` **while the tree was
+uncommitted**, so at the moment it was written **no revision could reproduce that
+tree.** ***Honest and useless in the same breath.***
+
+**⚠ A STALE REVISION IS WORSE THAN AN ABSENT ONE.** *A reader holding a digest, a
+revision that predates the work, and no way to connect them is worse off than one
+holding a digest and a blank — because the first will try the revision and conclude
+the record is wrong.* **Correct it; do not add beside it.**
+
+***Decision 3's whole point arriving at the last possible moment: pin by route
+digest and keep the route — but a reader has to be told where the route is kept.***
+
+### RULED
+
+**Record `67d60532bb0d` in the recording and in `frozen_reference.json` now — it does
+not wait for the re-run.**
+
+**On the circularity: name the commit that CONTAINS THE ROUTE, not the commit that
+contains the field.** *"`dd6ab701` is re-derivable at `67d6053`" stays true after
+the field is added, because the claim is about that revision's `src/chats/`, not
+about the artifact stating it.* **Non-circular, so it lands first.**
+
+**⚠ The contract corpora and the stderr baseline belong to closed seats and are NOT
+being re-opened for a field. Their mapping goes into `final-change-log.md` and here,
+as a STATED gap:** ***these artifacts carry `dd6ab701` and do not name a revision;
+the revision is `67d6053`.*** **A gap that is written down is navigable; one that is
+not is a dead end.**
+
+**Order: the revision field → `parity-finisher`'s re-run of all 93 → the second
+checkpoint commit → the deletion → the post-deletion proof.**
+
+## ⚠⚠ L364. `dd6ab701` IS **NOT** RE-DERIVABLE FROM `67d6053` — L363's ruling was a false claim
+
+**Measured before writing, and the field was not written.** ***"Writing a provenance
+claim I have not verified is the one thing this seat exists to prevent."***
+
+    1. src/chats/**/*.py              31 files   IN THE COMMIT, byte-identical to the worktree
+    2. .venv/bin/ch-legacy            321 bytes  NOT IN GIT — .gitignore:13 ignores .venv
+    3. chats-0.1.0.dist-info/RECORD 1,062 bytes  NOT IN GIT
+
+**Checking out `67d6053` gives 31 Python files and no venv.** So *"`dd6ab701`
+remains re-derivable forever by checking out that revision"* **is false as stated,
+and `search-firstmate` ordered it written into two artifacts as provenance.**
+*Fourth time today a seat measured an instruction rather than executing it, and the
+second time the instruction was the first mate's.*
+
+### ⚠⚠ THE GENERAL FORM, and nobody had noticed it in three days
+
+**The route digest exists BECAUSE a source-only digest is insufficient** — decision
+3's own words: *"a `git diff` digest cannot see the launcher or the installed
+RECORD, so a concurrent `uv sync` moves the oracle invisibly."*
+
+***It was deliberately built to cover more than git can hold. It therefore cannot be
+reproduced from git alone. The property that makes it a good pin is the property
+that makes it unrecoverable from a commit.***
+
+**Every artifact pinned that way has this shape.**
+
+### ▶ RULED: store the 1,383 bytes, and prove the re-derivation before writing the field
+
+***Naming lets a reader CHECK a candidate; storing lets them RECONSTRUCT one.*** For
+1,383 bytes that is not a trade. **Seventh instance of cheap-now-impossible-after in
+three days, and the cheapest by three orders of magnitude.**
+
+1. **Store both under `tests/data/` with identities recorded** — `ch-legacy`
+   `c1821a3a86ee9a88`, `RECORD` `863d603b8e2c49ed` — **and a note saying what they
+   are and why.** *Two files that look like stray venv artifacts get deleted by the
+   next person tidying.*
+2. **Write the re-derivation PROCEDURE beside them**, not just the inputs: check out
+   `67d6053`, restore these two to the paths the recipe reads, run
+   `oracle_route_digest()`. **`oracle_digest.py` reads the live venv, so a reader
+   with the files and no instructions still cannot do it.**
+3. **⚠ EXECUTE THAT PROCEDURE AND CONFIRM IT YIELDS `dd6ab701` BEFORE THE FIELD IS
+   WRITTEN.** *Otherwise two files are stored on a hypothesis and provenance is
+   written on a second one.* ***Falsify rather than assert, applied to a provenance
+   claim.***
+
+**Then the field is true: `revision: 67d60532bb0d`, the two stored inputs by path
+and identity, and that the re-derivation was verified on 2026-09-02.**
+
+*The truthful weaker fallback was offered and rejected only because the better
+option costs 1,383 bytes: `git diff HEAD -- src/chats` is empty and the source-only
+digest is `b1ae8f94710ba066`, so a partial, accurate claim was available. **Offering
+the weaker accurate answer alongside the stronger one is what made the ruling
+easy.***
+
+## ▶▶ L365. `dd6ab701` IS RE-DERIVABLE — verified, not asserted
+
+    reconstructed  sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0
+    recorded       sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0
+
+**`git archive 67d6053 src/chats tests` into a scratch tree — 31 Python files — plus
+the two STORED copies rather than the live ones**, *which is what proves the stored
+copies work*, then the digest run against the reconstruction.
+
+**`tests/data/oracle-route-inputs/`** — `ch-legacy` (321 B, `c1821a3a…`), `RECORD`
+(1,062 B, `863d603b…`), and a `README.md` opening **"⚠ DO NOT DELETE. These are not
+stray virtualenv artifacts."** **It carries the reason** — the digest covers more
+than git can hold, **so the property that makes it a good pin makes it unrecoverable
+from a commit** — *so the next person who finds them understands rather than
+obeys.* **The four-step re-derivation procedure sits beside them**, because
+`oracle_digest.py` reads the **live** venv and a reader with the files and no
+instructions still cannot do it.
+
+### The field was DERIVED, not patched — a rule applied against its author's convenience
+
+**`frozen_reference.json`: the field went into `freeze_references.py` and the file
+was re-frozen**, so it is produced by the instrument like every other field.
+***"Hand-patching would have reintroduced exactly what I deleted from this file
+yesterday — a field nobody derived."*** **82 stored, 0 drifted, 0 new; instrument
+digest `03bf8b92…`.** *L302 removed `revision` as the one field nobody re-derived,
+and its author declined to add a new one the same way, one day later.*
+
+**`legacy-selection-baseline.json` was patched, since no re-recording was
+authorised — and the answers were proved untouched, 0 of 3 groups changed, by
+hashing each group before and after. The capture script now derives the field, with
+a comment saying `git rev-parse HEAD` was the wrong source and was used once.**
+*A one-time exception that documents itself out of existence.*
+
+*Self-corrected mid-task: a `RECORD` hash first written truncated to 16 characters
+beside a full-length one. **A provenance record with two hash lengths invites a
+reader to wonder which is authoritative.***
+
+## ▶ REQUIRED CONTENTS OF `final-change-log.md` — a phase-5 deliverable, not yet written
+
+**Recorded here so nothing is lost between now and then.**
+
+1. **The deliberate-divergences table** — the four fence languages and the
+   `FutureWarning` decoration, each with its reason and its bound, **as asserted
+   exact differences rather than expected reds.**
+2. **The memory outcome with BOTH numbers in one sentence** — the adverse scan ratio
+   up to 3.39×, worst scan absolute 192 MB, worst overall 276 MB, **full coloured
+   rendering at about one-third of Python's memory, and every timing shape 1.8× to
+   33× faster.**
+3. **The named follow-up:** scan-memory per-session accumulation, with the flat-56 MB
+   diagnostic and the retirement of the oversized-line probe as primary instrument.
+4. **The closed-seat provenance gap, stated:** *the contract corpora and the stderr
+   baseline carry `dd6ab701` and name no revision; the revision is `67d6053`, and
+   its two non-git inputs are stored at `tests/data/oracle-route-inputs/`.*
+   ***A gap that is written down is navigable; one that is not is a dead end.***
+5. **What every frozen successor can no longer assert**, in `g5-runner`'s form:
+   **it can no longer detect that the recording was itself wrong, because the route
+   that would have said so is gone.**
+6. **The highlighting stated plainly** as a reimplementation of corpus-bounded
+   fidelity over seven language families carrying 98.2% of painted characters, with
+   the plain fallback for the rest.
+
+## ▶ L366. Both faults fixed, the unknown answered from git, and the run released
+
+**The unknown is settled from evidence rather than from the most recent change.**
+`git show HEAD:…legacy-selection-baseline.json` proves **the previous recording
+carries the identical bytes** — `{SEARCH_QUERY_SOURCE}:96: FutureWarning: …` —
+**so the fault predates the re-recording and nothing about the recording is
+implicated.** *Recorded as unknown at the pause rather than guessed, then answered
+from git rather than from what changed last, which is what everyone assumes.*
+
+**⚠ AND THE NUMBER BESIDE IT IS THE FINDING: only 1 of the 18 defect-pattern rows
+carries a placeholder at all. Seventeen would have passed a raw comparison
+forever.** ***The one row that could see the fault is the one that found it — which
+is why a group is not covered by its majority.***
+
+**Fault 1 — `ScopeMismatch`:** `fixed_length_sweep_home` is now `scope="module"`,
+**matching `sweep_home` rather than widening it**, as ruled — *widening a fixture
+another gate depends on changes when their corpus is built, for one seat's
+convenience.*
+
+**Fault 2 — normalisation, fixed one level up from where it bit.** The obvious
+repair was the defect-patterns comparison; **`_compare` now normalises both sides
+for every group, in one place, rather than each caller remembering** — **and the
+columns-sweep rows are normalised too and were failing partly for the same reason.**
+*Normalising the recorded side is a no-op, done anyway so the two sides are visibly
+treated alike* — the symmetry that stops a future reader "simplifying" it back.
+**All three gates now have the shape the generated-patterns gate already had.**
+
+**⚠ And the rejected workaround would not have helped: the sweep failures were TWO
+FAULTS WEARING ONE APPEARANCE** — a real home-length defect in the old recording
+*and* a missing normalisation. ***It would have hidden the second while the first
+was being properly fixed, and a hidden fault behind a correctly repaired one is the
+worst outcome available.***
+
+### The run is released, and the first mate is out of the digest loop
+
+**`parity-finisher` re-derives both digests themselves immediately before the run
+and records them with the result.** **The digests `search-firstmate` held are
+stale** — `g5-runner` confirmed nothing moved across the pause and then edited the
+tree themselves, storing `oracle-route-inputs` and re-freezing through the
+instrument. **The precondition the wait existed for is satisfied; movement since is
+recorded work.** ***A relayed digest is a report about tree state, and three of
+those have gone stale between being taken and being acted on.***
+
+*Tree verified quiet before release: no edits under `rust/`, `tests/` or `probes/`
+in thirty minutes; nine uncommitted paths, all accounted for.*
+
+## ⚠⚠ L367. 93 PASSED, 1 FAILED — and the red row is a RULED divergence, not a new defect
+
+*Digests re-derived immediately before the run: oracle `sha256:dd6ab701…`, tree
+`7b3267a6a22e1f7c`. **All 72 sweep rows pass, all 60 generated, 17 of 18 defect
+patterns, both falsifiers.***
+
+    recorded (python): b'{SEARCH_QUERY_SOURCE}:96: FutureWarning: Possible nested set at position 1\n  regex = re.compile(pattern, flags)\n'
+    native:            b'FutureWarning: Possible nested set at position 1\n'
+
+**`_normalize` is working correctly — there is no path in the native output to
+normalise, because the port does not print one.**
+
+**⚠ VERIFIED RATHER THAN INFERRED: `tests/deliberate_divergences.py` holds
+`WARNING_DIVERGENCES = ("fb-posix-class-warning", "fb-posix-class-bare-warning")`,
+and its docstring rules against reproduction explicitly** — *emitting a path to
+`search_query.py:96` and echoing a line of Python the cutover deletes is the
+fabricated-traceback pattern this project already removed once.* **The failing
+`posix_class_future_warning` row is a THIRD case of the same divergence, reached
+through a different corpus.**
+
+***So this is not a relaxation and not a port change: the frozen selection gate must
+defer to that authority, exactly as `test_search_command_contract.py` was taught to
+this morning. THIRD INSTANCE TODAY of a gate asserting byte-parity on a case the
+desk has ruled divergent.*** **And it must IMPORT, not copy** — that module's own
+docstring says *a second copy of this list is the defect it exists to prevent.*
+
+**Small, bounded, and it goes to whoever the captain resumes for the deletion.**
+
+### It was hidden behind a correctly repaired fault
+
+**The normalisation fault predated the re-recording and was that seat's own. This
+one is underneath it and was hidden by it — fixing the comparison is what made it
+visible.** ***Two faults wearing one appearance, for the second time in one seat***
+— and the rejected workaround would have hidden this one while the other was
+properly fixed.
+
+## `parity-finisher`'s seat is closed at 90%
+
+**Cleanup skipped deliberately rather than done badly.** ***A mistaken `rm` at 90%
+is not recoverable and a leftover target directory is.*** **Three directories named
+as safe for anyone to delete — a private `CARGO_TARGET_DIR` under the scratchpad and
+two driver `target/` dirs under `teammates/parity-finisher/probes/drivers/`.** *All
+reproducible, none referenced by any gate.* **Nothing on the preserve list touched.**
+
+**Ledger, the longest on this mission:** F1; the C0 set twice re-derived, ending as
+a four-site class with three oracles; F16; F17; the wrap-oracle gate; the
+backreference sweep as a measured negative; `codecs.rs`; both `terminal.rs` width
+divergences; `search_output.rs` three times; `codex.rs`; `inventory.rs`; the `-r`
+indentation and `textwrap.indent`; the rule-colour slice; the six ceilings and their
+discriminate-assertion; the three frozen gates. **Four defects nobody had listed,
+three changing search results.**
+
+**Two rules this desk keeps that came from that seat: *a maintained number is a
+drift generator*, and *placement is part of the retraction*** — the second of which
+corrected `state.md` twice within the hour of being found.
+
+## ▶▶ L368. THE DELETION SEAT IS APPROVED — `deletion-owner`, `prompts/deletion-owner.md`
+
+**Five items, in order, and no other scope:** wire the frozen selection gate to the
+shared divergence authority by import; re-run all 94; **hand the second checkpoint
+commit to `search-firstmate`** per charter commit policy; delete the Python search
+authority; **hand a stable tree to `g5-runner` for the full post-deletion proof.**
+
+### ⚠ THE PROMPT CARRIES NO DELETION LIST, ON PURPOSE
+
+***Derive it. Do not inherit one.*** **`ch-legacy` is not deleted — the charter
+keeps it for default parsing and unscoped commands. What goes is what is reachable
+only from the `search` subcommand.**
+
+**Two traps are named in the brief because each costs a day if a list is inherited
+by filename:**
+
+**`pool_filter.py` cannot simply go.** `extract_cwd_from_jsonl_file` serves
+`passes_path_for_index` — **the `ch -1 -d` index path, which has NOT been ported**
+(L310). **Deleting it breaks a journey the charter keeps.**
+
+**The PyO3 extension stays.** `python_extension.rs` imports only `inventory` and
+`scanner`, both used by `ch-legacy`. **The wheel legitimately ships
+`chats/_native.abi3.so`** — check 14 records it and it is not a leftover.
+
+**Derive by reachability from `cli.py`'s dispatch, not by name. Anything a surviving
+command imports, survives.** **Report the list before deleting, so it is on the
+record rather than in one seat's head.**
+
+### The falsifier for a deletion, stated as the brief states it
+
+***The proof that you deleted the right thing is that `ch-legacy`'s surviving
+journeys still work — run them before and after and diff. A deletion is falsified by
+what still has to pass.***
+
+### Current modified paths, handed over
+
+    M tests/data/legacy-selection-baseline/legacy-selection-baseline.json
+    M tests/test_legacy_selection_frozen.py
+    M thoughts/…/state.md
+    M thoughts/…/teammates/g5-runner/RESUME.md
+    M thoughts/…/teammates/g5-runner/probes/capture_selection_baseline.py
+    M thoughts/…/teammates/parity-finisher/RESUME.md
+    M thoughts/…/teammates/reviewer-profiler/freeze_references.py
+    M thoughts/…/teammates/reviewer-profiler/frozen_reference.json
+    ?? tests/data/oracle-route-inputs/
+    ?? thoughts/…/teammates/g5-runner/evidence/
+
+**Pre-deletion checkpoint `67d6053` already exists; the second one captures the
+passing gates.** **`g5-runner`'s standing instruction binds the new seat: refuse the
+deletion until the frozen gates are green and the checkpoint exists.**
+
+## ▶ L369. `deletion-owner` IS LIVE — w76:tK / w76:p1C
+
+**It exclusively owns: the shared divergence wiring, the 94/94 proof, the
+checkpoint/deletion sequence, and the G5 handoff.** **All prior owners stay idle
+unless it routes one narrow question.**
+
+**No welcome message was sent.** *The brief carries the ownership boundaries, the
+five items in order, the two deletion traps, the falsifiers, the definition of done,
+the preserve list and the commit policy — a welcome would cost a seat context to
+tell it what it is already reading.*
+
+**`g5-runner` was told what changed, because they were holding for a seat that no
+longer exists:** `parity-finisher` closed at 90%; **the red row is ruled, not
+defective**; **their own standing instruction is now written into someone else's
+brief as binding on them** — *it outlives their seat rather than remaining their
+intention*; and **the post-deletion proof is the last thing on this mission and is
+theirs.**
+
+**State at handover:** `ch search` runs on Rust and is installed; G5 closed at 13 of
+15 green with 2 accepted; 93 of 94 frozen assertions green; pre-deletion checkpoint
+`67d6053` exists with `dd6ab701` **verified re-derivable** from it plus
+`tests/data/oracle-route-inputs/`; nine stored artifacts confirmed; the final live
+consultation recorded at 373 comparisons, all passed, **and unrepeatable.**
