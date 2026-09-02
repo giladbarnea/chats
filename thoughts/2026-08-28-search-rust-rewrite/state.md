@@ -1,6 +1,27 @@
 # State — fully native `ch search`
 
-Decision record. Owned by `search-firstmate`. **Last update: 2026-08-29.**
+# ✅ COMPLETE — 2026-09-02
+
+**`ch search` runs entirely in the Rust executable. The Python search authority is
+deleted. G5 proved: 13 of 15 checks green, 2 retired as unmeasurable.**
+
+**→ For the outcome, the commits, the numbers and the follow-ups, read
+[`final-change-log.md`](final-change-log.md). It is the document written to be read
+first.**
+
+**This file is the decision record — why things are the way they are. It is
+append-only and 380+ entries long; nothing further will be added.**
+
+    67d6053   the native cutover, captured
+    e74f5a0   pre-deletion checkpoint, frozen gates green
+    ebd67ba   the deletion — 7,611 lines across 36 files
+    4c921a7   two measurements retired that the deletion made meaningless
+
+**Three follow-ups are open and named in the change log:** the missing `[a&&b]`
+warning; per-session scan-memory accumulation; and the post-cutover Arborium
+evaluation.
+
+---
 
 > ## ⚠ HOW TO READ THIS FILE
 >
@@ -14840,3 +14861,69 @@ one-name-for-one-thing hazard this desk has hit all week — and the resolution
 generalises `dd6ab701`'s: a digest needs its INPUTS to be re-derivable, and it needs
 its RECIPE to be an identity.*** **Every digest quoted from here carries which
 recipe produced it. One line in the change log so a successor does not chase it.**
+
+## ⚠⚠⚠ L381. THE ARM THAT WOULD HAVE GONE **GREEN** — `--falsify`, retired. Committed `4c921a7`.
+
+**`search-firstmate` ruled on the arm that went RED. There were two dead arms, and
+the other is the dangerous one.**
+
+    .venv/bin/ch-legacy search zqxjvwmkbphfgd -ll
+      → "Ambiguous conversation/session identifier 'search' matches multiple sessions"
+         exit 0, 14.9 SECONDS
+
+**`ch-legacy` resolves the word `search` as a SESSION IDENTIFIER and scans the
+pool.** Both arms measure session resolution — **but not equally visibly.**
+
+**The parity arm's control caught it and went red, which is why nobody filed the
+576-vs-65 MB regression.** **`--falsify` requires every shape to EXCEED its ceiling
+against the reference, and a 14.9-second session resolution exceeds all six —**
+***so it would have reported PASS forever.***
+
+***"A gate that passes for a reason unrelated to what it measures is worse than one
+that goes red, because nothing draws anyone to it."***
+
+***The red arm was safe precisely because it was red. The green one would have
+outlived everyone who knew why.*** **Twelfth instance of that shape this week — and
+the first inside this desk's own instruments, created by its own deletion, invisible
+in the same run that made it.**
+
+**Retiring it costs nothing, because of a ruling made the previous day for a
+different reason: `verify_ceilings_discriminate` (L354) already asserts the property
+`--falsify` existed to catch, before anything is measured.** *A mechanism placed on
+Tuesday covering a gate that died on Wednesday.*
+
+**Both flags refuse BY NAME with the 14.9-second measurement in the refusal
+message** — *a reader reaching for `--falsify` next month gets the reason, not an
+error.* **`memory_delta` kept unreachable beside the +576/+451 MB figures it
+produced, both directions stated** — the `interleaved_medians` treatment, applied
+unasked. **The per-session-accumulation follow-up is pointed at from where the
+retired gate was.**
+
+**Nine native-only gates PASS:** help 5.4/20 ms · literal miss 277/325 · broad list
+1030/1240 · coloured 2390/2930 · selective 1000/1235 · regex miss 1739/2065 · memory
+435/572/493 MB. **Suite 1,963 passed, 3 skipped, 0 failed. Journeys 36 of 36.**
+
+**Item 2 — `oracle_stamp()` now READS `tests/oracle_provenance.py`**, so there is no
+second place to go stale. *Sixth one-of-two-places fault, closed by removing the
+second place rather than fixing it.*
+
+**Item 3 — the correction is NARROWER than what it replaced.** An exemption cannot
+become vacuous **for the cases the list names**; ***what is gone is completeness —
+nothing can prove the list is whole any more.*** **A true statement that admits less
+is worth more than a comforting one.**
+
+### L382. The digest recipes, both recorded
+
+**`deletion-owner`/`parity-finisher`: `sha256` over concatenated `rust/**/*.rs`
+bytes in sorted path order, NO path names, NO separators — 43 files →
+`7b3267a6a22e1f7c`.** `probes/digests.py::rust_tree_digest`.
+
+**`g5-runner`: a recipe reproducing L263's `ca874ce060f1` exactly →
+`63a34f4f26451d0c`.** **Nine variants were tried to reproduce it from the first
+recipe — paths included, NUL separators, trailing NULs, repo-relative paths, all
+files rather than `*.rs`, plus `Cargo.toml`, plus `Cargo.lock`, newline separators —
+and none yields it.** ***A different recipe, not a different tree.*** `git diff HEAD
+-- rust` is empty, **so both claims are true.**
+
+***"A digest without its recipe is not an identity." Two seats quoted the same name
+at different values for four days and neither was ever wrong.***
