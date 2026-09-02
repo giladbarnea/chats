@@ -1,0 +1,1 @@
+teammates/query-semantics/query-semantics-map.md

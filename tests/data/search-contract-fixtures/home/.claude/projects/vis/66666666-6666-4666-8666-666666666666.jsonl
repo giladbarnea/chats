@@ -1,0 +1,5 @@
+{"type":"user","uuid":"u-2026-08-20T15:00:00Z","timestamp":"2026-08-20T15:00:00Z","message":{"role":"user","content":"visible opener"},"cwd":"/tmp/search-contract/vis"}
+{"type":"assistant","uuid":"a-tools","timestamp":"2026-08-20T15:01:00Z","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"tool_use","id":"toolu_v1","name":"Bash","input":{"command":"echo visbashcommand"}}]}}
+{"type":"user","uuid":"u-toolresult","timestamp":"2026-08-20T15:02:00Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_v1","content":"vistooloutput result text"}]}}
+{"type":"assistant","uuid":"a-think","timestamp":"2026-08-20T15:03:00Z","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"thinking","thinking":"vishushhush secret thought"},{"type":"text","text":"visible answer"}]}}
+{"type":"assistant","uuid":"a-plan","timestamp":"2026-08-20T15:04:00Z","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"tool_use","id":"toolu_v2","name":"ExitPlanMode","input":{"plan":"visplansteps content"}}]}}

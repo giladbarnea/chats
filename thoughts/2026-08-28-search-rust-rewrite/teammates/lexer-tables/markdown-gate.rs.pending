@@ -1,0 +1,90 @@
+// The markdown gate, written and held.
+//
+// **It was built against `handlecodeblocks=False`, which the retracted tail ruling
+// made correct and the replacement rule may not.** Two of its four mutations were
+// still failing when it was parked: the heading push does not exist (nothing
+// transitions into `inline`, which is include-only) and the two fence rules are
+// disjoint, so swapping them is invisible. Both need re-aiming, and the whole
+// oracle needs regenerating if the configuration changes.
+
+/// Markdown, the last family and the only one with a **transcribed** action.
+///
+/// Its fenced-code rule is a hand-written callback, so there is nothing in `_tokens`
+/// to project. Under the captain's tail ruling a nested fence renders plain, and
+/// **that is exactly Pygments' own `handlecodeblocks=False`** — not an approximation
+/// of it. So the oracle is recorded from that configuration and the callback's nine
+/// groups are transcribed as an ordinary `bygroups`. **The generator's entry carries
+/// its own premise** — the callback's name, the group count and every group name —
+/// and refuses if any of them moved.
+///
+/// **One divergence, named and measured.** The callback emits an empty `Text` for an
+/// empty `extra` group where `bygroups` emits nothing. Neither renderer produces a
+/// segment for an empty token, so the block renders identically; the token
+/// comparison elides empties on both sides and the render gate proves the rest.
+mod markdown {
+    use super::*;
+    use crate::syntax_tables::markdown_table;
+
+    #[test]
+    fn the_table_reproduces_pygments_over_real_markdown() {
+        reproduces_pygments("markdown", markdown_table, 40);
+    }
+
+    #[test]
+    fn the_corpus_reaches_every_declared_rule() {
+        corpus_reaches_every_declared_rule("markdown", markdown_table);
+    }
+
+    fn changes_the_stream(what: &str, mutate: &dyn Fn(&mut LexerTable)) {
+        must_change_the_stream("markdown", markdown_table, what, mutate);
+    }
+
+    /// **A rule dropped**, and it is the transcribed one: without it a tagged fence
+    /// is not a fence at all.
+    #[test]
+    fn dropping_the_fenced_code_rule_changes_the_stream() {
+        changes_the_stream("dropping root's fenced-code rule", &|table| {
+            rule_at(table, "root", 9, "(?x)");
+            state_of(table, "root").remove(9);
+        });
+    }
+
+    /// **Two rules swapped.** The untagged fence rule sits above the tagged one and
+    /// would take a tagged fence's opening if it did not.
+    #[test]
+    fn swapping_the_two_fence_rules_changes_the_stream() {
+        changes_the_stream("swapping root's untagged and tagged fence rules", &|table| {
+            rule_at(table, "root", 8, "^(\\s*```");
+            rule_at(table, "root", 9, "(?x)");
+            state_of(table, "root").swap(8, 9);
+        });
+    }
+
+    /// **A `bygroups` slot dropped**, on the transcribed rule itself — the one place
+    /// in 993 rules where a slot map was written by hand rather than projected.
+    #[test]
+    fn dropping_a_transcribed_bygroups_slot_changes_the_stream() {
+        changes_the_stream("dropping the code slot from root's fenced-code rule", &|table| {
+            let rule = rule_at(table, "root", 9, "(?x)");
+            let Action::ByGroups(slots) = &mut rule.action else {
+                panic!("ROOT[9] IS NOT A BYGROUPS — mutation not applied, result meaningless");
+            };
+            assert_eq!(slots.len(), 9, "the transcribed slot map has nine slots");
+            slots.remove(6);
+        });
+    }
+
+    /// **A transition changed from push-one to stay.** Markdown's only push is into
+    /// `inline`, and without it a heading's contents lex as ordinary text.
+    #[test]
+    fn losing_the_heading_push_changes_the_stream() {
+        changes_the_stream("losing a heading's push into `inline`", &|table| {
+            let rules = state_of(table, "root");
+            let index = rules
+                .iter()
+                .position(|rule| matches!(&rule.transition, Transition::States(states) if states == &["inline"]))
+                .expect("NO PUSH INTO `inline` — mutation not applied, result meaningless");
+            rules[index].transition = Transition::Stay;
+        });
+    }
+}

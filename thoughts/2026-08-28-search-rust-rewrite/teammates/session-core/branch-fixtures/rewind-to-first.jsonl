@@ -1,0 +1,5 @@
+{"type": "user", "uuid": "u1", "parentUuid": null, "timestamp": "2026-08-20T12:00:00.000Z", "message": {"role": "user", "content": "abandoned opening"}}
+{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "timestamp": "2026-08-20T12:01:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "abandoned reply"}]}}
+{"type": "user", "uuid": "u2", "parentUuid": null, "timestamp": "2026-08-20T12:02:00.000Z", "message": {"role": "user", "content": "real opening"}}
+{"type": "assistant", "uuid": "a2", "parentUuid": "u2", "timestamp": "2026-08-20T12:03:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "real reply"}]}}
+{"type": "last-prompt", "leafUuid": "a2"}

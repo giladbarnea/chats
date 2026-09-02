@@ -1,0 +1,12 @@
+=== repetition 1 ===
+E   AssertionError: `ch search . -l -d .` took 3095ms; budget is 2500ms.
+FAILED tests/test_search_perf.py::test_search_dir_filter_list_under_2500ms - ...
+1 failed, 3 passed in 6.80s
+=== repetition 2 ===
+E   AssertionError: `ch search . -ma 4h --list` took 1903ms; budget is 1750ms.
+FAILED tests/test_search_perf.py::test_search_mafter_4h_list_under_1750ms - A...
+1 failed, 3 passed in 6.79s
+=== repetition 3 ===
+E   AssertionError: `ch search . -l -d .` took 2564ms; budget is 2500ms.
+FAILED tests/test_search_perf.py::test_search_dir_filter_list_under_2500ms - ...
+1 failed, 3 passed in 5.25s

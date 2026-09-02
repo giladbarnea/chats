@@ -30,9 +30,32 @@ Do not ship an intermediate Python→Rust→Python production path. Keep product
 - Keep edits surgical. No unrelated cleanup, defensive fallbacks, or parallel production authorities.
 - Direct shared checkout. Coordinate ownership before touching overlapping files.
 - Workers do not commit independently. The first mate may create accepted checkpoint commits.
+- **Desk policy (2026-08-28, captain).** Only `search-firstmate` writes team-level
+  files directly under `thoughts/2026-08-28-search-rust-rewrite/`. Every teammate
+  works only inside `teammates/<name>/` — throwaway material, temporary scripts,
+  WIP notes, and draft artifacts. `search-firstmate` uses its own subdirectory for
+  scratch work too. When a teammate has something ready, it messages
+  `search-firstmate` with the path and asks for promotion. The first mate reviews
+  and promotes accepted material to the shared desk.
+  **This supersedes every role prompt in `prompts/` that tells a worker to write a
+  shared document.** Read `write X.md` in a role prompt as `write
+  teammates/<your-name>/X.md and ask for promotion`.
+- **Memory policy (2026-08-28, captain).** Only `search-firstmate` may run `memo`
+  or write under `.optmem/`. No other teammate touches either.
+- **Pause policy (2026-08-28, admiral).** If the shared Claude usage or session
+  limit is reached, or is close enough to stop work, pause the effort. Do not
+  switch models, do not spawn replacements, and do not attempt recovery. Leave
+  work in progress in `teammates/<name>/` and stop cleanly. The effort resumes
+  later.
+  **Therefore every teammate keeps `teammates/<name>/RESUME.md` current**: what
+  is half-done, what comes next, and which production files carry uncommitted
+  edits. A pause can arrive without warning, so the note is written as work
+  proceeds rather than when stopping.
 - Current source, tests, and installed-launcher evidence outrank `thoughts/`. Historical notes are untrusted until the context curator classifies them.
 
 ## Social dynamics
+
+Roster: `search-firstmate`, `context-curator`, `contract-owner`, `session-core`, `query-semantics`, `search-runtime`, and `reviewer-profiler`.
 
 `search-firstmate` owns the whole mission and edits no production code or tests. Every teammate communicates directly with the first mate through Claude Code native messaging.
 

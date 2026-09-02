@@ -1,0 +1,1 @@
+chats: agent teams reviewed and fixed the Rust rewrite (EPIPE, validator, launcher provenance, empty optionals, 44-col elision), then began the native ch search rewrite - desk 2026-08-28-search-rust-rewrite/state.md, reconciling unrecorded branch 0ffde41, 2.2-35x faster.                

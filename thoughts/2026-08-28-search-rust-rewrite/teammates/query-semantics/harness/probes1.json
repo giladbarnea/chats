@@ -1,0 +1,417 @@
+[
+ {
+  "id": "lookahead_pos",
+  "pattern": "foo(?=bar)",
+  "haystacks": [
+   "foobar",
+   "foobaz"
+  ]
+ },
+ {
+  "id": "lookahead_neg",
+  "pattern": "foo(?!bar)",
+  "haystacks": [
+   "foobar",
+   "foobaz"
+  ]
+ },
+ {
+  "id": "lookbehind_pos",
+  "pattern": "(?<=foo)bar",
+  "haystacks": [
+   "foobar",
+   "bazbar"
+  ]
+ },
+ {
+  "id": "lookbehind_neg",
+  "pattern": "(?<!foo)bar",
+  "haystacks": [
+   "foobar",
+   "bazbar"
+  ]
+ },
+ {
+  "id": "backreference",
+  "pattern": "(a)\\1",
+  "haystacks": [
+   "aa",
+   "ab",
+   "a1"
+  ]
+ },
+ {
+  "id": "named_backref",
+  "pattern": "(?P<x>a)(?P=x)",
+  "haystacks": [
+   "aa",
+   "ab"
+  ]
+ },
+ {
+  "id": "named_group",
+  "pattern": "(?P<name>foo)",
+  "haystacks": [
+   "foo",
+   "bar"
+  ]
+ },
+ {
+  "id": "conditional",
+  "pattern": "(a)?(?(1)b|c)",
+  "haystacks": [
+   "ab",
+   "c",
+   "b"
+  ]
+ },
+ {
+  "id": "atomic_group",
+  "pattern": "(?>foo)",
+  "haystacks": [
+   "foo",
+   "bar"
+  ]
+ },
+ {
+  "id": "possessive",
+  "pattern": "a*+b",
+  "haystacks": [
+   "aab",
+   "b"
+  ]
+ },
+ {
+  "id": "inline_comment",
+  "pattern": "(?#hi)foo",
+  "haystacks": [
+   "foo",
+   "hifoo"
+  ]
+ },
+ {
+  "id": "flag_leading",
+  "pattern": "(?i)foo",
+  "haystacks": [
+   "FOO",
+   "foo"
+  ]
+ },
+ {
+  "id": "flag_midpattern",
+  "pattern": "foo(?i)bar",
+  "haystacks": [
+   "fooBAR",
+   "foobar"
+  ]
+ },
+ {
+  "id": "flag_scoped",
+  "pattern": "foo(?i:bar)",
+  "haystacks": [
+   "fooBAR",
+   "foobar"
+  ]
+ },
+ {
+  "id": "anchor_cap_Z",
+  "pattern": "foo\\Z",
+  "haystacks": [
+   "foo",
+   "foo\n",
+   "foobar"
+  ]
+ },
+ {
+  "id": "anchor_low_z",
+  "pattern": "foo\\z",
+  "haystacks": [
+   "foo",
+   "foo\n"
+  ]
+ },
+ {
+  "id": "anchor_A",
+  "pattern": "\\Afoo",
+  "haystacks": [
+   "foo",
+   "barfoo",
+   "bar\nfoo"
+  ]
+ },
+ {
+  "id": "unicode_prop",
+  "pattern": "\\p{L}+",
+  "haystacks": [
+   "abc",
+   "123",
+   "p{L}"
+  ]
+ },
+ {
+  "id": "posix_class",
+  "pattern": "[[:alpha:]]+",
+  "haystacks": [
+   "abc",
+   "123",
+   "[:alpha:]",
+   "a:b"
+  ]
+ },
+ {
+  "id": "class_intersect",
+  "pattern": "[\\w&&[^a]]+",
+  "haystacks": [
+   "bcd",
+   "a",
+   "&"
+  ]
+ },
+ {
+  "id": "class_difference",
+  "pattern": "[a-z--[aeiou]]+",
+  "haystacks": [
+   "bcd",
+   "aei",
+   "-"
+  ]
+ },
+ {
+  "id": "brace_unclosed",
+  "pattern": "a{",
+  "haystacks": [
+   "a{",
+   "a"
+  ]
+ },
+ {
+  "id": "brace_unbounded",
+  "pattern": "a{2,}",
+  "haystacks": [
+   "aaa",
+   "a"
+  ]
+ },
+ {
+  "id": "brace_huge",
+  "pattern": "a{1,100000}",
+  "haystacks": [
+   "aaa"
+  ]
+ },
+ {
+  "id": "nested_quant",
+  "pattern": "(a+)+b",
+  "haystacks": [
+   "aaab",
+   "aaac"
+  ]
+ },
+ {
+  "id": "empty_pattern",
+  "pattern": "",
+  "haystacks": [
+   "anything"
+  ]
+ },
+ {
+  "id": "lone_star",
+  "pattern": "*foo",
+  "haystacks": [
+   "foo"
+  ]
+ },
+ {
+  "id": "unbalanced_paren",
+  "pattern": "(foo",
+  "haystacks": [
+   "(foo",
+   "foo"
+  ]
+ },
+ {
+  "id": "unbalanced_bracket",
+  "pattern": "[foo",
+  "haystacks": [
+   "[foo",
+   "f"
+  ]
+ },
+ {
+  "id": "bad_escape_q",
+  "pattern": "\\q",
+  "haystacks": [
+   "q",
+   "\\q"
+  ]
+ },
+ {
+  "id": "octal_escape",
+  "pattern": "\\101",
+  "haystacks": [
+   "A",
+   "101"
+  ]
+ },
+ {
+  "id": "dot_dotall",
+  "pattern": "a.b",
+  "haystacks": [
+   "a\nb",
+   "axb"
+  ]
+ },
+ {
+  "id": "dollar_multiline",
+  "pattern": "foo$",
+  "haystacks": [
+   "foo\nbar",
+   "barfoo",
+   "foo\n"
+  ]
+ },
+ {
+  "id": "caret_multiline",
+  "pattern": "^bar",
+  "haystacks": [
+   "foo\nbar",
+   "foobar"
+  ]
+ },
+ {
+  "id": "word_boundary",
+  "pattern": "\\bfoo\\b",
+  "haystacks": [
+   "a foo b",
+   "afoob",
+   "\u00e9foo"
+  ]
+ },
+ {
+  "id": "digit_unicode",
+  "pattern": "\\d+",
+  "haystacks": [
+   "123",
+   "\u0660\u0661",
+   "abc"
+  ]
+ },
+ {
+  "id": "word_unicode",
+  "pattern": "\\w+",
+  "haystacks": [
+   "abc",
+   "\u00e9t\u00e9",
+   "\u4e2d\u6587",
+   "_"
+  ]
+ },
+ {
+  "id": "space_unicode",
+  "pattern": "a\\sb",
+  "haystacks": [
+   "a b",
+   "a\u00a0b",
+   "a\u2028b"
+  ]
+ },
+ {
+  "id": "fold_kelvin",
+  "pattern": "k",
+  "haystacks": [
+   "\u212a",
+   "K",
+   "k"
+  ]
+ },
+ {
+  "id": "fold_sharp_s",
+  "pattern": "ss",
+  "haystacks": [
+   "\u00df",
+   "SS",
+   "ss"
+  ]
+ },
+ {
+  "id": "fold_cap_sharp_s",
+  "pattern": "\u1e9e",
+  "haystacks": [
+   "\u00df",
+   "ss"
+  ]
+ },
+ {
+  "id": "fold_long_s",
+  "pattern": "s",
+  "haystacks": [
+   "\u017f",
+   "S",
+   "s"
+  ]
+ },
+ {
+  "id": "fold_dotless_i",
+  "pattern": "i",
+  "haystacks": [
+   "\u0131",
+   "\u0130",
+   "I"
+  ]
+ },
+ {
+  "id": "fold_ligature_fi",
+  "pattern": "fi",
+  "haystacks": [
+   "\ufb01",
+   "FI"
+  ]
+ },
+ {
+  "id": "fold_sigma",
+  "pattern": "\u03c3",
+  "haystacks": [
+   "\u03c2",
+   "\u03a3"
+  ]
+ },
+ {
+  "id": "astral",
+  "pattern": "\ud83d\ude00",
+  "haystacks": [
+   "\ud83d\ude00x"
+  ]
+ },
+ {
+  "id": "case_class_range",
+  "pattern": "[a-z]+",
+  "haystacks": [
+   "ABC",
+   "abc",
+   "\u00c9"
+  ]
+ },
+ {
+  "id": "dollar_end_newline",
+  "pattern": "bar$",
+  "haystacks": [
+   "bar\n",
+   "bar\n\n"
+  ]
+ },
+ {
+  "id": "recursion",
+  "pattern": "(?R)",
+  "haystacks": [
+   "x"
+  ]
+ },
+ {
+  "id": "unicode_script",
+  "pattern": "\\p{Greek}+",
+  "haystacks": [
+   "\u03b1\u03b2",
+   "ab"
+  ]
+ }
+]

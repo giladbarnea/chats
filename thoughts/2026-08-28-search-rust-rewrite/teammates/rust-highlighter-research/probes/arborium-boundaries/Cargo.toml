@@ -1,0 +1,10 @@
+[package]
+name = "arborium-boundaries"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+arborium = { version = "2.18.2", default-features = false, features = ["lang-bash", "lang-json", "lang-markdown", "lang-python", "lang-typescript", "lang-tsx", "lang-zsh"] }
+arborium-highlight = "2.18.2"
+serde_json = "1"

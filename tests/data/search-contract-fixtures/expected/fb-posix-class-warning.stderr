@@ -1,0 +1,2 @@
+{SEARCH_QUERY_SOURCE}:96: FutureWarning: Possible nested set at position 1
+  regex = re.compile(pattern, flags)

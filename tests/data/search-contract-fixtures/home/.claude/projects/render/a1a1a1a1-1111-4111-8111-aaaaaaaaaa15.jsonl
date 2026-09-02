@@ -1,0 +1,4 @@
+{"type":"user","timestamp":"2026-08-20T13:00:00.000Z","cwd":"/tmp/search-contract","message":{"role":"user","content":"Renderpass short samples follow"}}
+{"type":"assistant","timestamp":"2026-08-20T13:00:00.000Z","cwd":"/tmp/search-contract","message":{"role":"assistant","content":[{"type":"text","text":"xxxxx"}]}}
+{"type":"assistant","timestamp":"2026-08-20T13:00:00.000Z","cwd":"/tmp/search-contract","message":{"role":"assistant","content":[{"type":"text","text":"xxxxxx"}]}}
+{"type":"assistant","timestamp":"2026-08-20T13:00:00.000Z","cwd":"/tmp/search-contract","message":{"role":"assistant","content":[{"type":"text","text":"xxxxxxxxxxx"}]}}

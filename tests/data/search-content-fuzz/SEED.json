@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "note": "Committed seed for the generated adversarial session corpus. The builder expands this deterministically, so the corpus on disk is reproducible without trusting that the generator still generates what it generated last month. Widths are a generated dimension: never 80 (the fallback that hides a broken resolution) and never 96 (the pinned corpus default).",
+  "widths": [52, 72, 111, 137],
+  "needle": "needle",
+  "shapes": [
+    {
+      "id": "casefold-expand",
+      "why": "Lowercasing grows the byte length. Produced the only blocker-severity defect on the prior native branch: painting indexed the original string with offsets measured on a lowered copy, aborting mid-render. An ASCII-only corpus cannot see it.",
+      "characters": ["İ"],
+      "repeats": [1, 3, 10, 31],
+      "placement": ["before", "around", "after"]
+    },
+    {
+      "id": "casefold-shrink",
+      "why": "Lowercasing shrinks the byte length. Same defect class, opposite direction, and below the abort threshold it silently paints the wrong span.",
+      "characters": ["ﬀ", "ﬁ", "ﬂ", "ﬃ", "ﬄ", "ŉ"],
+      "repeats": [1, 3, 10],
+      "placement": ["before", "around", "after"]
+    },
+    {
+      "id": "casefold-risk-scalars",
+      "why": "The 20 Python 3.14 scalars whose casefold reaches ASCII, plus U+0131 which is an ASCII i equivalent under re.IGNORECASE. The candidate gate must defer on every one.",
+      "characters": [
+        "ß", "İ", "ı", "ŉ", "ſ", "ǰ",
+        "ẖ", "ẗ", "ẘ", "ẙ", "ẚ", "ẞ",
+        "K", "ﬀ", "ﬁ", "ﬂ", "ﬃ", "ﬄ",
+        "ﬅ", "ﬆ"
+      ],
+      "repeats": [1],
+      "placement": ["around"]
+    },
+    {
+      "id": "wide-and-ambiguous",
+      "why": "Wide characters occupy two terminal columns. Three separate stderr wrap implementations disagree on them. Hebrew is real content in this user's sessions and is absent from every existing corpus.",
+      "characters": ["你好", "こんにちは", "🚀", "שלום עולם"],
+      "repeats": [1, 4, 17],
+      "placement": ["before", "around", "after"]
+    },
+    {
+      "id": "leading-whitespace-controls",
+      "why": "Python str.strip and Rust str::trim strip different sets, and the two known divergences run in opposite directions. U+001C-001F: Python strips, Rust does not. U+00A0/U+2028/U+3000: both strip. One leading character can flip a whole-file format verdict.",
+      "characters": [
+        "\u001c", "\u001d", "\u001e", "\u001f",
+        "\u0085", "\u00a0", "\u2028", "\u3000", "\u200b"
+      ],
+      "repeats": [1],
+      "placement": ["line-start"]
+    },
+    {
+      "id": "empty-optionals",
+      "why": "Legacy guards every message metadata field with Python truthiness, so empty strings are dropped rather than rendered. A confirmed live parity defect on the prior branch.",
+      "fields": ["branch", "agent_id", "subagent_type", "name", "model", "custom_type", "status", "sourceToolUserId"],
+      "values": ["", "   "]
+    },
+    {
+      "id": "json-escape-forms",
+      "why": "A query character can be stored raw, as a short escape, or as any \\uXXXX form with either hex case. The candidate gate must treat all of them as possible matches. Chunk-boundary spanning is covered by nothing that exists.",
+      "forms": ["raw", "short-escape", "upper-hex", "lower-hex", "mixed-hex"],
+      "pad_to_boundaries": [131070, 131071, 131072, 131073]
+    },
+    {
+      "id": "layout-edges",
+      "why": "Content landing exactly at the wrap column, and tokens longer than the terminal, are where an off-by-one in wrapping becomes visible. Generated against each width rather than a fixed one.",
+      "offsets": [-2, -1, 0, 1, 2],
+      "unbroken_token_multiples": [1, 2]
+    },
+    {
+      "id": "carriage-returns",
+      "why": "Universal-newline handling differs between text-mode capture and byte capture, and a harness built on text mode agrees where implementations differ. The product side needs pinning too.",
+      "separators": ["\n", "\r\n", "\r"],
+      "repeats": [1, 2]
+    }
+  ]
+}

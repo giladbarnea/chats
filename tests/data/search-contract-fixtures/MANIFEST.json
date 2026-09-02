@@ -1,0 +1,2936 @@
+{
+  "cases": [
+    {
+      "id": "help-long",
+      "arguments": [
+        "--help"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/help-long.stdout",
+      "expected_stderr": "expected/help-long.stderr"
+    },
+    {
+      "id": "help-short",
+      "arguments": [
+        "-h"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/help-short.stdout",
+      "expected_stderr": "expected/help-short.stderr"
+    },
+    {
+      "id": "err-unrecognized-flag",
+      "arguments": [
+        "needle",
+        "--bogus-flag"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-unrecognized-flag.stdout",
+      "expected_stderr": "expected/err-unrecognized-flag.stderr"
+    },
+    {
+      "id": "err-extra-positional",
+      "arguments": [
+        "needle",
+        "extra"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-extra-positional.stdout",
+      "expected_stderr": "expected/err-extra-positional.stderr"
+    },
+    {
+      "id": "err-missing-pattern",
+      "arguments": [],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-missing-pattern.stdout",
+      "expected_stderr": "expected/err-missing-pattern.stderr"
+    },
+    {
+      "id": "err-case-exclusive",
+      "arguments": [
+        "needle",
+        "-s",
+        "-i"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-case-exclusive.stdout",
+      "expected_stderr": "expected/err-case-exclusive.stderr"
+    },
+    {
+      "id": "err-bad-color-choice",
+      "arguments": [
+        "needle",
+        "--color",
+        "bogus"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-bad-color-choice.stdout",
+      "expected_stderr": "expected/err-bad-color-choice.stderr"
+    },
+    {
+      "id": "err-bad-thinking-value",
+      "arguments": [
+        "needle",
+        "-T",
+        "bogus"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-bad-thinking-value.stdout",
+      "expected_stderr": "expected/err-bad-thinking-value.stderr"
+    },
+    {
+      "id": "err-bad-short-spec",
+      "arguments": [
+        "needle",
+        "--short=bogusspec"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-bad-short-spec.stdout",
+      "expected_stderr": "expected/err-bad-short-spec.stderr"
+    },
+    {
+      "id": "err-bad-provider-choice",
+      "arguments": [
+        "needle",
+        "-p",
+        "gpt"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-bad-provider-choice.stdout",
+      "expected_stderr": "expected/err-bad-provider-choice.stderr"
+    },
+    {
+      "id": "err-thinking-swallowed-pattern",
+      "arguments": [
+        "-T",
+        "needle"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-thinking-swallowed-pattern.stdout",
+      "expected_stderr": "expected/err-thinking-swallowed-pattern.stderr"
+    },
+    {
+      "id": "err-tools-path-pattern-required",
+      "arguments": [
+        "-t",
+        "{HOME}/.claude/projects/alpha/11111111-1111-4111-8111-111111111111.jsonl"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-tools-path-pattern-required.stdout",
+      "expected_stderr": "expected/err-tools-path-pattern-required.stderr"
+    },
+    {
+      "id": "repair-short-detached",
+      "arguments": [
+        "--short",
+        "needle five",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/repair-short-detached.stdout",
+      "expected_stderr": "expected/repair-short-detached.stderr"
+    },
+    {
+      "id": "repair-short-digits",
+      "arguments": [
+        "--short",
+        "128",
+        "needle five",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/repair-short-digits.stdout",
+      "expected_stderr": "expected/repair-short-digits.stderr"
+    },
+    {
+      "id": "repair-short-spec",
+      "arguments": [
+        "--short",
+        "p=128",
+        "needle five",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/repair-short-spec.stdout",
+      "expected_stderr": "expected/repair-short-spec.stderr"
+    },
+    {
+      "id": "only-id-forces-plain",
+      "arguments": [
+        "needle five",
+        "-ll",
+        "--color",
+        "always",
+        "--paging"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/only-id-forces-plain.stdout",
+      "expected_stderr": "expected/only-id-forces-plain.stderr"
+    },
+    {
+      "id": "raw-forces-plain-nometa",
+      "arguments": [
+        "needle five",
+        "-r",
+        "--color",
+        "always"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/raw-forces-plain-nometa.stdout",
+      "expected_stderr": "expected/raw-forces-plain-nometa.stderr"
+    },
+    {
+      "id": "bool-and-cross-message",
+      "arguments": [
+        "fox AND dog",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/bool-and-cross-message.stdout",
+      "expected_stderr": "expected/bool-and-cross-message.stderr"
+    },
+    {
+      "id": "bool-or",
+      "arguments": [
+        "red OR quick",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/bool-or.stdout",
+      "expected_stderr": "expected/bool-or.stderr"
+    },
+    {
+      "id": "bool-parens-precedence",
+      "arguments": [
+        "(red OR quick) AND fox",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/bool-parens-precedence.stdout",
+      "expected_stderr": "expected/bool-parens-precedence.stderr"
+    },
+    {
+      "id": "bool-not-only",
+      "arguments": [
+        "needle NOT alpha",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/bool-not-only.stdout",
+      "expected_stderr": "expected/bool-not-only.stderr"
+    },
+    {
+      "id": "err-not-leading",
+      "arguments": [
+        "NOT needle"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-not-leading.stdout",
+      "expected_stderr": "expected/err-not-leading.stderr"
+    },
+    {
+      "id": "err-and-trailing",
+      "arguments": [
+        "needle AND"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-and-trailing.stdout",
+      "expected_stderr": "expected/err-and-trailing.stderr"
+    },
+    {
+      "id": "err-or-leading",
+      "arguments": [
+        "OR needle"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-or-leading.stdout",
+      "expected_stderr": "expected/err-or-leading.stderr"
+    },
+    {
+      "id": "err-mixed-not-and",
+      "arguments": [
+        "NOT needle AND fox"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-mixed-not-and.stdout",
+      "expected_stderr": "expected/err-mixed-not-and.stderr"
+    },
+    {
+      "id": "err-not-parens",
+      "arguments": [
+        "needle NOT (fox)"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-not-parens.stdout",
+      "expected_stderr": "expected/err-not-parens.stderr"
+    },
+    {
+      "id": "err-not-double-term",
+      "arguments": [
+        "needle NOT fox dog"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-not-double-term.stdout",
+      "expected_stderr": "expected/err-not-double-term.stderr"
+    },
+    {
+      "id": "err-not-trailing",
+      "arguments": [
+        "needle NOT"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/err-not-trailing.stdout",
+      "expected_stderr": "expected/err-not-trailing.stderr"
+    },
+    {
+      "id": "single-and-literal-icase",
+      "arguments": [
+        "AND",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/single-and-literal-icase.stdout",
+      "expected_stderr": "expected/single-and-literal-icase.stderr"
+    },
+    {
+      "id": "precedence-and-over-or",
+      "arguments": [
+        "needleone OR (fox AND dog)",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/precedence-and-over-or.stdout",
+      "expected_stderr": "expected/precedence-and-over-or.stderr"
+    },
+    {
+      "id": "quoted-without-operator-is-literal-quotes",
+      "arguments": [
+        "\"Alpha needle one\"",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/quoted-without-operator-is-literal-quotes.stdout",
+      "expected_stderr": "expected/quoted-without-operator-is-literal-quotes.stderr"
+    },
+    {
+      "id": "empty-quoted-no-operator",
+      "arguments": [
+        "\"\"",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/empty-quoted-no-operator.stdout",
+      "expected_stderr": "expected/empty-quoted-no-operator.stderr"
+    },
+    {
+      "id": "apostrophe-midword",
+      "arguments": [
+        "don't panic",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/apostrophe-midword.stdout",
+      "expected_stderr": "expected/apostrophe-midword.stderr"
+    },
+    {
+      "id": "quoted-term-inside-operators",
+      "arguments": [
+        "\"red fox\" AND dog",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/quoted-term-inside-operators.stdout",
+      "expected_stderr": "expected/quoted-term-inside-operators.stderr"
+    },
+    {
+      "id": "rx-anchor-start",
+      "arguments": [
+        "^line2",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-anchor-start.stdout",
+      "expected_stderr": "expected/rx-anchor-start.stderr"
+    },
+    {
+      "id": "rx-anchor-end",
+      "arguments": [
+        "end$",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-anchor-end.stdout",
+      "expected_stderr": "expected/rx-anchor-end.stderr"
+    },
+    {
+      "id": "rx-digit-class",
+      "arguments": [
+        "foo\\d+",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-digit-class.stdout",
+      "expected_stderr": "expected/rx-digit-class.stderr"
+    },
+    {
+      "id": "rx-upper-class",
+      "arguments": [
+        "[A-Z]+PITAL",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-upper-class.stdout",
+      "expected_stderr": "expected/rx-upper-class.stderr"
+    },
+    {
+      "id": "rx-dotall",
+      "arguments": [
+        "one.*three",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-dotall.stdout",
+      "expected_stderr": "expected/rx-dotall.stderr"
+    },
+    {
+      "id": "rx-multiline",
+      "arguments": [
+        "^two$",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-multiline.stdout",
+      "expected_stderr": "expected/rx-multiline.stderr"
+    },
+    {
+      "id": "rx-word-boundary",
+      "arguments": [
+        "\\bMIDDLE\\b",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-word-boundary.stdout",
+      "expected_stderr": "expected/rx-word-boundary.stderr"
+    },
+    {
+      "id": "rx-named-group-backref",
+      "arguments": [
+        "(?P<w>echo) (?P=w)",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-named-group-backref.stdout",
+      "expected_stderr": "expected/rx-named-group-backref.stderr"
+    },
+    {
+      "id": "rx-lookahead",
+      "arguments": [
+        "foo(?=123)",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-lookahead.stdout",
+      "expected_stderr": "expected/rx-lookahead.stderr"
+    },
+    {
+      "id": "rx-negative-lookahead",
+      "arguments": [
+        "foo(?!999)",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-negative-lookahead.stdout",
+      "expected_stderr": "expected/rx-negative-lookahead.stderr"
+    },
+    {
+      "id": "rx-lookbehind",
+      "arguments": [
+        "(?<=start )MIDDLE",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-lookbehind.stdout",
+      "expected_stderr": "expected/rx-lookbehind.stderr"
+    },
+    {
+      "id": "rx-group-alternation",
+      "arguments": [
+        "(red|quick)",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-group-alternation.stdout",
+      "expected_stderr": "expected/rx-group-alternation.stderr"
+    },
+    {
+      "id": "rx-escaped-hyphen",
+      "arguments": [
+        "a\\-b",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-escaped-hyphen.stdout",
+      "expected_stderr": "expected/rx-escaped-hyphen.stderr"
+    },
+    {
+      "id": "rx-tab-escape",
+      "arguments": [
+        "tab\\tend",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-tab-escape.stdout",
+      "expected_stderr": "expected/rx-tab-escape.stderr"
+    },
+    {
+      "id": "rx-hex-escape",
+      "arguments": [
+        "caf\\u00e9",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-hex-escape.stdout",
+      "expected_stderr": "expected/rx-hex-escape.stderr"
+    },
+    {
+      "id": "rx-octal-A",
+      "arguments": [
+        "C\\101PITAL",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-octal-A.stdout",
+      "expected_stderr": "expected/rx-octal-A.stderr"
+    },
+    {
+      "id": "rx-named-unicode",
+      "arguments": [
+        "\\N{GREEK SMALL LETTER ALPHA}",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-named-unicode.stdout",
+      "expected_stderr": "expected/rx-named-unicode.stderr"
+    },
+    {
+      "id": "rx-atomic-group",
+      "arguments": [
+        "(?>echo) echo",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-atomic-group.stdout",
+      "expected_stderr": "expected/rx-atomic-group.stderr"
+    },
+    {
+      "id": "rx-possessive-quantifier",
+      "arguments": [
+        "a++g",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-possessive-quantifier.stdout",
+      "expected_stderr": "expected/rx-possessive-quantifier.stderr"
+    },
+    {
+      "id": "rx-conditional-valid",
+      "arguments": [
+        "()(?(1)kettlexyz|zzz)",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-conditional-valid.stdout",
+      "expected_stderr": "expected/rx-conditional-valid.stderr"
+    },
+    {
+      "id": "dv-z-anchor-absolute-end-miss",
+      "arguments": [
+        "end\\\\Z",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/dv-z-anchor-absolute-end-miss.stdout",
+      "expected_stderr": "expected/dv-z-anchor-absolute-end-miss.stderr"
+    },
+    {
+      "id": "dv-z-anchor-single-backslash-hit",
+      "arguments": [
+        "end\\Z",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-z-anchor-single-backslash-hit.stdout",
+      "expected_stderr": "expected/dv-z-anchor-single-backslash-hit.stderr"
+    },
+    {
+      "id": "rx-inline-flag-scoped",
+      "arguments": [
+        "(?i:NEEDLE) one",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-inline-flag-scoped.stdout",
+      "expected_stderr": "expected/rx-inline-flag-scoped.stderr"
+    },
+    {
+      "id": "rx-backref-icase",
+      "arguments": [
+        "(?P<w>ECHO) (?P=w)",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/rx-backref-icase.stdout",
+      "expected_stderr": "expected/rx-backref-icase.stderr"
+    },
+    {
+      "id": "fb-lookbehind-alt-syntax",
+      "arguments": [
+        "(?<x>a)",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-lookbehind-alt-syntax.stdout",
+      "expected_stderr": "expected/fb-lookbehind-alt-syntax.stderr"
+    },
+    {
+      "id": "fb-unicode-prop",
+      "arguments": [
+        "\\p{L}",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-unicode-prop.stdout",
+      "expected_stderr": "expected/fb-unicode-prop.stderr"
+    },
+    {
+      "id": "fb-braced-hex",
+      "arguments": [
+        "\\x{41} braced hex",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-braced-hex.stdout",
+      "expected_stderr": "expected/fb-braced-hex.stderr"
+    },
+    {
+      "id": "fb-bad-range",
+      "arguments": [
+        "[z-a] range",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-bad-range.stdout",
+      "expected_stderr": "expected/fb-bad-range.stderr"
+    },
+    {
+      "id": "fb-inverted-interval",
+      "arguments": [
+        "a{2,1} inverted",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-inverted-interval.stdout",
+      "expected_stderr": "expected/fb-inverted-interval.stderr"
+    },
+    {
+      "id": "fb-digit-ref",
+      "arguments": [
+        "\\8 digit ref",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-digit-ref.stdout",
+      "expected_stderr": "expected/fb-digit-ref.stderr"
+    },
+    {
+      "id": "fb-group-name-ref",
+      "arguments": [
+        "(?P=name) group ref",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-group-name-ref.stdout",
+      "expected_stderr": "expected/fb-group-name-ref.stderr"
+    },
+    {
+      "id": "fb-conditional-invalid",
+      "arguments": [
+        "(?(1)x|y) conditional",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-conditional-invalid.stdout",
+      "expected_stderr": "expected/fb-conditional-invalid.stderr"
+    },
+    {
+      "id": "fb-bad-escape-y",
+      "arguments": [
+        "\\y bad escape",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-bad-escape-y.stdout",
+      "expected_stderr": "expected/fb-bad-escape-y.stderr"
+    },
+    {
+      "id": "fb-unmatched-paren",
+      "arguments": [
+        "open( paren",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-unmatched-paren.stdout",
+      "expected_stderr": "expected/fb-unmatched-paren.stderr"
+    },
+    {
+      "id": "fb-bracket-mismatch",
+      "arguments": [
+        "bracket[mismatch",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-bracket-mismatch.stdout",
+      "expected_stderr": "expected/fb-bracket-mismatch.stderr"
+    },
+    {
+      "id": "fb-posix-class-warning",
+      "arguments": [
+        "[[:alpha:]] class",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/fb-posix-class-warning.stdout",
+      "expected_stderr": "expected/fb-posix-class-warning.stderr"
+    },
+    {
+      "id": "fb-posix-class-bare-warning",
+      "arguments": [
+        "[[:alpha:]]",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/fb-posix-class-bare-warning.stdout",
+      "expected_stderr": "expected/fb-posix-class-bare-warning.stderr"
+    },
+    {
+      "id": "dv-empty-branch-all",
+      "arguments": [
+        "zznope|",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-empty-branch-all.stdout",
+      "expected_stderr": "expected/dv-empty-branch-all.stderr"
+    },
+    {
+      "id": "dv-empty-branch-real",
+      "arguments": [
+        "fox|",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-empty-branch-real.stdout",
+      "expected_stderr": "expected/dv-empty-branch-real.stderr"
+    },
+    {
+      "id": "dv-icase-dotted-i-hit",
+      "arguments": [
+        "istanbul dotted",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-icase-dotted-i-hit.stdout",
+      "expected_stderr": "expected/dv-icase-dotted-i-hit.stderr"
+    },
+    {
+      "id": "dv-icase-dotted-i-pattern-hit",
+      "arguments": [
+        "\u0130stanbul dotted",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-icase-dotted-i-pattern-hit.stdout",
+      "expected_stderr": "expected/dv-icase-dotted-i-pattern-hit.stderr"
+    },
+    {
+      "id": "dv-icase-long-s",
+      "arguments": [
+        "steady long s",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-icase-long-s.stdout",
+      "expected_stderr": "expected/dv-icase-long-s.stderr"
+    },
+    {
+      "id": "dv-icase-long-s-reverse",
+      "arguments": [
+        "\u017fteady long s",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-icase-long-s-reverse.stdout",
+      "expected_stderr": "expected/dv-icase-long-s-reverse.stderr"
+    },
+    {
+      "id": "dv-icase-kelvin",
+      "arguments": [
+        "kelvin k sign",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-icase-kelvin.stdout",
+      "expected_stderr": "expected/dv-icase-kelvin.stderr"
+    },
+    {
+      "id": "dv-sensitive-kelvin-explicit",
+      "arguments": [
+        "kelvin K sign",
+        "-s",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-sensitive-kelvin-explicit.stdout",
+      "expected_stderr": "expected/dv-sensitive-kelvin-explicit.stderr"
+    },
+    {
+      "id": "dv-sensitive-needle-miss",
+      "arguments": [
+        "needle five",
+        "-s",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dv-sensitive-needle-miss.stdout",
+      "expected_stderr": "expected/dv-sensitive-needle-miss.stderr"
+    },
+    {
+      "id": "role-only-assistant-hit",
+      "arguments": [
+        "response five",
+        "--only-assistant",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/role-only-assistant-hit.stdout",
+      "expected_stderr": "expected/role-only-assistant-hit.stderr"
+    },
+    {
+      "id": "gate-uescaped-letter",
+      "arguments": [
+        "uescaped tab content needle",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-uescaped-letter.stdout",
+      "expected_stderr": "expected/gate-uescaped-letter.stderr"
+    },
+    {
+      "id": "gate-escaped-slash",
+      "arguments": [
+        "slash a/b end",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-escaped-slash.stdout",
+      "expected_stderr": "expected/gate-escaped-slash.stderr"
+    },
+    {
+      "id": "gate-quote-needle-serial",
+      "arguments": [
+        "say \"hi\"",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-quote-needle-serial.stdout",
+      "expected_stderr": "expected/gate-quote-needle-serial.stderr"
+    },
+    {
+      "id": "gate-backslash-needle",
+      "arguments": [
+        "back\\\\slash",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-backslash-needle.stdout",
+      "expected_stderr": "expected/gate-backslash-needle.stderr"
+    },
+    {
+      "id": "gate-control-char-needle",
+      "arguments": [
+        "plus\ttab caf\u00e9",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-control-char-needle.stdout",
+      "expected_stderr": "expected/gate-control-char-needle.stderr"
+    },
+    {
+      "id": "gate-cafe-across-providers",
+      "arguments": [
+        "caf\u00e9",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-cafe-across-providers.stdout",
+      "expected_stderr": "expected/gate-cafe-across-providers.stderr"
+    },
+    {
+      "id": "gate-false-candidate-rejected",
+      "arguments": [
+        "e9 accent",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/gate-false-candidate-rejected.stdout",
+      "expected_stderr": "expected/gate-false-candidate-rejected.stderr"
+    },
+    {
+      "id": "gate-decoded-e-acute",
+      "arguments": [
+        "only \u00e9 accent",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-decoded-e-acute.stdout",
+      "expected_stderr": "expected/gate-decoded-e-acute.stderr"
+    },
+    {
+      "id": "gate-pi-marker-hit",
+      "arguments": [
+        "pi-user-agents explicitly",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/gate-pi-marker-hit.stdout",
+      "expected_stderr": "expected/gate-pi-marker-hit.stderr"
+    },
+    {
+      "id": "vis-toolresult-hidden-default",
+      "arguments": [
+        "vistooloutput",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-toolresult-hidden-default.stdout",
+      "expected_stderr": "expected/vis-toolresult-hidden-default.stderr"
+    },
+    {
+      "id": "vis-toolresult-shown-tools",
+      "arguments": [
+        "vistooloutput",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-toolresult-shown-tools.stdout",
+      "expected_stderr": "expected/vis-toolresult-shown-tools.stderr"
+    },
+    {
+      "id": "vis-tooluse-hidden-default",
+      "arguments": [
+        "visbashcommand",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-tooluse-hidden-default.stdout",
+      "expected_stderr": "expected/vis-tooluse-hidden-default.stderr"
+    },
+    {
+      "id": "vis-tooluse-shown-tools",
+      "arguments": [
+        "visbashcommand",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-tooluse-shown-tools.stdout",
+      "expected_stderr": "expected/vis-tooluse-shown-tools.stderr"
+    },
+    {
+      "id": "vis-thinking-hidden-default",
+      "arguments": [
+        "vishushhush",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-thinking-hidden-default.stdout",
+      "expected_stderr": "expected/vis-thinking-hidden-default.stderr"
+    },
+    {
+      "id": "vis-thinking-shown-flag",
+      "arguments": [
+        "vishushhush",
+        "-T",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-thinking-shown-flag.stdout",
+      "expected_stderr": "expected/vis-thinking-shown-flag.stderr"
+    },
+    {
+      "id": "vis-thinking-short",
+      "arguments": [
+        "vishushhush",
+        "-T",
+        "short",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-thinking-short.stdout",
+      "expected_stderr": "expected/vis-thinking-short.stderr"
+    },
+    {
+      "id": "vis-plans-hidden-default",
+      "arguments": [
+        "visplansteps",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-plans-hidden-default.stdout",
+      "expected_stderr": "expected/vis-plans-hidden-default.stderr"
+    },
+    {
+      "id": "vis-plans-shown-flag",
+      "arguments": [
+        "visplansteps",
+        "--plans",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-plans-shown-flag.stdout",
+      "expected_stderr": "expected/vis-plans-shown-flag.stderr"
+    },
+    {
+      "id": "vis-branch-hidden-default",
+      "arguments": [
+        "branchabandoned",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-branch-hidden-default.stdout",
+      "expected_stderr": "expected/vis-branch-hidden-default.stderr"
+    },
+    {
+      "id": "vis-branch-shown-flag",
+      "arguments": [
+        "branchabandoned",
+        "-b",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-branch-shown-flag.stdout",
+      "expected_stderr": "expected/vis-branch-shown-flag.stderr"
+    },
+    {
+      "id": "vis-sidechain-hidden-default",
+      "arguments": [
+        "sidechainagentsecret",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-sidechain-hidden-default.stdout",
+      "expected_stderr": "expected/vis-sidechain-hidden-default.stderr"
+    },
+    {
+      "id": "vis-sidechain-shown-agents",
+      "arguments": [
+        "sidechainagentsecret",
+        "-a",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-sidechain-shown-agents.stdout",
+      "expected_stderr": "expected/vis-sidechain-shown-agents.stderr"
+    },
+    {
+      "id": "vis-hook-context-hidden-default",
+      "arguments": [
+        "hookcontexttext",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-hook-context-hidden-default.stdout",
+      "expected_stderr": "expected/vis-hook-context-hidden-default.stderr"
+    },
+    {
+      "id": "vis-hook-context-shown-tools",
+      "arguments": [
+        "hookcontexttext",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-hook-context-shown-tools.stdout",
+      "expected_stderr": "expected/vis-hook-context-shown-tools.stderr"
+    },
+    {
+      "id": "vis-additionalcontext-marker-tools",
+      "arguments": [
+        "AdditionalContext",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-additionalcontext-marker-tools.stdout",
+      "expected_stderr": "expected/vis-additionalcontext-marker-tools.stderr"
+    },
+    {
+      "id": "vis-additionalcontext-marker-default",
+      "arguments": [
+        "AdditionalContext",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-additionalcontext-marker-default.stdout",
+      "expected_stderr": "expected/vis-additionalcontext-marker-default.stderr"
+    },
+    {
+      "id": "vis-thinking-marker-flag",
+      "arguments": [
+        "thinking",
+        "-T",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-thinking-marker-flag.stdout",
+      "expected_stderr": "expected/vis-thinking-marker-flag.stderr"
+    },
+    {
+      "id": "vis-tool-input-marker",
+      "arguments": [
+        "tool-input",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-tool-input-marker.stdout",
+      "expected_stderr": "expected/vis-tool-input-marker.stderr"
+    },
+    {
+      "id": "vis-tool-output-marker",
+      "arguments": [
+        "tool-output",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-tool-output-marker.stdout",
+      "expected_stderr": "expected/vis-tool-output-marker.stderr"
+    },
+    {
+      "id": "vis-exitplanmode-marker",
+      "arguments": [
+        "ExitPlanMode",
+        "--plans",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-exitplanmode-marker.stdout",
+      "expected_stderr": "expected/vis-exitplanmode-marker.stderr"
+    },
+    {
+      "id": "vis-fence-with-tools",
+      "arguments": [
+        "```",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-fence-with-tools.stdout",
+      "expected_stderr": "expected/vis-fence-with-tools.stderr"
+    },
+    {
+      "id": "vis-fence-default",
+      "arguments": [
+        "```",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-fence-default.stdout",
+      "expected_stderr": "expected/vis-fence-default.stderr"
+    },
+    {
+      "id": "vis-old-string-with-tools",
+      "arguments": [
+        "old_string:",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-old-string-with-tools.stdout",
+      "expected_stderr": "expected/vis-old-string-with-tools.stderr"
+    },
+    {
+      "id": "vis-old-string-default",
+      "arguments": [
+        "old_string:",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-old-string-default.stdout",
+      "expected_stderr": "expected/vis-old-string-default.stderr"
+    },
+    {
+      "id": "vis-rendered-tag-miss",
+      "arguments": [
+        "<user-message",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/vis-rendered-tag-miss.stdout",
+      "expected_stderr": "expected/vis-rendered-tag-miss.stderr"
+    },
+    {
+      "id": "vis-rendered-attr-default-miss",
+      "arguments": [
+        "=\"",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-rendered-attr-default-miss.stdout",
+      "expected_stderr": "expected/vis-rendered-attr-default-miss.stderr"
+    },
+    {
+      "id": "vis-rendered-attr-tools-hit",
+      "arguments": [
+        "=\"",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/vis-rendered-attr-tools-hit.stdout",
+      "expected_stderr": "expected/vis-rendered-attr-tools-hit.stderr"
+    },
+    {
+      "id": "facet-summary-match",
+      "arguments": [
+        "Alpha summary needle three",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/facet-summary-match.stdout",
+      "expected_stderr": "expected/facet-summary-match.stderr"
+    },
+    {
+      "id": "facet-custom-title-match",
+      "arguments": [
+        "Alpha Title",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/facet-custom-title-match.stdout",
+      "expected_stderr": "expected/facet-custom-title-match.stderr"
+    },
+    {
+      "id": "facet-pi-session-title",
+      "arguments": [
+        "Pi Current Title",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/facet-pi-session-title.stdout",
+      "expected_stderr": "expected/facet-pi-session-title.stderr"
+    },
+    {
+      "id": "facet-title-only-session",
+      "arguments": [
+        "TitleOnlySession name",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/facet-title-only-session.stdout",
+      "expected_stderr": "expected/facet-title-only-session.stderr"
+    },
+    {
+      "id": "facet-summary-only-session",
+      "arguments": [
+        "SummaryOnlySession digest",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/facet-summary-only-session.stdout",
+      "expected_stderr": "expected/facet-summary-only-session.stderr"
+    },
+    {
+      "id": "facet-empty-session-absent",
+      "arguments": [
+        "file-history-snapshot",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/facet-empty-session-absent.stdout",
+      "expected_stderr": "expected/facet-empty-session-absent.stderr"
+    },
+    {
+      "id": "pi-agent-record-needs-agents",
+      "arguments": [
+        "piagentsubagent",
+        "-a",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/pi-agent-record-needs-agents.stdout",
+      "expected_stderr": "expected/pi-agent-record-needs-agents.stderr"
+    },
+    {
+      "id": "pi-agent-record-default-miss",
+      "arguments": [
+        "piagentsubagent",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/pi-agent-record-default-miss.stdout",
+      "expected_stderr": "expected/pi-agent-record-default-miss.stderr"
+    },
+    {
+      "id": "pi-user-agent-joined-visible-default",
+      "arguments": [
+        "piuseragentresponse",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/pi-user-agent-joined-visible-default.stdout",
+      "expected_stderr": "expected/pi-user-agent-joined-visible-default.stderr"
+    },
+    {
+      "id": "pi-arbitrary-custom-needs-all",
+      "arguments": [
+        "piarbitrarycustom",
+        "-A",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/pi-arbitrary-custom-needs-all.stdout",
+      "expected_stderr": "expected/pi-arbitrary-custom-needs-all.stderr"
+    },
+    {
+      "id": "pi-arbitrary-custom-agents-miss",
+      "arguments": [
+        "piarbitrarycustom",
+        "-a",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/pi-arbitrary-custom-agents-miss.stdout",
+      "expected_stderr": "expected/pi-arbitrary-custom-agents-miss.stderr"
+    },
+    {
+      "id": "codex-preamble-invisible",
+      "arguments": [
+        "preamblesecret",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/codex-preamble-invisible.stdout",
+      "expected_stderr": "expected/codex-preamble-invisible.stderr"
+    },
+    {
+      "id": "codex-preamble-invisible-all",
+      "arguments": [
+        "preamblesecret",
+        "-A",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/codex-preamble-invisible-all.stdout",
+      "expected_stderr": "expected/codex-preamble-invisible-all.stderr"
+    },
+    {
+      "id": "dot-only-id-full",
+      "arguments": [
+        ".",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dot-only-id-full.stdout",
+      "expected_stderr": "expected/dot-only-id-full.stderr"
+    },
+    {
+      "id": "dot-only-id-provider-codex",
+      "arguments": [
+        ".",
+        "-ll",
+        "-p",
+        "codex"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dot-only-id-provider-codex.stdout",
+      "expected_stderr": "expected/dot-only-id-provider-codex.stderr"
+    },
+    {
+      "id": "dot-only-id-dir-a",
+      "arguments": [
+        ".",
+        "-ll",
+        "-d",
+        "/tmp/search-contract/dir-a"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dot-only-id-dir-a.stdout",
+      "expected_stderr": "expected/dot-only-id-dir-a.stderr"
+    },
+    {
+      "id": "dot-not-special-as-regex",
+      "arguments": [
+        "needle.five",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dot-not-special-as-regex.stdout",
+      "expected_stderr": "expected/dot-not-special-as-regex.stderr"
+    },
+    {
+      "id": "filter-dir-match",
+      "arguments": [
+        "dirfilter",
+        "-d",
+        "/tmp/search-contract/dir-a",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/filter-dir-match.stdout",
+      "expected_stderr": "expected/filter-dir-match.stderr"
+    },
+    {
+      "id": "filter-dir-miss",
+      "arguments": [
+        "dirfilter",
+        "-d",
+        "/nonexistent/dir",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/filter-dir-miss.stdout",
+      "expected_stderr": "expected/filter-dir-miss.stderr"
+    },
+    {
+      "id": "filter-mafter-boundary",
+      "arguments": [
+        "dirfilter",
+        "-ma",
+        "2026-08-21",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/filter-mafter-boundary.stdout",
+      "expected_stderr": "expected/filter-mafter-boundary.stderr"
+    },
+    {
+      "id": "filter-mafter-inclusive",
+      "arguments": [
+        "dirfilter",
+        "-ma",
+        "2026-08-20",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/filter-mafter-inclusive.stdout",
+      "expected_stderr": "expected/filter-mafter-inclusive.stderr"
+    },
+    {
+      "id": "filter-cafter-old",
+      "arguments": [
+        "needle five",
+        "-ca",
+        "2020-01-01",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/filter-cafter-old.stdout",
+      "expected_stderr": "expected/filter-cafter-old.stderr"
+    },
+    {
+      "id": "filter-cafter-future",
+      "arguments": [
+        "needle five",
+        "-ca",
+        "2030-01-01",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/filter-cafter-future.stdout",
+      "expected_stderr": "expected/filter-cafter-future.stderr"
+    },
+    {
+      "id": "filter-provider-pi",
+      "arguments": [
+        "needle four",
+        "-p",
+        "pi",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/filter-provider-pi.stdout",
+      "expected_stderr": "expected/filter-provider-pi.stderr"
+    },
+    {
+      "id": "shorten-elided-middle-miss",
+      "arguments": [
+        "middlenosecret",
+        "-t",
+        "--short=p=64",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/shorten-elided-middle-miss.stdout",
+      "expected_stderr": "expected/shorten-elided-middle-miss.stderr"
+    },
+    {
+      "id": "shorten-elided-middle-hit",
+      "arguments": [
+        "middlenosecret",
+        "-t",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/shorten-elided-middle-hit.stdout",
+      "expected_stderr": "expected/shorten-elided-middle-hit.stderr"
+    },
+    {
+      "id": "shorten-tail-survives",
+      "arguments": [
+        "longtooloutput tail",
+        "-t",
+        "--short=p=64",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/shorten-tail-survives.stdout",
+      "expected_stderr": "expected/shorten-tail-survives.stderr"
+    },
+    {
+      "id": "role-only-user",
+      "arguments": [
+        "needle five",
+        "--only-user",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/role-only-user.stdout",
+      "expected_stderr": "expected/role-only-user.stderr"
+    },
+    {
+      "id": "role-contradiction-warning",
+      "arguments": [
+        "needle five",
+        "--only-assistant",
+        "--thinking",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/role-contradiction-warning.stdout",
+      "expected_stderr": "expected/role-contradiction-warning.stderr"
+    },
+    {
+      "id": "tools-filter-modifier",
+      "arguments": [
+        "longtooloutput",
+        "-t",
+        "Bash:i",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/tools-filter-modifier.stdout",
+      "expected_stderr": "expected/tools-filter-modifier.stderr"
+    },
+    {
+      "id": "tools-multi-name-spec-narrows",
+      "arguments": [
+        "longtooloutput",
+        "-t",
+        "Bash:bogusmod",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/tools-multi-name-spec-narrows.stdout",
+      "expected_stderr": "expected/tools-multi-name-spec-narrows.stderr"
+    },
+    {
+      "id": "mode-matches-meta",
+      "arguments": [
+        "needle five",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-matches-meta.stdout",
+      "expected_stderr": "expected/mode-matches-meta.stderr"
+    },
+    {
+      "id": "mode-matches-nometa",
+      "arguments": [
+        "needle five",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-matches-nometa.stdout",
+      "expected_stderr": "expected/mode-matches-nometa.stderr"
+    },
+    {
+      "id": "mode-list-meta",
+      "arguments": [
+        "needle five",
+        "-l",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-list-meta.stdout",
+      "expected_stderr": "expected/mode-list-meta.stderr"
+    },
+    {
+      "id": "mode-list-nometa",
+      "arguments": [
+        "needle five",
+        "-l",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-list-nometa.stdout",
+      "expected_stderr": "expected/mode-list-nometa.stderr"
+    },
+    {
+      "id": "mode-full-meta",
+      "arguments": [
+        "needle five",
+        "-f",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-full-meta.stdout",
+      "expected_stderr": "expected/mode-full-meta.stderr"
+    },
+    {
+      "id": "mode-full-nometa",
+      "arguments": [
+        "needle five",
+        "-f",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-full-nometa.stdout",
+      "expected_stderr": "expected/mode-full-nometa.stderr"
+    },
+    {
+      "id": "mode-precedence-list-beats-full",
+      "arguments": [
+        "needle five",
+        "-l",
+        "-f",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-precedence-list-beats-full.stdout",
+      "expected_stderr": "expected/mode-precedence-list-beats-full.stderr"
+    },
+    {
+      "id": "mode-precedence-id-beats-list",
+      "arguments": [
+        "needle five",
+        "-ll",
+        "-l"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/mode-precedence-id-beats-list.stdout",
+      "expected_stderr": "expected/mode-precedence-id-beats-list.stderr"
+    },
+    {
+      "id": "raw-single-message-session",
+      "arguments": [
+        "sidechainagentsecret",
+        "-a",
+        "-r"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/raw-single-message-session.stdout",
+      "expected_stderr": "expected/raw-single-message-session.stderr"
+    },
+    {
+      "id": "raw-multi-session",
+      "arguments": [
+        "needle five",
+        "-r"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/raw-multi-session.stdout",
+      "expected_stderr": "expected/raw-multi-session.stderr"
+    },
+    {
+      "id": "raw-full-breadth",
+      "arguments": [
+        "needle five",
+        "-r",
+        "-f"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/raw-full-breadth.stdout",
+      "expected_stderr": "expected/raw-full-breadth.stderr"
+    },
+    {
+      "id": "nohit-matches-hint",
+      "arguments": [
+        "zznope",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/nohit-matches-hint.stdout",
+      "expected_stderr": "expected/nohit-matches-hint.stderr"
+    },
+    {
+      "id": "nohit-list-hint",
+      "arguments": [
+        "zznope",
+        "-l",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/nohit-list-hint.stdout",
+      "expected_stderr": "expected/nohit-list-hint.stderr"
+    },
+    {
+      "id": "nohit-full-hint",
+      "arguments": [
+        "zznope",
+        "-f",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/nohit-full-hint.stdout",
+      "expected_stderr": "expected/nohit-full-hint.stderr"
+    },
+    {
+      "id": "nohit-raw-hint",
+      "arguments": [
+        "zznope",
+        "-r"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/nohit-raw-hint.stdout",
+      "expected_stderr": "expected/nohit-raw-hint.stderr"
+    },
+    {
+      "id": "nohit-only-id-silent",
+      "arguments": [
+        "zznope",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/nohit-only-id-silent.stdout",
+      "expected_stderr": "expected/nohit-only-id-silent.stderr"
+    },
+    {
+      "id": "nohit-filtered-hint-suffix",
+      "arguments": [
+        "zznope",
+        "-p",
+        "pi",
+        "--color",
+        "never"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/nohit-filtered-hint-suffix.stdout",
+      "expected_stderr": "expected/nohit-filtered-hint-suffix.stderr"
+    },
+    {
+      "id": "colored-list-fixed-width",
+      "arguments": [
+        "needle five",
+        "-l",
+        "--color",
+        "always",
+        "--no-paging"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/colored-list-fixed-width.stdout",
+      "expected_stderr": "expected/colored-list-fixed-width.stderr"
+    },
+    {
+      "id": "colored-matches-panels",
+      "arguments": [
+        "needle five",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/colored-matches-panels.stdout",
+      "expected_stderr": "expected/colored-matches-panels.stderr"
+    },
+    {
+      "id": "colored-full-panel",
+      "arguments": [
+        "needle five",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/colored-full-panel.stdout",
+      "expected_stderr": "expected/colored-full-panel.stderr"
+    },
+    {
+      "id": "colored-hue-cycle-four-hits",
+      "arguments": [
+        "needle|dirfilter|tieorder",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/colored-hue-cycle-four-hits.stdout",
+      "expected_stderr": "expected/colored-hue-cycle-four-hits.stderr"
+    },
+    {
+      "id": "colored-narrow-columns-80",
+      "arguments": [
+        "needle five",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 80,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/colored-narrow-columns-80.stdout",
+      "expected_stderr": "expected/colored-narrow-columns-80.stderr"
+    },
+    {
+      "id": "colored-highlight-painting",
+      "arguments": [
+        "\"needle one\" AND panic",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/colored-highlight-painting.stdout",
+      "expected_stderr": "expected/colored-highlight-painting.stderr"
+    },
+    {
+      "id": "pager-engaged-real-less-piped",
+      "arguments": [
+        "needle five",
+        "--color",
+        "always",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/pager-engaged-real-less-piped.stdout",
+      "expected_stderr": "expected/pager-engaged-real-less-piped.stderr"
+    },
+    {
+      "id": "render-fence-shell-96",
+      "arguments": [
+        "Renderfence shell",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-shell-96.stdout",
+      "expected_stderr": "expected/render-fence-shell-96.stderr"
+    },
+    {
+      "id": "render-fence-shell-60",
+      "arguments": [
+        "Renderfence shell",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 60,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-shell-60.stdout",
+      "expected_stderr": "expected/render-fence-shell-60.stderr"
+    },
+    {
+      "id": "render-fence-python-96",
+      "arguments": [
+        "Renderfence python",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-python-96.stdout",
+      "expected_stderr": "expected/render-fence-python-96.stderr"
+    },
+    {
+      "id": "render-fence-python-60",
+      "arguments": [
+        "Renderfence python",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 60,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-python-60.stdout",
+      "expected_stderr": "expected/render-fence-python-60.stderr"
+    },
+    {
+      "id": "render-fence-web-96",
+      "arguments": [
+        "Renderfence web",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-web-96.stdout",
+      "expected_stderr": "expected/render-fence-web-96.stderr"
+    },
+    {
+      "id": "render-fence-web-140",
+      "arguments": [
+        "Renderfence web",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 140,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-web-140.stdout",
+      "expected_stderr": "expected/render-fence-web-140.stderr"
+    },
+    {
+      "id": "render-fence-data-96",
+      "arguments": [
+        "Renderfence data",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-data-96.stdout",
+      "expected_stderr": "expected/render-fence-data-96.stderr"
+    },
+    {
+      "id": "render-fence-data-60",
+      "arguments": [
+        "Renderfence data",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 60,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-data-60.stdout",
+      "expected_stderr": "expected/render-fence-data-60.stderr"
+    },
+    {
+      "id": "render-wrap-long-96",
+      "arguments": [
+        "Renderwrap",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-wrap-long-96.stdout",
+      "expected_stderr": "expected/render-wrap-long-96.stderr"
+    },
+    {
+      "id": "render-wrap-long-40",
+      "arguments": [
+        "Renderwrap",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 40,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-wrap-long-40.stdout",
+      "expected_stderr": "expected/render-wrap-long-40.stderr"
+    },
+    {
+      "id": "render-wide-glyphs-96",
+      "arguments": [
+        "Renderwide",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-wide-glyphs-96.stdout",
+      "expected_stderr": "expected/render-wide-glyphs-96.stderr"
+    },
+    {
+      "id": "render-wide-glyphs-40",
+      "arguments": [
+        "Renderwide",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 40,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-wide-glyphs-40.stdout",
+      "expected_stderr": "expected/render-wide-glyphs-40.stderr"
+    },
+    {
+      "id": "render-fence-shell-plain",
+      "arguments": [
+        "Renderfence shell",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-fence-shell-plain.stdout",
+      "expected_stderr": "expected/render-fence-shell-plain.stderr"
+    },
+    {
+      "id": "render-wide-glyphs-plain",
+      "arguments": [
+        "Renderwide",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/render-wide-glyphs-plain.stdout",
+      "expected_stderr": "expected/render-wide-glyphs-plain.stderr"
+    },
+    {
+      "id": "escape-incomplete-tag-plain",
+      "arguments": [
+        "Renderescape",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/escape-incomplete-tag-plain.stdout",
+      "expected_stderr": "expected/escape-incomplete-tag-plain.stderr"
+    },
+    {
+      "id": "escape-incomplete-tag-colored",
+      "arguments": [
+        "Renderescape",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/escape-incomplete-tag-colored.stdout",
+      "expected_stderr": "expected/escape-incomplete-tag-colored.stderr"
+    },
+    {
+      "id": "escape-incomplete-tag-search",
+      "arguments": [
+        "<thinking is my hobby",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/escape-incomplete-tag-search.stdout",
+      "expected_stderr": "expected/escape-incomplete-tag-search.stderr"
+    },
+    {
+      "id": "escape-complete-tag-search",
+      "arguments": [
+        "<thinking>",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/escape-complete-tag-search.stdout",
+      "expected_stderr": "expected/escape-complete-tag-search.stderr"
+    },
+    {
+      "id": "escape-tab-separated-tag-search",
+      "arguments": [
+        "Renderescape undertab",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/escape-tab-separated-tag-search.stdout",
+      "expected_stderr": "expected/escape-tab-separated-tag-search.stderr"
+    },
+    {
+      "id": "escape-newline-separated-tag-search",
+      "arguments": [
+        "Renderescape underline",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/escape-newline-separated-tag-search.stdout",
+      "expected_stderr": "expected/escape-newline-separated-tag-search.stderr"
+    },
+    {
+      "id": "escape-escaped-entity-search",
+      "arguments": [
+        "&lt;thinking",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/escape-escaped-entity-search.stdout",
+      "expected_stderr": "expected/escape-escaped-entity-search.stderr"
+    },
+    {
+      "id": "short-grapheme-16",
+      "arguments": [
+        "Rendershort",
+        "-f",
+        "--short=16",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/short-grapheme-16.stdout",
+      "expected_stderr": "expected/short-grapheme-16.stderr"
+    },
+    {
+      "id": "short-grapheme-16-colored",
+      "arguments": [
+        "Rendershort",
+        "-f",
+        "--short=16",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 1,
+      "expected_stdout": "expected/short-grapheme-16-colored.stdout",
+      "expected_stderr": "expected/short-grapheme-16-colored.stderr"
+    },
+    {
+      "id": "short-grapheme-8",
+      "arguments": [
+        "Rendershort",
+        "-f",
+        "--short=8",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/short-grapheme-8.stdout",
+      "expected_stderr": "expected/short-grapheme-8.stderr"
+    },
+    {
+      "id": "short-grapheme-progressive",
+      "arguments": [
+        "Rendershort",
+        "-f",
+        "--short=p=128",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/short-grapheme-progressive.stdout",
+      "expected_stderr": "expected/short-grapheme-progressive.stderr"
+    },
+    {
+      "id": "short-passthrough-10",
+      "arguments": [
+        "Renderpass",
+        "-f",
+        "--short=10",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/short-passthrough-10.stdout",
+      "expected_stderr": "expected/short-passthrough-10.stderr"
+    },
+    {
+      "id": "short-passthrough-8",
+      "arguments": [
+        "Renderpass",
+        "-f",
+        "--short=8",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/short-passthrough-8.stdout",
+      "expected_stderr": "expected/short-passthrough-8.stderr"
+    },
+    {
+      "id": "carriage-return-id",
+      "arguments": [
+        "Rendercr",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/carriage-return-id.stdout",
+      "expected_stderr": "expected/carriage-return-id.stderr"
+    },
+    {
+      "id": "carriage-return-body",
+      "arguments": [
+        "Rendercr",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/carriage-return-body.stdout",
+      "expected_stderr": "expected/carriage-return-body.stderr"
+    },
+    {
+      "id": "carriage-return-raw",
+      "arguments": [
+        "Rendercr",
+        "-f",
+        "-r"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/carriage-return-raw.stdout",
+      "expected_stderr": "expected/carriage-return-raw.stderr"
+    },
+    {
+      "id": "carriage-return-colored",
+      "arguments": [
+        "Rendercr",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/carriage-return-colored.stdout",
+      "expected_stderr": "expected/carriage-return-colored.stderr"
+    },
+    {
+      "id": "control-prefixed-first-line-id",
+      "arguments": [
+        "Renderctrl",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/control-prefixed-first-line-id.stdout",
+      "expected_stderr": "expected/control-prefixed-first-line-id.stderr"
+    },
+    {
+      "id": "control-prefixed-first-line-body",
+      "arguments": [
+        "Renderctrl",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/control-prefixed-first-line-body.stdout",
+      "expected_stderr": "expected/control-prefixed-first-line-body.stderr"
+    },
+    {
+      "id": "casefold-sharp-s-vs-ss",
+      "arguments": [
+        "Renderfold sharp ss",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/casefold-sharp-s-vs-ss.stdout",
+      "expected_stderr": "expected/casefold-sharp-s-vs-ss.stderr"
+    },
+    {
+      "id": "casefold-sharp-s-literal",
+      "arguments": [
+        "Renderfold sharp \u00df",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/casefold-sharp-s-literal.stdout",
+      "expected_stderr": "expected/casefold-sharp-s-literal.stderr"
+    },
+    {
+      "id": "casefold-dotted-i",
+      "arguments": [
+        "renderfold dotted \u0130",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/casefold-dotted-i.stdout",
+      "expected_stderr": "expected/casefold-dotted-i.stderr"
+    },
+    {
+      "id": "casefold-long-s",
+      "arguments": [
+        "renderfold long \u017f",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/casefold-long-s.stdout",
+      "expected_stderr": "expected/casefold-long-s.stderr"
+    },
+    {
+      "id": "casefold-kelvin-k",
+      "arguments": [
+        "renderfold kelvin k",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/casefold-kelvin-k.stdout",
+      "expected_stderr": "expected/casefold-kelvin-k.stderr"
+    },
+    {
+      "id": "casefold-kelvin-sign",
+      "arguments": [
+        "renderfold kelvin \u212a",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/casefold-kelvin-sign.stdout",
+      "expected_stderr": "expected/casefold-kelvin-sign.stderr"
+    },
+    {
+      "id": "casefold-kelvin-case-sensitive",
+      "arguments": [
+        "-s",
+        "Renderfold kelvin \u212a",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/casefold-kelvin-case-sensitive.stdout",
+      "expected_stderr": "expected/casefold-kelvin-case-sensitive.stderr"
+    },
+    {
+      "id": "literal-fallback-unbalanced-paren",
+      "arguments": [
+        "Renderparen calls foo(",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/literal-fallback-unbalanced-paren.stdout",
+      "expected_stderr": "expected/literal-fallback-unbalanced-paren.stderr"
+    },
+    {
+      "id": "literal-fallback-unbalanced-paren-lower",
+      "arguments": [
+        "renderparen calls foo(",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/literal-fallback-unbalanced-paren-lower.stdout",
+      "expected_stderr": "expected/literal-fallback-unbalanced-paren-lower.stderr"
+    },
+    {
+      "id": "literal-fallback-unbalanced-paren-sensitive",
+      "arguments": [
+        "-s",
+        "Renderparen calls foo(",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/literal-fallback-unbalanced-paren-sensitive.stdout",
+      "expected_stderr": "expected/literal-fallback-unbalanced-paren-sensitive.stderr"
+    },
+    {
+      "id": "literal-fallback-unbalanced-bracket",
+      "arguments": [
+        "Renderparen calls foo[",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/literal-fallback-unbalanced-bracket.stdout",
+      "expected_stderr": "expected/literal-fallback-unbalanced-bracket.stderr"
+    },
+    {
+      "id": "backtrack-nested-quantifier",
+      "arguments": [
+        "(a+)+b",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/backtrack-nested-quantifier.stdout",
+      "expected_stderr": "expected/backtrack-nested-quantifier.stderr"
+    },
+    {
+      "id": "backtrack-alternation",
+      "arguments": [
+        "(a|aa)+c",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/backtrack-alternation.stdout",
+      "expected_stderr": "expected/backtrack-alternation.stderr"
+    },
+    {
+      "id": "backtrack-pair-in-one-query",
+      "arguments": [
+        "(a+)+b OR (a|aa)+c",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 2,
+      "expected_stdout": "expected/backtrack-pair-in-one-query.stdout",
+      "expected_stderr": "expected/backtrack-pair-in-one-query.stderr"
+    },
+    {
+      "id": "nan-first-line-visible",
+      "arguments": [
+        "Rendernan",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/nan-first-line-visible.stdout",
+      "expected_stderr": "expected/nan-first-line-visible.stderr"
+    },
+    {
+      "id": "nan-first-line-body",
+      "arguments": [
+        "Rendernan",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/nan-first-line-body.stdout",
+      "expected_stderr": "expected/nan-first-line-body.stderr"
+    },
+    {
+      "id": "pi-user-agent-joined-default",
+      "arguments": [
+        "renderagent response",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/pi-user-agent-joined-default.stdout",
+      "expected_stderr": "expected/pi-user-agent-joined-default.stderr"
+    },
+    {
+      "id": "pi-user-agent-joined-agents",
+      "arguments": [
+        "-a",
+        "renderagent response",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/pi-user-agent-joined-agents.stdout",
+      "expected_stderr": "expected/pi-user-agent-joined-agents.stderr"
+    },
+    {
+      "id": "pi-user-agent-joined-body",
+      "arguments": [
+        "-a",
+        "renderagent response",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/pi-user-agent-joined-body.stdout",
+      "expected_stderr": "expected/pi-user-agent-joined-body.stderr"
+    },
+    {
+      "id": "provider-column-single-provider",
+      "arguments": [
+        "-p",
+        "claude",
+        "Renderfence",
+        "-l",
+        "--color",
+        "always",
+        "--no-paging"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/provider-column-single-provider.stdout",
+      "expected_stderr": "expected/provider-column-single-provider.stderr"
+    },
+    {
+      "id": "provider-column-multi-provider",
+      "arguments": [
+        "needle",
+        "-l",
+        "--color",
+        "always",
+        "--no-paging"
+      ],
+      "columns": 96,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/provider-column-multi-provider.stdout",
+      "expected_stderr": "expected/provider-column-multi-provider.stderr"
+    }
+  ]
+}

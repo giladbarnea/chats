@@ -1,0 +1,95 @@
+─────────────────────────────────────── numbering-order ────────────────────────────────────────
+<user-message i="1" date="2026-08-20 18:00">
+## User
+
+turn 1
+</user-message>
+
+---
+
+<assistant-response i="2" date="2026-08-20 18:01">
+## Assistant
+
+reply 1
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 18:02">
+## User
+
+turn 2
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 18:03">
+## Assistant
+
+reply 2
+</assistant-response>
+
+---
+
+<user-message i="5" date="2026-08-20 18:04">
+## User
+
+turn 3
+</user-message>
+
+---
+
+<assistant-response i="6" date="2026-08-20 18:05">
+## Assistant
+
+reply 3
+</assistant-response>
+
+---
+
+<user-message i="7" date="2026-08-20 18:06">
+## User
+
+turn 4
+</user-message>
+
+---
+
+<assistant-response i="8" date="2026-08-20 18:07">
+## Assistant
+
+reply 4
+</assistant-response>
+
+---
+
+<user-message i="9" branch="1" date="2026-08-20 18:08">
+## User
+
+branch off turn 1
+</user-message>
+
+---
+
+<user-message i="10" branch="2" date="2026-08-20 18:09">
+## User
+
+branch off turn 2
+</user-message>
+
+---
+
+<user-message i="11" branch="3" date="2026-08-20 18:10">
+## User
+
+branch off turn 3
+</user-message>
+
+---
+
+<user-message i="12" branch="4" date="2026-08-20 18:11">
+## User
+
+branch off turn 4
+</user-message>
+

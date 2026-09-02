@@ -1,0 +1,2 @@
+{"type":"session","id":"b1b1b1b1-1111-4111-8111-bbbbbbbbbb01","cwd":"/tmp/search-contract"}
+{"type":"custom_message","customType":"pi-user-agents","timestamp":"2026-08-20T13:00:00.000Z","details":{"agentId":"renderagent-1","task":"renderagent task","mainContextState":"joined","content":"<user_agent>\n<user_invocation>\n/agent renderagent task\n</user_invocation>\n<task>\nrenderagent task\n</task>\n<response>\nrenderagent response body\n</response>\n</user_agent>"}}

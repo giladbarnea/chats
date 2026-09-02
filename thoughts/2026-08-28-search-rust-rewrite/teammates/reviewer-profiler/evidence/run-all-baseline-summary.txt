@@ -1,0 +1,8 @@
+25:1129 passed, 3 skipped in 94.79s (0:01:34)
+33:E   AssertionError: `ch search . -ma 4h --list` took 1810ms; budget is 1750ms.
+38:E   AssertionError: `ch search . -l -d .` took 2556ms; budget is 2500ms.
+41:FAILED tests/test_search_perf.py::test_search_mafter_4h_list_under_1750ms - A...
+42:FAILED tests/test_search_perf.py::test_search_dir_filter_list_under_2500ms - ...
+43:2 failed, 2 passed in 6.79s
+44:./tests/run_all.sh  187.58s user 43.99s system 225% cpu 1:42.48 total
+45:exit=1

@@ -1,0 +1,9 @@
+{
+  "artifact": "ch-0ffde41",
+  "sha256": "257f505215f772b336f591eb5ac3ef769da57597bd6a0233a4008cd7fef8e77d",
+  "bytes": 6528976,
+  "built_from": "wip/cycle-02-native-default-pause-20260821 @ 0ffde41",
+  "built_at": "2026-08-25T00:20 local, in the worktree /Users/giladbarnea/dev/chats-cycle02-ox",
+  "why_it_is_kept": "A positive freshness proof that has never been shown to fail is green for an unknown reason. This is the stale artifact the guard has to catch: a real launcher from the unmerged branch, which is the hazard this mission actually hit. Rebuilding one later to falsify a guard is the expensive version of something that was nearly free while a copy still existed.",
+  "how_to_rebuild_if_lost": "git worktree add <dir> wip/cycle-02-native-default-pause-20260821 && cd <dir> && cargo build --release --bin ch --no-default-features"
+}

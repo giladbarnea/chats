@@ -1,0 +1,9 @@
+[package]
+name = "shortcheck"
+version = "0.0.0"
+edition = "2024"
+[dependencies]
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+unicode-general-category = "1"
+num-bigint = "0.4"
+ryu = "1"

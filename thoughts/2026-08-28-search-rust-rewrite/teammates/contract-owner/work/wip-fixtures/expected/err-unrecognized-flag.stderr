@@ -1,0 +1,6 @@
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]
+                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]
+                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]
+                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: unrecognized arguments: --bogus-flag

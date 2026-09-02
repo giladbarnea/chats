@@ -1,0 +1,76 @@
+{
+ "oracle_revision": "8cb4c5f",
+ "generated_by": "branch_map_differential.py",
+ "declared_divergences": {},
+ "cases": [
+  {
+   "key": "combined-eras.jsonl",
+   "case": {
+    "fixture": "combined-eras.jsonl"
+   },
+   "expected": {
+    "u1": "1",
+    "a1": "1",
+    "u4": "2"
+   }
+  },
+  {
+   "key": "compaction-boundary.jsonl",
+   "case": {
+    "fixture": "compaction-boundary.jsonl"
+   },
+   "expected": {
+    "u3": "1"
+   }
+  },
+  {
+   "key": "equal-depth-fork.jsonl",
+   "case": {
+    "fixture": "equal-depth-fork.jsonl"
+   },
+   "expected": {
+    "b2": "1"
+   }
+  },
+  {
+   "key": "no-recorded-leaf.jsonl",
+   "case": {
+    "fixture": "no-recorded-leaf.jsonl"
+   },
+   "expected": {
+    "u3": "1"
+   }
+  },
+  {
+   "key": "numbering-order.jsonl",
+   "case": {
+    "fixture": "numbering-order.jsonl"
+   },
+   "expected": {
+    "bA": "1",
+    "bB": "2",
+    "bC": "3",
+    "bD": "4"
+   }
+  },
+  {
+   "key": "rewind-to-first.jsonl",
+   "case": {
+    "fixture": "rewind-to-first.jsonl"
+   },
+   "expected": {
+    "u1": "1",
+    "a1": "1"
+   }
+  },
+  {
+   "key": "truncated-head.jsonl",
+   "case": {
+    "fixture": "truncated-head.jsonl"
+   },
+   "expected": {
+    "u3": "1"
+   }
+  }
+ ]
+}

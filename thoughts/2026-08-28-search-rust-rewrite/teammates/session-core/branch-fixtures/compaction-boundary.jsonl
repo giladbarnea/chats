@@ -1,0 +1,7 @@
+{"type": "user", "uuid": "u1", "parentUuid": null, "timestamp": "2026-08-20T11:00:00.000Z", "message": {"role": "user", "content": "before compaction"}}
+{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "timestamp": "2026-08-20T11:01:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "answer before compaction"}]}}
+{"type": "system", "subtype": "compact_boundary", "uuid": "c1", "parentUuid": null, "logicalParentUuid": "a1", "timestamp": "2026-08-20T11:02:00.000Z"}
+{"type": "user", "uuid": "u2", "parentUuid": "c1", "timestamp": "2026-08-20T11:03:00.000Z", "message": {"role": "user", "content": "after compaction"}}
+{"type": "assistant", "uuid": "a2", "parentUuid": "u2", "timestamp": "2026-08-20T11:04:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "answer after compaction"}]}}
+{"type": "user", "uuid": "u3", "parentUuid": "c1", "timestamp": "2026-08-20T11:05:00.000Z", "message": {"role": "user", "content": "abandoned after compaction"}}
+{"type": "last-prompt", "leafUuid": "a2"}

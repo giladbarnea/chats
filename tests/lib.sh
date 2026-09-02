@@ -2,7 +2,9 @@
 setopt EXTENDED_GLOB
 
 CH_ORIGINAL_HOME="$HOME"
-CH_TEST_HOME="${TMPDIR:-/tmp}/ch-shell-tests-${USER:-$UID}"
+# Per-run subdirectory: two shell suites running at once used to share one path,
+# and the wipe below deleted the other run's fixtures out from under it.
+CH_TEST_HOME="${TMPDIR:-/tmp}/ch-shell-tests-${USER:-$UID}/$$"
 CH_NATIVE_DATA_DIR="$CH_TEST_HOME/.claude/projects/ch-shell-tests"
 rm -rf "$CH_TEST_HOME"
 mkdir -p "$CH_NATIVE_DATA_DIR"

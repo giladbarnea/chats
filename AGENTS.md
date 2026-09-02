@@ -183,7 +183,7 @@ The following points are close to my heart:
 
 ## Memory
 
-Your memory is OptMem (github.com/VictorTaelin/OptMem), scoped to this project:
+Your memory is OptMem (github.com/giladbarnea/OptMem), scoped to this project:
 - The tool is `memo` (on PATH; wrapper at `~/.local/bin/memo`, real file in `~/dev/optmem`)
 - Your memories are in `<this repo>/.optmem/memory`
 
@@ -197,10 +197,7 @@ then do exactly what it prints, to the end of its output.
 
 ### While working: register memories (mandatory)
 
-Call `memo note "<1 line, max 280 bytes>"` whenever you learn something new,
-or something worth keeping happens. That covers a task worth real effort, a
-fact or insight the user teaches you, anything you learn about their life
-(even indirectly), any event of lasting effect.
+Call `memo note "<1 line, max 280 bytes>"` whenever you learn something new, or something worth keeping happens. That covers a lesson worth real effort, a fact or insight the user teaches you, anything you learn about their life (even indirectly), any event of lasting effect.
 Do not register redundant memories.
 If `memo note` asks a compression: do it before your next action.
 Never edit or delete anything under `.optmem/memory`: the tool manages it.
@@ -209,14 +206,48 @@ Never edit or delete anything under `.optmem/memory`: the tool manages it.
 
 `memo recall <regex>` searches every memory, word for word.
 
-Your memories also form a binary tree: #0-1, #2-3 ... exist as one-line
-summaries, pairs of those as #0-3, and so on -- every `#a-b` line wake
-prints is one node of it. `memo zoom <a-b>` opens a node into its two
-halves, down to the raw memories.
+Your memories also form a binary tree: #0-1, #2-3 ... exist as one-line summaries, pairs of those as #0-3, and so on -- every `#a-b` line wake prints is one node of it.
+`memo zoom <a-b>` opens a node into its two halves, down to the raw memories.
 
-### If you're a subagent: skip everything above
+### If you are being managed by another AI: perform only read-only memory operations
 
-Parallel sessions in this project are all you, and may all write memories.
-A subagent is not: it must never run `memo`, because it cannot judge what
-is already known, and its notes would arrive duplicated and incorrectly.
-When you spawn one, write: `You are a subagent. Don't run memo.`
+Only the leader AI is allowed to write or modify memory. Subagents and teammates are strictly limited to read available memory.
+
+### There is a high bar to registering a memory
+
+**A candidate memory should pass:**
+
+1. **Durable:** Useful for many weeks and potentially months, not days.
+2. **Behavior-changing:** Knowing it changes future agent conduct or MO.
+3. **Repeated and proven:** It applies across tasks, agnostic of domain, and has already mattered more than once.
+4. **Expensive to relearn:** Forgetting causes meaningful waste, frustration, or risk.
+5. **Not stored elsewhere:** Code, documentation, or project instructions do not already preserve it.
+
+**Good candidates:**
+
+ - Stable collaboration and transport preferences.
+ - A validated recurring failure pattern and its remedy.
+ - A durable product principle that guides many unrelated decisions.
+ - A user fact that consistently changes how the agent should communicate or work.
+
+**Do not propose:**
+
+- Current task, branch, or commit state.
+- Temporary conditions or tuning values.
+- Facts already visible in code or documentation.
+- One-off feedback or speculative lessons.
+
+**Choose the correct home:**
+
+OptMem does _not_ own:
+- Rules needed in every session belong in `AGENTS.md`. Updates to `AGENTS.md` are rare (once every few weeks, if at all) and must be confirmed by the user.
+- System knowledge: project documentation
+- WIP and continuation state: dedicated desks (typically `{thoughts/efforts}/<mission-slug>/...`)
+
+OptMem _does own_:
+- Durable tacit wisdom belongs in OptMem, as defined above.
+- Explicit user memory requests.
+
+**Note:**
+
+If the user has dictated a different memory policy for the current project, it should of course take precedence over these defaults. A project-specific policy should of course be memorized.

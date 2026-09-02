@@ -1,0 +1,2 @@
+{"type":"assistant","uuid":"a-lt","timestamp":"2026-08-20T21:00:00Z","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"tool_use","id":"toolu_lt","name":"Bash","input":{"command":"echo longtooloutput"}}]}}
+{"type":"user","uuid":"u-lt","timestamp":"2026-08-20T21:01:00Z","cwd":"/tmp/search-contract/shorttool","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_lt","content":"YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY middlenosecret hiddenZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ longtooloutput tail"}]}}

@@ -1,0 +1,2779 @@
+{
+ "oracle_revision": "8cb4c5f",
+ "generated_by": "shortening_differential.py",
+ "declared_divergences": {},
+ "cases": [
+  {
+   "key": "sample0/limit0",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit1",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 1
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit2",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 2
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit3",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 3
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit4",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 4
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit5",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 5
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit6",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 6
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit7",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 7
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit8",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 8
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit9",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 9
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit10",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 10
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit11",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 11
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit15",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 15
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit16",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 16
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit17",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 17
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit31",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 31
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit32",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 32
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit33",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 33
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit100",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 100
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit499",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 499
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit500",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 500
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample0/limit501",
+   "case": {
+    "sample": 0,
+    "text": "",
+    "limit": 501
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample1/limit0",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample1/limit1",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample1/limit2",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample1/limit3",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample1/limit4",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 4
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit5",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample1/limit6",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 6
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit7",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 7
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit8",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 8
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit9",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 9
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit10",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 10
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit11",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 11
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit15",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 15
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit16",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 16
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit17",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 17
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit31",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 31
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit32",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 32
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit33",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 33
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit100",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 100
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit499",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 499
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit500",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 500
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample1/limit501",
+   "case": {
+    "sample": 1,
+    "text": "a",
+    "limit": 501
+   },
+   "expected": "a"
+  },
+  {
+   "key": "sample2/limit0",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample2/limit1",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample2/limit2",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample2/limit3",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample2/limit4",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 4
+   },
+   "expected": "a...abcdefghijklmnopqrstuvwxyz0123456789"
+  },
+  {
+   "key": "sample2/limit5",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample2/limit6",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 6
+   },
+   "expected": "a\n...\nabcdefghijklmnopqrstuvwxyz0123456789"
+  },
+  {
+   "key": "sample2/limit7",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 7
+   },
+   "expected": "a\n...\n9"
+  },
+  {
+   "key": "sample2/limit8",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 8
+   },
+   "expected": "ab\n...\n9"
+  },
+  {
+   "key": "sample2/limit9",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 9
+   },
+   "expected": "ab\n...\n89"
+  },
+  {
+   "key": "sample2/limit10",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 10
+   },
+   "expected": "abc\n...\n89"
+  },
+  {
+   "key": "sample2/limit11",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 11
+   },
+   "expected": "abc\n...\n789"
+  },
+  {
+   "key": "sample2/limit15",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 15
+   },
+   "expected": "abcde\n...\n56789"
+  },
+  {
+   "key": "sample2/limit16",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 16
+   },
+   "expected": "abcdef\n...\n56789"
+  },
+  {
+   "key": "sample2/limit17",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 17
+   },
+   "expected": "abcdef\n...\n456789"
+  },
+  {
+   "key": "sample2/limit31",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 31
+   },
+   "expected": "abcdefghijklm\n...\nxyz0123456789"
+  },
+  {
+   "key": "sample2/limit32",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 32
+   },
+   "expected": "abcdefghijklmn\n...\nxyz0123456789"
+  },
+  {
+   "key": "sample2/limit33",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 33
+   },
+   "expected": "abcdefghijklmn\n...\nwxyz0123456789"
+  },
+  {
+   "key": "sample2/limit100",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 100
+   },
+   "expected": "abcdefghijklmnopqrstuvwxyz0123456789"
+  },
+  {
+   "key": "sample2/limit499",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 499
+   },
+   "expected": "abcdefghijklmnopqrstuvwxyz0123456789"
+  },
+  {
+   "key": "sample2/limit500",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 500
+   },
+   "expected": "abcdefghijklmnopqrstuvwxyz0123456789"
+  },
+  {
+   "key": "sample2/limit501",
+   "case": {
+    "sample": 2,
+    "text": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "limit": 501
+   },
+   "expected": "abcdefghijklmnopqrstuvwxyz0123456789"
+  },
+  {
+   "key": "sample3/limit0",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample3/limit1",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample3/limit2",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample3/limit3",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample3/limit4",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 4
+   },
+   "expected": "א...אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit5",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample3/limit6",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 6
+   },
+   "expected": "א\n...\nאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit7",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 7
+   },
+   "expected": "א\n...\nת"
+  },
+  {
+   "key": "sample3/limit8",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 8
+   },
+   "expected": "אב\n...\nת"
+  },
+  {
+   "key": "sample3/limit9",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 9
+   },
+   "expected": "אב\n...\nשת"
+  },
+  {
+   "key": "sample3/limit10",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 10
+   },
+   "expected": "אבג\n...\nשת"
+  },
+  {
+   "key": "sample3/limit11",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 11
+   },
+   "expected": "אבג\n...\nרשת"
+  },
+  {
+   "key": "sample3/limit15",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 15
+   },
+   "expected": "אבגדה\n...\nצקרשת"
+  },
+  {
+   "key": "sample3/limit16",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 16
+   },
+   "expected": "אבגדהו\n...\nצקרשת"
+  },
+  {
+   "key": "sample3/limit17",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 17
+   },
+   "expected": "אבגדהו\n...\nפצקרשת"
+  },
+  {
+   "key": "sample3/limit31",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 31
+   },
+   "expected": "אבגדהוזחטיכלמ\n...\nיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit32",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 32
+   },
+   "expected": "אבגדהוזחטיכלמנ\n...\nיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit33",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 33
+   },
+   "expected": "אבגדהוזחטיכלמנ\n...\nטיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit100",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 100
+   },
+   "expected": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit499",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 499
+   },
+   "expected": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit500",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 500
+   },
+   "expected": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample3/limit501",
+   "case": {
+    "sample": 3,
+    "text": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת",
+    "limit": 501
+   },
+   "expected": "אבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשתאבגדהוזחטיכלמנסעפצקרשת"
+  },
+  {
+   "key": "sample4/limit0",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample4/limit1",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample4/limit2",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample4/limit3",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample4/limit4",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 4
+   },
+   "expected": "日...日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit5",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample4/limit6",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 6
+   },
+   "expected": "日\n...\n日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit7",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 7
+   },
+   "expected": "日\n...\nす"
+  },
+  {
+   "key": "sample4/limit8",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 8
+   },
+   "expected": "日本\n...\nす"
+  },
+  {
+   "key": "sample4/limit9",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 9
+   },
+   "expected": "日本\n...\nです"
+  },
+  {
+   "key": "sample4/limit10",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 10
+   },
+   "expected": "日本語\n...\nです"
+  },
+  {
+   "key": "sample4/limit11",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 11
+   },
+   "expected": "日本語\n...\nトです"
+  },
+  {
+   "key": "sample4/limit15",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 15
+   },
+   "expected": "日本語のテ\n...\nキストです"
+  },
+  {
+   "key": "sample4/limit16",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 16
+   },
+   "expected": "日本語のテキ\n...\nキストです"
+  },
+  {
+   "key": "sample4/limit17",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 17
+   },
+   "expected": "日本語のテキ\n...\nテキストです"
+  },
+  {
+   "key": "sample4/limit31",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 31
+   },
+   "expected": "日本語のテキストです日本語\n...\nトです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit32",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 32
+   },
+   "expected": "日本語のテキストです日本語の\n...\nトです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit33",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 33
+   },
+   "expected": "日本語のテキストです日本語の\n...\nストです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit100",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 100
+   },
+   "expected": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit499",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 499
+   },
+   "expected": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit500",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 500
+   },
+   "expected": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです"
+  },
+  {
+   "key": "sample4/limit501",
+   "case": {
+    "sample": 4,
+    "text": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです",
+    "limit": 501
+   },
+   "expected": "日本語のテキストです日本語のテキストです日本語のテキストです日本語のテキストです"
+  },
+  {
+   "key": "sample5/limit0",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample5/limit1",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample5/limit2",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample5/limit3",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample5/limit4",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 4
+   },
+   "expected": "𝔘...𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit5",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample5/limit6",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 6
+   },
+   "expected": "𝔘\n...\n𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit7",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 7
+   },
+   "expected": "𝔘\n...\n𝔢"
+  },
+  {
+   "key": "sample5/limit8",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 8
+   },
+   "expected": "𝔘𝔫\n...\n𝔢"
+  },
+  {
+   "key": "sample5/limit9",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 9
+   },
+   "expected": "𝔘𝔫\n...\n𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit10",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 10
+   },
+   "expected": "𝔘𝔫𝔦\n...\n𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit11",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 11
+   },
+   "expected": "𝔘𝔫𝔦\n...\n𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit15",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 15
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬\n...\n𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit16",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 16
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡\n...\n𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit17",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 17
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡\n...\n𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit31",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 31
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡\n...\n𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit32",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 32
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢\n...\n𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit33",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 33
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢\n...\n𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit100",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 100
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit499",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 499
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit500",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 500
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample5/limit501",
+   "case": {
+    "sample": 5,
+    "text": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+    "limit": 501
+   },
+   "expected": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  },
+  {
+   "key": "sample6/limit0",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample6/limit1",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample6/limit2",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample6/limit3",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample6/limit4",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 4
+   },
+   "expected": "👨...👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit5",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample6/limit6",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 6
+   },
+   "expected": "👨\n...\n👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit7",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 7
+   },
+   "expected": "👨\n...\n👦"
+  },
+  {
+   "key": "sample6/limit8",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 8
+   },
+   "expected": "👨‍\n...\n👦"
+  },
+  {
+   "key": "sample6/limit9",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 9
+   },
+   "expected": "👨‍\n...\n‍👦"
+  },
+  {
+   "key": "sample6/limit10",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 10
+   },
+   "expected": "👨‍👩\n...\n‍👦"
+  },
+  {
+   "key": "sample6/limit11",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 11
+   },
+   "expected": "👨‍👩\n...\n👧‍👦"
+  },
+  {
+   "key": "sample6/limit15",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 15
+   },
+   "expected": "👨‍👩‍👧\n...\n👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit16",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 16
+   },
+   "expected": "👨‍👩‍👧‍\n...\n👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit17",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 17
+   },
+   "expected": "👨‍👩‍👧‍\n...\n‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit31",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 31
+   },
+   "expected": "👨‍👩‍👧‍👦👨‍👩‍👧‍\n...\n‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit32",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 32
+   },
+   "expected": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦\n...\n‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit33",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 33
+   },
+   "expected": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦\n...\n👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit100",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 100
+   },
+   "expected": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit499",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 499
+   },
+   "expected": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit500",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 500
+   },
+   "expected": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample6/limit501",
+   "case": {
+    "sample": 6,
+    "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+    "limit": 501
+   },
+   "expected": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+  },
+  {
+   "key": "sample7/limit0",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample7/limit1",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample7/limit2",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample7/limit3",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample7/limit4",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 4
+   },
+   "expected": "c...café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample7/limit5",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample7/limit6",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 6
+   },
+   "expected": "c\n...\ncafé résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample7/limit7",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 7
+   },
+   "expected": "c\n...\n "
+  },
+  {
+   "key": "sample7/limit8",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 8
+   },
+   "expected": "ca\n...\n "
+  },
+  {
+   "key": "sample7/limit9",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 9
+   },
+   "expected": "ca\n...\ne "
+  },
+  {
+   "key": "sample7/limit10",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 10
+   },
+   "expected": "caf\n...\ne "
+  },
+  {
+   "key": "sample7/limit11",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 11
+   },
+   "expected": "caf\n...\nve "
+  },
+  {
+   "key": "sample7/limit15",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 15
+   },
+   "expected": "café \n...\naïve "
+  },
+  {
+   "key": "sample7/limit16",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 16
+   },
+   "expected": "café r\n...\naïve "
+  },
+  {
+   "key": "sample7/limit17",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 17
+   },
+   "expected": "café r\n...\nnaïve "
+  },
+  {
+   "key": "sample7/limit31",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 31
+   },
+   "expected": "café résumé n\n...\nrésumé naïve "
+  },
+  {
+   "key": "sample7/limit32",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 32
+   },
+   "expected": "café résumé na\n...\nrésumé naïve "
+  },
+  {
+   "key": "sample7/limit33",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 33
+   },
+   "expected": "café résumé na\n...\n résumé naïve "
+  },
+  {
+   "key": "sample7/limit100",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 100
+   },
+   "expected": "café résumé naïve café résumé naïve café résumé \n...\nsumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample7/limit499",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 499
+   },
+   "expected": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample7/limit500",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 500
+   },
+   "expected": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample7/limit501",
+   "case": {
+    "sample": 7,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 501
+   },
+   "expected": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample8/limit0",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample8/limit1",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample8/limit2",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample8/limit3",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample8/limit4",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 4
+   },
+   "expected": "c...café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample8/limit5",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample8/limit6",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 6
+   },
+   "expected": "c\n...\ncafé résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample8/limit7",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 7
+   },
+   "expected": "c\n...\n "
+  },
+  {
+   "key": "sample8/limit8",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 8
+   },
+   "expected": "ca\n...\n "
+  },
+  {
+   "key": "sample8/limit9",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 9
+   },
+   "expected": "ca\n...\ne "
+  },
+  {
+   "key": "sample8/limit10",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 10
+   },
+   "expected": "caf\n...\ne "
+  },
+  {
+   "key": "sample8/limit11",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 11
+   },
+   "expected": "caf\n...\nve "
+  },
+  {
+   "key": "sample8/limit15",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 15
+   },
+   "expected": "café\n...\nïve "
+  },
+  {
+   "key": "sample8/limit16",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 16
+   },
+   "expected": "café \n...\nïve "
+  },
+  {
+   "key": "sample8/limit17",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 17
+   },
+   "expected": "café \n...\naïve "
+  },
+  {
+   "key": "sample8/limit31",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 31
+   },
+   "expected": "café résume\n...\nsumé naïve "
+  },
+  {
+   "key": "sample8/limit32",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 32
+   },
+   "expected": "café résumé\n...\nsumé naïve "
+  },
+  {
+   "key": "sample8/limit33",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 33
+   },
+   "expected": "café résumé\n...\ńsumé naïve "
+  },
+  {
+   "key": "sample8/limit100",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 100
+   },
+   "expected": "café résumé naïve café résumé naïve cafe\n...\nve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample8/limit499",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 499
+   },
+   "expected": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample8/limit500",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 500
+   },
+   "expected": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample8/limit501",
+   "case": {
+    "sample": 8,
+    "text": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve ",
+    "limit": 501
+   },
+   "expected": "café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve café résumé naïve "
+  },
+  {
+   "key": "sample9/limit0",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample9/limit1",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample9/limit2",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample9/limit3",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample9/limit4",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 4
+   },
+   "expected": "l...line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n"
+  },
+  {
+   "key": "sample9/limit5",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample9/limit6",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 6
+   },
+   "expected": "l\n...\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n"
+  },
+  {
+   "key": "sample9/limit7",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 7
+   },
+   "expected": "l\n...\n\n"
+  },
+  {
+   "key": "sample9/limit8",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 8
+   },
+   "expected": "li\n...\n\n"
+  },
+  {
+   "key": "sample9/limit9",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 9
+   },
+   "expected": "li\n...\ne\n"
+  },
+  {
+   "key": "sample9/limit10",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 10
+   },
+   "expected": "lin\n...\ne\n"
+  },
+  {
+   "key": "sample9/limit11",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 11
+   },
+   "expected": "lin\n...\nee\n"
+  },
+  {
+   "key": "sample9/limit15",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 15
+   },
+   "expected": "line \n...\nhree\n"
+  },
+  {
+   "key": "sample9/limit16",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 16
+   },
+   "expected": "line o\n...\nhree\n"
+  },
+  {
+   "key": "sample9/limit17",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 17
+   },
+   "expected": "line o\n...\nthree\n"
+  },
+  {
+   "key": "sample9/limit31",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 31
+   },
+   "expected": "line one\nline\n...\no\nline three\n"
+  },
+  {
+   "key": "sample9/limit32",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 32
+   },
+   "expected": "line one\nline \n...\no\nline three\n"
+  },
+  {
+   "key": "sample9/limit33",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 33
+   },
+   "expected": "line one\nline \n...\nwo\nline three\n"
+  },
+  {
+   "key": "sample9/limit100",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 100
+   },
+   "expected": "line one\nline two\nline three\nline one\nline two\nl\n...\nne two\nline three\nline one\nline two\nline three\n"
+  },
+  {
+   "key": "sample9/limit499",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 499
+   },
+   "expected": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n"
+  },
+  {
+   "key": "sample9/limit500",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 500
+   },
+   "expected": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n"
+  },
+  {
+   "key": "sample9/limit501",
+   "case": {
+    "sample": 9,
+    "text": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n",
+    "limit": 501
+   },
+   "expected": "line one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\nline one\nline two\nline three\n"
+  },
+  {
+   "key": "sample10/limit0",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample10/limit1",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample10/limit2",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample10/limit3",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample10/limit4",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 4
+   },
+   "expected": "\t...\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit5",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample10/limit6",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 6
+   },
+   "expected": "\t\n...\n\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit7",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 7
+   },
+   "expected": "\t\n...\n\t"
+  },
+  {
+   "key": "sample10/limit8",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 8
+   },
+   "expected": "\t\t\n...\n\t"
+  },
+  {
+   "key": "sample10/limit9",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 9
+   },
+   "expected": "\t\t\n...\n\t\t"
+  },
+  {
+   "key": "sample10/limit10",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 10
+   },
+   "expected": "\t\t\t\n...\n\t\t"
+  },
+  {
+   "key": "sample10/limit11",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 11
+   },
+   "expected": "\t\t\t\n...\n\t\t\t"
+  },
+  {
+   "key": "sample10/limit15",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 15
+   },
+   "expected": "\t\t\t  \n...\n  \t\t\t"
+  },
+  {
+   "key": "sample10/limit16",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 16
+   },
+   "expected": "\t\t\t   \n...\n  \t\t\t"
+  },
+  {
+   "key": "sample10/limit17",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 17
+   },
+   "expected": "\t\t\t   \n...\n   \t\t\t"
+  },
+  {
+   "key": "sample10/limit31",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 31
+   },
+   "expected": "\t\t\t   spaced \n...\n spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit32",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 32
+   },
+   "expected": "\t\t\t   spaced  \n...\n spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit33",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 33
+   },
+   "expected": "\t\t\t   spaced  \n...\n  spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit100",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 100
+   },
+   "expected": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit499",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 499
+   },
+   "expected": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit500",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 500
+   },
+   "expected": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t"
+  },
+  {
+   "key": "sample10/limit501",
+   "case": {
+    "sample": 10,
+    "text": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t",
+    "limit": 501
+   },
+   "expected": "\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t\t\t\t   spaced   \t\t\t"
+  },
+  {
+   "key": "sample11/limit0",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample11/limit1",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample11/limit2",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample11/limit3",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample11/limit4",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 4
+   },
+   "expected": "m...mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit5",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample11/limit6",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 6
+   },
+   "expected": "m\n...\nmixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit7",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 7
+   },
+   "expected": "m\n...\né"
+  },
+  {
+   "key": "sample11/limit8",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 8
+   },
+   "expected": "mi\n...\né"
+  },
+  {
+   "key": "sample11/limit9",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 9
+   },
+   "expected": "mi\n...\nfé"
+  },
+  {
+   "key": "sample11/limit10",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 10
+   },
+   "expected": "mix\n...\nfé"
+  },
+  {
+   "key": "sample11/limit11",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 11
+   },
+   "expected": "mix\n...\nafé"
+  },
+  {
+   "key": "sample11/limit15",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 15
+   },
+   "expected": "mixed\n...\n café"
+  },
+  {
+   "key": "sample11/limit16",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 16
+   },
+   "expected": "mixed \n...\n café"
+  },
+  {
+   "key": "sample11/limit17",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 17
+   },
+   "expected": "mixed \n...\n💻 café"
+  },
+  {
+   "key": "sample11/limit31",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 31
+   },
+   "expected": "mixed אבג 日本 \n...\n本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit32",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 32
+   },
+   "expected": "mixed אבג 日本 𝔘\n...\n本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit33",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 33
+   },
+   "expected": "mixed אבג 日本 𝔘\n...\n日本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit100",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 100
+   },
+   "expected": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café\n...\nixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit499",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 499
+   },
+   "expected": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit500",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 500
+   },
+   "expected": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample11/limit501",
+   "case": {
+    "sample": 11,
+    "text": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café",
+    "limit": 501
+   },
+   "expected": "mixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 cafémixed אבג 日本 𝔘𝔫 👩‍💻 café"
+  },
+  {
+   "key": "sample12/limit0",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample12/limit1",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample12/limit2",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample12/limit3",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample12/limit4",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 4
+   },
+   "expected": "\u0000...\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit5",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample12/limit6",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 6
+   },
+   "expected": "\u0000\n...\n\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit7",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 7
+   },
+   "expected": "\u0000\n...\nm"
+  },
+  {
+   "key": "sample12/limit8",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 8
+   },
+   "expected": "\u0000\u0001\n...\nm"
+  },
+  {
+   "key": "sample12/limit9",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 9
+   },
+   "expected": "\u0000\u0001\n...\n1m"
+  },
+  {
+   "key": "sample12/limit10",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 10
+   },
+   "expected": "\u0000\u0001\u0002\n...\n1m"
+  },
+  {
+   "key": "sample12/limit11",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 11
+   },
+   "expected": "\u0000\u0001\u0002\n...\n31m"
+  },
+  {
+   "key": "sample12/limit15",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 15
+   },
+   "expected": "\u0000\u0001\u0002 c\n...\n\u001b[31m"
+  },
+  {
+   "key": "sample12/limit16",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 16
+   },
+   "expected": "\u0000\u0001\u0002 co\n...\n\u001b[31m"
+  },
+  {
+   "key": "sample12/limit17",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 17
+   },
+   "expected": "\u0000\u0001\u0002 co\n...\n \u001b[31m"
+  },
+  {
+   "key": "sample12/limit31",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 31
+   },
+   "expected": "\u0000\u0001\u0002 control b\n...\nl bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit32",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 32
+   },
+   "expected": "\u0000\u0001\u0002 control by\n...\nl bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit33",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 33
+   },
+   "expected": "\u0000\u0001\u0002 control by\n...\nol bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit100",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 100
+   },
+   "expected": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit499",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 499
+   },
+   "expected": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit500",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 500
+   },
+   "expected": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m"
+  },
+  {
+   "key": "sample12/limit501",
+   "case": {
+    "sample": 12,
+    "text": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m",
+    "limit": 501
+   },
+   "expected": "\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m\u0000\u0001\u0002 control bytes \u001b[31m"
+  },
+  {
+   "key": "sample13/limit0",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 0
+   },
+   "expected": ""
+  },
+  {
+   "key": "sample13/limit1",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 1
+   },
+   "expected": "."
+  },
+  {
+   "key": "sample13/limit2",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 2
+   },
+   "expected": ".."
+  },
+  {
+   "key": "sample13/limit3",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 3
+   },
+   "expected": "..."
+  },
+  {
+   "key": "sample13/limit4",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 4
+   },
+   "expected": "y...yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit5",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 5
+   },
+   "expected": "\n...\n"
+  },
+  {
+   "key": "sample13/limit6",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 6
+   },
+   "expected": "y\n...\nyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit7",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 7
+   },
+   "expected": "y\n...\ny"
+  },
+  {
+   "key": "sample13/limit8",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 8
+   },
+   "expected": "yy\n...\ny"
+  },
+  {
+   "key": "sample13/limit9",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 9
+   },
+   "expected": "yy\n...\nyy"
+  },
+  {
+   "key": "sample13/limit10",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 10
+   },
+   "expected": "yyy\n...\nyy"
+  },
+  {
+   "key": "sample13/limit11",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 11
+   },
+   "expected": "yyy\n...\nyyy"
+  },
+  {
+   "key": "sample13/limit15",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 15
+   },
+   "expected": "yyyyy\n...\nyyyyy"
+  },
+  {
+   "key": "sample13/limit16",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 16
+   },
+   "expected": "yyyyyy\n...\nyyyyy"
+  },
+  {
+   "key": "sample13/limit17",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 17
+   },
+   "expected": "yyyyyy\n...\nyyyyyy"
+  },
+  {
+   "key": "sample13/limit31",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 31
+   },
+   "expected": "yyyyyyyyyyyyy\n...\nyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit32",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 32
+   },
+   "expected": "yyyyyyyyyyyyyy\n...\nyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit33",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 33
+   },
+   "expected": "yyyyyyyyyyyyyy\n...\nyyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit100",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 100
+   },
+   "expected": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n...\nyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit499",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 499
+   },
+   "expected": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n...\nyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit500",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 500
+   },
+   "expected": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n...\nyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+   "key": "sample13/limit501",
+   "case": {
+    "sample": 13,
+    "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "limit": 501
+   },
+   "expected": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\n...\nyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  }
+ ]
+}

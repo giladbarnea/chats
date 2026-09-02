@@ -1,0 +1,1 @@
+teammates/lexer-tables/coverage-enumeration.md

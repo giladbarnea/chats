@@ -1,0 +1,6 @@
+{"type":"user","uuid":"u-2026-08-20T17:00:00Z","timestamp":"2026-08-20T17:00:00Z","message":{"role":"user","content":"markbase opener"},"cwd":"/tmp/search-contract/mark"}
+{"type":"assistant","uuid":"a-mread","timestamp":"2026-08-20T17:01:00Z","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"tool_use","id":"toolu_m1","name":"Read","input":{"file_path":"/tmp/example.txt","offset":1,"limit":2}}]}}
+{"type":"user","uuid":"u-mread","timestamp":"2026-08-20T17:02:00Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_m1","content":"plain read output without fences"}]}}
+{"type":"assistant","uuid":"a-medit","timestamp":"2026-08-20T17:03:00Z","message":{"role":"assistant","model":"claude-sonnet-4-6","content":[{"type":"tool_use","id":"toolu_m2","name":"Edit","input":{"file_path":"/tmp/app.py","old_string":"value = 'old'","new_string":"value = 'new'"}}]}}
+{"type":"user","uuid":"u-medit","timestamp":"2026-08-20T17:04:00Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_m2","content":"applied edit"}]}}
+{"type":"attachment","uuid":"att-hook","parentUuid":"u-medit","attachment":{"type":"hook_additional_context","content":["hookcontexttext injected body"],"hookName":"UserPromptSubmit","toolUseID":"hook-abc123","hookEvent":"UserPromptSubmit"},"timestamp":"2026-08-20T17:05:00Z"}

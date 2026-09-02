@@ -687,6 +687,26 @@ def _emit_no_results(
     sys.exit(1)
 
 
+_NOW_OVERRIDE_VARIABLE = "CH_NOW"
+_NOW_OVERRIDE_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
+
+def _resolved_now() -> datetime:
+    """The instant age rendering measures against, overridable by `CH_NOW`.
+
+    Age is the one search output where identical inputs legitimately produce
+    different bytes on different days, so a differential diff across it is
+    meaningless unless both routes read the same instant. The format is pinned
+    rather than ISO-permissive so the native route accepts exactly the same
+    values. Raises when `CH_NOW` is set but unparseable, rather than silently
+    reverting to the wall clock.
+    """
+    override = os.environ.get(_NOW_OVERRIDE_VARIABLE)
+    if override is None:
+        return datetime.now()
+    return datetime.strptime(override, _NOW_OVERRIDE_FORMAT)
+
+
 def _emit(pager: StreamingPager | None, render: Callable[[], None]) -> None:
     """Render via the module console, routing to the pager or straight to stdout.
 
@@ -718,7 +738,7 @@ def _stream_search_results(
         flags.color and flags.paging and output_mode != SearchOutputMode.ONLY_ID
     )
     pager = StreamingPager() if use_pager else None
-    now = datetime.now()
+    now = _resolved_now()
     found = 0
     try:
         for hit in hits:

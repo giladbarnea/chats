@@ -1,0 +1,24 @@
+REFUSED. 251 of 251 cases moved:
+  contract:help-long
+  contract:help-short
+  contract:err-unrecognized-flag
+  contract:err-extra-positional
+  contract:err-missing-pattern
+  contract:err-case-exclusive
+  contract:err-bad-color-choice
+  contract:err-bad-thinking-value
+  contract:err-bad-short-spec
+  contract:err-bad-provider-choice
+  contract:err-thinking-swallowed-pattern
+  contract:err-tools-path-pattern-required
+  contract:repair-short-detached
+  contract:repair-short-digits
+  contract:repair-short-spec
+  contract:only-id-forces-plain
+  contract:raw-forces-plain-nometa
+  contract:bool-and-cross-message
+  contract:bool-or
+  contract:bool-parens-precedence
+
+The oracle changed behaviour. Re-characterize deliberately with
+`generate_fixtures.py`, and say in the change log what moved and why.

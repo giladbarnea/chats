@@ -1,0 +1,42 @@
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]
+                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]
+                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]
+                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]
+                 [pattern]
+
+positional arguments:
+  pattern               Pattern to search for
+
+options:
+  -h, --help            show this help message and exit
+  -l, --list            List mode - show only paths and metadata
+  -ll, --only-id        Show only matching session IDs (implies --color never and --no-paging)
+  -f, --full            Show full matching conversations instead of only matching messages
+  -r, --raw             Alias for raw markdown search output (implies --no-metadata, --color
+                        never, and --no-paging)
+  -T, --thinking [THINKING]
+                        Show thinking tokens (optional: short)
+  --only-user           Search only regular user message bodies
+  --only-assistant      Search only regular assistant message bodies
+  -t, --tools [TOOLS]   Show tool use/result details (optional: filter with modifiers, e.g.
+                        'Bash:i', 'Read:o:s', '!Bash')
+  -a, --agents          Include agent messages and Pi agent custom records
+  -b, --branches        Include messages from abandoned (rewound) branches
+  -A, --all             Show everything, including arbitrary Pi custom records
+  --plans               Show plan content (ExitPlanMode)
+  -s, --case-sensitive  Match letter case exactly (default: false)
+  -i, --case-insensitive
+                        Ignore letter case (default: true)
+  --short [SHORT]       Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)
+  --color {always,never,auto}
+                        Control Rich formatting: always, never, or auto (default: auto)
+  --paging              Enable paging (default: same as color)
+  --no-paging           Disable paging
+  --no-metadata         Disable outputting metadata frontmatter
+
+session pool filters:
+  -d, --dir DIR         Restrict search to conversations in this directory
+  -ma, --mafter DATE    Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)
+  -ca, --cafter DATE    Only conversations created after DATE
+  -p, --provider {claude,pi,codex}
+                        Restrict search to sessions from a specific provider

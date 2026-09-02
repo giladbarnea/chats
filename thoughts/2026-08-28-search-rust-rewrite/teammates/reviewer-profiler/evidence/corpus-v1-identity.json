@@ -1,0 +1,21 @@
+{
+  "corpus_root": "/Users/giladbarnea/.cache/ch-search-corpus/v1",
+  "codex_stride": 4,
+  "files": 695,
+  "bytes": 1183541907,
+  "by_provider": {
+    ".claude": {
+      "files": 392,
+      "bytes": 513894109
+    },
+    ".codex": {
+      "files": 302,
+      "bytes": 666202653
+    },
+    ".pi": {
+      "files": 1,
+      "bytes": 3445145
+    }
+  },
+  "identity_sha256": "de693c35ad4700c5e8c36d453a13460936b6b7b28d453f0866c8b5c4ab284965"
+}

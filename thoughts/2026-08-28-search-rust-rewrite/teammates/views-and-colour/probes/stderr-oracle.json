@@ -1,0 +1,949 @@
+{
+ "rows": [
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJuZWVkbGUgZml2ZSIbWzBtG1szODsyOzEzNTsxNDA7MTQ2bS4bWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJuZWVkbGUgZml2ZSIbWzBtG1szODsyOzEzNTsxNDA7MTQ2bSB3aXRoIHRoZRtbMG0KG1szODsyOzEzNTsxNDA7MTQ2bWN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJhIEFORCBiIhtbMG0bWzM4OzI7MTM1OzE0MDsxNDZtIHdpdGggdGhlIBtbMG0KG1szODsyOzEzNTsxNDA7MTQ2bWN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSItIhtbMG0bWzM4OzI7MTM1OzE0MDsxNDZtLhtbMG0K"
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0KG1szMm0i5L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW9IhtbMG0bWzM4OzI7MTM1OzE0MDsxNDZtLhtbMG0K"
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0KG1szNW0vVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8bWzBtG1s5NW0xLmpzb25sG1swbRtbMzFtOiAbWzBtChtbMTszMW1bG1swbRtbMzFtRXJybm8gG1swbRtbMTszNm0yMRtbMG0bWzE7MzFtXRtbMG0bWzMxbSBJcyBhIGRpcmVjdG9yeRtbMG0K"
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtChtbMzJtJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94JxtbMG0K"
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCAbWzBtChtbMzFtZ290IGVuZCBvZiBwYXR0ZXJuLhtbMG0K"
+  },
+  {
+   "tier": "truecolor",
+   "columns": 40,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6G1swbQobWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJuZWVkbGUgZml2ZSIbWzBtG1szODsyOzEzNTsxNDA7MTQ2bS4bWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJuZWVkbGUgZml2ZSIbWzBtG1szODsyOzEzNTsxNDA7MTQ2bSB3aXRoIHRoZSBjdXJyZW50IGZpbHRlcnMuG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJhIEFORCBiIhtbMG0bWzM4OzI7MTM1OzE0MDsxNDZtIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSItIhtbMG0bWzM4OzI7MTM1OzE0MDsxNDZtLhtbMG0K"
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSLkvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb0iG1swbRtbMzg7MjsxMzU7MTQwOzE0Nm0uG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0KG1szNW0vVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8bWzBtG1s5NW0xLmpzb25sG1swbRtbMzFtOiAbWzBtG1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5G1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtG1szMm0nL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gnG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCBnb3QgZW5kIG9mIHBhdHRlcm4uG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 72,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6IBtbMG0bWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJuZWVkbGUgZml2ZSIbWzBtG1szODsyOzEzNTsxNDA7MTQ2bS4bWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJuZWVkbGUgZml2ZSIbWzBtG1szODsyOzEzNTsxNDA7MTQ2bSB3aXRoIHRoZSBjdXJyZW50IGZpbHRlcnMuG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSJhIEFORCBiIhtbMG0bWzM4OzI7MTM1OzE0MDsxNDZtIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSItIhtbMG0bWzM4OzI7MTM1OzE0MDsxNDZtLhtbMG0K"
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szODsyOzEzNTsxNDA7MTQ2bU5vIHNlc3Npb25zIG1hdGNoIBtbMG0bWzMybSLkvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb0iG1swbRtbMzg7MjsxMzU7MTQwOzE0Nm0uG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0bWzM1bS9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94LxtbMG0bWzk1bTEuanNvbmwbWzBtG1szMW06IBtbMG0bWzE7MzFtWxtbMG0bWzMxbUVycm5vIBtbMG0bWzE7MzZtMjEbWzBtG1sxOzMxbV0bWzBtG1szMW0gSXMgYSBkaXJlY3RvcnkbWzBtCg=="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtG1szMm0nL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gnG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCBnb3QgZW5kIG9mIHBhdHRlcm4uG1swbQo="
+  },
+  {
+   "tier": "truecolor",
+   "columns": 120,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6IBtbMG0bWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzg7NTsyNDVtLhtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzg7NTsyNDVtIHdpdGggdGhlG1swbQobWzM4OzU7MjQ1bWN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iYSBBTkQgYiIbWzBtG1szODs1OzI0NW0gd2l0aCB0aGUgG1swbQobWzM4OzU7MjQ1bWN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iLSIbWzBtG1szODs1OzI0NW0uG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtChtbMzJtIuS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlvSIbWzBtG1szODs1OzI0NW0uG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0KG1szNW0vVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8bWzBtG1s5NW0xLmpzb25sG1swbRtbMzFtOiAbWzBtChtbMTszMW1bG1swbRtbMzFtRXJybm8gG1swbRtbMTszNm0yMRtbMG0bWzE7MzFtXRtbMG0bWzMxbSBJcyBhIGRpcmVjdG9yeRtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtChtbMzJtJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94JxtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCAbWzBtChtbMzFtZ290IGVuZCBvZiBwYXR0ZXJuLhtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 40,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6G1swbQobWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzg7NTsyNDVtLhtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzg7NTsyNDVtIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iYSBBTkQgYiIbWzBtG1szODs1OzI0NW0gd2l0aCB0aGUgY3VycmVudCBmaWx0ZXJzLhtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iLSIbWzBtG1szODs1OzI0NW0uG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0i5L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW9IhtbMG0bWzM4OzU7MjQ1bS4bWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0KG1szNW0vVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8bWzBtG1s5NW0xLmpzb25sG1swbRtbMzFtOiAbWzBtG1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5G1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtG1szMm0nL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gnG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCBnb3QgZW5kIG9mIHBhdHRlcm4uG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 72,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6IBtbMG0bWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzg7NTsyNDVtLhtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzg7NTsyNDVtIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iYSBBTkQgYiIbWzBtG1szODs1OzI0NW0gd2l0aCB0aGUgY3VycmVudCBmaWx0ZXJzLhtbMG0K"
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iLSIbWzBtG1szODs1OzI0NW0uG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szODs1OzI0NW1ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0i5L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW9IhtbMG0bWzM4OzU7MjQ1bS4bWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0bWzM1bS9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94LxtbMG0bWzk1bTEuanNvbmwbWzBtG1szMW06IBtbMG0bWzE7MzFtWxtbMG0bWzMxbUVycm5vIBtbMG0bWzE7MzZtMjEbWzBtG1sxOzMxbV0bWzBtG1szMW0gSXMgYSBkaXJlY3RvcnkbWzBtCg=="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtG1szMm0nL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gnG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCBnb3QgZW5kIG9mIHBhdHRlcm4uG1swbQo="
+  },
+  {
+   "tier": "eight-bit",
+   "columns": 120,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6IBtbMG0bWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzdtLhtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzdtIHdpdGggdGhlG1swbQobWzM3bWN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iYSBBTkQgYiIbWzBtG1szN20gd2l0aCB0aGUgG1swbQobWzM3bWN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iLSIbWzBtG1szN20uG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtChtbMzJtIuS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlvSIbWzBtG1szN20uG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0KG1szNW0vVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8bWzBtG1s5NW0xLmpzb25sG1swbRtbMzFtOiAbWzBtChtbMTszMW1bG1swbRtbMzFtRXJybm8gG1swbRtbMTszNm0yMRtbMG0bWzE7MzFtXRtbMG0bWzMxbSBJcyBhIGRpcmVjdG9yeRtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtChtbMzJtJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94JxtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCAbWzBtChtbMzFtZ290IGVuZCBvZiBwYXR0ZXJuLhtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 40,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6G1swbQobWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzdtLhtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzdtIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iYSBBTkQgYiIbWzBtG1szN20gd2l0aCB0aGUgY3VycmVudCBmaWx0ZXJzLhtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iLSIbWzBtG1szN20uG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0i5L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW9IhtbMG0bWzM3bS4bWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0KG1szNW0vVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8bWzBtG1s5NW0xLmpzb25sG1swbRtbMzFtOiAbWzBtG1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5G1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtG1szMm0nL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gnG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCBnb3QgZW5kIG9mIHBhdHRlcm4uG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 72,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6IBtbMG0bWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzdtLhtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0ibmVlZGxlIGZpdmUiG1swbRtbMzdtIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4bWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iYSBBTkQgYiIbWzBtG1szN20gd2l0aCB0aGUgY3VycmVudCBmaWx0ZXJzLhtbMG0K"
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0iLSIbWzBtG1szN20uG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "G1szN21ObyBzZXNzaW9ucyBtYXRjaCAbWzBtG1szMm0i5L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW95L2g5aW9IhtbMG0bWzM3bS4bWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "G1szMW1FcnJvciBwcm9jZXNzaW5nIGNvbnZlcnNhdGlvbiBmaWxlIBtbMG0bWzM1bS9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94LxtbMG0bWzk1bTEuanNvbmwbWzBtG1szMW06IBtbMG0bWzE7MzFtWxtbMG0bWzMxbUVycm5vIBtbMG0bWzE7MzZtMjEbWzBtG1sxOzMxbV0bWzBtG1szMW0gSXMgYSBkaXJlY3RvcnkbWzBtCg=="
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxOzMxbVsbWzBtG1szMW1FcnJubyAbWzBtG1sxOzM2bTIxG1swbRtbMTszMW1dG1swbRtbMzFtIElzIGEgZGlyZWN0b3J5OiAbWzBtG1szMm0nL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gnG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "G1szMW1JbnZhbGlkIHNlYXJjaCBxdWVyeTogZXhwZWN0ZWQgYSB0ZXJtLCBnb3QgZW5kIG9mIHBhdHRlcm4uG1swbQo="
+  },
+  {
+   "tier": "standard",
+   "columns": 120,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "G1szM21TZWFyY2ggcGF0dGVybiBleGNlZWRlZCBpdHMgc3RlcCBidWRnZXQ6IBtbMG0bWzE7MzNtKBtbMG0bWzMzbWErG1swbRtbMTszM20pG1swbRtbMzNtK2IbWzBtCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIi4K"
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIiB3aXRoIHRoZQpjdXJyZW50IGZpbHRlcnMuCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggImEgQU5EIGIiIHdpdGggdGhlIApjdXJyZW50IGZpbHRlcnMuCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIi0iLgo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggCiLkvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb3kvaDlpb0iLgo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "RXJyb3IgcHJvY2Vzc2luZyBjb252ZXJzYXRpb24gZmlsZSAKL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gvMS5qc29ubDogChtbMW1bG1swbUVycm5vIBtbMW0yMRtbMG0bWzFtXRtbMG0gSXMgYSBkaXJlY3RvcnkK"
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxbVsbWzBtRXJybm8gG1sxbTIxG1swbRtbMW1dG1swbSBJcyBhIGRpcmVjdG9yeTogCicvVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveCcK"
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "SW52YWxpZCBzZWFyY2ggcXVlcnk6IGV4cGVjdGVkIGEgdGVybSwgCmdvdCBlbmQgb2YgcGF0dGVybi4K"
+  },
+  {
+   "tier": "no-color",
+   "columns": 40,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "U2VhcmNoIHBhdHRlcm4gZXhjZWVkZWQgaXRzIHN0ZXAgYnVkZ2V0OgobWzFtKBtbMG1hKxtbMW0pG1swbStiCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIi4K"
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIiB3aXRoIHRoZSBjdXJyZW50IGZpbHRlcnMuCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggImEgQU5EIGIiIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4K"
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIi0iLgo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIuS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlvSIuCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "RXJyb3IgcHJvY2Vzc2luZyBjb252ZXJzYXRpb24gZmlsZSAKL1VzZXJzL2FkYS8uY2xhdWRlL3Byb2plY3RzL3gvMS5qc29ubDogG1sxbVsbWzBtRXJybm8gG1sxbTIxG1swbRtbMW1dG1swbSBJcyBhIGRpcmVjdG9yeQo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxbVsbWzBtRXJybm8gG1sxbTIxG1swbRtbMW1dG1swbSBJcyBhIGRpcmVjdG9yeTogJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94Jwo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "SW52YWxpZCBzZWFyY2ggcXVlcnk6IGV4cGVjdGVkIGEgdGVybSwgZ290IGVuZCBvZiBwYXR0ZXJuLgo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 72,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "U2VhcmNoIHBhdHRlcm4gZXhjZWVkZWQgaXRzIHN0ZXAgYnVkZ2V0OiAbWzFtKBtbMG1hKxtbMW0pG1swbStiCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIi4K"
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIiB3aXRoIHRoZSBjdXJyZW50IGZpbHRlcnMuCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggImEgQU5EIGIiIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4K"
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIi0iLgo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIuS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlvSIuCg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "RXJyb3IgcHJvY2Vzc2luZyBjb252ZXJzYXRpb24gZmlsZSAvVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8xLmpzb25sOiAbWzFtWxtbMG1FcnJubyAbWzFtMjEbWzBtG1sxbV0bWzBtIElzIGEgZGlyZWN0b3J5Cg=="
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "G1sxbVsbWzBtRXJybm8gG1sxbTIxG1swbRtbMW1dG1swbSBJcyBhIGRpcmVjdG9yeTogJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94Jwo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "SW52YWxpZCBzZWFyY2ggcXVlcnk6IGV4cGVjdGVkIGEgdGVybSwgZ290IGVuZCBvZiBwYXR0ZXJuLgo="
+  },
+  {
+   "tier": "no-color",
+   "columns": 120,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "U2VhcmNoIHBhdHRlcm4gZXhjZWVkZWQgaXRzIHN0ZXAgYnVkZ2V0OiAbWzFtKBtbMG1hKxtbMW0pG1swbStiCg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIi4K"
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIiB3aXRoIHRoZSBjdXJyZW50IGZpbHRlcnMuCg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggImEgQU5EIGIiIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4K"
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIi0iLgo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIuS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlvSIuCg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "RXJyb3IgcHJvY2Vzc2luZyBjb252ZXJzYXRpb24gZmlsZSAvVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8xLmpzb25sOiBbRXJybm8KMjFdIElzIGEgZGlyZWN0b3J5Cg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "W0Vycm5vIDIxXSBJcyBhIGRpcmVjdG9yeTogJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94Jwo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "SW52YWxpZCBzZWFyY2ggcXVlcnk6IGV4cGVjdGVkIGEgdGVybSwgZ290IGVuZCBvZiBwYXR0ZXJuLgo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 40,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "U2VhcmNoIHBhdHRlcm4gZXhjZWVkZWQgaXRzIHN0ZXAgYnVkZ2V0OiAoYSspK2IK"
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIi4K"
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIiB3aXRoIHRoZSBjdXJyZW50IGZpbHRlcnMuCg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggImEgQU5EIGIiIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4K"
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIi0iLgo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIuS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlvSIuCg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "RXJyb3IgcHJvY2Vzc2luZyBjb252ZXJzYXRpb24gZmlsZSAvVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8xLmpzb25sOiBbRXJybm8KMjFdIElzIGEgZGlyZWN0b3J5Cg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "W0Vycm5vIDIxXSBJcyBhIGRpcmVjdG9yeTogJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94Jwo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "SW52YWxpZCBzZWFyY2ggcXVlcnk6IGV4cGVjdGVkIGEgdGVybSwgZ290IGVuZCBvZiBwYXR0ZXJuLgo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 72,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "U2VhcmNoIHBhdHRlcm4gZXhjZWVkZWQgaXRzIHN0ZXAgYnVkZ2V0OiAoYSspK2IK"
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIi4K"
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"needle five\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIm5lZWRsZSBmaXZlIiB3aXRoIHRoZSBjdXJyZW50IGZpbHRlcnMuCg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"a AND b\" with the current filters.",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggImEgQU5EIGIiIHdpdGggdGhlIGN1cnJlbnQgZmlsdGVycy4K"
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"-\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIi0iLgo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "hint",
+   "message": "No sessions match \"\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d\".",
+   "bytes": "Tm8gc2Vzc2lvbnMgbWF0Y2ggIuS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlveS9oOWlvSIuCg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "error",
+   "message": "Error processing conversation file /Users/ada/.claude/projects/x/1.jsonl: [Errno 21] Is a directory",
+   "bytes": "RXJyb3IgcHJvY2Vzc2luZyBjb252ZXJzYXRpb24gZmlsZSAvVXNlcnMvYWRhLy5jbGF1ZGUvcHJvamVjdHMveC8xLmpzb25sOiBbRXJybm8KMjFdIElzIGEgZGlyZWN0b3J5Cg=="
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "error",
+   "message": "[Errno 21] Is a directory: '/Users/ada/.claude/projects/x'",
+   "bytes": "W0Vycm5vIDIxXSBJcyBhIGRpcmVjdG9yeTogJy9Vc2Vycy9hZGEvLmNsYXVkZS9wcm9qZWN0cy94Jwo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "error",
+   "message": "Invalid search query: expected a term, got end of pattern.",
+   "bytes": "SW52YWxpZCBzZWFyY2ggcXVlcnk6IGV4cGVjdGVkIGEgdGVybSwgZ290IGVuZCBvZiBwYXR0ZXJuLgo="
+  },
+  {
+   "tier": "dumb",
+   "columns": 120,
+   "kind": "warning",
+   "message": "Search pattern exceeded its step budget: (a+)+b",
+   "bytes": "U2VhcmNoIHBhdHRlcm4gZXhjZWVkZWQgaXRzIHN0ZXAgYnVkZ2V0OiAoYSspK2IK"
+  }
+ ]
+}

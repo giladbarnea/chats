@@ -1,0 +1,31 @@
+──────────────────────────────────────── truncated-head ────────────────────────────────────────
+<user-message i="1" date="2026-08-20 13:00">
+## User
+
+resumed from a trimmed transcript
+</user-message>
+
+---
+
+<assistant-response i="2" date="2026-08-20 13:01">
+## Assistant
+
+continuing
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 13:02">
+## User
+
+kept question
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 13:03">
+## Assistant
+
+kept answer
+</assistant-response>
+

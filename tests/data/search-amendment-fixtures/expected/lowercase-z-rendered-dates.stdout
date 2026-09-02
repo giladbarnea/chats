@@ -1,0 +1,18 @@
+───────────────────────────── c0000002-0000-4000-8000-000000000002 ─────────────────────────────
+session_id: c0000002-0000-4000-8000-000000000002
+provider: claude
+directory: /tmp/search-amendment
+history_path: ~/.claude/projects/zcase/c0000002-0000-4000-8000-000000000002.jsonl
+created: "2026-08-20 13:00"
+modified: "2026-08-20 13:00"
+messages: 1
+matches: 1
+───────────────────────────── c0000002-0000-4000-8000-000000000001 ─────────────────────────────
+session_id: c0000002-0000-4000-8000-000000000001
+provider: claude
+directory: /tmp/search-amendment
+history_path: ~/.claude/projects/zcase/c0000002-0000-4000-8000-000000000001.jsonl
+created: "2024-01-01 02:01"
+modified: "2024-01-01 02:01"
+messages: 1
+matches: 1

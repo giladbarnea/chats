@@ -1,0 +1,13 @@
+───────────────────────────── a1a1a1a1-1111-4111-8111-aaaaaaaaaa07 ─────────────────────────────
+<user-message i="1" date="2026-08-20 16:00">
+## User
+
+Renderescape over: <thinking is my hobby and not a tag
+Renderescape undertab: <thinking	name="x">
+Renderescape underline: <thinking
+name="x">
+Renderescape agree-attr: <thinking name="x">
+Renderescape agree-bare: <thinking>real tag body</thinking>
+Renderescape plain: a < b and c > d
+</user-message>
+

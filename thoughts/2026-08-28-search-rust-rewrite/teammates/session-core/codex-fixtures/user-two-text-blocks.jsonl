@@ -1,0 +1,2 @@
+{"type": "session_meta", "payload": {"id": "fixture", "cwd": "/tmp/fixture"}, "timestamp": "2026-07-01T10:00:00.000Z"}
+{"type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "USER ONE"}, {"type": "input_text", "text": "USER TWO"}]}, "timestamp": "2026-07-01T09:00:00.000Z"}

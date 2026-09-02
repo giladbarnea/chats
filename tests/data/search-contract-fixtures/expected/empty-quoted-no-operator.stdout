@@ -1,0 +1,29 @@
+───────────────────────────── a1a1a1a1-1111-4111-8111-aaaaaaaaaa03 ─────────────────────────────
+---
+session_id: a1a1a1a1-1111-4111-8111-aaaaaaaaaa03
+provider: claude
+directory: /tmp/search-contract
+history_path: ~/.claude/projects/render/a1a1a1a1-1111-4111-8111-aaaaaaaaaa03.jsonl
+created: "2026-08-20 16:00"
+modified: "2026-08-20 16:00"
+messages: 1
+matches: 1
+---
+<assistant-response i="1" date="2026-08-20 16:00">
+## Assistant
+
+Renderfence web sample:
+
+```javascript
+const render = (items) => items.map((item) => `<li>${item.name}</li>`).join("");
+```
+
+```html
+<section class="panel"><h1 id="title">Heading</h1><!-- note --></section>
+```
+
+```css
+.panel > h1#title { color: #5cc8a8; margin: 0 auto; content: "x"; }
+```
+</assistant-response>
+

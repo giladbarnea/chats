@@ -1,0 +1,14 @@
+───────────────────────────── a1a1a1a1-1111-4111-8111-aaaaaaaaaa01 ─────────────────────────────
+<assistant-response i="1" date="2026-08-20 16:00">
+## Assistant
+
+Renderfence shell sample:
+
+```bash
+cat <<'EOF' > /tmp/render.txt
+inner $NOT_EXPANDED line
+EOF
+echo "done" && ls -la | grep -v '^d'
+```
+</assistant-response>
+

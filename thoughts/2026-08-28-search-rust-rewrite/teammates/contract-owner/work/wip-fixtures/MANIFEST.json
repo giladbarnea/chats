@@ -1,0 +1,2201 @@
+{
+  "cases": [
+    {
+      "id": "help-long",
+      "arguments": [
+        "--help"
+      ],
+      "expected_stdout": "expected/help-long.stdout",
+      "expected_stderr": "expected/help-long.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "help-short",
+      "arguments": [
+        "-h"
+      ],
+      "expected_stdout": "expected/help-short.stdout",
+      "expected_stderr": "expected/help-short.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-unrecognized-flag",
+      "arguments": [
+        "needle",
+        "--bogus-flag"
+      ],
+      "expected_stdout": "expected/err-unrecognized-flag.stdout",
+      "expected_stderr": "expected/err-unrecognized-flag.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-extra-positional",
+      "arguments": [
+        "needle",
+        "extra"
+      ],
+      "expected_stdout": "expected/err-extra-positional.stdout",
+      "expected_stderr": "expected/err-extra-positional.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-missing-pattern",
+      "arguments": [],
+      "expected_stdout": "expected/err-missing-pattern.stdout",
+      "expected_stderr": "expected/err-missing-pattern.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-case-exclusive",
+      "arguments": [
+        "needle",
+        "-s",
+        "-i"
+      ],
+      "expected_stdout": "expected/err-case-exclusive.stdout",
+      "expected_stderr": "expected/err-case-exclusive.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-bad-color-choice",
+      "arguments": [
+        "needle",
+        "--color",
+        "bogus"
+      ],
+      "expected_stdout": "expected/err-bad-color-choice.stdout",
+      "expected_stderr": "expected/err-bad-color-choice.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-bad-thinking-value",
+      "arguments": [
+        "needle",
+        "-T",
+        "bogus"
+      ],
+      "expected_stdout": "expected/err-bad-thinking-value.stdout",
+      "expected_stderr": "expected/err-bad-thinking-value.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-bad-short-spec",
+      "arguments": [
+        "needle",
+        "--short=bogusspec"
+      ],
+      "expected_stdout": "expected/err-bad-short-spec.stdout",
+      "expected_stderr": "expected/err-bad-short-spec.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-bad-provider-choice",
+      "arguments": [
+        "needle",
+        "-p",
+        "gpt"
+      ],
+      "expected_stdout": "expected/err-bad-provider-choice.stdout",
+      "expected_stderr": "expected/err-bad-provider-choice.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-thinking-swallowed-pattern",
+      "arguments": [
+        "-T",
+        "needle"
+      ],
+      "expected_stdout": "expected/err-thinking-swallowed-pattern.stdout",
+      "expected_stderr": "expected/err-thinking-swallowed-pattern.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-tools-path-pattern-required",
+      "arguments": [
+        "-t",
+        "{HOME}/.claude/projects/alpha/11111111-1111-4111-8111-111111111111.jsonl"
+      ],
+      "expected_stdout": "expected/err-tools-path-pattern-required.stdout",
+      "expected_stderr": "expected/err-tools-path-pattern-required.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "repair-short-detached",
+      "arguments": [
+        "--short",
+        "needle five",
+        "-ll"
+      ],
+      "expected_stdout": "expected/repair-short-detached.stdout",
+      "expected_stderr": "expected/repair-short-detached.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "repair-short-digits",
+      "arguments": [
+        "--short",
+        "128",
+        "needle five",
+        "-ll"
+      ],
+      "expected_stdout": "expected/repair-short-digits.stdout",
+      "expected_stderr": "expected/repair-short-digits.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "repair-short-spec",
+      "arguments": [
+        "--short",
+        "p=128",
+        "needle five",
+        "-ll"
+      ],
+      "expected_stdout": "expected/repair-short-spec.stdout",
+      "expected_stderr": "expected/repair-short-spec.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "only-id-forces-plain",
+      "arguments": [
+        "needle five",
+        "-ll",
+        "--color",
+        "always",
+        "--paging"
+      ],
+      "expected_stdout": "expected/only-id-forces-plain.stdout",
+      "expected_stderr": "expected/only-id-forces-plain.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "raw-forces-plain-nometa",
+      "arguments": [
+        "needle five",
+        "-r",
+        "--color",
+        "always"
+      ],
+      "expected_stdout": "expected/raw-forces-plain-nometa.stdout",
+      "expected_stderr": "expected/raw-forces-plain-nometa.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 96
+    },
+    {
+      "id": "bool-and-cross-message",
+      "arguments": [
+        "fox AND dog",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/bool-and-cross-message.stdout",
+      "expected_stderr": "expected/bool-and-cross-message.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "bool-or",
+      "arguments": [
+        "red OR quick",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/bool-or.stdout",
+      "expected_stderr": "expected/bool-or.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "bool-parens-precedence",
+      "arguments": [
+        "(red OR quick) AND fox",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/bool-parens-precedence.stdout",
+      "expected_stderr": "expected/bool-parens-precedence.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "bool-not-only",
+      "arguments": [
+        "needle NOT alpha",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/bool-not-only.stdout",
+      "expected_stderr": "expected/bool-not-only.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-not-leading",
+      "arguments": [
+        "NOT needle"
+      ],
+      "expected_stdout": "expected/err-not-leading.stdout",
+      "expected_stderr": "expected/err-not-leading.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-and-trailing",
+      "arguments": [
+        "needle AND"
+      ],
+      "expected_stdout": "expected/err-and-trailing.stdout",
+      "expected_stderr": "expected/err-and-trailing.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-or-leading",
+      "arguments": [
+        "OR needle"
+      ],
+      "expected_stdout": "expected/err-or-leading.stdout",
+      "expected_stderr": "expected/err-or-leading.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-mixed-not-and",
+      "arguments": [
+        "NOT needle AND fox"
+      ],
+      "expected_stdout": "expected/err-mixed-not-and.stdout",
+      "expected_stderr": "expected/err-mixed-not-and.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-not-parens",
+      "arguments": [
+        "needle NOT (fox)"
+      ],
+      "expected_stdout": "expected/err-not-parens.stdout",
+      "expected_stderr": "expected/err-not-parens.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-not-double-term",
+      "arguments": [
+        "needle NOT fox dog"
+      ],
+      "expected_stdout": "expected/err-not-double-term.stdout",
+      "expected_stderr": "expected/err-not-double-term.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "err-not-trailing",
+      "arguments": [
+        "needle NOT"
+      ],
+      "expected_stdout": "expected/err-not-trailing.stdout",
+      "expected_stderr": "expected/err-not-trailing.stderr",
+      "exit_status": 2,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "single-and-literal-icase",
+      "arguments": [
+        "AND",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/single-and-literal-icase.stdout",
+      "expected_stderr": "expected/single-and-literal-icase.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "precedence-and-over-or",
+      "arguments": [
+        "needleone OR (fox AND dog)",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/precedence-and-over-or.stdout",
+      "expected_stderr": "expected/precedence-and-over-or.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "quoted-without-operator-is-literal-quotes",
+      "arguments": [
+        "\"Alpha needle one\"",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/quoted-without-operator-is-literal-quotes.stdout",
+      "expected_stderr": "expected/quoted-without-operator-is-literal-quotes.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "empty-quoted-no-operator",
+      "arguments": [
+        "\"\"",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/empty-quoted-no-operator.stdout",
+      "expected_stderr": "expected/empty-quoted-no-operator.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "apostrophe-midword",
+      "arguments": [
+        "don't panic",
+        "-ll"
+      ],
+      "expected_stdout": "expected/apostrophe-midword.stdout",
+      "expected_stderr": "expected/apostrophe-midword.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "quoted-term-inside-operators",
+      "arguments": [
+        "\"red fox\" AND dog",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/quoted-term-inside-operators.stdout",
+      "expected_stderr": "expected/quoted-term-inside-operators.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-anchor-start",
+      "arguments": [
+        "^line2",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-anchor-start.stdout",
+      "expected_stderr": "expected/rx-anchor-start.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-anchor-end",
+      "arguments": [
+        "end$",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-anchor-end.stdout",
+      "expected_stderr": "expected/rx-anchor-end.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-digit-class",
+      "arguments": [
+        "foo\\d+",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-digit-class.stdout",
+      "expected_stderr": "expected/rx-digit-class.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-upper-class",
+      "arguments": [
+        "[A-Z]+PITAL",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-upper-class.stdout",
+      "expected_stderr": "expected/rx-upper-class.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-dotall",
+      "arguments": [
+        "one.*three",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-dotall.stdout",
+      "expected_stderr": "expected/rx-dotall.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-multiline",
+      "arguments": [
+        "^two$",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-multiline.stdout",
+      "expected_stderr": "expected/rx-multiline.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-word-boundary",
+      "arguments": [
+        "\\bMIDDLE\\b",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-word-boundary.stdout",
+      "expected_stderr": "expected/rx-word-boundary.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-named-group-backref",
+      "arguments": [
+        "(?P<w>echo) (?P=w)",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-named-group-backref.stdout",
+      "expected_stderr": "expected/rx-named-group-backref.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-lookahead",
+      "arguments": [
+        "foo(?=123)",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-lookahead.stdout",
+      "expected_stderr": "expected/rx-lookahead.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-negative-lookahead",
+      "arguments": [
+        "foo(?!999)",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-negative-lookahead.stdout",
+      "expected_stderr": "expected/rx-negative-lookahead.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-lookbehind",
+      "arguments": [
+        "(?<=start )MIDDLE",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-lookbehind.stdout",
+      "expected_stderr": "expected/rx-lookbehind.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-group-alternation",
+      "arguments": [
+        "(red|quick)",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-group-alternation.stdout",
+      "expected_stderr": "expected/rx-group-alternation.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-escaped-hyphen",
+      "arguments": [
+        "a\\-b",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-escaped-hyphen.stdout",
+      "expected_stderr": "expected/rx-escaped-hyphen.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-tab-escape",
+      "arguments": [
+        "tab\\tend",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-tab-escape.stdout",
+      "expected_stderr": "expected/rx-tab-escape.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-hex-escape",
+      "arguments": [
+        "caf\\u00e9",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-hex-escape.stdout",
+      "expected_stderr": "expected/rx-hex-escape.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-octal-A",
+      "arguments": [
+        "C\\101PITAL",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-octal-A.stdout",
+      "expected_stderr": "expected/rx-octal-A.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-named-unicode",
+      "arguments": [
+        "\\N{GREEK SMALL LETTER ALPHA}",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-named-unicode.stdout",
+      "expected_stderr": "expected/rx-named-unicode.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-atomic-group",
+      "arguments": [
+        "(?>echo) echo",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-atomic-group.stdout",
+      "expected_stderr": "expected/rx-atomic-group.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-possessive-quantifier",
+      "arguments": [
+        "a++g",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-possessive-quantifier.stdout",
+      "expected_stderr": "expected/rx-possessive-quantifier.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-conditional-valid",
+      "arguments": [
+        "()(?(1)kettlexyz|zzz)",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-conditional-valid.stdout",
+      "expected_stderr": "expected/rx-conditional-valid.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-z-anchor-absolute-end-miss",
+      "arguments": [
+        "end\\\\Z",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-z-anchor-absolute-end-miss.stdout",
+      "expected_stderr": "expected/dv-z-anchor-absolute-end-miss.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-z-anchor-single-backslash-hit",
+      "arguments": [
+        "end\\Z",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-z-anchor-single-backslash-hit.stdout",
+      "expected_stderr": "expected/dv-z-anchor-single-backslash-hit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-inline-flag-scoped",
+      "arguments": [
+        "(?i:NEEDLE) one",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-inline-flag-scoped.stdout",
+      "expected_stderr": "expected/rx-inline-flag-scoped.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "rx-backref-icase",
+      "arguments": [
+        "(?P<w>ECHO) (?P=w)",
+        "-ll"
+      ],
+      "expected_stdout": "expected/rx-backref-icase.stdout",
+      "expected_stderr": "expected/rx-backref-icase.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-lookbehind-alt-syntax",
+      "arguments": [
+        "(?<x>a)",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-lookbehind-alt-syntax.stdout",
+      "expected_stderr": "expected/fb-lookbehind-alt-syntax.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-unicode-prop",
+      "arguments": [
+        "\\p{L}",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-unicode-prop.stdout",
+      "expected_stderr": "expected/fb-unicode-prop.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-braced-hex",
+      "arguments": [
+        "\\x{41} braced hex",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-braced-hex.stdout",
+      "expected_stderr": "expected/fb-braced-hex.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-bad-range",
+      "arguments": [
+        "[z-a] range",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-bad-range.stdout",
+      "expected_stderr": "expected/fb-bad-range.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-inverted-interval",
+      "arguments": [
+        "a{2,1} inverted",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-inverted-interval.stdout",
+      "expected_stderr": "expected/fb-inverted-interval.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-digit-ref",
+      "arguments": [
+        "\\8 digit ref",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-digit-ref.stdout",
+      "expected_stderr": "expected/fb-digit-ref.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-group-name-ref",
+      "arguments": [
+        "(?P=name) group ref",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-group-name-ref.stdout",
+      "expected_stderr": "expected/fb-group-name-ref.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-conditional-invalid",
+      "arguments": [
+        "(?(1)x|y) conditional",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-conditional-invalid.stdout",
+      "expected_stderr": "expected/fb-conditional-invalid.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-bad-escape-y",
+      "arguments": [
+        "\\y bad escape",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-bad-escape-y.stdout",
+      "expected_stderr": "expected/fb-bad-escape-y.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-unmatched-paren",
+      "arguments": [
+        "open( paren",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-unmatched-paren.stdout",
+      "expected_stderr": "expected/fb-unmatched-paren.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-bracket-mismatch",
+      "arguments": [
+        "bracket[mismatch",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-bracket-mismatch.stdout",
+      "expected_stderr": "expected/fb-bracket-mismatch.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-posix-class-warning",
+      "arguments": [
+        "[[:alpha:]] class",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-posix-class-warning.stdout",
+      "expected_stderr": "expected/fb-posix-class-warning.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "fb-posix-class-bare-warning",
+      "arguments": [
+        "[[:alpha:]]",
+        "-ll"
+      ],
+      "expected_stdout": "expected/fb-posix-class-bare-warning.stdout",
+      "expected_stderr": "expected/fb-posix-class-bare-warning.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-empty-branch-all",
+      "arguments": [
+        "zznope|",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-empty-branch-all.stdout",
+      "expected_stderr": "expected/dv-empty-branch-all.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-empty-branch-real",
+      "arguments": [
+        "fox|",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-empty-branch-real.stdout",
+      "expected_stderr": "expected/dv-empty-branch-real.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-icase-dotted-i-hit",
+      "arguments": [
+        "istanbul dotted",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-icase-dotted-i-hit.stdout",
+      "expected_stderr": "expected/dv-icase-dotted-i-hit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-icase-dotted-i-pattern-hit",
+      "arguments": [
+        "\u0130stanbul dotted",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-icase-dotted-i-pattern-hit.stdout",
+      "expected_stderr": "expected/dv-icase-dotted-i-pattern-hit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-icase-long-s",
+      "arguments": [
+        "steady long s",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-icase-long-s.stdout",
+      "expected_stderr": "expected/dv-icase-long-s.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-icase-long-s-reverse",
+      "arguments": [
+        "\u017fteady long s",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-icase-long-s-reverse.stdout",
+      "expected_stderr": "expected/dv-icase-long-s-reverse.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-icase-kelvin",
+      "arguments": [
+        "kelvin k sign",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-icase-kelvin.stdout",
+      "expected_stderr": "expected/dv-icase-kelvin.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-sensitive-kelvin-explicit",
+      "arguments": [
+        "kelvin K sign",
+        "-s",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-sensitive-kelvin-explicit.stdout",
+      "expected_stderr": "expected/dv-sensitive-kelvin-explicit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dv-sensitive-needle-miss",
+      "arguments": [
+        "needle five",
+        "-s",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dv-sensitive-needle-miss.stdout",
+      "expected_stderr": "expected/dv-sensitive-needle-miss.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "role-only-assistant-hit",
+      "arguments": [
+        "response five",
+        "--only-assistant",
+        "-ll"
+      ],
+      "expected_stdout": "expected/role-only-assistant-hit.stdout",
+      "expected_stderr": "expected/role-only-assistant-hit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-uescaped-letter",
+      "arguments": [
+        "uescaped tab content needle",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-uescaped-letter.stdout",
+      "expected_stderr": "expected/gate-uescaped-letter.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-escaped-slash",
+      "arguments": [
+        "slash a/b end",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-escaped-slash.stdout",
+      "expected_stderr": "expected/gate-escaped-slash.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-quote-needle-serial",
+      "arguments": [
+        "say \"hi\"",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-quote-needle-serial.stdout",
+      "expected_stderr": "expected/gate-quote-needle-serial.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-backslash-needle",
+      "arguments": [
+        "back\\\\slash",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-backslash-needle.stdout",
+      "expected_stderr": "expected/gate-backslash-needle.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-control-char-needle",
+      "arguments": [
+        "plus\ttab caf\u00e9",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-control-char-needle.stdout",
+      "expected_stderr": "expected/gate-control-char-needle.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-cafe-across-providers",
+      "arguments": [
+        "caf\u00e9",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-cafe-across-providers.stdout",
+      "expected_stderr": "expected/gate-cafe-across-providers.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-false-candidate-rejected",
+      "arguments": [
+        "e9 accent",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-false-candidate-rejected.stdout",
+      "expected_stderr": "expected/gate-false-candidate-rejected.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-decoded-e-acute",
+      "arguments": [
+        "only \u00e9 accent",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-decoded-e-acute.stdout",
+      "expected_stderr": "expected/gate-decoded-e-acute.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "gate-pi-marker-hit",
+      "arguments": [
+        "pi-user-agents explicitly",
+        "-ll"
+      ],
+      "expected_stdout": "expected/gate-pi-marker-hit.stdout",
+      "expected_stderr": "expected/gate-pi-marker-hit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-toolresult-hidden-default",
+      "arguments": [
+        "vistooloutput",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-toolresult-hidden-default.stdout",
+      "expected_stderr": "expected/vis-toolresult-hidden-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-toolresult-shown-tools",
+      "arguments": [
+        "vistooloutput",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-toolresult-shown-tools.stdout",
+      "expected_stderr": "expected/vis-toolresult-shown-tools.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-tooluse-hidden-default",
+      "arguments": [
+        "visbashcommand",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-tooluse-hidden-default.stdout",
+      "expected_stderr": "expected/vis-tooluse-hidden-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-tooluse-shown-tools",
+      "arguments": [
+        "visbashcommand",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-tooluse-shown-tools.stdout",
+      "expected_stderr": "expected/vis-tooluse-shown-tools.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-thinking-hidden-default",
+      "arguments": [
+        "vishushhush",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-thinking-hidden-default.stdout",
+      "expected_stderr": "expected/vis-thinking-hidden-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-thinking-shown-flag",
+      "arguments": [
+        "vishushhush",
+        "-T",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-thinking-shown-flag.stdout",
+      "expected_stderr": "expected/vis-thinking-shown-flag.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-thinking-short",
+      "arguments": [
+        "vishushhush",
+        "-T",
+        "short",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-thinking-short.stdout",
+      "expected_stderr": "expected/vis-thinking-short.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-plans-hidden-default",
+      "arguments": [
+        "visplansteps",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-plans-hidden-default.stdout",
+      "expected_stderr": "expected/vis-plans-hidden-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-plans-shown-flag",
+      "arguments": [
+        "visplansteps",
+        "--plans",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-plans-shown-flag.stdout",
+      "expected_stderr": "expected/vis-plans-shown-flag.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-branch-hidden-default",
+      "arguments": [
+        "branchabandoned",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-branch-hidden-default.stdout",
+      "expected_stderr": "expected/vis-branch-hidden-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-branch-shown-flag",
+      "arguments": [
+        "branchabandoned",
+        "-b",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-branch-shown-flag.stdout",
+      "expected_stderr": "expected/vis-branch-shown-flag.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-sidechain-hidden-default",
+      "arguments": [
+        "sidechainagentsecret",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-sidechain-hidden-default.stdout",
+      "expected_stderr": "expected/vis-sidechain-hidden-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-sidechain-shown-agents",
+      "arguments": [
+        "sidechainagentsecret",
+        "-a",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-sidechain-shown-agents.stdout",
+      "expected_stderr": "expected/vis-sidechain-shown-agents.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-hook-context-hidden-default",
+      "arguments": [
+        "hookcontexttext",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-hook-context-hidden-default.stdout",
+      "expected_stderr": "expected/vis-hook-context-hidden-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-hook-context-shown-tools",
+      "arguments": [
+        "hookcontexttext",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-hook-context-shown-tools.stdout",
+      "expected_stderr": "expected/vis-hook-context-shown-tools.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-additionalcontext-marker-tools",
+      "arguments": [
+        "AdditionalContext",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-additionalcontext-marker-tools.stdout",
+      "expected_stderr": "expected/vis-additionalcontext-marker-tools.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-additionalcontext-marker-default",
+      "arguments": [
+        "AdditionalContext",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-additionalcontext-marker-default.stdout",
+      "expected_stderr": "expected/vis-additionalcontext-marker-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-thinking-marker-flag",
+      "arguments": [
+        "thinking",
+        "-T",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-thinking-marker-flag.stdout",
+      "expected_stderr": "expected/vis-thinking-marker-flag.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-tool-input-marker",
+      "arguments": [
+        "tool-input",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-tool-input-marker.stdout",
+      "expected_stderr": "expected/vis-tool-input-marker.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-tool-output-marker",
+      "arguments": [
+        "tool-output",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-tool-output-marker.stdout",
+      "expected_stderr": "expected/vis-tool-output-marker.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-exitplanmode-marker",
+      "arguments": [
+        "ExitPlanMode",
+        "--plans",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-exitplanmode-marker.stdout",
+      "expected_stderr": "expected/vis-exitplanmode-marker.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-fence-with-tools",
+      "arguments": [
+        "```",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-fence-with-tools.stdout",
+      "expected_stderr": "expected/vis-fence-with-tools.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-fence-default",
+      "arguments": [
+        "```",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-fence-default.stdout",
+      "expected_stderr": "expected/vis-fence-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-old-string-with-tools",
+      "arguments": [
+        "old_string:",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-old-string-with-tools.stdout",
+      "expected_stderr": "expected/vis-old-string-with-tools.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-old-string-default",
+      "arguments": [
+        "old_string:",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-old-string-default.stdout",
+      "expected_stderr": "expected/vis-old-string-default.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-rendered-tag-miss",
+      "arguments": [
+        "<user-message",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-rendered-tag-miss.stdout",
+      "expected_stderr": "expected/vis-rendered-tag-miss.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-rendered-attr-default-miss",
+      "arguments": [
+        "=\"",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-rendered-attr-default-miss.stdout",
+      "expected_stderr": "expected/vis-rendered-attr-default-miss.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "vis-rendered-attr-tools-hit",
+      "arguments": [
+        "=\"",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/vis-rendered-attr-tools-hit.stdout",
+      "expected_stderr": "expected/vis-rendered-attr-tools-hit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "facet-summary-match",
+      "arguments": [
+        "Alpha summary needle three",
+        "-ll"
+      ],
+      "expected_stdout": "expected/facet-summary-match.stdout",
+      "expected_stderr": "expected/facet-summary-match.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "facet-custom-title-match",
+      "arguments": [
+        "Alpha Title",
+        "-ll"
+      ],
+      "expected_stdout": "expected/facet-custom-title-match.stdout",
+      "expected_stderr": "expected/facet-custom-title-match.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "facet-pi-session-title",
+      "arguments": [
+        "Pi Current Title",
+        "-ll"
+      ],
+      "expected_stdout": "expected/facet-pi-session-title.stdout",
+      "expected_stderr": "expected/facet-pi-session-title.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "facet-title-only-session",
+      "arguments": [
+        "TitleOnlySession name",
+        "-ll"
+      ],
+      "expected_stdout": "expected/facet-title-only-session.stdout",
+      "expected_stderr": "expected/facet-title-only-session.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "facet-summary-only-session",
+      "arguments": [
+        "SummaryOnlySession digest",
+        "-ll"
+      ],
+      "expected_stdout": "expected/facet-summary-only-session.stdout",
+      "expected_stderr": "expected/facet-summary-only-session.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "facet-empty-session-absent",
+      "arguments": [
+        "file-history-snapshot",
+        "-ll"
+      ],
+      "expected_stdout": "expected/facet-empty-session-absent.stdout",
+      "expected_stderr": "expected/facet-empty-session-absent.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "pi-agent-record-needs-agents",
+      "arguments": [
+        "piagentsubagent",
+        "-a",
+        "-ll"
+      ],
+      "expected_stdout": "expected/pi-agent-record-needs-agents.stdout",
+      "expected_stderr": "expected/pi-agent-record-needs-agents.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "pi-agent-record-default-miss",
+      "arguments": [
+        "piagentsubagent",
+        "-ll"
+      ],
+      "expected_stdout": "expected/pi-agent-record-default-miss.stdout",
+      "expected_stderr": "expected/pi-agent-record-default-miss.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "pi-user-agent-joined-visible-default",
+      "arguments": [
+        "piuseragentresponse",
+        "-ll"
+      ],
+      "expected_stdout": "expected/pi-user-agent-joined-visible-default.stdout",
+      "expected_stderr": "expected/pi-user-agent-joined-visible-default.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "pi-arbitrary-custom-needs-all",
+      "arguments": [
+        "piarbitrarycustom",
+        "-A",
+        "-ll"
+      ],
+      "expected_stdout": "expected/pi-arbitrary-custom-needs-all.stdout",
+      "expected_stderr": "expected/pi-arbitrary-custom-needs-all.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "pi-arbitrary-custom-agents-miss",
+      "arguments": [
+        "piarbitrarycustom",
+        "-a",
+        "-ll"
+      ],
+      "expected_stdout": "expected/pi-arbitrary-custom-agents-miss.stdout",
+      "expected_stderr": "expected/pi-arbitrary-custom-agents-miss.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "codex-preamble-invisible",
+      "arguments": [
+        "preamblesecret",
+        "-ll"
+      ],
+      "expected_stdout": "expected/codex-preamble-invisible.stdout",
+      "expected_stderr": "expected/codex-preamble-invisible.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "codex-preamble-invisible-all",
+      "arguments": [
+        "preamblesecret",
+        "-A",
+        "-ll"
+      ],
+      "expected_stdout": "expected/codex-preamble-invisible-all.stdout",
+      "expected_stderr": "expected/codex-preamble-invisible-all.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dot-only-id-full",
+      "arguments": [
+        ".",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dot-only-id-full.stdout",
+      "expected_stderr": "expected/dot-only-id-full.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dot-only-id-provider-codex",
+      "arguments": [
+        ".",
+        "-ll",
+        "-p",
+        "codex"
+      ],
+      "expected_stdout": "expected/dot-only-id-provider-codex.stdout",
+      "expected_stderr": "expected/dot-only-id-provider-codex.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dot-only-id-dir-a",
+      "arguments": [
+        ".",
+        "-ll",
+        "-d",
+        "/tmp/search-contract/dir-a"
+      ],
+      "expected_stdout": "expected/dot-only-id-dir-a.stdout",
+      "expected_stderr": "expected/dot-only-id-dir-a.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "dot-not-special-as-regex",
+      "arguments": [
+        "needle.five",
+        "-ll"
+      ],
+      "expected_stdout": "expected/dot-not-special-as-regex.stdout",
+      "expected_stderr": "expected/dot-not-special-as-regex.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "filter-dir-match",
+      "arguments": [
+        "dirfilter",
+        "-d",
+        "/tmp/search-contract/dir-a",
+        "-ll"
+      ],
+      "expected_stdout": "expected/filter-dir-match.stdout",
+      "expected_stderr": "expected/filter-dir-match.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "filter-dir-miss",
+      "arguments": [
+        "dirfilter",
+        "-d",
+        "/nonexistent/dir",
+        "-ll"
+      ],
+      "expected_stdout": "expected/filter-dir-miss.stdout",
+      "expected_stderr": "expected/filter-dir-miss.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "filter-mafter-boundary",
+      "arguments": [
+        "dirfilter",
+        "-ma",
+        "2026-08-21",
+        "-ll"
+      ],
+      "expected_stdout": "expected/filter-mafter-boundary.stdout",
+      "expected_stderr": "expected/filter-mafter-boundary.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "filter-mafter-inclusive",
+      "arguments": [
+        "dirfilter",
+        "-ma",
+        "2026-08-20",
+        "-ll"
+      ],
+      "expected_stdout": "expected/filter-mafter-inclusive.stdout",
+      "expected_stderr": "expected/filter-mafter-inclusive.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "filter-cafter-old",
+      "arguments": [
+        "needle five",
+        "-ca",
+        "2020-01-01",
+        "-ll"
+      ],
+      "expected_stdout": "expected/filter-cafter-old.stdout",
+      "expected_stderr": "expected/filter-cafter-old.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "filter-cafter-future",
+      "arguments": [
+        "needle five",
+        "-ca",
+        "2030-01-01",
+        "-ll"
+      ],
+      "expected_stdout": "expected/filter-cafter-future.stdout",
+      "expected_stderr": "expected/filter-cafter-future.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "filter-provider-pi",
+      "arguments": [
+        "needle four",
+        "-p",
+        "pi",
+        "-ll"
+      ],
+      "expected_stdout": "expected/filter-provider-pi.stdout",
+      "expected_stderr": "expected/filter-provider-pi.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "shorten-elided-middle-miss",
+      "arguments": [
+        "middlenosecret",
+        "-t",
+        "--short=p=64",
+        "-ll"
+      ],
+      "expected_stdout": "expected/shorten-elided-middle-miss.stdout",
+      "expected_stderr": "expected/shorten-elided-middle-miss.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "shorten-elided-middle-hit",
+      "arguments": [
+        "middlenosecret",
+        "-t",
+        "-ll"
+      ],
+      "expected_stdout": "expected/shorten-elided-middle-hit.stdout",
+      "expected_stderr": "expected/shorten-elided-middle-hit.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "shorten-tail-survives",
+      "arguments": [
+        "longtooloutput tail",
+        "-t",
+        "--short=p=64",
+        "-ll"
+      ],
+      "expected_stdout": "expected/shorten-tail-survives.stdout",
+      "expected_stderr": "expected/shorten-tail-survives.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "role-only-user",
+      "arguments": [
+        "needle five",
+        "--only-user",
+        "-ll"
+      ],
+      "expected_stdout": "expected/role-only-user.stdout",
+      "expected_stderr": "expected/role-only-user.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "role-contradiction-warning",
+      "arguments": [
+        "needle five",
+        "--only-assistant",
+        "--thinking",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/role-contradiction-warning.stdout",
+      "expected_stderr": "expected/role-contradiction-warning.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "tools-filter-modifier",
+      "arguments": [
+        "longtooloutput",
+        "-t",
+        "Bash:i",
+        "-ll"
+      ],
+      "expected_stdout": "expected/tools-filter-modifier.stdout",
+      "expected_stderr": "expected/tools-filter-modifier.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "tools-multi-name-spec-narrows",
+      "arguments": [
+        "longtooloutput",
+        "-t",
+        "Bash:bogusmod",
+        "-ll"
+      ],
+      "expected_stdout": "expected/tools-multi-name-spec-narrows.stdout",
+      "expected_stderr": "expected/tools-multi-name-spec-narrows.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-matches-meta",
+      "arguments": [
+        "needle five",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/mode-matches-meta.stdout",
+      "expected_stderr": "expected/mode-matches-meta.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-matches-nometa",
+      "arguments": [
+        "needle five",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/mode-matches-nometa.stdout",
+      "expected_stderr": "expected/mode-matches-nometa.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-list-meta",
+      "arguments": [
+        "needle five",
+        "-l",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/mode-list-meta.stdout",
+      "expected_stderr": "expected/mode-list-meta.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-list-nometa",
+      "arguments": [
+        "needle five",
+        "-l",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/mode-list-nometa.stdout",
+      "expected_stderr": "expected/mode-list-nometa.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-full-meta",
+      "arguments": [
+        "needle five",
+        "-f",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/mode-full-meta.stdout",
+      "expected_stderr": "expected/mode-full-meta.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-full-nometa",
+      "arguments": [
+        "needle five",
+        "-f",
+        "--no-metadata",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/mode-full-nometa.stdout",
+      "expected_stderr": "expected/mode-full-nometa.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-precedence-list-beats-full",
+      "arguments": [
+        "needle five",
+        "-l",
+        "-f",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/mode-precedence-list-beats-full.stdout",
+      "expected_stderr": "expected/mode-precedence-list-beats-full.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "mode-precedence-id-beats-list",
+      "arguments": [
+        "needle five",
+        "-ll",
+        "-l"
+      ],
+      "expected_stdout": "expected/mode-precedence-id-beats-list.stdout",
+      "expected_stderr": "expected/mode-precedence-id-beats-list.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "raw-single-message-session",
+      "arguments": [
+        "sidechainagentsecret",
+        "-a",
+        "-r"
+      ],
+      "expected_stdout": "expected/raw-single-message-session.stdout",
+      "expected_stderr": "expected/raw-single-message-session.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "raw-multi-session",
+      "arguments": [
+        "needle five",
+        "-r"
+      ],
+      "expected_stdout": "expected/raw-multi-session.stdout",
+      "expected_stderr": "expected/raw-multi-session.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "raw-full-breadth",
+      "arguments": [
+        "needle five",
+        "-r",
+        "-f"
+      ],
+      "expected_stdout": "expected/raw-full-breadth.stdout",
+      "expected_stderr": "expected/raw-full-breadth.stderr",
+      "exit_status": 0,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "nohit-matches-hint",
+      "arguments": [
+        "zznope",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/nohit-matches-hint.stdout",
+      "expected_stderr": "expected/nohit-matches-hint.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "nohit-list-hint",
+      "arguments": [
+        "zznope",
+        "-l",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/nohit-list-hint.stdout",
+      "expected_stderr": "expected/nohit-list-hint.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "nohit-full-hint",
+      "arguments": [
+        "zznope",
+        "-f",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/nohit-full-hint.stdout",
+      "expected_stderr": "expected/nohit-full-hint.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "nohit-raw-hint",
+      "arguments": [
+        "zznope",
+        "-r"
+      ],
+      "expected_stdout": "expected/nohit-raw-hint.stdout",
+      "expected_stderr": "expected/nohit-raw-hint.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "nohit-only-id-silent",
+      "arguments": [
+        "zznope",
+        "-ll"
+      ],
+      "expected_stdout": "expected/nohit-only-id-silent.stdout",
+      "expected_stderr": "expected/nohit-only-id-silent.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "nohit-filtered-hint-suffix",
+      "arguments": [
+        "zznope",
+        "-p",
+        "pi",
+        "--color",
+        "never"
+      ],
+      "expected_stdout": "expected/nohit-filtered-hint-suffix.stdout",
+      "expected_stderr": "expected/nohit-filtered-hint-suffix.stderr",
+      "exit_status": 1,
+      "color": false,
+      "columns": 96
+    },
+    {
+      "id": "colored-list-fixed-width",
+      "arguments": [
+        "needle five",
+        "-l",
+        "--color",
+        "always",
+        "--no-paging"
+      ],
+      "expected_stdout": "expected/colored-list-fixed-width.stdout",
+      "expected_stderr": "expected/colored-list-fixed-width.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 96
+    },
+    {
+      "id": "colored-matches-panels",
+      "arguments": [
+        "needle five",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "expected_stdout": "expected/colored-matches-panels.stdout",
+      "expected_stderr": "expected/colored-matches-panels.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 96
+    },
+    {
+      "id": "colored-full-panel",
+      "arguments": [
+        "needle five",
+        "-f",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "expected_stdout": "expected/colored-full-panel.stdout",
+      "expected_stderr": "expected/colored-full-panel.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 96
+    },
+    {
+      "id": "colored-hue-cycle-four-hits",
+      "arguments": [
+        "needle|dirfilter|tieorder",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "expected_stdout": "expected/colored-hue-cycle-four-hits.stdout",
+      "expected_stderr": "expected/colored-hue-cycle-four-hits.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 96
+    },
+    {
+      "id": "colored-narrow-columns-80",
+      "arguments": [
+        "needle five",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "expected_stdout": "expected/colored-narrow-columns-80.stdout",
+      "expected_stderr": "expected/colored-narrow-columns-80.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 80
+    },
+    {
+      "id": "colored-highlight-painting",
+      "arguments": [
+        "\"needle one\" AND panic",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "expected_stdout": "expected/colored-highlight-painting.stdout",
+      "expected_stderr": "expected/colored-highlight-painting.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 96
+    },
+    {
+      "id": "pager-engaged-real-less-piped",
+      "arguments": [
+        "needle five",
+        "--color",
+        "always",
+        "--no-metadata"
+      ],
+      "expected_stdout": "expected/pager-engaged-real-less-piped.stdout",
+      "expected_stderr": "expected/pager-engaged-real-less-piped.stderr",
+      "exit_status": 0,
+      "color": true,
+      "columns": 96
+    }
+  ]
+}

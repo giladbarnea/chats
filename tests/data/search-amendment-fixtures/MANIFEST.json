@@ -1,0 +1,434 @@
+{
+  "cases": [
+    {
+      "id": "dst-fold-order",
+      "arguments": [
+        "Renderdst",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dst-fold-order.stdout",
+      "expected_stderr": "expected/dst-fold-order.stderr"
+    },
+    {
+      "id": "dst-fold-metadata",
+      "arguments": [
+        "Renderdst",
+        "-l"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dst-fold-metadata.stdout",
+      "expected_stderr": "expected/dst-fold-metadata.stderr"
+    },
+    {
+      "id": "dst-fold-mafter-between",
+      "arguments": [
+        "Renderdst",
+        "-ll",
+        "-ma",
+        "2026-10-25T01:00"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dst-fold-mafter-between.stdout",
+      "expected_stderr": "expected/dst-fold-mafter-between.stderr"
+    },
+    {
+      "id": "dst-fold-cafter-between",
+      "arguments": [
+        "Renderdst",
+        "-ll",
+        "-ca",
+        "2026-10-25T01:00"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/dst-fold-cafter-between.stdout",
+      "expected_stderr": "expected/dst-fold-cafter-between.stderr"
+    },
+    {
+      "id": "lowercase-z-rendered-dates",
+      "arguments": [
+        "Renderzcase",
+        "-l"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/lowercase-z-rendered-dates.stdout",
+      "expected_stderr": "expected/lowercase-z-rendered-dates.stderr"
+    },
+    {
+      "id": "lowercase-z-ordering",
+      "arguments": [
+        "Renderzcase",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/lowercase-z-ordering.stdout",
+      "expected_stderr": "expected/lowercase-z-ordering.stderr"
+    },
+    {
+      "id": "lowercase-z-mafter-splits-the-pair",
+      "arguments": [
+        "Renderzcase",
+        "-ll",
+        "-ma",
+        "2026-08-21"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/lowercase-z-mafter-splits-the-pair.stdout",
+      "expected_stderr": "expected/lowercase-z-mafter-splits-the-pair.stderr"
+    },
+    {
+      "id": "lowercase-z-cafter-splits-the-pair",
+      "arguments": [
+        "Renderzcase",
+        "-ll",
+        "-ca",
+        "2026-08-21"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/lowercase-z-cafter-splits-the-pair.stdout",
+      "expected_stderr": "expected/lowercase-z-cafter-splits-the-pair.stderr"
+    },
+    {
+      "id": "trailing-space-bodies",
+      "arguments": [
+        "Renderspace",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/trailing-space-bodies.stdout",
+      "expected_stderr": "expected/trailing-space-bodies.stderr"
+    },
+    {
+      "id": "trailing-space-raw",
+      "arguments": [
+        "Renderspace",
+        "-f",
+        "-r"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/trailing-space-raw.stdout",
+      "expected_stderr": "expected/trailing-space-raw.stderr"
+    },
+    {
+      "id": "normalization-title-elision-52",
+      "arguments": [
+        "Rendernorm",
+        "-l",
+        "--color",
+        "always",
+        "--no-paging"
+      ],
+      "columns": 52,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/normalization-title-elision-52.stdout",
+      "expected_stderr": "expected/normalization-title-elision-52.stderr"
+    },
+    {
+      "id": "normalization-title-elision-72",
+      "arguments": [
+        "Rendernorm",
+        "-l",
+        "--color",
+        "always",
+        "--no-paging"
+      ],
+      "columns": 72,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/normalization-title-elision-72.stdout",
+      "expected_stderr": "expected/normalization-title-elision-72.stderr"
+    },
+    {
+      "id": "normalization-title-panel-52",
+      "arguments": [
+        "Rendernorm",
+        "--color",
+        "always",
+        "--no-paging",
+        "--no-metadata"
+      ],
+      "columns": 52,
+      "color": true,
+      "exit_status": 0,
+      "expected_stdout": "expected/normalization-title-panel-52.stdout",
+      "expected_stderr": "expected/normalization-title-panel-52.stderr"
+    },
+    {
+      "id": "branch-abandoned-default",
+      "arguments": [
+        "abandoned",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/branch-abandoned-default.stdout",
+      "expected_stderr": "expected/branch-abandoned-default.stderr"
+    },
+    {
+      "id": "branch-abandoned-with-flag",
+      "arguments": [
+        "-b",
+        "abandoned",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-abandoned-with-flag.stdout",
+      "expected_stderr": "expected/branch-abandoned-with-flag.stderr"
+    },
+    {
+      "id": "branch-abandoned-bodies-default",
+      "arguments": [
+        "abandoned",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/branch-abandoned-bodies-default.stdout",
+      "expected_stderr": "expected/branch-abandoned-bodies-default.stderr"
+    },
+    {
+      "id": "branch-abandoned-bodies-with-flag",
+      "arguments": [
+        "-b",
+        "abandoned",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-abandoned-bodies-with-flag.stdout",
+      "expected_stderr": "expected/branch-abandoned-bodies-with-flag.stderr"
+    },
+    {
+      "id": "branch-kept-default",
+      "arguments": [
+        "kept",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-kept-default.stdout",
+      "expected_stderr": "expected/branch-kept-default.stderr"
+    },
+    {
+      "id": "branch-numbering-default",
+      "arguments": [
+        "branch off turn",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/branch-numbering-default.stdout",
+      "expected_stderr": "expected/branch-numbering-default.stderr"
+    },
+    {
+      "id": "branch-numbering-with-flag",
+      "arguments": [
+        "-b",
+        "branch off turn",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-numbering-with-flag.stdout",
+      "expected_stderr": "expected/branch-numbering-with-flag.stderr"
+    },
+    {
+      "id": "branch-compaction-bodies",
+      "arguments": [
+        "compaction",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-compaction-bodies.stdout",
+      "expected_stderr": "expected/branch-compaction-bodies.stderr"
+    },
+    {
+      "id": "branch-compaction-with-flag",
+      "arguments": [
+        "-b",
+        "compaction",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-compaction-with-flag.stdout",
+      "expected_stderr": "expected/branch-compaction-with-flag.stderr"
+    },
+    {
+      "id": "branch-truncated-head",
+      "arguments": [
+        "trimmed transcript",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-truncated-head.stdout",
+      "expected_stderr": "expected/branch-truncated-head.stderr"
+    },
+    {
+      "id": "branch-all-sessions",
+      "arguments": [
+        ".",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-all-sessions.stdout",
+      "expected_stderr": "expected/branch-all-sessions.stderr"
+    },
+    {
+      "id": "branch-all-sessions-with-flag",
+      "arguments": [
+        "-b",
+        ".",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/branch-all-sessions-with-flag.stdout",
+      "expected_stderr": "expected/branch-all-sessions-with-flag.stderr"
+    },
+    {
+      "id": "preamble-only-invisible-to-dot",
+      "arguments": [
+        ".",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/preamble-only-invisible-to-dot.stdout",
+      "expected_stderr": "expected/preamble-only-invisible-to-dot.stderr"
+    },
+    {
+      "id": "preamble-only-invisible-to-dot-all",
+      "arguments": [
+        "-A",
+        ".",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/preamble-only-invisible-to-dot-all.stdout",
+      "expected_stderr": "expected/preamble-only-invisible-to-dot-all.stderr"
+    },
+    {
+      "id": "preamble-developer-role-search",
+      "arguments": [
+        "permissions instructions",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/preamble-developer-role-search.stdout",
+      "expected_stderr": "expected/preamble-developer-role-search.stderr"
+    },
+    {
+      "id": "preamble-agents-md-search",
+      "arguments": [
+        "AGENTS.md instructions",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/preamble-agents-md-search.stdout",
+      "expected_stderr": "expected/preamble-agents-md-search.stderr"
+    },
+    {
+      "id": "preamble-environment-context-search",
+      "arguments": [
+        "environment_context",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/preamble-environment-context-search.stdout",
+      "expected_stderr": "expected/preamble-environment-context-search.stderr"
+    },
+    {
+      "id": "preamble-turn-aborted-search",
+      "arguments": [
+        "previous turn was interrupted",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 1,
+      "expected_stdout": "expected/preamble-turn-aborted-search.stdout",
+      "expected_stderr": "expected/preamble-turn-aborted-search.stderr"
+    },
+    {
+      "id": "preamble-visible-sibling-search",
+      "arguments": [
+        "Renderpreamble",
+        "-ll"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/preamble-visible-sibling-search.stdout",
+      "expected_stderr": "expected/preamble-visible-sibling-search.stderr"
+    },
+    {
+      "id": "preamble-visible-sibling-body",
+      "arguments": [
+        "Renderpreamble",
+        "-f",
+        "--no-metadata"
+      ],
+      "columns": 96,
+      "color": false,
+      "exit_status": 0,
+      "expected_stdout": "expected/preamble-visible-sibling-body.stdout",
+      "expected_stderr": "expected/preamble-visible-sibling-body.stderr"
+    }
+  ]
+}

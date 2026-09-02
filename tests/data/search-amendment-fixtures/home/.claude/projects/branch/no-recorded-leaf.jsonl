@@ -1,0 +1,6 @@
+{"type": "user", "uuid": "u1", "parentUuid": null, "timestamp": "2026-08-20T13:00:00.000Z", "message": {"role": "user", "content": "opening"}}
+{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "timestamp": "2026-08-20T13:01:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "reply"}]}}
+{"type": "user", "uuid": "u2", "parentUuid": "a1", "timestamp": "2026-08-20T13:02:00.000Z", "message": {"role": "user", "content": "kept follow-up"}}
+{"type": "assistant", "uuid": "a2", "parentUuid": "u2", "timestamp": "2026-08-20T13:03:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "kept answer"}]}}
+{"type": "assistant", "uuid": "a3", "parentUuid": "a2", "timestamp": "2026-08-20T13:04:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "kept continuation"}]}}
+{"type": "user", "uuid": "u3", "parentUuid": "a1", "timestamp": "2026-08-20T13:05:00.000Z", "message": {"role": "user", "content": "abandoned follow-up"}}

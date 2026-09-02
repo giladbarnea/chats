@@ -1,0 +1,8 @@
+[
+  {
+    "type": "user-message",
+    "role": "user",
+    "original_index": 1,
+    "content": ["<thinking is my hobby\nand a second line"]
+  }
+]

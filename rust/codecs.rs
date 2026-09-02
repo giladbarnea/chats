@@ -16,7 +16,6 @@ use crate::model::{
 };
 
 const DOCUMENT_SEPARATOR: &str = "\n\n---\n\n";
-const INNER_TAGS: [&str; 4] = ["thinking", "tool-input", "tool-output", "subagent-task"];
 
 pub fn json_to_xml(content: &str) -> Result<String, String> {
     if content.starts_with('\u{feff}') {
@@ -321,7 +320,7 @@ pub fn format_xml(messages: &[Message]) -> Result<String, String> {
 }
 
 fn format_message_xml(message: &Message) -> Result<Option<String>, String> {
-    let (mut content, text_encoding) = render_message_content(message)?;
+    let (mut content, text_encoding) = render_message_inner_xml(message, true)?;
     if content.is_empty() {
         return Ok(None);
     }
@@ -345,26 +344,39 @@ fn format_message_xml(message: &Message) -> Result<Option<String>, String> {
     )))
 }
 
-fn render_message_content(message: &Message) -> Result<(String, Option<String>), String> {
+/// Render one message's inner XML.
+///
+/// `encode_transport` is the difference between the two readers of this output.
+/// `ch parse` needs a document it can decode back, so it escapes delimiters that
+/// would otherwise reopen a block. Search matches against the semantic text, so it
+/// asks for the same render with the escaping off.
+pub fn render_message_inner_xml(
+    message: &Message,
+    encode_transport: bool,
+) -> Result<(String, Option<String>), String> {
     let mut parts = Vec::new();
     let mut text_encoding = None;
     if let Some(task) = message.subagent_task.as_deref().filter(|value| !value.is_empty()) {
-        parts.push(render_inner_block("subagent-task", task, &[], true));
+        parts.push(render_inner_block("subagent-task", task, &[], encode_transport));
     }
     if !message.text.is_empty() {
-        let (text, encoding) = encode_xml_text(&message.text);
-        parts.push(text);
-        text_encoding = encoding;
+        if encode_transport {
+            let (text, encoding) = encode_xml_text(&message.text);
+            parts.push(text);
+            text_encoding = encoding;
+        } else {
+            parts.push(message.text.clone());
+        }
     }
     if let Some(thinking) = message.thinking.as_deref().filter(|value| !value.is_empty()) {
-        parts.push(render_inner_block("thinking", thinking, &[], true));
+        parts.push(render_inner_block("thinking", thinking, &[], encode_transport));
     }
     if !message.tools.is_empty() {
         parts.push(
             message
                 .tools
                 .iter()
-                .map(render_tool_xml)
+                .map(|tool| render_tool_xml(tool, encode_transport))
                 .collect::<Result<Vec<_>, _>>()?
                 .join("\n"),
         );
@@ -374,38 +386,42 @@ fn render_message_content(message: &Message) -> Result<(String, Option<String>),
             "tool-input",
             plan,
             &[("name".to_string(), "ExitPlanMode".to_string())],
-            true,
+            encode_transport,
         ));
     }
     Ok((parts.join("\n\n"), text_encoding))
 }
 
 fn encode_xml_text(text: &str) -> (String, Option<String>) {
-    if !text.lines().any(has_inner_opening_tag) {
+    if !inner_opening_regex().is_match(text) {
         return (text.to_string(), None);
     }
     (escape_html_text(text), Some("html".to_string()))
 }
 
-fn has_inner_opening_tag(line: &str) -> bool {
-    let Some(remainder) = line.strip_prefix('<') else {
-        return false;
-    };
-    INNER_TAGS.iter().any(|tag| {
-        remainder
-            .strip_prefix(tag)
-            .is_some_and(|suffix| suffix.starts_with('>') || suffix.starts_with(' '))
-    })
-}
-
-fn render_tool_xml(tool: &Tool) -> Result<String, String> {
+fn render_tool_xml(tool: &Tool, encode_transport: bool) -> Result<String, String> {
     match tool {
-        Tool::Use(tool) => render_tool_use_xml(tool),
-        Tool::Result(tool) => Ok(render_tool_result_xml(tool)),
+        Tool::Use(tool) => render_tool_use_xml(tool, encode_transport),
+        Tool::Result(tool) => Ok(render_tool_result_xml(tool, encode_transport)),
     }
 }
 
-fn render_tool_use_xml(tool: &ToolUse) -> Result<String, String> {
+/// A tool's attributes and body, which is what **both** consumers need.
+///
+/// The XML renderers below build a tag from it; `session_render` builds a header and
+/// a rail from the same values. Python calls this a `ToolParts`, and computing it
+/// twice is how the two routes would drift.
+pub struct ToolParts {
+    pub attributes: Vec<(String, String)>,
+    pub content: Option<String>,
+    /// A tool result's body **before** it is fenced, which is what a `Read` result's
+    /// line-number gutter reads. `None` for a tool use, exactly as Python's
+    /// `ToolParts.output_text` is.
+    pub output_text: Option<String>,
+}
+
+/// A tool-use's attributes and body.
+pub fn tool_use_parts(tool: &ToolUse) -> Result<ToolParts, String> {
     let mut attributes = vec![("name".to_string(), tool.name.clone())];
     if let Some(id) = short_tool_id(tool.id.as_deref()) {
         attributes.push(("id".to_string(), id));
@@ -439,8 +455,15 @@ fn render_tool_use_xml(tool: &ToolUse) -> Result<String, String> {
             json_pretty_ensure_ascii(&tool.input)?
         ));
     }
+    Ok(ToolParts { attributes, content, output_text: None })
+}
+
+fn render_tool_use_xml(tool: &ToolUse, encode_transport: bool) -> Result<String, String> {
+    let ToolParts { attributes, content, .. } = tool_use_parts(tool)?;
     Ok(match content {
-        Some(content) => render_inner_block("tool-input", &content, &attributes, true),
+        Some(content) => {
+            render_inner_block("tool-input", &content, &attributes, encode_transport)
+        }
         None => empty_inner_block("tool-input", &attributes),
     })
 }
@@ -462,7 +485,8 @@ fn format_edit_content(input: &Map<String, Value>) -> String {
     parts.join("\n")
 }
 
-fn render_tool_result_xml(tool: &ToolResult) -> String {
+/// A tool-result's attributes and body, on the same terms.
+pub fn tool_result_parts(tool: &ToolResult) -> ToolParts {
     let mut attributes = Vec::new();
     if let Some(name) = tool.name.as_deref().filter(|value| !value.is_empty()) {
         attributes.push(("name".to_string(), name.to_string()));
@@ -479,15 +503,19 @@ fn render_tool_result_xml(tool: &ToolResult) -> String {
         .map(extract_text_content)
         .unwrap_or_default()
         .join("\n");
-    if content_text.is_empty() {
-        return empty_inner_block("tool-output", &attributes);
+    let content = (!content_text.is_empty()).then(|| format!("```\n{content_text}\n```"));
+    let output_text = (!content_text.is_empty()).then_some(content_text);
+    ToolParts { attributes, content, output_text }
+}
+
+fn render_tool_result_xml(tool: &ToolResult, encode_transport: bool) -> String {
+    let ToolParts { attributes, content, .. } = tool_result_parts(tool);
+    match content {
+        Some(content) => {
+            render_inner_block("tool-output", &content, &attributes, encode_transport)
+        }
+        None => empty_inner_block("tool-output", &attributes),
     }
-    render_inner_block(
-        "tool-output",
-        &format!("```\n{content_text}\n```"),
-        &attributes,
-        true,
-    )
 }
 
 fn extract_text_content(content: &Value) -> Vec<String> {
@@ -607,7 +635,12 @@ fn message_attributes(message: &Message, text_encoding: Option<&str>) -> Result<
         .join(" "))
 }
 
-fn timestamp_to_date(timestamp: &str) -> Result<String, String> {
+/// A message timestamp as local naive time.
+///
+/// Both date renderings read from here rather than each parsing the string: the
+/// XML attribute wants `%Y-%m-%d %H:%M` and the coloured badge wants
+/// `August 20th, 11:01`, and a second parser is a second set of edge cases.
+pub fn message_local_datetime(timestamp: &str) -> Result<NaiveDateTime, String> {
     let invalid_isoformat = || {
         format!(
             "Invalid isoformat string: {}",
@@ -630,23 +663,26 @@ fn timestamp_to_date(timestamp: &str) -> Result<String, String> {
         date = date.succ_opt().ok_or_else(invalid_isoformat)?;
     }
     let naive = NaiveDateTime::new(date, time);
-    if let Some(parsed_offset) = parsed_offset {
-        let offset = FixedOffset::east_opt(parsed_offset.seconds)
-            .ok_or_else(invalid_isoformat)?;
-        let value = offset
-            .from_local_datetime(&naive)
-            .single()
-            .ok_or_else(invalid_isoformat)?
-            .checked_sub_signed(TimeDelta::microseconds(
-                parsed_offset.fractional_microseconds,
-            ))
-            .ok_or_else(invalid_isoformat)?;
-        return Ok(value
-            .with_timezone(&Local)
-            .format("%Y-%m-%d %H:%M")
-            .to_string());
-    }
-    Ok(naive.format("%Y-%m-%d %H:%M").to_string())
+    let Some(parsed_offset) = parsed_offset else {
+        // Python's `_message_timestamp_datetime` leaves a naive timestamp naive.
+        return Ok(naive);
+    };
+    let offset = FixedOffset::east_opt(parsed_offset.seconds).ok_or_else(invalid_isoformat)?;
+    let value = offset
+        .from_local_datetime(&naive)
+        .single()
+        .ok_or_else(invalid_isoformat)?
+        .checked_sub_signed(TimeDelta::microseconds(
+            parsed_offset.fractional_microseconds,
+        ))
+        .ok_or_else(invalid_isoformat)?;
+    Ok(value.with_timezone(&Local).naive_local())
+}
+
+fn timestamp_to_date(timestamp: &str) -> Result<String, String> {
+    Ok(message_local_datetime(timestamp)?
+        .format("%Y-%m-%d %H:%M")
+        .to_string())
 }
 
 #[derive(Clone, Copy)]
@@ -1014,6 +1050,16 @@ fn parse_document_message(
     Ok((message, next_cursor))
 }
 
+/// **Deliberately the crate's `\s` and `\w`, not CPython's, and this is the
+/// reason.** The two patterns here serve only `parse_document_message` and
+/// `find_inner_opening` — the XML-tagged-Markdown → JSON direction, reachable
+/// only from `main.rs`. **Python has no counterpart for that direction**:
+/// `cmd_parse` reads a session file and formats *to* xml, json or raw, never
+/// back. So there is no CPython class behind these to reproduce, and widening
+/// them would be a change with nothing behind it.
+///
+/// `inner_opening_regex` below is the opposite case and does use CPython's.
+/// **Do not "finish the set."**
 fn outer_opening_regex() -> &'static Regex {
     static REGEX: OnceLock<Regex> = OnceLock::new();
     REGEX.get_or_init(|| {
@@ -1024,17 +1070,28 @@ fn outer_opening_regex() -> &'static Regex {
     })
 }
 
+/// See `outer_opening_regex`: same direction, same absent oracle.
 fn attribute_regex() -> &'static Regex {
     static REGEX: OnceLock<Regex> = OnceLock::new();
     REGEX.get_or_init(|| Regex::new(r#"([\w-]+)="([^"]*)""#).expect("attribute regex"))
 }
 
+/// CPython's `\s` and `\w`, because this one has a live oracle.
+///
+/// It ports `_INNER_XML_BLOCK_OPENING_PATTERN` at `xml_transport.py:15-19`, and
+/// `encode_xml_text` uses it to decide whether message text is HTML-escaped —
+/// which reaches `render_message_inner_xml`, the string search matches against.
+/// The crate's `\s` misses U+001C..U+001F and its `\w` differs from CPython's in
+/// **both** directions; `session::PYTHON_SPACE_CLASS` and `PYTHON_WORD_CLASS`
+/// carry the measured equivalents.
 fn inner_opening_regex() -> &'static Regex {
     static REGEX: OnceLock<Regex> = OnceLock::new();
     REGEX.get_or_init(|| {
-        Regex::new(
-            r#"(?m)^<(?P<tag>thinking|tool-input|tool-output|subagent-task)(?P<attrs>(?:\s+[\w-]+="[^"]*")*)>"#,
-        )
+        Regex::new(&format!(
+            r#"(?m)^<(?P<tag>thinking|tool-input|tool-output|subagent-task)(?P<attrs>(?:[{space}]+[{word}-]+="[^"]*")*)>"#,
+            space = crate::session::PYTHON_SPACE_CLASS,
+            word = crate::session::PYTHON_WORD_CLASS,
+        ))
         .expect("inner opening regex")
     })
 }
@@ -1282,7 +1339,7 @@ fn parse_embedded_python_json(content: &str) -> Result<Value, String> {
     Ok(value)
 }
 
-fn normalize_python_json_constants(content: &str) -> String {
+pub(crate) fn normalize_python_json_constants(content: &str) -> String {
     let mut normalized = String::with_capacity(content.len());
     let mut index = 0;
     let mut in_string = false;
@@ -1588,4 +1645,71 @@ fn python_string_list(values: &[String]) -> String {
             .collect::<Vec<_>>()
             .join(", ")
     )
+}
+
+#[cfg(test)]
+mod inner_block_class_tests {
+    use super::*;
+
+    /// `encode_xml_text` must use CPython's character classes, not the crate's.
+    ///
+    /// It decides whether message text is HTML-escaped, and the escaped form is
+    /// what `render_message_inner_xml` emits — **the string search matches
+    /// against** — so a class difference here changes which sessions a query
+    /// finds.
+    ///
+    /// **Authored, not harvested.** Every expectation was transcribed from a run
+    /// of `chats.xml_transport.encode_xml_text` at oracle revision `8cb4c5f`; no
+    /// file in the real pool carries U+001C..U+001F at all.
+    #[test]
+    fn encode_xml_text_uses_pythons_character_classes() {
+        for (text, expected) in [
+            ("<thinking>x</thinking>", Some("html")),
+            (r#"<thinking id="1">x"#, Some("html")),
+            // CPython's `\s` matches U+001C; the crate's does not.
+            ("<thinking\u{1c}id=\"1\">x", Some("html")),
+            // CPython's `\w` is `str.isalnum()`, which accepts the `No` numeric
+            // U+00BD; the crate's `\w` rejects it.
+            ("<thinking \u{bd}=\"1\">x", Some("html")),
+            // And the other direction, which is the one an implementer never
+            // checks: the crate's `\w` accepts a lone combining mark through
+            // `\p{M}`, CPython's does not, so Python leaves this text alone.
+            ("<thinking \u{301}=\"1\">x", None),
+            ("plain text", None),
+        ] {
+            assert_eq!(
+                encode_xml_text(text).1.as_deref(),
+                expected,
+                "encode_xml_text({text:?}) must agree with Python about whether \
+                 this opens a canonical inner block"
+            );
+        }
+    }
+
+    /// The falsifier: the crate's bare classes, on the same six inputs, must
+    /// disagree with Python on three of them — and in both directions.
+    #[test]
+    fn the_gate_catches_the_crates_bare_classes() {
+        let bare = Regex::new(
+            r#"(?m)^<(?P<tag>thinking|tool-input|tool-output|subagent-task)(?P<attrs>(?:\s+[\w-]+="[^"]*")*)>"#,
+        )
+        .expect("the pre-fix pattern");
+
+        assert!(
+            !bare.is_match("<thinking\u{1c}id=\"1\">x"),
+            "the falsifier must reproduce what it stands for: the crate's `\\s` \
+             does not match U+001C, so this text escaped HTML-escaping"
+        );
+        assert!(
+            !bare.is_match("<thinking \u{bd}=\"1\">x"),
+            "same, for the crate's `\\w` rejecting the `No` numeric U+00BD"
+        );
+        assert!(
+            bare.is_match("<thinking \u{301}=\"1\">x"),
+            "and the reverse: the crate's `\\w` accepts a lone combining mark, so \
+             this text was escaped where Python leaves it alone. If this stops \
+             holding, the class difference has gone one-directional and the gate \
+             above no longer covers both."
+        );
+    }
 }

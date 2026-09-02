@@ -1,0 +1,23 @@
+{
+  ".claude/projects/branch/combined-eras.jsonl": 1800021900.0,
+  ".claude/projects/branch/compaction-boundary.jsonl": 1800021600.0,
+  ".claude/projects/branch/no-recorded-leaf.jsonl": 1800021800.0,
+  ".claude/projects/branch/numbering-order.jsonl": 1800022000.0,
+  ".claude/projects/branch/rewind-to-first.jsonl": 1800021700.0,
+  ".claude/projects/branch/truncated-head.jsonl": 1800021500.0,
+  ".claude/projects/dst/c0000001-0000-4000-8000-000000000001.jsonl": 1800020000.0,
+  ".claude/projects/dst/c0000001-0000-4000-8000-000000000002.jsonl": 1800020100.0,
+  ".claude/projects/norm/c0000004-0000-4000-8000-000000000001.jsonl": 1800020700.0,
+  ".claude/projects/norm/c0000004-0000-4000-8000-000000000002.jsonl": 1800020800.0,
+  ".claude/projects/space/c0000003-0000-4000-8000-000000000001.jsonl": 1800020400.0,
+  ".claude/projects/space/c0000003-0000-4000-8000-000000000002.jsonl": 1800020500.0,
+  ".claude/projects/space/c0000003-0000-4000-8000-000000000003.jsonl": 1800020600.0,
+  ".claude/projects/zcase/c0000002-0000-4000-8000-000000000001.jsonl": 1704067260.0,
+  ".claude/projects/zcase/c0000002-0000-4000-8000-000000000002.jsonl": 1704067261.0,
+  ".codex/sessions/2026/08/20/rollout-2026-08-20T12-00-00-d0000001-0000-4000-8000-000000000001.jsonl": 1800020900.0,
+  ".codex/sessions/2026/08/20/rollout-2026-08-20T12-01-00-d0000001-0000-4000-8000-000000000002.jsonl": 1800021000.0,
+  ".codex/sessions/2026/08/20/rollout-2026-08-20T12-02-00-d0000001-0000-4000-8000-000000000003.jsonl": 1800021100.0,
+  ".codex/sessions/2026/08/20/rollout-2026-08-20T12-03-00-d0000001-0000-4000-8000-000000000004.jsonl": 1800021200.0,
+  ".codex/sessions/2026/08/20/rollout-2026-08-20T12-04-00-d0000001-0000-4000-8000-000000000005.jsonl": 1800021300.0,
+  ".codex/sessions/2026/08/20/rollout-2026-08-20T12-05-00-d0000001-0000-4000-8000-000000000006.jsonl": 1800021400.0
+}

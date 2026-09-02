@@ -1,0 +1,94 @@
+──────────────────────────────────────── combined-eras ─────────────────────────────────────────
+<user-message i="1" branch="1" date="2026-08-20 17:00">
+## User
+
+abandoned opening
+</user-message>
+
+---
+
+<assistant-response i="2" branch="1" date="2026-08-20 17:01">
+## Assistant
+
+abandoned reply
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 17:02">
+## User
+
+real opening
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 17:03">
+## Assistant
+
+real reply
+</assistant-response>
+
+---
+
+<user-message i="5" date="2026-08-20 17:05">
+## User
+
+after compaction
+</user-message>
+
+---
+
+<assistant-response i="6" date="2026-08-20 17:06">
+## Assistant
+
+answer after compaction
+</assistant-response>
+
+---
+
+<user-message i="7" branch="2" date="2026-08-20 17:07">
+## User
+
+abandoned after compaction
+</user-message>
+
+───────────────────────────────────── compaction-boundary ──────────────────────────────────────
+<user-message i="1" date="2026-08-20 14:00">
+## User
+
+before compaction
+</user-message>
+
+---
+
+<assistant-response i="2" date="2026-08-20 14:01">
+## Assistant
+
+answer before compaction
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 14:03">
+## User
+
+after compaction
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 14:04">
+## Assistant
+
+answer after compaction
+</assistant-response>
+
+---
+
+<user-message i="5" branch="1" date="2026-08-20 14:05">
+## User
+
+abandoned after compaction
+</user-message>
+

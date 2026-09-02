@@ -1,0 +1,51 @@
+───────────────────────────── a1a1a1a1-1111-4111-8111-aaaaaaaaaa08 ─────────────────────────────
+<user-message i="1" date="2026-08-20 16:00">
+## User
+
+Renderfold sharp ß and ss pair
+Renderfold dotted İ and i pair
+Renderfold long ſ and s pair
+Renderfold kelvin K and k pair
+</user-message>
+
+───────────────────────────── a1a1a1a1-1111-4111-8111-aaaaaaaaaa07 ─────────────────────────────
+<user-message i="1" date="2026-08-20 16:00">
+## User
+
+Renderescape over: <thinking is my hobby and not a tag
+Renderescape undertab: <thinking	name="x">
+Renderescape underline: <thinking
+name="x">
+Renderescape agree-attr: <thinking name="x">
+Renderescape agree-bare: <thinking>real tag body</thinking>
+Renderescape plain: a < b and c > d
+</user-message>
+
+───────────────────────────── a1a1a1a1-1111-4111-8111-aaaaaaaaaa06 ─────────────────────────────
+<user-message i="1" date="2026-08-20 16:00">
+## User
+
+Renderwide CJK 中文字符串测试 and kana カタカナひらがな and emoji 🎯🚀👩‍👩‍👧‍👦 then ASCII tail
+</user-message>
+
+───────────────────────────── a1a1a1a1-1111-4111-8111-aaaaaaaaaa01 ─────────────────────────────
+<assistant-response i="1" date="2026-08-20 16:00">
+## Assistant
+
+Renderfence shell sample:
+
+```bash
+cat <<'EOF' > /tmp/render.txt
+inner $NOT_EXPANDED line
+EOF
+echo "done" && ls -la | grep -v '^d'
+```
+</assistant-response>
+
+───────────────────────────── 69696969-6969-4969-8969-696969696969 ─────────────────────────────
+<user-message i="1" date="2026-08-20 22:00">
+## User
+
+say "hi" and back\slash plus	tab café end
+</user-message>
+

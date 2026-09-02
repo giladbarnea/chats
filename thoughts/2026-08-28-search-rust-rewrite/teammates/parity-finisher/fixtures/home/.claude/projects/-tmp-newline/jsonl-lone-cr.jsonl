@@ -1,0 +1,1 @@
+{"type": "user", "uuid": "u1", "parentUuid": null, "cwd": "/tmp/newline", "message": {"role": "user", "content": "alpha question"}}{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "message": {"role": "assistant", "content": [{"type": "text", "text": "beta answer"}]}}

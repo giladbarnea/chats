@@ -1,0 +1,13 @@
+{"type": "user", "uuid": "u1", "parentUuid": null, "timestamp": "2026-08-20T15:00:00.000Z", "message": {"role": "user", "content": "turn 1"}}
+{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "timestamp": "2026-08-20T15:01:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "reply 1"}]}}
+{"type": "user", "uuid": "u2", "parentUuid": "a1", "timestamp": "2026-08-20T15:02:00.000Z", "message": {"role": "user", "content": "turn 2"}}
+{"type": "assistant", "uuid": "a2", "parentUuid": "u2", "timestamp": "2026-08-20T15:03:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "reply 2"}]}}
+{"type": "user", "uuid": "u3", "parentUuid": "a2", "timestamp": "2026-08-20T15:04:00.000Z", "message": {"role": "user", "content": "turn 3"}}
+{"type": "assistant", "uuid": "a3", "parentUuid": "u3", "timestamp": "2026-08-20T15:05:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "reply 3"}]}}
+{"type": "user", "uuid": "u4", "parentUuid": "a3", "timestamp": "2026-08-20T15:06:00.000Z", "message": {"role": "user", "content": "turn 4"}}
+{"type": "assistant", "uuid": "a4", "parentUuid": "u4", "timestamp": "2026-08-20T15:07:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "reply 4"}]}}
+{"type": "user", "uuid": "bA", "parentUuid": "u1", "timestamp": "2026-08-20T15:08:00.000Z", "message": {"role": "user", "content": "branch off turn 1"}}
+{"type": "user", "uuid": "bB", "parentUuid": "a1", "timestamp": "2026-08-20T15:09:00.000Z", "message": {"role": "user", "content": "branch off turn 2"}}
+{"type": "user", "uuid": "bC", "parentUuid": "a2", "timestamp": "2026-08-20T15:10:00.000Z", "message": {"role": "user", "content": "branch off turn 3"}}
+{"type": "user", "uuid": "bD", "parentUuid": "a3", "timestamp": "2026-08-20T15:11:00.000Z", "message": {"role": "user", "content": "branch off turn 4"}}
+{"type": "last-prompt", "leafUuid": "a4"}

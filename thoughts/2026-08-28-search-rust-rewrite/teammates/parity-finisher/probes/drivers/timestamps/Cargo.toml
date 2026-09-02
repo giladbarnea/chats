@@ -1,0 +1,9 @@
+[package]
+name = "timestampcheck"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+chats-native = { path = "/Users/giladbarnea/dev/chats", default-features = false }
+chrono = "0.4"
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }

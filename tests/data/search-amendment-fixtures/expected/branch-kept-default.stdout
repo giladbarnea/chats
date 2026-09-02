@@ -1,0 +1,70 @@
+─────────────────────────────────────── no-recorded-leaf ───────────────────────────────────────
+<user-message i="1" date="2026-08-20 16:00">
+## User
+
+opening
+</user-message>
+
+---
+
+<assistant-response i="2" date="2026-08-20 16:01">
+## Assistant
+
+reply
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 16:02">
+## User
+
+kept follow-up
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 16:03">
+## Assistant
+
+kept answer
+</assistant-response>
+
+---
+
+<assistant-response i="5" date="2026-08-20 16:04">
+## Assistant
+
+kept continuation
+</assistant-response>
+
+──────────────────────────────────────── truncated-head ────────────────────────────────────────
+<user-message i="1" date="2026-08-20 13:00">
+## User
+
+resumed from a trimmed transcript
+</user-message>
+
+---
+
+<assistant-response i="2" date="2026-08-20 13:01">
+## Assistant
+
+continuing
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 13:02">
+## User
+
+kept question
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 13:03">
+## Assistant
+
+kept answer
+</assistant-response>
+

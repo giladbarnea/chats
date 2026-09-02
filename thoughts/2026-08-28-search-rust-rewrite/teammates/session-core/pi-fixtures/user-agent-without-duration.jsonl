@@ -1,0 +1,2 @@
+{"type": "session", "version": 3, "id": "fixture-session"}
+{"type": "custom_message", "customType": "pi-user-agents", "id": "ua-1", "timestamp": "2026-08-20T10:00:00.000Z", "content": "<user_agent>\n<user_invocation>\n/agent summarise the file\n</user_invocation>\n<task>\nsummarise the file\n</task>\n<response>\nthe summary text\n</response>\n</user_agent>", "details": {"task": "summarise the file", "ok": true, "mainContextState": "joined", "responsePreview": "the summary text"}}

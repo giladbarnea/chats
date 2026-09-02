@@ -1,0 +1,4 @@
+{"type": "user", "uuid": "u1", "parentUuid": null, "timestamp": "2026-08-20T16:00:00.000Z", "message": {"role": "user", "content": "opening"}}
+{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "timestamp": "2026-08-20T16:01:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "reply"}]}}
+{"type": "user", "uuid": "b1", "parentUuid": "a1", "timestamp": "2026-08-20T16:02:00.000Z", "message": {"role": "user", "content": "first continuation"}}
+{"type": "user", "uuid": "b2", "parentUuid": "a1", "timestamp": "2026-08-20T16:03:00.000Z", "message": {"role": "user", "content": "second continuation"}}

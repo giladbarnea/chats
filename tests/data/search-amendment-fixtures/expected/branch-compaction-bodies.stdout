@@ -1,0 +1,62 @@
+──────────────────────────────────────── combined-eras ─────────────────────────────────────────
+<user-message i="1" date="2026-08-20 17:02">
+## User
+
+real opening
+</user-message>
+
+---
+
+<assistant-response i="2" date="2026-08-20 17:03">
+## Assistant
+
+real reply
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 17:05">
+## User
+
+after compaction
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 17:06">
+## Assistant
+
+answer after compaction
+</assistant-response>
+
+───────────────────────────────────── compaction-boundary ──────────────────────────────────────
+<user-message i="1" date="2026-08-20 14:00">
+## User
+
+before compaction
+</user-message>
+
+---
+
+<assistant-response i="2" date="2026-08-20 14:01">
+## Assistant
+
+answer before compaction
+</assistant-response>
+
+---
+
+<user-message i="3" date="2026-08-20 14:03">
+## User
+
+after compaction
+</user-message>
+
+---
+
+<assistant-response i="4" date="2026-08-20 14:04">
+## Assistant
+
+answer after compaction
+</assistant-response>
+

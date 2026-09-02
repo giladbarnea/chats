@@ -1,0 +1,944 @@
+
+==============================================================================
+### matches-default: ch search needle
+--- exit=0
+--- stdout ---
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+---
+session_id: codex-0006-id
+provider: codex
+directory: /tmp/ch-contract/codex
+history_path: ~/.codex/sessions/2026/01/01/codex-0006.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<assistant-response i="1">
+## Assistant
+
+codex body needle
+</assistant-response>
+
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+---
+session_id: pi-0005-id
+provider: pi
+directory: /tmp/ch-contract/pi
+history_path: ~/.pi/agent/sessions/proj/pi-0005.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<user-message i="1">
+## User
+
+pi body needle
+</user-message>
+
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+---
+session_id: aaaa0002-custom-title
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0002-custom-title.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 1
+custom_title: "Titled needle session"
+---
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+---
+session_id: aaaa0001-summary-and-body
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 1
+matched_summary: "Alpha summary mentions needle"
+---
+
+==============================================================================
+### list: ch search -l needle
+--- exit=0
+--- stdout ---
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+session_id: codex-0006-id
+provider: codex
+directory: /tmp/ch-contract/codex
+history_path: ~/.codex/sessions/2026/01/01/codex-0006.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+session_id: pi-0005-id
+provider: pi
+directory: /tmp/ch-contract/pi
+history_path: ~/.pi/agent/sessions/proj/pi-0005.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+session_id: aaaa0002-custom-title
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0002-custom-title.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 1
+custom_title: "Titled needle session"
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+session_id: aaaa0001-summary-and-body
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 1
+matched_summary: "Alpha summary mentions needle"
+
+==============================================================================
+### only-id: ch search -ll needle
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### full: ch search -f needle
+--- exit=0
+--- stdout ---
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+---
+session_id: codex-0006-id
+provider: codex
+directory: /tmp/ch-contract/codex
+history_path: ~/.codex/sessions/2026/01/01/codex-0006.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<assistant-response i="1">
+## Assistant
+
+codex body needle
+</assistant-response>
+
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+---
+session_id: pi-0005-id
+provider: pi
+directory: /tmp/ch-contract/pi
+history_path: ~/.pi/agent/sessions/proj/pi-0005.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<user-message i="1">
+## User
+
+pi body needle
+</user-message>
+
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+---
+session_id: aaaa0002-custom-title
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0002-custom-title.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 1
+custom_title: "Titled needle session"
+---
+<user-message i="1" date="2025-10-09 03:00">
+## User
+
+unrelated words here
+</user-message>
+
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+---
+session_id: aaaa0001-summary-and-body
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 1
+matched_summary: "Alpha summary mentions needle"
+---
+<user-message i="1" date="2025-10-09 03:00">
+## User
+
+plain alpha body
+</user-message>
+
+---
+
+<assistant-response i="2" date="2025-10-09 03:01">
+## Assistant
+
+alpha assistant reply
+</assistant-response>
+
+==============================================================================
+### raw: ch search -r needle
+--- exit=0
+--- stdout ---
+Session codex-0006-id
+=====================
+
+codex body needle
+
+---
+
+Session pi-0005-id
+==================
+
+pi body needle
+
+==============================================================================
+### no-metadata: ch search --no-metadata needle
+--- exit=0
+--- stdout ---
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+<assistant-response i="1">
+## Assistant
+
+codex body needle
+</assistant-response>
+
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+<user-message i="1">
+## User
+
+pi body needle
+</user-message>
+
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+
+==============================================================================
+### dot-only-id: ch search -ll .
+--- exit=0
+--- stdout ---
+aaaa0007-boolean-terms
+codex-0006-id
+pi-0005-id
+aaaa0004-regex-and-unicode
+aaaa0003-hidden-facets
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### dot-list: ch search -l .
+--- exit=0
+--- stdout ---
+────────────────────────────────────── aaaa0007-boolean-terms ──────────────────────────────────────
+session_id: aaaa0007-boolean-terms
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0007-boolean-terms.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 2
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+session_id: codex-0006-id
+provider: codex
+directory: /tmp/ch-contract/codex
+history_path: ~/.codex/sessions/2026/01/01/codex-0006.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+session_id: pi-0005-id
+provider: pi
+directory: /tmp/ch-contract/pi
+history_path: ~/.pi/agent/sessions/proj/pi-0005.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+──────────────────────────────────── aaaa0004-regex-and-unicode ────────────────────────────────────
+session_id: aaaa0004-regex-and-unicode
+provider: claude
+directory: /tmp/ch-contract/beta
+history_path: ~/.claude/projects/beta/aaaa0004-regex-and-unicode.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 1
+────────────────────────────────────── aaaa0003-hidden-facets ──────────────────────────────────────
+session_id: aaaa0003-hidden-facets
+provider: claude
+directory: /tmp/ch-contract/beta
+history_path: ~/.claude/projects/beta/aaaa0003-hidden-facets.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:03"
+messages: 1
+matches: 1
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+session_id: aaaa0002-custom-title
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0002-custom-title.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 2
+custom_title: "Titled needle session"
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+session_id: aaaa0001-summary-and-body
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 3
+matched_summary: "Alpha summary mentions needle"
+
+==============================================================================
+### and-same-session: ch search -ll booleanalpha AND booleanbeta
+--- exit=0
+--- stdout ---
+aaaa0007-boolean-terms
+
+==============================================================================
+### and-cross-session: ch search -ll booleanalpha AND needle
+--- exit=1
+
+==============================================================================
+### or: ch search -ll booleanalpha OR needle
+--- exit=0
+--- stdout ---
+aaaa0007-boolean-terms
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### not: ch search -ll needle NOT summary
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+
+==============================================================================
+### paren-group: ch search -ll (booleanalpha OR nomatchxyz) AND booleanbeta
+--- exit=0
+--- stdout ---
+aaaa0007-boolean-terms
+
+==============================================================================
+### quoted-term: ch search -ll "pi body" AND needle
+--- exit=0
+--- stdout ---
+pi-0005-id
+
+==============================================================================
+### mix-not-and: ch search -ll a AND b NOT c
+--- exit=2
+--- stderr ---
+Mixing NOT with AND/OR is not supported. Use one operator type per query.
+
+==============================================================================
+### dangling-and: ch search -ll foo AND
+--- exit=2
+--- stderr ---
+Invalid search query: expected a term, got end of pattern.
+
+==============================================================================
+### unclosed-paren: ch search -ll (foo AND bar
+--- exit=2
+--- stderr ---
+Invalid search query: missing closing ')'.
+
+==============================================================================
+### empty-quoted: ch search -ll "" AND foo
+--- exit=2
+--- stderr ---
+Invalid search query: empty quoted term.
+
+==============================================================================
+### unexpected-term: ch search -ll foo AND bar baz
+--- exit=2
+--- stderr ---
+Invalid search query: unexpected term 'baz'. Quote multi-word terms, e.g. '"hello world" AND foo'.
+
+==============================================================================
+### bare-operator-only: ch search -ll AND
+--- exit=0
+--- stdout ---
+aaaa0004-regex-and-unicode
+
+==============================================================================
+### unterminated-quote: ch search -ll "foo
+--- exit=1
+
+==============================================================================
+### regex-dotstar: ch search -ll book.*alpha
+--- exit=1
+
+==============================================================================
+### regex-invalid-falls-back-literal: ch search -ll a.b*c
+--- exit=1
+
+==============================================================================
+### regex-invalid-syntax: ch search -ll foo[
+--- exit=1
+
+==============================================================================
+### unicode-literal: ch search -ll ünïcodé
+--- exit=0
+--- stdout ---
+aaaa0004-regex-and-unicode
+
+==============================================================================
+### anchored: ch search -ll ^plain alpha body$
+--- exit=0
+--- stdout ---
+aaaa0001-summary-and-body
+
+==============================================================================
+### case-default: ch search -ll NEEDLE
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### case-sensitive: ch search -ll -s NEEDLE
+--- exit=1
+
+==============================================================================
+### case-insensitive-explicit: ch search -ll -i NEEDLE
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### case-both-flags: ch search -ll -s -i NEEDLE
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: argument -i/--case-insensitive: not allowed with argument -s/--case-sensitive
+
+==============================================================================
+### thinking-hidden-by-default: ch search -ll thinkingonlyneedle
+--- exit=1
+
+==============================================================================
+### thinking-shown: ch search -ll -T thinkingonlyneedle
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: the following arguments are required: pattern
+
+==============================================================================
+### tool-hidden-by-default: ch search -ll toolonlyneedle
+--- exit=1
+
+==============================================================================
+### tool-shown: ch search -ll -t toolonlyneedle
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: the following arguments are required: pattern
+
+==============================================================================
+### tool-output-shown: ch search -ll -t tooloutputneedle
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: the following arguments are required: pattern
+
+==============================================================================
+### tool-filtered-out: ch search -ll -t !Bash toolonlyneedle
+--- exit=1
+
+==============================================================================
+### all-flag: ch search -ll -A thinkingonlyneedle
+--- exit=0
+--- stdout ---
+aaaa0003-hidden-facets
+
+==============================================================================
+### only-user: ch search -ll --only-user alpha assistant reply
+--- exit=1
+
+==============================================================================
+### only-assistant: ch search -ll --only-assistant plain alpha body
+--- exit=1
+
+==============================================================================
+### only-user-and-assistant: ch search -ll --only-user --only-assistant needle
+--- exit=0
+--- stdout ---
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+--- stderr ---
+Warning: `--only-user` and `--only-assistant` are contradictory; continuing with both filters 
+active.
+
+==============================================================================
+### only-user-overrides-tools: ch search -ll --only-user -t needle
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: the following arguments are required: pattern
+
+==============================================================================
+### summary-facet: ch search -ll Alpha summary mentions
+--- exit=0
+--- stdout ---
+aaaa0001-summary-and-body
+
+==============================================================================
+### custom-title-facet: ch search -ll Titled needle session
+--- exit=0
+--- stdout ---
+aaaa0002-custom-title
+
+==============================================================================
+### provider-claude: ch search -ll -p claude needle
+--- exit=0
+--- stdout ---
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### provider-pi: ch search -ll -p pi needle
+--- exit=0
+--- stdout ---
+pi-0005-id
+
+==============================================================================
+### provider-codex: ch search -ll -p codex needle
+--- exit=0
+--- stdout ---
+codex-0006-id
+
+==============================================================================
+### provider-invalid: ch search -ll -p gemini needle
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: argument -p/--provider: invalid choice: 'gemini' (choose from 'claude', 'pi', 'codex')
+
+==============================================================================
+### dir-filter: ch search -ll -d /tmp/ch-contract/alpha needle
+--- exit=0
+--- stdout ---
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### dir-filter-nomatch: ch search -ll -d /tmp/ch-contract/nope needle
+--- exit=1
+
+==============================================================================
+### mafter-wide: ch search -ll -ma 9999d needle
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### mafter-narrow: ch search -ll -ma 1d needle
+--- exit=1
+
+==============================================================================
+### cafter-wide: ch search -ll -ca 9999d needle
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### mafter-bad-date: ch search -ll -ma notadate needle
+--- exit=1
+--- stderr ---
+Error processing conversation file 
+/private/tmp/claude-501/-Users-giladbarnea-dev-chats/0ea39927-26a6-4358-9704-77c1a36beb29/scratchpad
+/home/.claude/projects/alpha/aaaa0007-boolean-terms.jsonl: Invalid date format: 'notadate'
+Error processing conversation file 
+/private/tmp/claude-501/-Users-giladbarnea-dev-chats/0ea39927-26a6-4358-9704-77c1a36beb29/scratchpad
+/home/.codex/sessions/2026/01/01/codex-0006.jsonl: Invalid date format: 'notadate'
+Error processing conversation file 
+/private/tmp/claude-501/-Users-giladbarnea-dev-chats/0ea39927-26a6-4358-9704-77c1a36beb29/scratchpad
+/home/.pi/agent/sessions/proj/pi-0005.jsonl: Invalid date format: 'notadate'
+Error processing conversation file 
+/private/tmp/claude-501/-Users-giladbarnea-dev-chats/0ea39927-26a6-4358-9704-77c1a36beb29/scratchpad
+/home/.claude/projects/beta/aaaa0004-regex-and-unicode.jsonl: Invalid date format: 'notadate'
+Error processing conversation file 
+/private/tmp/claude-501/-Users-giladbarnea-dev-chats/0ea39927-26a6-4358-9704-77c1a36beb29/scratchpad
+/home/.claude/projects/beta/aaaa0003-hidden-facets.jsonl: Invalid date format: 'notadate'
+Error processing conversation file 
+/private/tmp/claude-501/-Users-giladbarnea-dev-chats/0ea39927-26a6-4358-9704-77c1a36beb29/scratchpad
+/home/.claude/projects/alpha/aaaa0002-custom-title.jsonl: Invalid date format: 'notadate'
+Error processing conversation file 
+/private/tmp/claude-501/-Users-giladbarnea-dev-chats/0ea39927-26a6-4358-9704-77c1a36beb29/scratchpad
+/home/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl: Invalid date format: 'notadate'
+
+==============================================================================
+### no-results: ch search -ll zzznomatchzzz
+--- exit=1
+
+==============================================================================
+### no-results-matches-mode: ch search zzznomatchzzz
+--- exit=1
+--- stderr ---
+No sessions match "zzznomatchzzz".
+
+==============================================================================
+### no-results-with-filter: ch search -p claude zzznomatchzzz
+--- exit=1
+--- stderr ---
+No sessions match "zzznomatchzzz" with the current filters.
+
+==============================================================================
+### missing-pattern: ch search
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: the following arguments are required: pattern
+
+==============================================================================
+### unknown-flag: ch search --bogus needle
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: unrecognized arguments: --bogus
+
+==============================================================================
+### short-swallows-pattern: ch search --short needle
+--- exit=0
+--- stdout ---
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+---
+session_id: codex-0006-id
+provider: codex
+directory: /tmp/ch-contract/codex
+history_path: ~/.codex/sessions/2026/01/01/codex-0006.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<assistant-response i="1">
+## Assistant
+
+codex body needle
+</assistant-response>
+
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+---
+session_id: pi-0005-id
+provider: pi
+directory: /tmp/ch-contract/pi
+history_path: ~/.pi/agent/sessions/proj/pi-0005.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<user-message i="1">
+## User
+
+pi body needle
+</user-message>
+
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+---
+session_id: aaaa0002-custom-title
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0002-custom-title.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 1
+custom_title: "Titled needle session"
+---
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+---
+session_id: aaaa0001-summary-and-body
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 1
+matched_summary: "Alpha summary mentions needle"
+---
+
+==============================================================================
+### short-with-spec: ch search --short=p=64 -ll needle
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### short-bad-spec: ch search --short=7 -ll needle
+--- exit=2
+--- stderr ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+ch search: error: Invalid short value: '7'. Expected N, p, progressive, p=N, or progressive=N with N >= 8.
+
+==============================================================================
+### dash-s-is-case-not-short: ch search -s -ll needle
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### help: ch search --help
+--- exit=0
+--- stdout ---
+usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE] [-p {claude,pi,codex}]
+                 [-T [THINKING]] [--only-user] [--only-assistant] [-t [TOOLS]] [-a] [-b] [-A]
+                 [--plans] [-s | -i] [--short [SHORT]] [--color {always,never,auto}] [--paging]
+                 [--no-paging] [--no-metadata]
+                 [pattern]
+
+positional arguments:
+  pattern               Pattern to search for
+
+options:
+  -h, --help            show this help message and exit
+  -l, --list            List mode - show only paths and metadata
+  -ll, --only-id        Show only matching session IDs (implies --color never and --no-paging)
+  -f, --full            Show full matching conversations instead of only matching messages
+  -r, --raw             Alias for raw markdown search output (implies --no-metadata, --color
+                        never, and --no-paging)
+  -T, --thinking [THINKING]
+                        Show thinking tokens (optional: short)
+  --only-user           Search only regular user message bodies
+  --only-assistant      Search only regular assistant message bodies
+  -t, --tools [TOOLS]   Show tool use/result details (optional: filter with modifiers, e.g.
+                        'Bash:i', 'Read:o:s', '!Bash')
+  -a, --agents          Include agent messages and Pi agent custom records
+  -b, --branches        Include messages from abandoned (rewound) branches
+  -A, --all             Show everything, including arbitrary Pi custom records
+  --plans               Show plan content (ExitPlanMode)
+  -s, --case-sensitive  Match letter case exactly (default: false)
+  -i, --case-insensitive
+                        Ignore letter case (default: true)
+  --short [SHORT]       Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)
+  --color {always,never,auto}
+                        Control Rich formatting: always, never, or auto (default: auto)
+  --paging              Enable paging (default: same as color)
+  --no-paging           Disable paging
+  --no-metadata         Disable outputting metadata frontmatter
+
+session pool filters:
+  -d, --dir DIR         Restrict search to conversations in this directory
+  -ma, --mafter DATE    Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)
+  -ca, --cafter DATE    Only conversations created after DATE
+  -p, --provider {claude,pi,codex}
+                        Restrict search to sessions from a specific provider
+
+==============================================================================
+### color-always-list: ch search -l --color always needle
+--- exit=0
+--- stdout ---
+[38;2;92;200;168m▎ [0m[3;38;2;154;160;166mcodex body needle[0m
+  [38;2;92;200;168m/tmp/ch-contract/codex[0m[38;2;74;78;84m · [0m[38;2;126;131;137mcodex[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[38;2;86;91;97m10mo[0m[38;2;74;78;84m · [0m[38;2;79;158;134mcodex-00[0m[38;2;100;106;112m06-id[0m
+
+[38;2;92;200;168m▎ [0m[3;38;2;154;160;166mpi body needle[0m
+  [38;2;92;200;168m/tmp/ch-contract/pi[0m[38;2;74;78;84m · [0m[38;2;126;131;137mpi[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[38;2;86;91;97m10mo[0m[38;2;74;78;84m · [0m[38;2;79;158;134mpi-0005-[0m[38;2;100;106;112mid[0m
+
+[38;2;92;200;168m▎ [0m[1;38;2;230;232;235mTitled needle session[0m
+  [38;2;92;200;168m/tmp/ch-contract/alpha[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[38;2;86;91;97m10mo[0m[38;2;74;78;84m · [0m[38;2;79;158;134maaaa0002[0m[38;2;100;106;112m-custom-title[0m
+
+[38;2;92;200;168m▎ [0m[3;38;2;154;160;166mAlpha summary mentions needle[0m
+  [38;2;92;200;168m/tmp/ch-contract/alpha[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[38;2;86;91;97m10mo[0m[38;2;74;78;84m · [0m[38;2;79;158;134maaaa0001[0m[38;2;100;106;112m-summary-and-body[0m
+
+[38;2;126;131;137m4 sessions[0m[38;2;74;78;84m  ·  newest first[0m
+
+==============================================================================
+### color-never-list: ch search -l --color never needle
+--- exit=0
+--- stdout ---
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+session_id: codex-0006-id
+provider: codex
+directory: /tmp/ch-contract/codex
+history_path: ~/.codex/sessions/2026/01/01/codex-0006.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+session_id: pi-0005-id
+provider: pi
+directory: /tmp/ch-contract/pi
+history_path: ~/.pi/agent/sessions/proj/pi-0005.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+session_id: aaaa0002-custom-title
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0002-custom-title.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 1
+custom_title: "Titled needle session"
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+session_id: aaaa0001-summary-and-body
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 1
+matched_summary: "Alpha summary mentions needle"
+
+==============================================================================
+### only-id-color-always: ch search -ll --color always needle
+--- exit=0
+--- stdout ---
+codex-0006-id
+pi-0005-id
+aaaa0002-custom-title
+aaaa0001-summary-and-body
+
+==============================================================================
+### paging-explicit-off: ch search --no-paging needle
+--- exit=0
+--- stdout ---
+────────────────────────────────────────── codex-0006-id ───────────────────────────────────────────
+---
+session_id: codex-0006-id
+provider: codex
+directory: /tmp/ch-contract/codex
+history_path: ~/.codex/sessions/2026/01/01/codex-0006.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<assistant-response i="1">
+## Assistant
+
+codex body needle
+</assistant-response>
+
+──────────────────────────────────────────── pi-0005-id ────────────────────────────────────────────
+---
+session_id: pi-0005-id
+provider: pi
+directory: /tmp/ch-contract/pi
+history_path: ~/.pi/agent/sessions/proj/pi-0005.jsonl
+created: "2025-10-09 11:54"
+modified: "2025-10-09 11:54"
+messages: 1
+matches: 1
+---
+<user-message i="1">
+## User
+
+pi body needle
+</user-message>
+
+────────────────────────────────────── aaaa0002-custom-title ───────────────────────────────────────
+---
+session_id: aaaa0002-custom-title
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0002-custom-title.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:00"
+messages: 1
+matches: 1
+custom_title: "Titled needle session"
+---
+──────────────────────────────────── aaaa0001-summary-and-body ─────────────────────────────────────
+---
+session_id: aaaa0001-summary-and-body
+provider: claude
+directory: /tmp/ch-contract/alpha
+history_path: ~/.claude/projects/alpha/aaaa0001-summary-and-body.jsonl
+created: "2025-10-09 03:00"
+modified: "2025-10-09 03:01"
+messages: 2
+matches: 1
+matched_summary: "Alpha summary mentions needle"
+---

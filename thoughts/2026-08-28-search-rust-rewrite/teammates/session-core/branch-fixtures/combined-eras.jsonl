@@ -1,0 +1,9 @@
+{"type": "user", "uuid": "u1", "parentUuid": null, "timestamp": "2026-08-20T14:00:00.000Z", "message": {"role": "user", "content": "abandoned opening"}}
+{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "timestamp": "2026-08-20T14:01:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "abandoned reply"}]}}
+{"type": "user", "uuid": "u2", "parentUuid": null, "timestamp": "2026-08-20T14:02:00.000Z", "message": {"role": "user", "content": "real opening"}}
+{"type": "assistant", "uuid": "a2", "parentUuid": "u2", "timestamp": "2026-08-20T14:03:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "real reply"}]}}
+{"type": "system", "subtype": "compact_boundary", "uuid": "c1", "parentUuid": null, "logicalParentUuid": "a2", "timestamp": "2026-08-20T14:04:00.000Z"}
+{"type": "user", "uuid": "u3", "parentUuid": "c1", "timestamp": "2026-08-20T14:05:00.000Z", "message": {"role": "user", "content": "after compaction"}}
+{"type": "assistant", "uuid": "a3", "parentUuid": "u3", "timestamp": "2026-08-20T14:06:00.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "answer after compaction"}]}}
+{"type": "user", "uuid": "u4", "parentUuid": "c1", "timestamp": "2026-08-20T14:07:00.000Z", "message": {"role": "user", "content": "abandoned after compaction"}}
+{"type": "last-prompt", "leafUuid": "a3"}

@@ -1,0 +1,2620 @@
+{
+ "ages": [
+  {
+   "seconds": 0,
+   "label": "now",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 1,
+   "label": "now",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 30,
+   "label": "now",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 58,
+   "label": "now",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 59,
+   "label": "now",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 59.5,
+   "label": "now",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 59.9,
+   "label": "now",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 60,
+   "label": "1m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 60.5,
+   "label": "1m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 61,
+   "label": "1m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 62,
+   "label": "1m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 420,
+   "label": "7m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 840,
+   "label": "14m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 1260,
+   "label": "21m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 1680,
+   "label": "28m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 2100,
+   "label": "35m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 2520,
+   "label": "42m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 2940,
+   "label": "49m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3360,
+   "label": "56m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3598,
+   "label": "59m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3599,
+   "label": "59m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3599.5,
+   "label": "59m",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3600,
+   "label": "1h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3600.5,
+   "label": "1h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3601,
+   "label": "1h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 3602,
+   "label": "1h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 7200,
+   "label": "2h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 10800,
+   "label": "3h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 14400,
+   "label": "4h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 18000,
+   "label": "5h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 21600,
+   "label": "6h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 25200,
+   "label": "7h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 28800,
+   "label": "8h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 32400,
+   "label": "9h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 36000,
+   "label": "10h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 39600,
+   "label": "11h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 43200,
+   "label": "12h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 46800,
+   "label": "13h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 50400,
+   "label": "14h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 54000,
+   "label": "15h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 57600,
+   "label": "16h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 61200,
+   "label": "17h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 64800,
+   "label": "18h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 68400,
+   "label": "19h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 72000,
+   "label": "20h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 75600,
+   "label": "21h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 79200,
+   "label": "22h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 82800,
+   "label": "23h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 86398,
+   "label": "23h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 86399,
+   "label": "23h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 86399.5,
+   "label": "23h",
+   "style": "search.age.now"
+  },
+  {
+   "seconds": 86400,
+   "label": "1d",
+   "style": "search.age.week"
+  },
+  {
+   "seconds": 86400.5,
+   "label": "1d",
+   "style": "search.age.week"
+  },
+  {
+   "seconds": 86401,
+   "label": "1d",
+   "style": "search.age.week"
+  },
+  {
+   "seconds": 86402,
+   "label": "1d",
+   "style": "search.age.week"
+  },
+  {
+   "seconds": 604798,
+   "label": "6d",
+   "style": "search.age.week"
+  },
+  {
+   "seconds": 604799,
+   "label": "6d",
+   "style": "search.age.week"
+  },
+  {
+   "seconds": 604799.5,
+   "label": "6d",
+   "style": "search.age.week"
+  },
+  {
+   "seconds": 604800,
+   "label": "1w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 604800.5,
+   "label": "1w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 604801,
+   "label": "1w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 604802,
+   "label": "1w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 1209600,
+   "label": "2w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 1814400,
+   "label": "3w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 2419200,
+   "label": "4w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 2591998,
+   "label": "4w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 2591999,
+   "label": "4w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 2591999.5,
+   "label": "4w",
+   "style": "search.age.month"
+  },
+  {
+   "seconds": 2592000,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 2592000.5,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 2592001,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 2592002,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 3024000,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 3628800,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 4233600,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 4838400,
+   "label": "1mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 5443200,
+   "label": "2mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 6048000,
+   "label": "2mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 6652800,
+   "label": "2mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 7257600,
+   "label": "2mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 7862400,
+   "label": "3mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 8467200,
+   "label": "3mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 9072000,
+   "label": "3mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 9676800,
+   "label": "3mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 10281600,
+   "label": "3mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 10886400,
+   "label": "4mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 11491200,
+   "label": "4mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 12096000,
+   "label": "4mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 12700800,
+   "label": "4mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 13305600,
+   "label": "5mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 13910400,
+   "label": "5mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 14515200,
+   "label": "5mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 15120000,
+   "label": "5mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 15724800,
+   "label": "6mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 16329600,
+   "label": "6mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 16934400,
+   "label": "6mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 17539200,
+   "label": "6mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 18144000,
+   "label": "7mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 18748800,
+   "label": "7mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 19353600,
+   "label": "7mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 19958400,
+   "label": "7mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 20563200,
+   "label": "7mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 21168000,
+   "label": "8mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 21772800,
+   "label": "8mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 22377600,
+   "label": "8mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 22982400,
+   "label": "8mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 23587200,
+   "label": "9mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 24192000,
+   "label": "9mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 24796800,
+   "label": "9mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 25401600,
+   "label": "9mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 26006400,
+   "label": "10mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 26611200,
+   "label": "10mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 27216000,
+   "label": "10mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 27820800,
+   "label": "10mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 28425600,
+   "label": "10mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 29030400,
+   "label": "11mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 29635200,
+   "label": "11mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 30240000,
+   "label": "11mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 30844800,
+   "label": "11mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31017600.5,
+   "label": "11mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31104000.5,
+   "label": "12mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31190400.5,
+   "label": "12mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31449600,
+   "label": "12mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31449600.5,
+   "label": "12mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31535998,
+   "label": "12mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31535999,
+   "label": "12mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31535999.5,
+   "label": "12mo",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31536000,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31536000.5,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31536001,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31536002,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 31622400.5,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 32054400,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 32659200,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 33264000,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 33868800,
+   "label": "1y",
+   "style": "search.age.old"
+  },
+  {
+   "seconds": 34473600,
+   "label": "1y",
+   "style": "search.age.old"
+  }
+ ],
+ "elisions": [
+  {
+   "text": "",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 1,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 1,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 2,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 2,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 3,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 3,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 4,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 4,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 5,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 5,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 8,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 8,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 11,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 11,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 12,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 12,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 16,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 16,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 20,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 20,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 40,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 40,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 100,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "",
+   "width": 100,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "a",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "a",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "a",
+   "width": 1,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 1,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 2,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 2,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 3,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 3,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 4,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 4,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 5,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 5,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 8,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 8,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 11,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 11,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 12,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 12,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 16,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 16,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 20,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 20,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 40,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 40,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 100,
+   "where": "tail",
+   "result": "a"
+  },
+  {
+   "text": "a",
+   "width": 100,
+   "where": "middle",
+   "result": "a"
+  },
+  {
+   "text": "hello world",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "hello world",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "hello world",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 2,
+   "where": "tail",
+   "result": "h\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 2,
+   "where": "middle",
+   "result": "h\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 3,
+   "where": "tail",
+   "result": "he\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 3,
+   "where": "middle",
+   "result": "h\u2026d"
+  },
+  {
+   "text": "hello world",
+   "width": 4,
+   "where": "tail",
+   "result": "hel\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 4,
+   "where": "middle",
+   "result": "he\u2026d"
+  },
+  {
+   "text": "hello world",
+   "width": 5,
+   "where": "tail",
+   "result": "hell\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 5,
+   "where": "middle",
+   "result": "he\u2026ld"
+  },
+  {
+   "text": "hello world",
+   "width": 8,
+   "where": "tail",
+   "result": "hello w\u2026"
+  },
+  {
+   "text": "hello world",
+   "width": 8,
+   "where": "middle",
+   "result": "hell\u2026rld"
+  },
+  {
+   "text": "hello world",
+   "width": 11,
+   "where": "tail",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 11,
+   "where": "middle",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 12,
+   "where": "tail",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 12,
+   "where": "middle",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 16,
+   "where": "tail",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 16,
+   "where": "middle",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 20,
+   "where": "tail",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 20,
+   "where": "middle",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 40,
+   "where": "tail",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 40,
+   "where": "middle",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 100,
+   "where": "tail",
+   "result": "hello world"
+  },
+  {
+   "text": "hello world",
+   "width": 100,
+   "where": "middle",
+   "result": "hello world"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 2,
+   "where": "tail",
+   "result": "/\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 2,
+   "where": "middle",
+   "result": "/\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 3,
+   "where": "tail",
+   "result": "/a\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 3,
+   "where": "middle",
+   "result": "/\u2026e"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 4,
+   "where": "tail",
+   "result": "/a/\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 4,
+   "where": "middle",
+   "result": "/a\u2026e"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 5,
+   "where": "tail",
+   "result": "/a/v\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 5,
+   "where": "middle",
+   "result": "/a\u2026re"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 8,
+   "where": "tail",
+   "result": "/a/very\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 8,
+   "where": "middle",
+   "result": "/a/v\u2026ere"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 11,
+   "where": "tail",
+   "result": "/a/very/lo\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 11,
+   "where": "middle",
+   "result": "/a/ve\u2026/here"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 12,
+   "where": "tail",
+   "result": "/a/very/lon\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 12,
+   "where": "middle",
+   "result": "/a/ver\u2026/here"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 16,
+   "where": "tail",
+   "result": "/a/very/long/pa\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 16,
+   "where": "middle",
+   "result": "/a/very/\u2026th/here"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 20,
+   "where": "tail",
+   "result": "/a/very/long/path/h\u2026"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 20,
+   "where": "middle",
+   "result": "/a/very/lo\u2026path/here"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 40,
+   "where": "tail",
+   "result": "/a/very/long/path/here"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 40,
+   "where": "middle",
+   "result": "/a/very/long/path/here"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 100,
+   "where": "tail",
+   "result": "/a/very/long/path/here"
+  },
+  {
+   "text": "/a/very/long/path/here",
+   "width": 100,
+   "where": "middle",
+   "result": "/a/very/long/path/here"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 2,
+   "where": "tail",
+   "result": "/\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 2,
+   "where": "middle",
+   "result": "/\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 3,
+   "where": "tail",
+   "result": "/U\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 3,
+   "where": "middle",
+   "result": "/\u20268"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 4,
+   "where": "tail",
+   "result": "/Us\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 4,
+   "where": "middle",
+   "result": "/U\u20268"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 5,
+   "where": "tail",
+   "result": "/Use\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 5,
+   "where": "middle",
+   "result": "/U\u202628"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 8,
+   "where": "tail",
+   "result": "/Users/\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 8,
+   "where": "middle",
+   "result": "/Use\u2026-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 11,
+   "where": "tail",
+   "result": "/Users/ada\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 11,
+   "where": "middle",
+   "result": "/User\u202608-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 12,
+   "where": "tail",
+   "result": "/Users/ada/\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 12,
+   "where": "middle",
+   "result": "/Users\u202608-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 16,
+   "where": "tail",
+   "result": "/Users/ada/dev/\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 16,
+   "where": "middle",
+   "result": "/Users/a\u20266-08-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 20,
+   "where": "tail",
+   "result": "/Users/ada/dev/chat\u2026"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 20,
+   "where": "middle",
+   "result": "/Users/ada\u2026026-08-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 40,
+   "where": "tail",
+   "result": "/Users/ada/dev/chats/thoughts/2026-08-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 40,
+   "where": "middle",
+   "result": "/Users/ada/dev/chats/thoughts/2026-08-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 100,
+   "where": "tail",
+   "result": "/Users/ada/dev/chats/thoughts/2026-08-28"
+  },
+  {
+   "text": "/Users/ada/dev/chats/thoughts/2026-08-28",
+   "width": 100,
+   "where": "middle",
+   "result": "/Users/ada/dev/chats/thoughts/2026-08-28"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 2,
+   "where": "tail",
+   "result": "\u4f60\u2026"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 2,
+   "where": "middle",
+   "result": "\u4f60\u2026"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 3,
+   "where": "tail",
+   "result": "\u4f60\u597d\u2026"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 3,
+   "where": "middle",
+   "result": "\u4f60\u2026\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 4,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u2026"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 4,
+   "where": "middle",
+   "result": "\u4f60\u597d\u2026\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 5,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u2026"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 5,
+   "where": "middle",
+   "result": "\u4f60\u597d\u2026\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 8,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 8,
+   "where": "middle",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 11,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 11,
+   "where": "middle",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 12,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 12,
+   "where": "middle",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 16,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 16,
+   "where": "middle",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 20,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 20,
+   "where": "middle",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 40,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 40,
+   "where": "middle",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 100,
+   "where": "tail",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d",
+   "width": 100,
+   "where": "middle",
+   "result": "\u4f60\u597d\u4f60\u597d\u4f60\u597d\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 2,
+   "where": "tail",
+   "result": "a\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 2,
+   "where": "middle",
+   "result": "a\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 3,
+   "where": "tail",
+   "result": "ab\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 3,
+   "where": "middle",
+   "result": "a\u2026\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 4,
+   "where": "tail",
+   "result": "ab\u4f60\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 4,
+   "where": "middle",
+   "result": "ab\u2026\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 5,
+   "where": "tail",
+   "result": "ab\u4f60\u597d\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 5,
+   "where": "middle",
+   "result": "ab\u2026\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 8,
+   "where": "tail",
+   "result": "ab\u4f60\u597dab\u4f60\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 8,
+   "where": "middle",
+   "result": "ab\u4f60\u597d\u2026b\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 11,
+   "where": "tail",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 11,
+   "where": "middle",
+   "result": "ab\u4f60\u597da\u2026\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 12,
+   "where": "tail",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u2026"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 12,
+   "where": "middle",
+   "result": "ab\u4f60\u597dab\u2026\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 16,
+   "where": "tail",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 16,
+   "where": "middle",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 20,
+   "where": "tail",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 20,
+   "where": "middle",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 40,
+   "where": "tail",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 40,
+   "where": "middle",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 100,
+   "where": "tail",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d",
+   "width": 100,
+   "where": "middle",
+   "result": "ab\u4f60\u597dab\u4f60\u597dab\u4f60\u597dab\u4f60\u597d"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 2,
+   "where": "tail",
+   "result": "c\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 2,
+   "where": "middle",
+   "result": "c\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 3,
+   "where": "tail",
+   "result": "ca\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 3,
+   "where": "middle",
+   "result": "c\u2026\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 4,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 4,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 5,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 5,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 8,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 8,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 11,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 11,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 12,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 12,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 16,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 16,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 20,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 20,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 40,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 40,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 100,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 100,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 2,
+   "where": "tail",
+   "result": "c\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 2,
+   "where": "middle",
+   "result": "c\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 3,
+   "where": "tail",
+   "result": "ca\u2026"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 3,
+   "where": "middle",
+   "result": "c\u2026\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 4,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 4,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 5,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 5,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 8,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 8,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 11,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 11,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 12,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 12,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 16,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 16,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 20,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 20,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 40,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 40,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 100,
+   "where": "tail",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "caf\u00e9",
+   "width": 100,
+   "where": "middle",
+   "result": "caf\u00e9"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 2,
+   "where": "tail",
+   "result": "\u0130\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 2,
+   "where": "middle",
+   "result": "\u0130\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 3,
+   "where": "tail",
+   "result": "\u0130s\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 3,
+   "where": "middle",
+   "result": "\u0130\u2026t"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 4,
+   "where": "tail",
+   "result": "\u0130st\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 4,
+   "where": "middle",
+   "result": "\u0130s\u2026t"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 5,
+   "where": "tail",
+   "result": "\u0130sta\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 5,
+   "where": "middle",
+   "result": "\u0130s\u2026it"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 8,
+   "where": "tail",
+   "result": "\u0130stanbu\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 8,
+   "where": "middle",
+   "result": "\u0130sta\u2026fit"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 11,
+   "where": "tail",
+   "result": "\u0130stanbul i\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 11,
+   "where": "middle",
+   "result": "\u0130stan\u2026t fit"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 12,
+   "where": "tail",
+   "result": "\u0130stanbul is\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 12,
+   "where": "middle",
+   "result": "\u0130stanb\u2026t fit"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 16,
+   "where": "tail",
+   "result": "\u0130stanbul is a l\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 16,
+   "where": "middle",
+   "result": "\u0130stanbul\u2026not fit"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 20,
+   "where": "tail",
+   "result": "\u0130stanbul is a long \u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 20,
+   "where": "middle",
+   "result": "\u0130stanbul i\u2026l not fit"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 40,
+   "where": "tail",
+   "result": "\u0130stanbul is a long headline that will n\u2026"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 40,
+   "where": "middle",
+   "result": "\u0130stanbul is a long h\u2026e that will not fit"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 100,
+   "where": "tail",
+   "result": "\u0130stanbul is a long headline that will not fit"
+  },
+  {
+   "text": "\u0130stanbul is a long headline that will not fit",
+   "width": 100,
+   "where": "middle",
+   "result": "\u0130stanbul is a long headline that will not fit"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 2,
+   "where": "tail",
+   "result": "\ud83d\udc68\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 2,
+   "where": "middle",
+   "result": "\ud83d\udc68\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 3,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 3,
+   "where": "middle",
+   "result": "\ud83d\udc68\u2026e"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 4,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 4,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\u2026e"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 5,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb \u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 5,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\u2026ne"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 8,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb tec\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 8,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb \u2026ine"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 11,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb techno\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 11,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb t\u2026dline"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 12,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb technol\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 12,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb te\u2026dline"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 16,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb technologis\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 16,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb tech\u2026eadline"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 20,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb technologist he\u2026"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 20,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb techno\u2026 headline"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 40,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 40,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 100,
+   "where": "tail",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline"
+  },
+  {
+   "text": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline",
+   "width": 100,
+   "where": "middle",
+   "result": "\ud83d\udc68\u200d\ud83d\udcbb technologist headline"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 0,
+   "where": "tail",
+   "result": ""
+  },
+  {
+   "text": "(untitled session)",
+   "width": 0,
+   "where": "middle",
+   "result": ""
+  },
+  {
+   "text": "(untitled session)",
+   "width": 1,
+   "where": "tail",
+   "result": "\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 1,
+   "where": "middle",
+   "result": "\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 2,
+   "where": "tail",
+   "result": "(\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 2,
+   "where": "middle",
+   "result": "(\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 3,
+   "where": "tail",
+   "result": "(u\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 3,
+   "where": "middle",
+   "result": "(\u2026)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 4,
+   "where": "tail",
+   "result": "(un\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 4,
+   "where": "middle",
+   "result": "(u\u2026)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 5,
+   "where": "tail",
+   "result": "(unt\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 5,
+   "where": "middle",
+   "result": "(u\u2026n)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 8,
+   "where": "tail",
+   "result": "(untitl\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 8,
+   "where": "middle",
+   "result": "(unt\u2026on)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 11,
+   "where": "tail",
+   "result": "(untitled \u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 11,
+   "where": "middle",
+   "result": "(unti\u2026sion)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 12,
+   "where": "tail",
+   "result": "(untitled s\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 12,
+   "where": "middle",
+   "result": "(untit\u2026sion)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 16,
+   "where": "tail",
+   "result": "(untitled sessi\u2026"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 16,
+   "where": "middle",
+   "result": "(untitle\u2026ession)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 20,
+   "where": "tail",
+   "result": "(untitled session)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 20,
+   "where": "middle",
+   "result": "(untitled session)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 40,
+   "where": "tail",
+   "result": "(untitled session)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 40,
+   "where": "middle",
+   "result": "(untitled session)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 100,
+   "where": "tail",
+   "result": "(untitled session)"
+  },
+  {
+   "text": "(untitled session)",
+   "width": 100,
+   "where": "middle",
+   "result": "(untitled session)"
+  }
+ ],
+ "collapse_home": [
+  {
+   "path": "/Users/ada",
+   "home": "/Users/ada",
+   "result": "~"
+  },
+  {
+   "path": "/Users/ada/",
+   "home": "/Users/ada",
+   "result": "~/"
+  },
+  {
+   "path": "/Users/ada/dev/chats",
+   "home": "/Users/ada",
+   "result": "~/dev/chats"
+  },
+  {
+   "path": "/Users/adaX/dev",
+   "home": "/Users/ada",
+   "result": "~X/dev"
+  },
+  {
+   "path": "/Users/ada-backup/x",
+   "home": "/Users/ada",
+   "result": "~-backup/x"
+  },
+  {
+   "path": "/Users/adam/dev",
+   "home": "/Users/ada",
+   "result": "~m/dev"
+  },
+  {
+   "path": "/Users/ad/dev",
+   "home": "/Users/ada",
+   "result": "/Users/ad/dev"
+  },
+  {
+   "path": "/Users/adaada/dev",
+   "home": "/Users/ada",
+   "result": "~ada/dev"
+  },
+  {
+   "path": "/opt/tools",
+   "home": "/Users/ada",
+   "result": "/opt/tools"
+  },
+  {
+   "path": "",
+   "home": "/Users/ada",
+   "result": ""
+  },
+  {
+   "path": "/Users/ada/\u4f60\u597d",
+   "home": "/Users/ada",
+   "result": "~/\u4f60\u597d"
+  }
+ ]
+}

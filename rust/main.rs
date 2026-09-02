@@ -5,6 +5,12 @@ use std::process::ExitCode;
 
 use _native::codecs::{json_to_xml, xml_to_json};
 use _native::model::python_repr_string;
+use _native::python_io::{decode_utf8, python_io_error};
+use _native::search::parse::{SearchOutcome, parse_search_arguments};
+use _native::search::{render_error, render_help};
+use _native::search_run::{print_stderr_wrapped, run};
+use _native::search_views::StderrConsole;
+use _native::terminal::{argparse_columns, terminal_width, wrap_preserving_spaces};
 
 const USAGE: &str = "usage: ch parse [-h] [-f {xml,json}] [input_file]";
 const HELP: &str = "usage: ch parse [-h] [-f {xml,json}] [input_file]\n\nConvert between structured ch JSON and XML-tagged Markdown\n\npositional arguments:\n  input_file            Input file (reads stdin when omitted)\n\noptions:\n  -h, --help            show this help message and exit\n  -f, --format {xml,json}\n                        Output format: xml or json (default: xml)\n";
@@ -31,7 +37,76 @@ fn main() -> ExitCode {
     if arguments.first().is_some_and(|argument| argument == "parse") {
         return run_parse(&arguments[1..]);
     }
+    // `cli.py` dispatches on `sys.argv[1] == "search"` and hands the parser
+    // `sys.argv[2:]`, so the subcommand is matched exactly and never abbreviated.
+    if arguments.first().is_some_and(|argument| argument == "search") {
+        return run_search(&arguments[1..]);
+    }
     run_legacy(&arguments)
+}
+
+/// The native `ch search` route.
+///
+/// **Two width resolvers, and they must stay two.** `argparse_columns()` follows
+/// `shutil.get_terminal_size`, which is `int(COLUMNS)` inside a `try`; `terminal_width()`
+/// follows Rich, which requires `str.isdigit()` first. They disagree on `+96`, on `' 96'`
+/// and on `0` — in the same process, in the same run. Help and errors come out of
+/// argparse and take the first; everything `run` prints comes out of Rich and takes the
+/// second. **Unifying them is the most tempting deletion in this file and it changes
+/// output either way**, which is what `terminal.rs`'s disagree-on-`+96` test and the
+/// `COLUMNS` sweep in `tests/` are there to stop.
+fn run_search(arguments: &[OsString]) -> ExitCode {
+    let parsed = parse_search_arguments(arguments);
+    // **Wrapped, because `print_warning` is a Rich `Console.print`.** Argparse emits
+    // every warning before it decides anything about the arguments, and each one folds
+    // at the terminal width. A raw `eprint!` agreed with the product at every width wide
+    // enough not to fold — which is every width a developer types, and not the width the
+    // contract corpus is recorded at.
+    for warning in &parsed.warnings {
+        print_stderr_wrapped(warning, StderrConsole::Warning);
+    }
+    match parsed.outcome {
+        SearchOutcome::Help => {
+            print!("{}", render_help(argparse_columns()));
+            ExitCode::SUCCESS
+        }
+        SearchOutcome::Error(message) => {
+            eprint!("{}", render_error(&message, argparse_columns()));
+            ExitCode::from(2)
+        }
+        SearchOutcome::Run(arguments) => {
+            let status = run(&arguments, &home_directory(), terminal_width());
+            ExitCode::from(status as u8)
+        }
+    }
+}
+
+/// The session root, resolved exactly as Python's `Path.home()` does.
+///
+/// **Three branches, because `posixpath.expanduser` distinguishes three states and a
+/// `home_dir`-shaped convenience call collapses two of them.** All measured against the
+/// live `ch-legacy search` route rather than against an expectation of it:
+///
+/// | `HOME` | legacy | `std::env::home_dir()` | here |
+/// | --- | --- | --- | --- |
+/// | a path | that path | that path | that path |
+/// | unset | the passwd entry, and search works | the passwd entry | the passwd entry |
+/// | **empty** | **`/`** | the passwd entry | **`/`** |
+///
+/// The empty case is Python's `return (userhome + path[i:]) or '/'`: a present but empty
+/// `HOME` yields `/`, so legacy searches a root that holds no sessions and returns
+/// nothing. **A resolver that "corrects" that returns results where the product returns
+/// none.** `.expect("HOME")` — what this replaced in the rehearsal driver — panicked
+/// where the product works.
+fn home_directory() -> PathBuf {
+    match std::env::var_os("HOME") {
+        Some(value) if !value.is_empty() => PathBuf::from(value),
+        // Present and empty. Python yields `/`, not the passwd entry.
+        Some(_) => PathBuf::from("/"),
+        // Absent. Python falls through to `pwd.getpwuid`, which is what `home_dir()`
+        // does on Unix.
+        None => std::env::home_dir().unwrap_or_else(|| PathBuf::from("/")),
+    }
 }
 
 fn run_parse(arguments: &[OsString]) -> ExitCode {
@@ -233,95 +308,8 @@ fn read_input(path: Option<&PathBuf>) -> Result<Vec<u8>, String> {
     Ok(bytes)
 }
 
-fn python_io_error(error: &std::io::Error, path: &PathBuf) -> String {
-    let path = path.to_string_lossy();
-    match error.raw_os_error() {
-        Some(errno) => {
-            let rendered = error.to_string();
-            let suffix = format!(" (os error {errno})");
-            let message = rendered.strip_suffix(&suffix).unwrap_or(&rendered);
-            format!(
-                "[Errno {errno}] {message}: {}",
-                python_repr_string(&path)
-            )
-        }
-        None => format!("{}: {}", error, python_repr_string(&path)),
-    }
-}
-
-fn decode_utf8(bytes: &[u8]) -> Result<String, String> {
-    match std::str::from_utf8(bytes) {
-        Ok(content) => Ok(content.to_string()),
-        Err(error) => {
-            let start = error.valid_up_to();
-            let byte = bytes.get(start).copied().unwrap_or_default();
-            if error.error_len().is_none() {
-                let end = bytes.len().saturating_sub(1);
-                let subject = if end > start {
-                    format!("bytes in position {start}-{end}")
-                } else {
-                    format!("byte 0x{byte:02x} in position {start}")
-                };
-                return Err(format!(
-                    "'utf-8' codec can't decode {subject}: unexpected end of data"
-                ));
-            }
-            let invalid_length = error.error_len().expect("handled truncated UTF-8");
-            let end = start + invalid_length - 1;
-            let subject = if end > start {
-                format!("bytes in position {start}-{end}")
-            } else {
-                format!("byte 0x{byte:02x} in position {start}")
-            };
-            let reason = if matches!(byte, 0xc2..=0xf4) {
-                "invalid continuation byte"
-            } else {
-                "invalid start byte"
-            };
-            Err(format!(
-                "'utf-8' codec can't decode {subject}: {reason}"
-            ))
-        }
-    }
-}
-
 fn normalize_newlines(content: String) -> String {
     content.replace("\r\n", "\n").replace('\r', "\n")
-}
-
-const FALLBACK_TERMINAL_WIDTH: usize = 80;
-
-/// The width to wrap error output at: the terminal's own, overridden by COLUMNS.
-///
-/// A shell sets COLUMNS without exporting it, so the variable alone resolves to
-/// nothing and pins the width to the fallback. Asking the terminal is what makes
-/// the wrap follow the window. The precedence matches the one Rich applies on the
-/// Python side, so both halves of `ch` wrap alike.
-fn terminal_width() -> usize {
-    std::env::var("COLUMNS")
-        .ok()
-        .and_then(|value| value.parse::<usize>().ok())
-        .or_else(measured_terminal_width)
-        .filter(|width| *width > 0)
-        .unwrap_or(FALLBACK_TERMINAL_WIDTH)
-}
-
-#[cfg(unix)]
-fn measured_terminal_width() -> Option<usize> {
-    [libc::STDIN_FILENO, libc::STDOUT_FILENO, libc::STDERR_FILENO]
-        .into_iter()
-        .find_map(|descriptor| {
-            let mut size: libc::winsize = unsafe { std::mem::zeroed() };
-            let measured = unsafe {
-                libc::ioctl(descriptor, libc::TIOCGWINSZ, &mut size as *mut libc::winsize)
-            };
-            (measured == 0).then_some(size.ws_col as usize)
-        })
-}
-
-#[cfg(not(unix))]
-fn measured_terminal_width() -> Option<usize> {
-    None
 }
 
 fn print_wrapped_error(message: &str) {
@@ -348,48 +336,6 @@ fn error_color_enabled() -> bool {
     false
 }
 
-fn wrap_preserving_spaces(message: &str, width: usize) -> String {
-    let mut output = String::new();
-    let mut line_width = 0;
-    let mut word = String::new();
-    let flush_word = |word: &mut String, output: &mut String, line_width: &mut usize| {
-        if word.is_empty() {
-            return;
-        }
-        let word_width = word.chars().count();
-        if *line_width > 0 && *line_width + word_width > width {
-            output.push('\n');
-            *line_width = 0;
-        }
-        for character in word.chars() {
-            if *line_width == width {
-                output.push('\n');
-                *line_width = 0;
-            }
-            output.push(character);
-            *line_width += 1;
-        }
-        word.clear();
-    };
-    for character in message.chars() {
-        if character != ' ' {
-            word.push(character);
-            continue;
-        }
-        flush_word(&mut word, &mut output, &mut line_width);
-        if line_width == width {
-            output.push('\n');
-            line_width = 0;
-            continue;
-        }
-        output.push(' ');
-        line_width += 1;
-    }
-    flush_word(&mut word, &mut output, &mut line_width);
-    output
-}
-
-#[cfg(unix)]
 fn run_legacy(arguments: &[OsString]) -> ExitCode {
     use std::os::unix::process::CommandExt;
 

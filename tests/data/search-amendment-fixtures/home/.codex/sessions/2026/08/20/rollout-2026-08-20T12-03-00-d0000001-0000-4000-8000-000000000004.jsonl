@@ -1,0 +1,2 @@
+{"type":"session_meta","payload":{"id":"d0000001-0000-4000-8000-000000000004","cwd":"/tmp/search-amendment"}}
+{"type":"response_item","payload":{"type":"message","role":"developer","content":[{"type":"input_text","text":"<turn_aborted>The previous turn was interrupted before the assistant replied. No work was completed and nothing was written to disk.</turn_aborted>"}]}}

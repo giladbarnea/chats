@@ -1,0 +1,1229 @@
+.....................................................................FF. [  7%]
+........................................................................ [ 15%]
+..F...................FFFFFFFFFFFFFFFFFFF...F..............F............ [ 23%]
+.........FF....F.....FFF................................................ [ 31%]
+.........................................FF............................. [ 39%]
+..............................................F...................FFFFFF [ 46%]
+FFFFFFFFFFFFF...F..............F.....................FF....F.....FFF.... [ 54%]
+........................................................................ [ 62%]
+..............FF........................................................ [ 70%]
+...................F...................FFFFFFFFFFFFFFFFFFF...F.......... [ 78%]
+....F.....................FF....F.....FFF............................... [ 86%]
+........F............F......FFFFFFF...................F.....F.F...FF...F [ 93%]
+.F.....F..FFFF.F...FF..F.F......FFF.F.F.F...............                 [100%]
+=================================== FAILURES ===================================
+_ test_search_journey_matches_characterized_legacy_bytes[contract:fb-posix-class-warning] _
+tests/test_search_command_contract.py:342: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stderr, contract_home) == expected_stderr, (
+E   AssertionError: Expected characterized stderr bytes for fb-posix-class-warning. Expected: b'{SEARCH_QUERY_SOURCE}:96: FutureWarning: Possible nested set at position 1\n  regex = re.compile(pattern, flags)\n'; got: b'FutureWarning: Possible nested set at position 1\n'.
+E   assert b'FutureWarni... position 1\n' == b'{SEARCH_QUE...ern, flags)\n'
+E     
+E     At index 0 diff: b'F' != b'{'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:fb-posix-class-bare-warning] _
+tests/test_search_command_contract.py:342: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stderr, contract_home) == expected_stderr, (
+E   AssertionError: Expected characterized stderr bytes for fb-posix-class-bare-warning. Expected: b'{SEARCH_QUERY_SOURCE}:96: FutureWarning: Possible nested set at position 1\n  regex = re.compile(pattern, flags)\n'; got: b'FutureWarning: Possible nested set at position 1\n'.
+E   assert b'FutureWarni... position 1\n' == b'{SEARCH_QUE...ern, flags)\n'
+E     
+E     At index 0 diff: b'F' != b'{'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:role-contradiction-warning] _
+tests/test_search_command_contract.py:342: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stderr, contract_home) == expected_stderr, (
+E   AssertionError: Expected characterized stderr bytes for role-contradiction-warning. Expected: b'Warning: `--only-assistant` overrides `--thinking`; disabling those options.\nNo sessions match "needle five".\n'; got: b'Warning: `--only-assistant` overrides `--thinking`; disabling those options.No sessions match "needle five".\n'.
+E   assert b'Warning: `-...edle five".\n' == b'Warning: `-...edle five".\n'
+E     
+E     At index 76 diff: b'N' != b'\n'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:colored-list-fixed-width] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for colored-list-fixed-width. Expected: b'\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mCodex needle five body\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/search-contract/codexmain\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;126;131;137mcodex\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[1;38;2;195;199;205m1\x1b[0m\x1b[38;2;126;131;137m match\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;79;158;134m88888888\x1b[0m\x1b[38;2;100;106;112m-8888-4888-8888-888888888888\x1b[0m\n\n\x1b[38;2;126;131;137m1 session\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  newest first\x1b[0m\n'; got: b'\xe2\x96\x8e Codex needle five body\n  /tmp/search-contract/codexmain \xc2\xb7 codex \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 88888888-8888-4888-8888-888888888888\n\n1 session  \xc2\xb7  newest first\n'.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:colored-matches-panels] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for colored-matches-panels. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mCodex needle five body\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134m88888888\x1b[0m\x1b[38;2;100;106;112m-8888-4888-8888-888888888888\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01\x1b[0m                                            \x1b[38;2;9'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Codex needle five body  \xc2\xb7  88888888-8888-4888-8888-888888888888  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Codex needle five body                                                                       \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:colored-full-panel] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for colored-full-panel. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mCodex needle five body\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134m88888888\x1b[0m\x1b[38;2;100;106;112m-8888-4888-8888-888888888888\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01\x1b[0m                                            \x1b[38;2;9'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Codex needle five body  \xc2\xb7  88888888-8888-4888-8888-888888888888  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Codex needle five body                                                                       \xe2\x94\x82\n\xe2\x94\x82 -------------------------------------------------------------------------------------------- \xe2\x94\x82\n\xe2\x94\x82                                             '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:colored-hue-cycle-four-hits] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for colored-hue-cycle-four-hits. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mdirfilter target two\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134m75757575\x1b[0m\x1b[38;2;100;106;112m-7575-4757-8757-757575757575\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  75757575  \xc2\xb7  #1  \xc2\xb7  August 20th, 23:01\x1b[0m                                            \x1b[38'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e dirfilter target two  \xc2\xb7  75757575-7575-4757-8757-757575757575  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  75757575  \xc2\xb7  #1  \xc2\xb7  August 20th, 23:01                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 dirfilter target two                                                                         \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2'.
+E   assert b"\xe2\x95\xa...xe2\x95\xaf\n" == b"\x1b[38;2;9...\xaf\x1b[0m\n"
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:colored-narrow-columns-80] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for colored-narrow-columns-80. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mCodex needle five body\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134m88888888\x1b[0m\x1b[38;2;100;106;112m-8888-4888-8888-888888888888\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01\x1b[0m                            \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                     '; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Codex needle five body  \xc2\xb7  88888888-8888-4888-8888-888888888888  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01                            \xe2\x94\x82\n\xe2\x94\x82                                                                              \xe2\x94\x82\n\xe2\x94\x82 Codex needle five body                                                       \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xaf\n'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:colored-highlight-painting] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for colored-highlight-painting. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[1;38;2;230;232;235mAlpha Title\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134m11111111\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-111111111111\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  11111111  \xc2\xb7  #1  \xc2\xb7  August 20th, 13:00\x1b[0m                              '; got: b"\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Alpha Title  \xc2\xb7  11111111-1111-4111-8111-111111111111  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  11111111  \xc2\xb7  #1  \xc2\xb7  August 20th, 13:00                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Alpha needle one body don't panic here                                                       \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2".
+E   assert b"\xe2\x95\xa...xe2\x95\xaf\n" == b"\x1b[38;2;9...\xaf\x1b[0m\n"
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:pager-engaged-real-less-piped] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for pager-engaged-real-less-piped. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mCodex needle five body\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134m88888888\x1b[0m\x1b[38;2;100;106;112m-8888-4888-8888-888888888888\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01\x1b[0m                                            \x1b[38;2;9'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Codex needle five body  \xc2\xb7  88888888-8888-4888-8888-888888888888  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  88888888  \xc2\xb7  #1  \xc2\xb7  August 20th, 11:01                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Codex needle five body                                                                       \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-shell-96] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-shell-96. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfence shell sample:\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa01\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m Assistant \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                       \x1b[38;2;92;200;'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfence shell sample:  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa01  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                       \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Renderfence shell sample:                                                                    \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82                                                   '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-shell-60] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-shell-60. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfen\xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa01\x1b[0m\x1b[38;2;74;78;84m \xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m Assistant \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m   \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                                          \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;20;24;29'; got: b"\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfen\xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa01 \xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00   \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82 Renderfence shell sample:                                \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82  cat <<'EOF' > /tmp/render.txt                           \xe2\x94\x82\n\xe2\x94\x82  inner $NOT_EXPANDED line                                \xe2\x94\x82\n\xe2\x94\x82  EOF                                                     \xe2\x94\x82\n\xe2".
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-python-96] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-python-96. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfence python sample:\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa02\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m Assistant \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                       \x1b[38;2;92;200;16'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfence python sample:  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa02  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                       \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Renderfence python sample:                                                                   \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82                                                     '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-python-60] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-python-60. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfen\xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa02\x1b[0m\x1b[38;2;74;78;84m \xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m Assistant \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m   \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                                          \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;20;24;29'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfen\xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa02 \xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00   \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82 Renderfence python sample:                               \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82  def build(name: str, count: int = 3) -> str:            \xe2\x94\x82\n\xe2\x94\x82      return f"{name!r} x {count} -> {\' \'.join(str(i)     \xe2\x94\x82\n\xe2\x94\x82  for i in range(count))}"                                \xe2\x94\x82\n\xe2'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-web-96] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-web-96. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfence web sample:\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa03\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m Assistant \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                       \x1b[38;2;92;'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfence web sample:  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa03  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                       \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Renderfence web sample:                                                                      \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82                                               '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-web-140] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-web-140. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfence web sample:\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa03\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m '; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfence web sample:  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa03  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                                                                   \xe2\x94\x82\n\xe2\x94\x82                                                                                                                                          \xe2\x94\x82\n\xe2\x94\x82 Renderfence web sample:     '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-data-96] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-data-96. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfence data sample:\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa04\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m Assistant \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                       \x1b[38;2;92;20'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfence data sample:  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa04  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                       \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Renderfence data sample:                                                                     \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82                                                 '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-data-60] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-fence-data-60. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfen\xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa04\x1b[0m\x1b[38;2;74;78;84m \xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;200;139;218m Assistant \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m   \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                                          \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;20;24;29'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderfen\xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa04 \xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  Assistant   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00   \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82 Renderfence data sample:                                 \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2\x94\x82  {"name": "value", "nested": [1, 2.5, true, null],       \xe2\x94\x82\n\xe2\x94\x82  "escaped": "a\\"b"}                                      \xe2\x94\x82\n\xe2\x94\x82                                                          \xe2\x94\x82\n\xe2'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-wrap-long-96] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-wrap-long-96. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderwrap segment000 segment001 segment002 s\xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa05\x1b[0m\x1b[38;2;74;78;84m \xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                            \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                                       '; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderwrap segment000 segment001 segment002 s\xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa05 \xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Renderwrap segment000 segment001 segment002 segment003 segment004 segment005 segment006      \xe2\x94\x82\n\xe2\x94\x82 segment007 segment008 segment009 segment010 segment011 segment012 segment013 segment014      \xe2\x94\x82\n\xe2\x94\x82 segment015 segment016 segment017 segment018 segment019 segment020 segment021 '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-wrap-long-40] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-wrap-long-40. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderw\xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-\xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  \x1b[0m      \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[38;2;100;106;112mAugust 20th, 16:00\x1b[0m                   \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                      \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;2'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderw\xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-\xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7        \xe2\x94\x82\n\xe2\x94\x82 August 20th, 16:00                   \xe2\x94\x82\n\xe2\x94\x82                                      \xe2\x94\x82\n\xe2\x94\x82 Renderwrap segment000 segment001     \xe2\x94\x82\n\xe2\x94\x82 segment002 segment003 segment004     \xe2\x94\x82\n\xe2\x94\x82 segment005 segment006 segment007     \xe2\x94\x82\n\xe2\x94\x82 segment008 segment009 segment010     \xe2\x94\x82\n\xe2\x94\x82 segment011 segment012 segment013     \xe2\x94\x82\n\xe2\x94\x82 segment014 segment015 segment016     \xe2\x94\x82\n\xe2\x94\x82 segment017 segment018 segment019     \xe2\x94\x82\n\xe2\x94\x82 segment020 segment021 segment022     \xe2\x94\x82\n\xe2\x94\x82 segment023 segment024 segment025     \xe2\x94\x82\n\xe2'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-wide-glyphs-96] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-wide-glyphs-96. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderwide CJK \xe4\xb8\xad\xe6\x96\x87\xe5\xad\x97\xe7\xac\xa6\xe4\xb8\xb2\xe6\xb5\x8b\xe8\xaf\x95 and kana \xe3\x82\xab\xe3\x82\xbf\xe3\x82\xab\xe3\x83\x8a\xe3\x81\xb2\xe3\x82\x89\xe3\x81\x8c\xe3\x81\xaa and \xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-811\xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                            \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                                            '; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderwide CJK \xe4\xb8\xad\xe6\x96\x87\xe5\xad\x97\xe7\xac\xa6\xe4\xb8\xb2\xe6\xb5\x8b\xe8\xaf\x95 and kana \xe3\x82\xab\xe3\x82\xbf\xe3\x82\xab\xe3\x83\x8a\xe3\x81\xb2\xe3\x82\x89\xe3\x81\x8c\xe3\x81\xaa and \xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-811\xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Renderwide CJK \xe4\xb8\xad\xe6\x96\x87\xe5\xad\x97\xe7\xac\xa6\xe4\xb8\xb2\xe6\xb5\x8b\xe8\xaf\x95 and kana \xe3\x82\xab\xe3\x82\xbf\xe3\x82\xab\xe3\x83\x8a\xe3\x81\xb2\xe3\x82\x89\xe3\x81\x8c\xe3\x81\xaa and emoji \xf0\x9f\x8e\xaf\xf0\x9f\x9a\x80\xf0\x9f\x91\xa9\xe2\x80\x8d\xf0\x9f\x91\xa9\xe2\x80\x8d\xf0\x9f\x91\xa7\xe2\x80\x8d\xf0\x9f\x91\xa6 then ASCII tail     \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:render-wide-glyphs-40] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for render-wide-glyphs-40. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderw\xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-\xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  \x1b[0m      \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[38;2;100;106;112mAugust 20th, 16:00\x1b[0m                   \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                      \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;2'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderw\xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-\xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7        \xe2\x94\x82\n\xe2\x94\x82 August 20th, 16:00                   \xe2\x94\x82\n\xe2\x94\x82                                      \xe2\x94\x82\n\xe2\x94\x82 Renderwide CJK \xe4\xb8\xad\xe6\x96\x87\xe5\xad\x97\xe7\xac\xa6\xe4\xb8\xb2\xe6\xb5\x8b\xe8\xaf\x95 and    \xe2\x94\x82\n\xe2\x94\x82 kana \xe3\x82\xab\xe3\x82\xbf\xe3\x82\xab\xe3\x83\x8a\xe3\x81\xb2\xe3\x82\x89\xe3\x81\x8c\xe3\x81\xaa and emoji      \xe2\x94\x82\n\xe2\x94\x82 \xf0\x9f\x8e\xaf\xf0\x9f\x9a\x80\xf0\x9f\x91\xa9\xe2\x80\x8d\xf0\x9f\x91\xa9\xe2\x80\x8d\xf0\x9f\x91\xa7\xe2\x80\x8d\xf0\x9f\x91\xa6 then ASCII tail               \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xaf\n'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:escape-incomplete-tag-colored] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for escape-incomplete-tag-colored. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderescape over: <thinking is my hobby and \xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa07\x1b[0m\x1b[38;2;74;78;84m \xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                            \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                                       '; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Renderescape over: <thinking is my hobby and \xe2\x80\xa6  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa07 \xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Renderescape over: <thinking is my hobby and not a tag Renderescape undertab:  Renderescape  \xe2\x94\x82\n\xe2\x94\x82 underline: <thinking name="x"> Renderescape agree-attr: <thinking name="x"> R'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:carriage-return-colored] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for carriage-return-colored. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRendercr progress follows\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa13\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00\x1b[0m                                            \x1b[38;2;92;200;'; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e Rendercr progress follows  \xc2\xb7  a1a1a1a1-1111-4111-8111-aaaaaaaaaa13  \xc2\xb7  1w \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  a1a1a1a1  \xc2\xb7  #1  \xc2\xb7  August 20th, 16:00                                            \xe2\x94\x82\n\xe2\x94\x82                                                                                              \xe2\x94\x82\n\xe2\x94\x82 Rendercr progress follows Receiving objects:  47% (470/1000) Receiving objects: 100%         \xe2\x94\x82\n\xe2\x94\x82 (1000/1000) Rendercr done                                                                    \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80'.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:provider-column-single-provider] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for provider-column-single-provider. Expected: b'\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfence data sample:\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/search-contract\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[1;38;2;195;199;205m1\x1b[0m\x1b[38;2;126;131;137m match\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;79;158;134ma1a1a1a1\x1b[0m\x1b[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa04\x1b[0m\n\n\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mRenderfence web sample:\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/search-contract\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[1;38;2;195;199;205m1\x1b[0m\x1b[38;2;126;131;137m match\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b['; got: b'\xe2\x96\x8e Renderfence data sample:\n  /tmp/search-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 a1a1a1a1-1111-4111-8111-aaaaaaaaaa04\n\n\xe2\x96\x8e Renderfence web sample:\n  /tmp/search-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 a1a1a1a1-1111-4111-8111-aaaaaaaaaa03\n\n\xe2\x96\x8e Renderfence python sample:\n  /tmp/search-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 a1a1a1a1-1111-4111-8111-aaaaaaaaaa02\n\n\xe2\x96\x8e Renderfence shell sample:\n  /tmp/search-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 a1a1a1a1-1111-4111-8111-aaaaaaaaaa01\n\n4 sessions  \xc2\xb7  newest first\n'.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[contract:provider-column-multi-provider] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for provider-column-multi-provider. Expected: b'\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[3;38;2;154;160;166mCodex needle five body\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/search-contract/codexmain\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;126;131;137mcodex\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[1;38;2;195;199;205m1\x1b[0m\x1b[38;2;126;131;137m match\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;79;158;134m88888888\x1b[0m\x1b[38;2;100;106;112m-8888-4888-8888-888888888888\x1b[0m\n\n\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[1;38;2;230;232;235mPi Current Title\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/search-contract/pimain\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;126;131;137mpi\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7'; got: b'\xe2\x96\x8e Codex needle five body\n  /tmp/search-contract/codexmain \xc2\xb7 codex \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 88888888-8888-4888-8888-888888888888\n\n\xe2\x96\x8e Pi Current Title\n  /tmp/search-contract/pimain \xc2\xb7 pi \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 77777777-7777-4777-8777-777777777777\n\n\xe2\x96\x8e uescaped tab content needle\n  /tmp/search-contract/esc \xc2\xb7 claude \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 70707070-7070-4707-8707-707070707077\n\n\xe2\x96\x8e XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\xe2\x80\xa6\n  /tmp/search-contract/short \xc2\xb7 claude \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 68686868-6868-4868-8868-686868686868\n\n\xe2\x96\x8e Needle case one\n  /tmp/search'.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[amendment:lowercase-z-rendered-dates] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for lowercase-z-rendered-dates. Expected: b'\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 c0000002-0000-4000-8000-000000000002 \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\nsession_id: c0000002-0000-4000-8000-000000000002\nprovider: claude\ndirectory: /tmp/search-amendment\nhistory_path: ~/.claude/projects/zcase/c0000002-0000-4000-8000-000000000002.jsonl\ncreated: "2026-08-20 13:00"\nmodified: "2026-08-20 13:00"\nmessages: 1\nmatches: 1\n\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 c0000002-0000-4000-8000-000000000001 \xe2'; got: b'\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 c0000002-0000-4000-8000-000000000002 \xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\nsession_id: c0000002-0000-4000-8000-000000000002\nprovider: claude\ndirectory: /tmp/search-amendment\nhistory_path: ~/.claude/projects/zcase/c0000002-0000-4000-8000-000000000002.jsonl\ncreated: "2026-08-20 13:00"\nmodified: "2026-08-20 13:00"\nmessages: 1\nmatches: 1\n\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80 c0000002-0000-4000-8000-000000000001 \xe2'.
+E   assert b'\xe2\x94\x8...nmatches: 1\n' == b'\xe2\x94\x8...nmatches: 1\n'
+E     
+E     At index 881 diff: b'6' != b'4'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[amendment:normalization-title-elision-52] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for normalization-title-elision-52. Expected: b'\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[1;38;2;230;232;235mcafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 r\xe2\x80\xa6\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/sea\xe2\x80\xa6endment\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;126;131;137mclaude\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[1;38;2;195;199;205m1\x1b[0m\x1b[38;2;126;131;137m match\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;79;158;134mc00000\xe2\x80\xa6\x1b[0m\n\n\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[1;38;2;230;232;235mcaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xaf\xe2\x80\xa6\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/sea\xe2\x80\xa6endment\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;126;131;137mclaude\x1b['; got: b'\xe2\x96\x8e cafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 r\xe2\x80\xa6\n  /tmp/sea\xe2\x80\xa6endment \xc2\xb7 claude \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 c00000\xe2\x80\xa6\n\n\xe2\x96\x8e caf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xaf\xe2\x80\xa6\n  /tmp/sea\xe2\x80\xa6endment \xc2\xb7 claude \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 c00000\xe2\x80\xa6\n\n2 sessions  \xc2\xb7  newest first\n'.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[amendment:normalization-title-elision-72] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for normalization-title-elision-72. Expected: b'\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[1;38;2;230;232;235mcafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88ve\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/sea\xe2\x80\xa6endment\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;126;131;137mclaude\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[1;38;2;195;199;205m1\x1b[0m\x1b[38;2;126;131;137m match\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[{AGE_STYLE}m{AGE}\x1b[0m\x1b[38;2;74;78;84m \xc2\xb7 \x1b[0m\x1b[38;2;79;158;134mc0000004\x1b[0m\x1b[38;2;100;106;112m-0000-4000-8000-00\xe2\x80\xa6\x1b[0m\n\n\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[1;38;2;230;232;235mcaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafve\x1b[0m\n  \x1b[38;2;92;200;168m/tmp/sea\xe2\x80\xa6endmen'; got: b'\xe2\x96\x8e cafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88vecafe\xcc\x81 re\xcc\x81sume\xcc\x81 nai\xcc\x88ve\n  /tmp/sea\xe2\x80\xa6endment \xc2\xb7 claude \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 c0000004-0000-4000-8000-00\xe2\x80\xa6\n\n\xe2\x96\x8e caf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafvecaf\xc3\xa9 r\xc3\xa9sum\xc3\xa9 na\xc3\xafve\n  /tmp/sea\xe2\x80\xa6endment \xc2\xb7 claude \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 c0000004-0000-4000-8000-00\xe2\x80\xa6\n\n2 sessions  \xc2\xb7  newest first\n'.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_characterized_legacy_bytes[amendment:normalization-title-panel-52] _
+tests/test_search_command_contract.py:337: in test_search_journey_matches_characterized_legacy_bytes
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected characterized stdout bytes for normalization-title-panel-52. Expected: b'\x1b[38;2;92;200;168m\xe2\x95\xad\xe2\x94\x80\x1b[0m\x1b[38;2;92;200;168m \x1b[0m\x1b[38;2;92;200;168m\xe2\x96\x8e \x1b[0m\x1b[1;38;2;230;232;235mcafe\xcc\x81 r\xe2\x80\xa6\x1b[0m\x1b[38;2;74;78;84m  \xc2\xb7  \x1b[0m\x1b[38;2;79;158;134mc0000004\x1b[0m\x1b[38;2;100;106;112m-0000-4000-8000-00000000\xe2\x80\xa6\x1b[0m\x1b[38;2;92;200;168m\xe2\x94\x80\xe2\x95\xae\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[1;38;2;29;31;35;48;2;113;185;244m User \x1b[0m\x1b[38;2;100;106;112m  \xc2\xb7  c0000004  \xc2\xb7  #1  \xc2\xb7  August 20th, \x1b[0m     \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m \x1b[38;2;100;106;112m13:05\x1b[0m                                            \x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m\n\x1b[38;2;92;200;168m\xe2\x94\x82\x1b[0m                                     '; got: b'\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e cafe\xcc\x81 r\xe2\x80\xa6  \xc2\xb7  c0000004-0000-4000-8000-00000000\xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  c0000004  \xc2\xb7  #1  \xc2\xb7  August 20th,      \xe2\x94\x82\n\xe2\x94\x82 13:05                                            \xe2\x94\x82\n\xe2\x94\x82                                                  \xe2\x94\x82\n\xe2\x94\x82 Rendernorm nfd subject                           \xe2\x94\x82\n\xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xaf\n\xe2\x95\xad\xe2\x94\x80 \xe2\x96\x8e caf\xc3\xa9 r\xc3\xa9\xe2\x80\xa6  \xc2\xb7  c0000004-0000-4000-8000-0000000\xe2\x80\xa6\xe2\x94\x80\xe2\x95\xae\n\xe2\x94\x82  User   \xc2\xb7  c0000004  \xc2\xb7  #1  \xc2\xb7  August 20th,      \xe2\x94\x82\n\xe2\x94\x82 13:04   '.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:fb-posix-class-warning] _
+tests/test_search_command_contract.py:384: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stderr, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stderr for fb-posix-class-warning.
+E   assert b'FutureWarni... position 1\n' == b'{SEARCH_QUE...ern, flags)\n'
+E     
+E     At index 0 diff: b'F' != b'{'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:fb-posix-class-bare-warning] _
+tests/test_search_command_contract.py:384: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stderr, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stderr for fb-posix-class-bare-warning.
+E   assert b'FutureWarni... position 1\n' == b'{SEARCH_QUE...ern, flags)\n'
+E     
+E     At index 0 diff: b'F' != b'{'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:role-contradiction-warning] _
+tests/test_search_command_contract.py:384: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stderr, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stderr for role-contradiction-warning.
+E   assert b'Warning: `-...edle five".\n' == b'Warning: `-...edle five".\n'
+E     
+E     At index 76 diff: b'N' != b'\n'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:colored-list-fixed-width] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for colored-list-fixed-width.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:colored-matches-panels] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for colored-matches-panels.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:colored-full-panel] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for colored-full-panel.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:colored-hue-cycle-four-hits] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for colored-hue-cycle-four-hits.
+E   assert b"\xe2\x95\xa...xe2\x95\xaf\n" == b"\x1b[38;2;9...\xaf\x1b[0m\n"
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:colored-narrow-columns-80] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for colored-narrow-columns-80.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:colored-highlight-painting] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for colored-highlight-painting.
+E   assert b"\xe2\x95\xa...xe2\x95\xaf\n" == b"\x1b[38;2;9...\xaf\x1b[0m\n"
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:pager-engaged-real-less-piped] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for pager-engaged-real-less-piped.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-shell-96] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-shell-96.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-shell-60] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-shell-60.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-python-96] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-python-96.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-python-60] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-python-60.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-web-96] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-web-96.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-web-140] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-web-140.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-data-96] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-data-96.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-fence-data-60] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-fence-data-60.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-wrap-long-96] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-wrap-long-96.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-wrap-long-40] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-wrap-long-40.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-wide-glyphs-96] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-wide-glyphs-96.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:render-wide-glyphs-40] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for render-wide-glyphs-40.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:escape-incomplete-tag-colored] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for escape-incomplete-tag-colored.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:carriage-return-colored] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for carriage-return-colored.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:provider-column-single-provider] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for provider-column-single-provider.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[contract:provider-column-multi-provider] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for provider-column-multi-provider.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[amendment:lowercase-z-rendered-dates] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for lowercase-z-rendered-dates.
+E   assert b'\xe2\x94\x8...nmatches: 1\n' == b'\xe2\x94\x8...nmatches: 1\n'
+E     
+E     At index 881 diff: b'6' != b'4'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[amendment:normalization-title-elision-52] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for normalization-title-elision-52.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[amendment:normalization-title-elision-72] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for normalization-title-elision-72.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_matches_live_legacy_implementation[amendment:normalization-title-panel-52] _
+tests/test_search_command_contract.py:381: in test_search_journey_matches_live_legacy_implementation
+    assert _normalize(native.stdout, contract_home) == _normalize(
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on stdout for normalization-title-panel-52.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:fb-posix-class-warning] _
+tests/test_search_command_contract.py:455: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stderr, contract_home) == expected_stderr, (
+E   AssertionError: Expected identical stderr for fb-posix-class-warning with no legacy sibling.
+E   assert b'FutureWarni... position 1\n' == b'{SEARCH_QUE...ern, flags)\n'
+E     
+E     At index 0 diff: b'F' != b'{'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:fb-posix-class-bare-warning] _
+tests/test_search_command_contract.py:455: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stderr, contract_home) == expected_stderr, (
+E   AssertionError: Expected identical stderr for fb-posix-class-bare-warning with no legacy sibling.
+E   assert b'FutureWarni... position 1\n' == b'{SEARCH_QUE...ern, flags)\n'
+E     
+E     At index 0 diff: b'F' != b'{'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:role-contradiction-warning] _
+tests/test_search_command_contract.py:455: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stderr, contract_home) == expected_stderr, (
+E   AssertionError: Expected identical stderr for role-contradiction-warning with no legacy sibling.
+E   assert b'Warning: `-...edle five".\n' == b'Warning: `-...edle five".\n'
+E     
+E     At index 76 diff: b'N' != b'\n'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:colored-list-fixed-width] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for colored-list-fixed-width with no legacy sibling.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:colored-matches-panels] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for colored-matches-panels with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:colored-full-panel] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for colored-full-panel with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:colored-hue-cycle-four-hits] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for colored-hue-cycle-four-hits with no legacy sibling.
+E   assert b"\xe2\x95\xa...xe2\x95\xaf\n" == b"\x1b[38;2;9...\xaf\x1b[0m\n"
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:colored-narrow-columns-80] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for colored-narrow-columns-80 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:colored-highlight-painting] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for colored-highlight-painting with no legacy sibling.
+E   assert b"\xe2\x95\xa...xe2\x95\xaf\n" == b"\x1b[38;2;9...\xaf\x1b[0m\n"
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:pager-engaged-real-less-piped] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for pager-engaged-real-less-piped with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-shell-96] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-shell-96 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-shell-60] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-shell-60 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-python-96] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-python-96 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-python-60] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-python-60 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-web-96] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-web-96 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-web-140] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-web-140 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-data-96] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-data-96 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-fence-data-60] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-fence-data-60 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-wrap-long-96] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-wrap-long-96 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-wrap-long-40] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-wrap-long-40 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-wide-glyphs-96] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-wide-glyphs-96 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:render-wide-glyphs-40] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for render-wide-glyphs-40 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:escape-incomplete-tag-colored] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for escape-incomplete-tag-colored with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:carriage-return-colored] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for carriage-return-colored with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:provider-column-single-provider] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for provider-column-single-provider with no legacy sibling.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[contract:provider-column-multi-provider] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for provider-column-multi-provider with no legacy sibling.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[amendment:lowercase-z-rendered-dates] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for lowercase-z-rendered-dates with no legacy sibling.
+E   assert b'\xe2\x94\x8...nmatches: 1\n' == b'\xe2\x94\x8...nmatches: 1\n'
+E     
+E     At index 881 diff: b'6' != b'4'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[amendment:normalization-title-elision-52] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for normalization-title-elision-52 with no legacy sibling.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[amendment:normalization-title-elision-72] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for normalization-title-elision-72 with no legacy sibling.
+E   assert b'\xe2\x96\x8...ewest first\n' == b'\x1b[38;2;9...irst\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_ test_search_journey_needs_no_private_legacy_entry[amendment:normalization-title-panel-52] _
+tests/test_search_command_contract.py:452: in test_search_journey_needs_no_private_legacy_entry
+    assert _normalize(completed.stdout, contract_home) == expected_stdout, (
+E   AssertionError: Expected identical stdout for normalization-title-panel-52 with no legacy sibling.
+E   assert b'\xe2\x95\xa...xe2\x95\xaf\n' == b'\x1b[38;2;9...\xaf\x1b[0m\n'
+E     
+E     At index 0 diff: b'\xe2' != b'\x1b'
+E     Use -v to get more diff
+_______________ test_generated_patterns_select_the_same_sessions _______________
+tests/test_search_command_contract.py:575: in test_generated_patterns_select_the_same_sessions
+    assert not divergences, (
+E   AssertionError: Expected `ch search` and `ch-legacy search` to agree on every generated pattern. 23 of 60 diverged: ["'\\\\n??' at 52 columns", "'é' at 110 columns", "'[a-z]+' at 52 columns", "'\\\\s{,2}' at 52 columns", "'[a-]*?' at 96 columns", "'[[:alpha:]]{2,}|a{, 2}' at 96 columns", "'\\\\N{BULLET}*?' at 140 columns", "'[]a]{' at 96 columns", "'ß*?|中{,2}' at 52 columns", "'[a-]++' at 96 columns"].
+E   assert not ["'\\\\n??' at 52 columns", "'é' at 110 columns", "'[a-z]+' at 52 columns", "'\\\\s{,2}' at 52 columns", "'[a-]*?' at 96 columns", "'[[:alpha:]]{2,}|a{, 2}' at 96 columns", ...]
+_____________________ test_a_closed_reader_stops_the_scan ______________________
+tests/test_search_command_contract.py:922: in test_a_closed_reader_stops_the_scan
+    assert full_elapsed > 0.4, (
+E   AssertionError: Expected the full scan to take long enough to measure. It took 153 ms. Raise EARLY_CLOSE_SESSION_COUNT.
+E   assert 0.15261599991936237 > 0.4
+____________ test_search_age_token_and_style_track_the_clock[hours] ____________
+tests/test_search_command_contract.py:1160: in test_search_age_token_and_style_track_the_clock
+    assert expected_style in completed.stdout, (
+E   AssertionError: Expected the colored list row to style an age of 3:00:00 with b'\x1b[38;2;169;174;180m'. Got: b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 3h \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E   assert b'\x1b[38;2;169;174;180m' in b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 3h \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E    +  where b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 3h \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n' = CompletedProcess(args=['/private/var/folders/28/9x0yw2vs4bzd8s3p7pyfs1kc0000gn/T/pytest-of-giladbarnea/pytest-267/cont.../ch-age-contract \xc2\xb7 1 match \xc2\xb7 3h \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n', stderr=b'').stdout
+____________ test_search_age_token_and_style_track_the_clock[days] _____________
+tests/test_search_command_contract.py:1160: in test_search_age_token_and_style_track_the_clock
+    assert expected_style in completed.stdout, (
+E   AssertionError: Expected the colored list row to style an age of 3 days, 0:00:00 with b'\x1b[38;2;135;140;146m'. Got: b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 3d \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E   assert b'\x1b[38;2;135;140;146m' in b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 3d \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E    +  where b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 3d \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n' = CompletedProcess(args=['/private/var/folders/28/9x0yw2vs4bzd8s3p7pyfs1kc0000gn/T/pytest-of-giladbarnea/pytest-267/cont.../ch-age-contract \xc2\xb7 1 match \xc2\xb7 3d \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n', stderr=b'').stdout
+____________ test_search_age_token_and_style_track_the_clock[weeks] ____________
+tests/test_search_command_contract.py:1160: in test_search_age_token_and_style_track_the_clock
+    assert expected_style in completed.stdout, (
+E   AssertionError: Expected the colored list row to style an age of 12 days, 0:00:00 with b'\x1b[38;2;107;112;118m'. Got: b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E   assert b'\x1b[38;2;107;112;118m' in b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E    +  where b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n' = CompletedProcess(args=['/private/var/folders/28/9x0yw2vs4bzd8s3p7pyfs1kc0000gn/T/pytest-of-giladbarnea/pytest-267/cont.../ch-age-contract \xc2\xb7 1 match \xc2\xb7 1w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n', stderr=b'').stdout
+__________ test_search_age_token_and_style_track_the_clock[two-weeks] __________
+tests/test_search_command_contract.py:1160: in test_search_age_token_and_style_track_the_clock
+    assert expected_style in completed.stdout, (
+E   AssertionError: Expected the colored list row to style an age of 14 days, 0:00:00 with b'\x1b[38;2;107;112;118m'. Got: b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 2w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E   assert b'\x1b[38;2;107;112;118m' in b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 2w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E    +  where b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 2w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n' = CompletedProcess(args=['/private/var/folders/28/9x0yw2vs4bzd8s3p7pyfs1kc0000gn/T/pytest-of-giladbarnea/pytest-267/cont.../ch-age-contract \xc2\xb7 1 match \xc2\xb7 2w \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n', stderr=b'').stdout
+__________ test_search_age_token_and_style_track_the_clock[one-month] __________
+tests/test_search_command_contract.py:1160: in test_search_age_token_and_style_track_the_clock
+    assert expected_style in completed.stdout, (
+E   AssertionError: Expected the colored list row to style an age of 31 days, 0:00:00 with b'\x1b[38;2;86;91;97m'. Got: b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E   assert b'\x1b[38;2;86;91;97m' in b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E    +  where b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n' = CompletedProcess(args=['/private/var/folders/28/9x0yw2vs4bzd8s3p7pyfs1kc0000gn/T/pytest-of-giladbarnea/pytest-267/cont...ch-age-contract \xc2\xb7 1 match \xc2\xb7 1mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n', stderr=b'').stdout
+________ test_search_age_token_and_style_track_the_clock[twelve-months] ________
+tests/test_search_command_contract.py:1160: in test_search_age_token_and_style_track_the_clock
+    assert expected_style in completed.stdout, (
+E   AssertionError: Expected the colored list row to style an age of 362 days, 0:00:00 with b'\x1b[38;2;86;91;97m'. Got: b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 12mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E   assert b'\x1b[38;2;86;91;97m' in b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 12mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E    +  where b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 12mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n' = CompletedProcess(args=['/private/var/folders/28/9x0yw2vs4bzd8s3p7pyfs1kc0000gn/T/pytest-of-giladbarnea/pytest-267/cont...h-age-contract \xc2\xb7 1 match \xc2\xb7 12mo \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n', stderr=b'').stdout
+____________ test_search_age_token_and_style_track_the_clock[years] ____________
+tests/test_search_command_contract.py:1160: in test_search_age_token_and_style_track_the_clock
+    assert expected_style in completed.stdout, (
+E   AssertionError: Expected the colored list row to style an age of 400 days, 0:00:00 with b'\x1b[38;2;86;91;97m'. Got: b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1y \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E   assert b'\x1b[38;2;86;91;97m' in b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1y \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n'
+E    +  where b'\xe2\x96\x8e agecontract body\n  /tmp/ch-age-contract \xc2\xb7 1 match \xc2\xb7 1y \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n' = CompletedProcess(args=['/private/var/folders/28/9x0yw2vs4bzd8s3p7pyfs1kc0000gn/T/pytest-of-giladbarnea/pytest-267/cont.../ch-age-contract \xc2\xb7 1 match \xc2\xb7 1y \xc2\xb7 age-session\n\n1 session  \xc2\xb7  newest first\n', stderr=b'').stdout
+____________ test_pattern_selects_the_frozen_sessions[generated:0] _____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:0 ('\\n??'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/sea…ontract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a…[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/sea…ontract · claude · 1 match · now · a1a1a…
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (181 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:6] _____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:6 ('é'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ combining ...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mcombining éééééééééééééééé[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa14[0m
+E     + ▎ combining éééééééééééééééé
+E     +   /tmp/search-contract · claude · 1 match · 1w · a1a1a1a1-1111-4111-8111-aaaaaaaaaa14
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mpi café escaped é letter[0m...
+E     
+E     ...Full output truncated (21 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:8] _____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:8 ('[a-z]+'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/sea…ontract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a…[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/sea…ontract · claude · 1 match · now · a1a1a…
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (181 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:12] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:12 ('\\s{,2}'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/sea…ontract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a…[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/sea…ontract · claude · 1 match · now · a1a1a…
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (181 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:13] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:13 ('[a-]*?'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:17] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:17 ('[[:alpha:]]{2,}|a{, 2}'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ literal pa...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mliteral patterns below:[0m
+E     -   [38;2;92;200;168m/tmp/search-contract/invalid[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134m44444444[0m[38;2;100;106;112m-4444-4444-8444-444444444444[0m
+E     + ▎ literal patterns below:
+E     +   /tmp/search-contract/invalid · claude · 1 match · 1w · 44444444-4444-4444-8444-444444444444
+E       
+E     - [38;2;126;131;137m1 session[0m[38;2;74;78;84m  ·  newest first[0m
+E     + 1 session  ·  newest first
+____________ test_pattern_selects_the_frozen_sessions[generated:19] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:19 ('\\N{BULLET}*?'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:25] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:25 ('[]a]{'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ literal pa...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mliteral patterns below:[0m
+E     -   [38;2;92;200;168m/tmp/search-contract/invalid[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134m44444444[0m[38;2;100;106;112m-4444-4444-8444-444444444444[0m
+E     + ▎ literal patterns below:
+E     +   /tmp/search-contract/invalid · claude · 1 match · 1w · 44444444-4444-4444-8444-444444444444
+E       
+E     - [38;2;126;131;137m1 session[0m[38;2;74;78;84m  ·  newest first[0m
+E     + 1 session  ·  newest first
+____________ test_pattern_selects_the_frozen_sessions[generated:28] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:28 ('ß*?|中{,2}'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/sea…ontract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a…[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/sea…ontract · claude · 1 match · now · a1a1a…
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (181 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:29] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:29 ('[a-]++'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (164 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:30] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:30 ('Z?|\\.??'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:31] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:31 ('Z*'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:33] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:33 ('9*?'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:37] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:37 ('_*'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:38] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:38 ('(?x:$)'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:41] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:41 ('[A-Za-z0-9_]?'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:43] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:43 ('ß?+'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:50] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:50 ('[a\\]]?+'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:51] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:51 ('[a&&b]'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (179 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:52] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:52 ('\\x41{2}'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderback...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderbacktrack aaaaaaaaaaaaaa tail[0m
+E     -   [38;2;92;200;168m/tmp/sea…ontract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1…[0m
+E     + ▎ Renderbacktrack aaaaaaaaaaaaaa tail
+E     +   /tmp/sea…ontract · claude · 1 match · 1w · a1a1a1…
+E       
+E     - [38;2;126;131;137m1 session[0m[38;2;74;78;84m  ·  newest first[0m
+E     + 1 session  ·  newest first
+____________ test_pattern_selects_the_frozen_sessions[generated:54] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:54 ('\\S{,2}'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (184 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:56] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:56 ('[abc]+?'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/sea…ontract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a…[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/sea…ontract · claude · 1 match · now · a1a1a…
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (181 lines hidden), use '-vv' to show
+____________ test_pattern_selects_the_frozen_sessions[generated:58] ____________
+tests/test_search_frozen_differentials.py:69: in test_pattern_selects_the_frozen_sessions
+    assert actual == row["stdout"], (
+E   AssertionError: Expected the frozen session selection for generated:58 ('[[:foo:]]{,2}'). A validity disagreement flips a pattern between regex and literal with no error on either side, and a different session set is its only visible trace.
+E   assert '▎ Renderctrl...ewest first\n' == '\x1b[38;2;92...irst\x1b[0m\n'
+E     
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRenderctrl separator line[0m
+E     -   [38;2;92;200;168m/tmp/search-contract[0m[38;2;74;78;84m · [0m[38;2;126;131;137mclaude[0m[38;2;74;78;84m · [0m[1;38;2;195;199;205m1[0m[38;2;126;131;137m match[0m[38;2;74;78;84m · [0m[{AGE_STYLE}m{AGE}[0m[38;2;74;78;84m · [0m[38;2;79;158;134ma1a1a1a1[0m[38;2;100;106;112m-1111-4111-8111-aaaaaaaaaa12[0m
+E     + ▎ Renderctrl separator line
+E     +   /tmp/search-contract · claude · 1 match · now · a1a1a1a1-1111-4111-8111-aaaaaaaaaa12
+E       
+E     - [38;2;92;200;168m▎ [0m[3;38;2;154;160;166mRendernan second line[0m...
+E     
+E     ...Full output truncated (169 lines hidden), use '-vv' to show
+=========================== short test summary info ============================
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:fb-posix-class-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:fb-posix-class-bare-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:role-contradiction-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:colored-list-fixed-width]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:colored-matches-panels]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:colored-full-panel]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:colored-hue-cycle-four-hits]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:colored-narrow-columns-80]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:colored-highlight-painting]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:pager-engaged-real-less-piped]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-shell-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-shell-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-python-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-python-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-web-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-web-140]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-data-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-fence-data-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-wrap-long-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-wrap-long-40]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-wide-glyphs-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:render-wide-glyphs-40]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:escape-incomplete-tag-colored]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:carriage-return-colored]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:provider-column-single-provider]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[contract:provider-column-multi-provider]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[amendment:lowercase-z-rendered-dates]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[amendment:normalization-title-elision-52]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[amendment:normalization-title-elision-72]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_characterized_legacy_bytes[amendment:normalization-title-panel-52]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:fb-posix-class-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:fb-posix-class-bare-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:role-contradiction-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:colored-list-fixed-width]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:colored-matches-panels]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:colored-full-panel]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:colored-hue-cycle-four-hits]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:colored-narrow-columns-80]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:colored-highlight-painting]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:pager-engaged-real-less-piped]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-shell-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-shell-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-python-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-python-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-web-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-web-140]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-data-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-fence-data-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-wrap-long-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-wrap-long-40]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-wide-glyphs-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:render-wide-glyphs-40]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:escape-incomplete-tag-colored]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:carriage-return-colored]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:provider-column-single-provider]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[contract:provider-column-multi-provider]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[amendment:lowercase-z-rendered-dates]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[amendment:normalization-title-elision-52]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[amendment:normalization-title-elision-72]
+FAILED tests/test_search_command_contract.py::test_search_journey_matches_live_legacy_implementation[amendment:normalization-title-panel-52]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:fb-posix-class-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:fb-posix-class-bare-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:role-contradiction-warning]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:colored-list-fixed-width]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:colored-matches-panels]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:colored-full-panel]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:colored-hue-cycle-four-hits]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:colored-narrow-columns-80]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:colored-highlight-painting]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:pager-engaged-real-less-piped]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-shell-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-shell-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-python-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-python-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-web-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-web-140]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-data-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-fence-data-60]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-wrap-long-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-wrap-long-40]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-wide-glyphs-96]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:render-wide-glyphs-40]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:escape-incomplete-tag-colored]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:carriage-return-colored]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:provider-column-single-provider]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[contract:provider-column-multi-provider]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[amendment:lowercase-z-rendered-dates]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[amendment:normalization-title-elision-52]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[amendment:normalization-title-elision-72]
+FAILED tests/test_search_command_contract.py::test_search_journey_needs_no_private_legacy_entry[amendment:normalization-title-panel-52]
+FAILED tests/test_search_command_contract.py::test_generated_patterns_select_the_same_sessions
+FAILED tests/test_search_command_contract.py::test_a_closed_reader_stops_the_scan
+FAILED tests/test_search_command_contract.py::test_search_age_token_and_style_track_the_clock[hours]
+FAILED tests/test_search_command_contract.py::test_search_age_token_and_style_track_the_clock[days]
+FAILED tests/test_search_command_contract.py::test_search_age_token_and_style_track_the_clock[weeks]
+FAILED tests/test_search_command_contract.py::test_search_age_token_and_style_track_the_clock[two-weeks]
+FAILED tests/test_search_command_contract.py::test_search_age_token_and_style_track_the_clock[one-month]
+FAILED tests/test_search_command_contract.py::test_search_age_token_and_style_track_the_clock[twelve-months]
+FAILED tests/test_search_command_contract.py::test_search_age_token_and_style_track_the_clock[years]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:0]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:6]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:8]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:12]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:13]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:17]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:19]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:25]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:28]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:29]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:30]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:31]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:33]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:37]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:38]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:41]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:43]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:50]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:51]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:52]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:54]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:56]
+FAILED tests/test_search_frozen_differentials.py::test_pattern_selects_the_frozen_sessions[generated:58]
+pytest exit=1

@@ -1,0 +1,7 @@
+[package]
+name = "branchcheck"
+version = "0.0.0"
+edition = "2024"
+[dependencies]
+chats-native = { path = "/Users/giladbarnea/dev/chats", default-features = false }
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }

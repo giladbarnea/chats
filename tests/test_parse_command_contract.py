@@ -32,7 +32,11 @@ ROUND_TRIP_MANIFEST = json.loads(
 )["fixtures"]
 CHECKOUT_INSTALLED_CH = PROJECT_ROOT / ".venv" / "bin" / "ch"
 CHECKOUT_BUILT_CH = PROJECT_ROOT / "target" / "release" / "ch"
-HEAD_ABSENT_LAUNCHER_MARKERS = (b"logicalParentUuid",)
+# **Imported, never copied.** This file held a second, older `_reject_foreign_launcher`
+# with the forbidden-string premise — and when that premise died with the cutover, the
+# fix landed in the other file only and this one rejected every correctly built launcher.
+# **Two functions, same name, two files, one fixed.** One authority now.
+from test_search_command_contract import _reject_foreign_launcher  # noqa: E402
 MACH_O_MAGICS = {
     b"\xca\xfe\xba\xbe",
     b"\xcf\xfa\xed\xfe",
@@ -78,21 +82,6 @@ def _representative_round_trip_row() -> dict[str, object]:
         row
         for row in ROUND_TRIP_MANIFEST
         if row["provider_adapter"] == "codex" and row["configuration"] == "with-tools"
-    )
-
-
-def _reject_foreign_launcher(launcher: Path) -> None:
-    if not launcher.is_file():
-        return
-    launcher_bytes = launcher.read_bytes()
-    found = [
-        marker.decode()
-        for marker in HEAD_ABSENT_LAUNCHER_MARKERS
-        if marker in launcher_bytes
-    ]
-    assert not found, (
-        f"Launcher provenance cannot be proven fresh: {launcher} embeds HEAD-absent strings {found}. "
-        "A stale or foreign artifact occupies the checkout build path."
     )
 
 
@@ -418,11 +407,6 @@ def test_uncompleted_public_journeys_keep_exact_legacy_behavior(
             "legacy-default-parse",
         ),
         (
-            "search",
-            ["search", "I.ll export the current", "--color", "never", "--no-metadata"],
-            "legacy-search",
-        ),
-        (
             "legacy-name",
             ["name", "a6f25fb8-e7a8-4411-b378-ad0f20e552d1", "Contract Name", "-n"],
             "legacy-name",
@@ -469,6 +453,47 @@ def test_uncompleted_public_journeys_keep_exact_legacy_behavior(
 _ANSI_SEQUENCE = re.compile(r"\x1b\[[0-9;]*m")
 _MISSING_INPUT_PATH = "/nonexistent/" + "/".join(["deeply_nested_directory"] * 4) + "/input.json"
 
+
+
+def test_completed_search_journey_is_native_with_no_python_authority(
+    tmp_path: Path,
+    checkout_built_ch: Path,
+) -> None:
+    """`search` moved from the uncompleted set to the completed set at cutover.
+
+    It was listed as uncompleted and asserted to keep loading a Python
+    interpreter. That assertion started failing because the cutover succeeded —
+    so the case **moves** rather than being deleted. Deleting it would drop an
+    assertion instead of relocating one, and this is the assertion the charter
+    actually asked for: search bypasses Python.
+
+    The loader trace is meaningful here in a way it is not for a legacy journey.
+    A legacy journey `exec`s into a hardened-runtime interpreter, and macOS
+    purges `DYLD_*` across that exec, so the trace stops at the handoff and shows
+    nothing. A completed journey does the work in this process, so what it loaded
+    is what the trace lists.
+    """
+    session_path = _controlled_legacy_session(tmp_path)
+    completed = _run_ch(
+        checkout_built_ch,
+        ["search", "I.ll export the current", "--color", "never", "--no-metadata"],
+        home=session_path.parent.parent.parent.parent,
+        loader_trace=True,
+    )
+    loader_trace = completed.stderr.lower()
+
+    assert completed.returncode in (0, 1), (
+        "Expected the completed search journey to run to a search outcome. "
+        f"Got exit {completed.returncode}."
+    )
+    assert b"python" not in loader_trace, (
+        "Expected completed search to load no Python interpreter. Loaded: "
+        f"{[line for line in completed.stderr.splitlines() if b'python' in line.lower()][:5]!r}."
+    )
+    assert b"_native" not in loader_trace and b"abi3" not in loader_trace, (
+        "Expected completed search to bypass the legacy PyO3 extension authority. "
+        f"Entries: {[line for line in completed.stderr.splitlines() if b'abi3' in line.lower()][:5]!r}."
+    )
 
 def _run_attached_to_terminal(
     arguments: list[str],

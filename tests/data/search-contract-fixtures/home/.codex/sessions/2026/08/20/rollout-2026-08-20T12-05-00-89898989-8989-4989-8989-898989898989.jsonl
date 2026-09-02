@@ -1,0 +1,2 @@
+{"timestamp":"2026-08-20T08:05:00.000Z","type":"session_meta","payload":{"id":"89898989-8989-4989-8989-898989898989","cwd":"/tmp/search-contract/codexpreamble","thread_source":"user"}}
+{"timestamp":"2026-08-20T08:06:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"# AGENTS.md instructions for /tmp/proj\npreamblesecret noise"}]}}

@@ -1,0 +1,24 @@
+───────────────────────────── c0000003-0000-4000-8000-000000000003 ─────────────────────────────
+<user-message i="1" date="2026-08-20 13:03">
+## User
+
+Renderspace middle line has one 
+and a clean last line
+</user-message>
+
+───────────────────────────── c0000003-0000-4000-8000-000000000002 ─────────────────────────────
+<user-message i="1" date="2026-08-20 13:02">
+## User
+
+Renderspace body
+last line has two trailing spaces  
+</user-message>
+
+───────────────────────────── c0000003-0000-4000-8000-000000000001 ─────────────────────────────
+<user-message i="1" date="2026-08-20 13:01">
+## User
+
+Renderspace body
+last line has one trailing space
+</user-message>
+

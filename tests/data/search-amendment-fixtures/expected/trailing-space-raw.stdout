@@ -1,0 +1,21 @@
+Session c0000003-0000-4000-8000-000000000003
+============================================
+
+Renderspace middle line has one 
+and a clean last line
+
+---
+
+Session c0000003-0000-4000-8000-000000000002
+============================================
+
+Renderspace body
+last line has two trailing spaces
+
+---
+
+Session c0000003-0000-4000-8000-000000000001
+============================================
+
+Renderspace body
+last line has one trailing space

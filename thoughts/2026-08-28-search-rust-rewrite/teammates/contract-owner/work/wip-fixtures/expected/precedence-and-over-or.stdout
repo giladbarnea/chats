@@ -1,0 +1,15 @@
+───────────────────────────── 22222222-2222-4222-8222-222222222222 ─────────────────────────────
+<user-message i="1" date="2026-08-20 14:00">
+## User
+
+red fox running
+</user-message>
+
+---
+
+<assistant-response i="2" model="sonnet-4-6" date="2026-08-20 14:01">
+## Assistant
+
+quick dog resting
+</assistant-response>
+
