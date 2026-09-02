@@ -10,9 +10,12 @@ session token budget.** Not derived.
 
 ## Status in one line
 
-**ALL FIVE ITEMS ARE DONE.** The gate is wired, all 94 pass, `search-firstmate` made
-checkpoint `e74f5a0`, **the Python search authority is deleted**, and the tree is
-green and handed to `g5-runner`.
+**ALL FIVE ITEMS ARE DONE, AND SO ARE THE FOUR CLOSING ITEMS AFTER THEM.** The gate
+is wired, all 94 pass, `search-firstmate` made checkpoint `e74f5a0`, **the Python
+search authority is deleted and committed at `ebd67ba`**, `g5-runner`'s proof is
+green, and the two dead reference arms in `performance_gates.py` are retired.
+**Two sections at the end supersede the plan above: `THE DELETION IS DONE` and
+`CLOSING ITEMS`.**
 
 > ## ⚠ HOW TO READ THIS FILE
 >
@@ -453,3 +456,78 @@ Seven on the divergence authority (A–G above). Then:
    A `final-change-log.md` item. **The seven `//!` provenance headers in `rust/`
    that name `commands/search.py` should STAY** — they name where the port came
    from, and that file lives at `67d6053`.
+
+---
+
+# ▶ CLOSING ITEMS, after `ebd67ba`. 2026-09-02.
+
+**Four items from `search-firstmate` once `g5-runner`'s proof was green. All done.**
+`1,963 passed, 3 skipped, 0 failed` and `36 of 36` journeys after them.
+
+## 1 — both reference arms retired, and the second one was the dangerous one
+
+**The brief named the memory parity arm. The measurement widened it to two.**
+
+    .venv/bin/ch-legacy search zqxjvwmkbphfgd -ll
+      → "Ambiguous conversation/session identifier 'search' matches multiple
+         sessions", exit 0, **14.9 seconds**
+
+**The reference resolves the word `search` as a session identifier and scans the
+pool.** So a reference arm measures session resolution.
+
+**⚠ THE TWO ARMS FAILED IN OPPOSITE AND UNEQUALLY VISIBLE WAYS.** The memory parity
+arm went **RED** — its control caught the invalid measurement, which is why nobody
+filed a 576-vs-65 MB regression. **The `--falsify` arm would have gone GREEN:** it
+requires every shape to exceed its ceiling against the reference, and a
+14.9-second session resolution exceeds all six. ***A gate passing for a reason
+unrelated to what it measures is worse than one going red, because nothing draws
+anyone to it.***
+
+**Nothing was lost.** `verify_ceilings_discriminate` already asserts the property
+`--falsify` existed to catch, before anything is measured. **Both flags now refuse
+by name with that measurement in the message.** `MEMORY_PARITY_TOLERANCE` went with
+the comparison it parameterised; `memory_delta` is **kept unreachable beside the
++576/+451 MB figures it produced**, with both directions stated, the same treatment
+`interleaved_medians` already had.
+
+**Native-only and green:** six time ceilings and three memory budgets, all PASS on
+the digest-pinned corpus. **The named per-session-accumulation follow-up is pointed
+at from where the retired gate was.**
+
+## 2 — the stamp is derived, and that is what stops it going stale again
+
+`performance_gates.py` hardcoded `HEAD 8cb4c5f, oracle route digest dd6ab701…` —
+**a revision predating this mission, naming a route that no longer exists.**
+**`oracle_stamp()` now derives it from `tests/oracle_provenance.py`.** *The same
+fault was fixed in `frozen_reference.json` the day before by making the instrument
+derive the field, and it survived here because nothing derived it here.* It now
+prints `revision 67d60532bb0d … (deleted 2026-09-02; re-derivable)`. **Two lazy
+`sys.path` inserts became one helper while I was in there.**
+
+## 3 — two comments that named a deleted file in the present tense
+
+`test_search_command_contract.py`. **The load-bearing one claimed *"Neither suite
+can quietly stop meaning anything without the other going red"* — one of the two
+suites is gone**, so the sentence named one survivor of a pair.
+
+**Corrected to what is true, and it is narrower.**
+`_assert_deliberate_divergence_still_differs` **still runs at two call sites against
+the STORED bytes**, so an exemption cannot become vacuous in either direction **for
+the cases the list names**. ***What is gone is completeness: nothing can prove the
+list is whole any more.***
+
+## 4 — the rust tree digest, and why two seats read it differently
+
+**Mine is `sha256` over the concatenated bytes of `rust/**/*.rs` in sorted path
+order, with NO path names and NO separators** — 43 files, `7b3267a6a22e1f7c`. It is
+`probes/digests.py::rust_tree_digest`, and it reproduces `parity-finisher`'s figure
+exactly, which is how I know it is their recipe.
+
+**`g5-runner`'s `63a34f4f26451d0c` is a different recipe, not a different tree.** I
+tried nine variants — paths included, NUL separators, trailing NULs, repo-relative
+paths, all files under `rust/` rather than `*.rs`, plus `Cargo.toml`, plus
+`Cargo.lock`, newline separators — **and none yields theirs.** So it covers
+something my glob does not.
+
+***A digest without its recipe is not an identity.*** Both claims hold regardless:
+`git diff HEAD -- rust` is empty.

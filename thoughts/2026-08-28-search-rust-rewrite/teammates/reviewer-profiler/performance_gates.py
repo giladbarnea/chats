@@ -12,13 +12,14 @@ derived from a *different build*; absolutes once the deletion was next, because
 the block above `ABSOLUTE_TIME_GATES` for the digest that makes absolutes
 admissible here.
 
-    performance_gates.py SUBJECT --reference ROUTE [--falsify]
+    performance_gates.py SUBJECT
 
-`--falsify` runs the whole set against the reference route and requires every
-shape to fail. A budget the reference could meet is not a gate. **That property is
-now asserted rather than hoped for**: `verify_ceilings_discriminate` refuses to
-run if any ceiling sits at or above the Python figure recorded for its shape, so
-the hole `--falsify` exists to catch cannot open in the first place.
+⚠ **`--reference` and `--falsify` were RETIRED on 2026-09-02** and the gate refuses
+them by name. They consumed the Python route, which is deleted. **The property
+`--falsify` existed to check is asserted instead** — `verify_ceilings_discriminate`
+refuses to run if any ceiling sits at or above the Python figure recorded for its
+shape, before anything is measured, so the hole cannot open in the first place.
+The retirement and its measurement are recorded where `run_memory_parity` was.
 
 **The subject must be a native binary and the gate refuses otherwise.** See
 `verify_native_subject`: a launcher that delegates to the Python route would make
@@ -41,8 +42,36 @@ from pathlib import Path
 CORPUS = Path.home() / ".cache" / "ch-search-corpus" / "v1"
 PROBE = Path.home() / ".cache" / "ch-search-corpus" / "pi-bigline"
 CORPUS_IDENTITY = "de693c35ad4700c5e8c36d453a13460936b6b7b28d453f0866c8b5c4ab284965"
-ORACLE_STAMP = "HEAD 8cb4c5f, oracle route digest sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0 (tests/oracle_digest.py::oracle_route_digest)"
 REPETITIONS = 5
+REPOSITORY = Path(__file__).resolve().parents[4]
+
+
+def _tests_on_path() -> None:
+    """Put the repository's `tests/` on `sys.path`. Two callers, one insert."""
+    if str(REPOSITORY / "tests") not in sys.path:
+        sys.path.insert(0, str(REPOSITORY / "tests"))
+
+
+def oracle_stamp() -> str:
+    """The route the historical Python column came from — **derived, not written here.**
+
+    ⚠ **This was a hardcoded string and it went stale the moment the route moved:**
+    `HEAD 8cb4c5f, oracle route digest sha256:dd6ab701…`, naming a revision that
+    predates this whole mission and a route that no longer exists. **The same fault
+    was corrected in `frozen_reference.json` the day before by making the
+    instrument derive the field, and it survived in this file because nothing
+    derived it here.** *A field nobody derives is a field nobody re-derives.*
+
+    `tests/oracle_provenance.py` is the one authority for that route's identity now.
+    """
+    _tests_on_path()
+    import oracle_provenance
+
+    return (
+        f"revision {oracle_provenance.ORACLE_ROUTE_REVISION}, "
+        f"oracle route digest {oracle_provenance.ORACLE_ROUTE_DIGEST} "
+        "(deleted 2026-09-02; re-derivable — see tests/data/oracle-route-inputs/)"
+    )
 
 # The six time gates, as ABSOLUTES on the frozen corpus.
 # Measured by `g5-runner` 2026-09-01T19:28-19:31Z **while both routes still
@@ -159,9 +188,11 @@ def verify_ceilings_discriminate() -> None:
     The python column is already in the table as evidence, **so this assertion is
     free - it converts a discipline into a mechanism.**
 
-    It also restores `--falsify`'s meaning for absolutes: the whole set run against
-    the reference route can only fail on every shape while every ceiling sits below
-    what that route costs.
+    ⚠ **It used to be described as *restoring `--falsify`'s meaning*. `--falsify` was
+    retired on 2026-09-02 with the route it consumed, so this is no longer a
+    companion to that arm — it is the whole of it.** The property is asserted here,
+    before anything is measured, rather than demonstrated afterwards against a
+    reference that no longer exists.
     """
     indiscriminate = [
         f"  {name}: ceiling {ceiling}ms is not below Python's {python}ms"
@@ -182,7 +213,8 @@ MEMORY_GATES = {
     "colored matches": (["search", "the", "--color", "always", "--no-paging", "--no-metadata"], 900),
 }
 
-MEMORY_PARITY_TOLERANCE = 1.05
+# **`MEMORY_PARITY_TOLERANCE` was deleted with the comparison it parameterised.** A
+# threshold with no consumer is a number a reader will try to interpret.
 ABSENT_LITERAL = ["search", "zqxjvwmkbphfgd", "-ll"]
 ARMS = {"agent-bearing": ("large", "small"), "control (claude)": ("claude-large", "claude-small")}
 
@@ -205,7 +237,7 @@ def verify_corpus() -> None:
             "The budgets came from a different corpus; re-baseline before trusting them."
         )
     print(f"corpus  {manifest['files']} files, {manifest['bytes']:,} bytes, identity verified")
-    print(f"oracle  {ORACLE_STAMP}\n")
+    print(f"oracle  {oracle_stamp()}\n")
 
 
 def verify_native_subject(path: str) -> None:
@@ -303,8 +335,7 @@ def verify_subject_freshness(path: str) -> None:
     mtime — deliberately not added here, because a mtime test fails for reasons
     that have nothing to do with content and this file refuses rather than warns.
     """
-    repository = Path(__file__).resolve().parents[4]
-    sys.path.insert(0, str(repository / "tests"))
+    _tests_on_path()
     from test_search_command_contract import _reject_foreign_launcher
 
     _reject_foreign_launcher(Path(path))
@@ -381,6 +412,13 @@ def interleaved_medians(
     return statistics.median(subject_times), statistics.median(reference_times)
 
 
+# **Unreachable and KEPT, for the same reason as `interleaved_medians` above.** It
+# produced the +576 MB / +451 MB figures cited in the TIME ONLY block, and those
+# were taken while both routes existed. **It stays beside the numbers it produced.**
+# ⚠ **Do not wire it back to a reference route** — `ch-legacy` cannot search, so a
+# second arm would measure session resolution. **And do not read it as the successor
+# to the memory question:** the oversized-line probe is retired as the primary
+# instrument, and the named follow-up is per-session accumulation on the real corpus.
 def memory_delta(binary: str, arm: str) -> float:
     large_dir, small_dir = ARMS[arm]
     large = max(peak_megabytes(binary, ABSENT_LITERAL, PROBE / large_dir) for _ in range(2))
@@ -388,14 +426,15 @@ def memory_delta(binary: str, arm: str) -> float:
     return large - small
 
 
-def run_gates(subject: str, reference: str, *, expect_failure: bool) -> int:
-    unexpected = 0
+def run_gates(subject: str) -> int:
+    """Every shape must pass. **`expect_failure` is gone with the reference arm.**"""
+    failures = 0
     print(f"{'shape':32} {'measured':>10} {'gate':>11}  verdict")
 
     for name, (arguments, ceiling, python) in ABSOLUTE_TIME_GATES.items():
         measured = median_time(subject, arguments, CORPUS)
         ok = measured < ceiling
-        unexpected += 1 if ok == expect_failure else 0
+        failures += 0 if ok else 1
         print(
             f"{name:32} {measured:9.1f}ms {ceiling:8}ms  {'PASS' if ok else 'FAIL'}"
             f"   (python was {python}ms, historical evidence, not a denominator)"
@@ -405,60 +444,81 @@ def run_gates(subject: str, reference: str, *, expect_failure: bool) -> int:
     for name, (arguments, budget) in MEMORY_GATES.items():
         measured = max(peak_megabytes(subject, arguments, CORPUS) for _ in range(2))
         ok = measured < budget
-        unexpected += 1 if ok == expect_failure else 0
+        failures += 0 if ok else 1
         print(f"{name:32} {measured:9.0f}MB {budget:8}MB  {'PASS' if ok else 'FAIL'}")
 
     print()
-    print("FALSIFY: every shape had to fail" if expect_failure else "GATE: every shape had to pass")
-    if unexpected:
-        print(f"  {unexpected} shape(s) did not behave as required")
-    return unexpected
-
-
-def run_memory_parity(subject: str, reference: str) -> int:
-    print("\noversized-line memory parity, same window")
-    failures = 0
-    for arm in ARMS:
-        subject_delta = memory_delta(subject, arm)
-        reference_delta = memory_delta(reference, arm)
-        if arm.startswith("control"):
-            ok = abs(subject_delta) < 50 and abs(reference_delta) < 50
-            note = "control: both must stay near zero"
-        else:
-            ok = subject_delta <= reference_delta * MEMORY_PARITY_TOLERANCE
-            note = f"subject <= reference x{MEMORY_PARITY_TOLERANCE}"
-        failures += 0 if ok else 1
-        print(
-            f"  {arm:16} subject {subject_delta:+7.0f}MB  reference {reference_delta:+7.0f}MB  "
-            f"{'PASS' if ok else 'FAIL'}   ({note})"
-        )
+    print("GATE: every shape had to pass")
+    if failures:
+        print(f"  {failures} shape(s) did not behave as required")
     return failures
 
 
+# ── ⚠ RETIRED 2026-09-02: both arms that consumed a reference route ──────────
+#
+# `run_memory_parity` and the `--falsify` arm are gone. **They compared the subject
+# against `ch-legacy`, and `ch-legacy` can no longer search.** What it does with
+# `search zqxjvwmkbphfgd -ll` now was measured rather than assumed:
+#
+#   .venv/bin/ch-legacy search zqxjvwmkbphfgd -ll
+#     -> "Error: Ambiguous conversation/session identifier 'search' matches
+#        multiple sessions", exit 0, **14.9 seconds**
+#
+# It resolves the word `search` as a session identifier and scans the whole pool.
+# **So a reference arm measures session resolution, not a search route.**
+#
+# ⚠ **THE TWO ARMS FAILED IN OPPOSITE AND UNEQUALLY VISIBLE WAYS, and that is the
+# finding.** The memory parity arm went RED — its control caught the invalid
+# measurement, which is why nobody filed a 576-vs-65 MB regression. **The
+# `--falsify` arm would have gone GREEN:** it requires every shape to exceed its
+# ceiling against the reference, and a 14.9-second session resolution exceeds all
+# six. ***A gate passing for a reason unrelated to what it measures is worse than
+# one going red, because nothing draws anyone to it.***
+#
+# **Nothing was lost by removing `--falsify`.** `verify_ceilings_discriminate`
+# already asserts the property it existed to catch — every ceiling below the
+# recorded Python figure — and it does so BEFORE anything is measured. L354: a
+# mechanism where there was a check.
+#
+# **What survives is native-only and still meaningful:** the six absolute time
+# ceilings and the three `MEMORY_GATES` budgets, all on the digest-pinned corpus.
+#
+# ▶ **THE SUCCESSOR TO THE MEMORY PARITY QUESTION IS A NAMED FOLLOW-UP, not this
+# file:** *scan-memory per-session accumulation.* On id-only scanning Python's peak
+# was FLAT at 56 MB across sessions from 34.6 MB to 83.3 MB while the native
+# route's grew with the session — so the extra memory is a per-session
+# accumulation, not a constant overhead. **Streaming versus materialising is the
+# obvious reading and has never been measured.** The oversized-line probe that
+# these two arms used is retired as the primary instrument: it is a pathological
+# shape nobody has, and it sent two checks after a mechanism the real corpus
+# describes better.
+
+
 def main() -> int:
-    if "--reference" not in sys.argv:
+    if len(sys.argv) < 2 or sys.argv[1].startswith("-"):
         raise SystemExit(__doc__)
     subject = sys.argv[1]
-    reference = sys.argv[sys.argv.index("--reference") + 1]
+    if "--reference" in sys.argv or "--falsify" in sys.argv:
+        raise SystemExit(
+            "REFUSING: `--reference` and `--falsify` are retired. They compared the\n"
+            "subject against `ch-legacy`, which can no longer search — it resolves the\n"
+            "word `search` as a session identifier and takes 14.9 seconds to say so.\n"
+            "`--falsify` would have PASSED on that, for a reason unrelated to search.\n"
+            "The property it checked is asserted by `verify_ceilings_discriminate`\n"
+            "before anything is measured. Run with the subject alone."
+        )
 
     verify_corpus()
     verify_ceilings_discriminate()
     verify_native_subject(subject)
     verify_subject_freshness(subject)
-    identities = {path: route_identity(path) for path in dict.fromkeys((subject, reference))}
-    for path, digest in identities.items():
-        print(f"route   {digest}  {path}")
-    print()
+    identity = route_identity(subject)
+    print(f"route   {identity}  {subject}\n")
 
-    unexpected = run_gates(subject, reference, expect_failure=False)
-    if "--falsify" in sys.argv:
-        print("\n=== the same gates against the reference route (every shape must fail) ===")
-        unexpected += run_gates(reference, reference, expect_failure=True)
-    unexpected += run_memory_parity(subject, reference)
+    unexpected = run_gates(subject)
 
-    for path, digest in identities.items():
-        if route_identity(path) != digest:
-            raise SystemExit(f"VOID: {path} changed mid-run; every number above is unusable")
+    if route_identity(subject) != identity:
+        raise SystemExit(f"VOID: {subject} changed mid-run; every number above is unusable")
     print("\nroute identity unchanged across the run")
     return unexpected
 

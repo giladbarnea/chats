@@ -17,6 +17,32 @@ nothing under `.optmem/`. Runs the runbook and reports. Defects go to
 > a cold reader meets. Found by re-reading this file whole, which is the practice
 > that has caught the same fault five times on this mission.
 
+## ✅ THE POST-DELETION PROOF IS DONE AND GREEN — 2026-09-02T12:48–12:56Z
+
+**`post-deletion-proof.md`, 111 lines. The last deliverable of this mission.**
+
+**Green:** checks 1, 2, 8, 9 (1,963 passed + 13 of 13 shell suites), 10, 11's six
+time gates and three memory budgets, 14, 15, and the deletion falsifier at **36 of
+36 journeys**. **Check 10's bytes are identical to its pre-deletion run.**
+
+**Dead by construction, as ruled:** checks 3, 5, 6, 7, 12, 13 — live differentials
+with no surviving reference. Their stored successors are inside the 1,963.
+
+**Three findings, none a product defect:**
+1. **Memory parity measures an error path now — and the CONTROL caught it.** A red
+   control is the difference between *this number is broken* and *the product got
+   worse*.
+2. **`performance_gates.py:44` hardcodes a stamp naming a route that no longer
+   exists** — the fault fixed in `frozen_reference.json` yesterday, surviving in
+   the file beside it.
+3. **A stale comment names the deleted divergence gate as its live counterpart.**
+
+**One unresolved disagreement: the other two seats report the rust tree digest as
+`7b3267a6…`; I measure `63a34f4f…` and no recipe I tried yields theirs.** The
+claim holds either way — `git diff HEAD -- rust` is empty.
+
+---
+
 ## ▶ RESUMED 2026-09-02. Both digests unchanged across the pause.
 
 **`dd6ab701…` and `63a34f4f…` both re-derived and identical.** The recording is

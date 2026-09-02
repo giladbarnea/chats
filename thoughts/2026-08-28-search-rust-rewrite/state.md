@@ -14761,3 +14761,82 @@ contention, not chased.*
 untouched at `1f76081c`. Disk 13 → 16 GiB.*
 
 **Nothing is committed. The commit follows `g5-runner`'s proof, not the deletion.**
+
+## ▶▶▶ L379. THE POST-DELETION PROOF IS GREEN. COMMITTED AT `ebd67ba`.
+
+*`teammates/g5-runner/post-deletion-proof.md`, 111 lines. Oracle
+`sha256:08f036af…` (moved, as ruled), all three launchers `1f76081c`, corpus
+`de693c35…`.*
+
+    1  no PyO3          0 undefined Py_, three system dylibs only
+    2  corpus identity  exact
+    8  scoped diff      52 paths, none outside scope
+    9  full suite       1,963 passed, 0 failed  +  13 of 13 shell suites
+    10 no Python route   search exit 0, 934 bytes, 31 escapes | info exit 1
+    11 time gates       6 of 6 PASS      memory budgets 3 of 3 PASS
+    14 package          one Mach-O ch = the measured binary
+    15 installed        byte-identical to the wheel
+       falsifier        36 of 36 surviving journeys reproduce
+
+**⚠ Check 10's output is BYTE-IDENTICAL to its pre-deletion run — 934 bytes, 31
+escape runs. The deletion changed nothing the product emits.**
+*No stderr flake this run; 241 of 241 green inside the 1,963 — **absence in one run
+is evidence, not proof.***
+
+**Commit `ebd67ba`, 53 paths, 2,499 insertions, 7,611 deletions.**
+
+### ⚠ FINDING 1 — the memory parity gate now measures an ERROR PATH, and its CONTROL caught it
+
+    agent-bearing    subject +576MB   reference +65MB   FAIL
+    control (claude) subject   +0MB   reference +66MB   FAIL   <- the control
+
+**`memory_delta` runs the absent literal through both binaries; the reference cannot
+search, so its arm measures Python interpreter startup on an error path.** **The
+control's contract is that both arms stay near zero, and the reference came back
++66MB, so the control went red.**
+
+***That is the gate reporting that its own measurement is invalid rather than that
+the port regressed.*** ***A red control is the whole difference between "this number
+is broken" and "the product got worse"*** — **without it, a 576-vs-65 memory
+regression would have been filed.**
+
+**RULED: the parity arm is retired with its finding recorded at the site.** *An
+expected red is indistinguishable from a regression and this desk spent two days
+removing the last one.* **The named per-session-accumulation follow-up is its
+successor and is pointed at from where the gate was.**
+
+### FINDING 2 — a hardcoded stamp naming a route that no longer exists
+
+**`performance_gates.py:44` still prints `HEAD 8cb4c5f, oracle route digest
+sha256:dd6ab701…`.** Live values are `e74f5a0` and `08f036af…`. ***The exact fault
+corrected in `frozen_reference.json` yesterday, surviving in the file beside it
+because nothing derived it.*** **Sixth one-of-two-places instance. Derive it or
+delete it; do not hand-correct it.**
+
+### FINDING 3 — a comment names a deleted file as its live counterpart
+
+**`test_search_command_contract.py:113` and `:191` name
+`test_deliberate_divergences.py` in the present tense, and it is deleted.** `:191`
+claims *"Neither suite can quietly stop meaning anything without the other going
+red"* — **one of the two is gone.**
+
+**What survives is real and is the correction:** `_assert_deliberate_divergence_
+still_differs` **still runs at `:346` and `:431` against the STORED bytes, so an
+exemption cannot become vacuous.** ***What is gone is completeness — nothing can now
+prove the list is whole.***
+
+## ⚠⚠ L380. TWO RECIPES, ONE NAME: the rust tree digest disagrees between seats
+
+**`search-firstmate` and `deletion-owner` quote `7b3267a6a22e1f7c`.
+`g5-runner` measures `63a34f4f26451d0c`** — unchanged from their own pre-deletion
+value, **reproduced from two independent framings, and no recipe they tried yields
+the other.** *Their recipe reproduces L263's `ca874ce060f1` exactly.*
+
+**The claim holds either way and was verified independently: `git diff HEAD -- rust`
+is empty, so no Rust was touched. A recipe difference, not a state difference.**
+
+***But two seats quoting "the rust tree digest" at different values is the
+one-name-for-one-thing hazard this desk has hit all week — and the resolution
+generalises `dd6ab701`'s: a digest needs its INPUTS to be re-derivable, and it needs
+its RECIPE to be an identity.*** **Every digest quoted from here carries which
+recipe produced it. One line in the change log so a successor does not chase it.**

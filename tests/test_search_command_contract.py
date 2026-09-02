@@ -110,9 +110,15 @@ CONTRACT_BUILT_CH = CONTRACT_CARGO_TARGET / "release" / "ch"
 VENV_ROOT = PROJECT_ROOT / ".venv"
 CHECKOUT_LEGACY = VENV_ROOT / "bin" / "ch-legacy"
 # **Imported, never restated.** `tests/deliberate_divergences.py` is the single authority
-# for the cases this suite must not assert byte-parity on; `test_deliberate_divergences.py`
-# asserts what each difference *is*. A second copy of the list here is exactly the defect
-# that produced 21 launcher errors — one fix landing in one of two files that held it.
+# for the cases this suite must not assert byte-parity on. A second copy of the list here
+# is exactly the defect that produced 21 launcher errors — one fix landing in one of two
+# files that held it.
+#
+# ⚠ **`test_deliberate_divergences.py` used to be named here as the file that asserts what
+# each difference IS. It was deleted on 2026-09-02 with the route it ran** — it compared
+# `ch` against `ch-legacy` live. **What each difference is, is now asserted against STORED
+# bytes**: by `_assert_deliberate_divergence_still_differs` below for this suite, and by
+# `_stderr_verdict` in `test_legacy_selection_frozen.py` for the selection recording.
 from deliberate_divergences import DELIBERATE  # noqa: E402
 # **Probes, not a blacklist.** Each is a production string literal that a release
 # build embeds. The guard asserts the binary and the working tree **agree** about every
@@ -188,9 +194,21 @@ def _assert_deliberate_divergence_still_differs(case_id: str, ours: bytes, their
 
     **Not a silent skip.** If the two sides ever agree, the exemption is allowing nothing
     and the id belongs out of `DELIBERATE` — at which point this suite starts asserting
-    byte-parity on it again by itself. `test_deliberate_divergences.py` kills the other
-    direction, asserting exactly *what* the difference is. **Neither suite can quietly
-    stop meaning anything without the other going red.**
+    byte-parity on it again by itself.
+
+    ⚠ **This docstring used to end *"Neither suite can quietly stop meaning anything
+    without the other going red"*, naming `test_deliberate_divergences.py` as the other
+    suite. That file was deleted on 2026-09-02 with the live route it ran, so the claim
+    named one survivor of a pair.** What is true now, and it is narrower:
+
+    **This runs at two call sites against the STORED bytes, so an exemption cannot become
+    vacuous** — a case that stops diverging still fails here, and one whose name leaves
+    `DELIBERATE` goes back on byte-parity by itself. **Both directions still hold for the
+    cases the list NAMES.**
+
+    ***What is gone is completeness.*** The deleted suite ran every recorded case through
+    both routes and asserted the differing set was exactly `DELIBERATE`, so a seventh
+    divergence appearing was a failure. **Nothing can prove the list is whole any more.**
     """
     assert ours != theirs, (
         f"{case_id} is listed in `DELIBERATE` but now matches `ch-legacy` exactly. "
