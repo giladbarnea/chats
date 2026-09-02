@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pytest
 
-import oracle_digest
+import oracle_provenance
 import test_search_command_contract as contract
 
 
@@ -42,12 +42,15 @@ ORACLE = json.loads((FIXTURE_ROOT / "ORACLE.json").read_text(encoding="utf-8"))
 
 
 def test_frozen_records_name_the_oracle_they_came_from() -> None:
-    """A record with no machine-checkable stamp cannot be known to be current."""
-    assert ORACLE["source_digest"] == oracle_digest.oracle_route_digest(), (
-        "These records hold answers computed by a Python that has since changed. "
-        f"Frozen against {ORACLE['source_digest']}; the route now digests to "
-        f"{oracle_digest.oracle_route_digest()}. Re-freeze with "
-        "`work/freeze_differentials.py`, or prove the behavior is unchanged."
+    """A record with no machine-checkable stamp cannot be traced to its source.
+
+    ⚠ **Not a currency check any more.** It compared this stamp against the live
+    Python route until that route was deleted on 2026-09-02. **Re-freezing is no
+    longer possible and no longer the remedy** — `work/freeze_differentials.py`
+    has nothing to run.
+    """
+    oracle_provenance.assert_artifact_names_the_recorded_oracle(
+        ORACLE["source_digest"], "the frozen differentials"
     )
 
 

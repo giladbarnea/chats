@@ -23,22 +23,31 @@ VENV_ROOT = PROJECT_ROOT / ".venv"
 LEGACY_ENTRY = VENV_ROOT / "bin" / "ch-legacy"
 
 
-def oracle_route_digest() -> str:
+def oracle_route_digest(root: Path = PROJECT_ROOT) -> str:
     """Digest the sources, the entry script, and the installed distribution record.
+
+    `root` exists so **one recipe** can also digest a RECONSTRUCTED route — a
+    checkout of the pre-deletion revision with the two non-git inputs restored
+    beside it. `tests/oracle_provenance.py` is the only caller that passes one,
+    and it does so because a second copy of this recipe is exactly what a
+    reconstruction must not be graded against.
 
     >>> oracle_route_digest().startswith("sha256:")
     True
     """
+    source_root = root / "src" / "chats"
+    venv_root = root / ".venv"
+    legacy_entry = venv_root / "bin" / "ch-legacy"
     digest = hashlib.sha256()
-    for path in sorted(ORACLE_SOURCE_ROOT.rglob("*.py")):
-        digest.update(path.relative_to(ORACLE_SOURCE_ROOT).as_posix().encode())
+    for path in sorted(source_root.rglob("*.py")):
+        digest.update(path.relative_to(source_root).as_posix().encode())
         digest.update(b"\0")
         digest.update(path.read_bytes())
         digest.update(b"\0")
     installed_records = sorted(
-        VENV_ROOT.glob("lib/python*/site-packages/chats-*.dist-info/RECORD")
+        venv_root.glob("lib/python*/site-packages/chats-*.dist-info/RECORD")
     )
-    for path in [LEGACY_ENTRY, *installed_records]:
+    for path in [legacy_entry, *installed_records]:
         digest.update(path.name.encode())
         digest.update(b"\0")
         digest.update(path.read_bytes() if path.is_file() else b"<missing>")

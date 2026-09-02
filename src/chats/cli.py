@@ -12,14 +12,12 @@ from .commands import (
     cmd_name,
     cmd_parse,
     cmd_rm,
-    cmd_search,
 )
 from .console import init_module_console, print_warning
 from .model import (
     ConversationFlags,
     MessageSelection,
     ParseOutputMode,
-    SearchOutputMode,
 )
 from .ordering import is_single_negative_index
 from .pool_filter import PoolFilter, add_pool_filter_args
@@ -208,17 +206,6 @@ def _resolve_parse_output_mode(args: argparse.Namespace) -> ParseOutputMode:
     return ParseOutputMode.FULL
 
 
-def _resolve_search_output_mode(args: argparse.Namespace) -> SearchOutputMode:
-    """Resolve mutually-exclusive search output flags into one mode."""
-    if args.only_id:
-        return SearchOutputMode.ONLY_ID
-    if args.list:
-        return SearchOutputMode.LIST
-    if args.full:
-        return SearchOutputMode.FULL
-    return SearchOutputMode.MATCHES
-
-
 def _looks_like_slice(candidate: str) -> bool:
     """Check if candidate is a numeric slice (not a tool filter spec)."""
     parts = candidate.split(":")
@@ -345,189 +332,7 @@ def main():
         return value
 
     # Check for subcommands early (before argparse)
-    if len(sys.argv) > 1 and sys.argv[1] == "search":
-        # Parse search arguments
-        parser = argparse.ArgumentParser(prog="ch search")
-        parser.add_argument("pattern", nargs="?", help="Pattern to search for")
-        parser.add_argument(
-            "-l",
-            "--list",
-            action="store_true",
-            help="List mode - show only paths and metadata",
-        )
-        parser.add_argument(
-            "-ll",
-            "--only-id",
-            action="store_true",
-            help="Show only matching session IDs (implies --color never and --no-paging)",
-        )
-        parser.add_argument(
-            "-f",
-            "--full",
-            action="store_true",
-            help="Show full matching conversations instead of only matching messages",
-        )
-        parser.add_argument(
-            "-r",
-            "--raw",
-            action="store_true",
-            help="Alias for raw markdown search output (implies --no-metadata, --color never, and --no-paging)",
-        )
-        add_pool_filter_args(
-            parser,
-            dir_help="Restrict search to conversations in this directory",
-            mafter_help="Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)",
-            cafter_help="Only conversations created after DATE",
-            provider_help="Restrict search to sessions from a specific provider",
-        )
-        parser.add_argument(
-            "-T",
-            "--thinking",
-            nargs="?",
-            const="full",
-            default=None,
-            help="Show thinking tokens (optional: short)",
-        )
-        parser.add_argument(
-            "--only-user",
-            action="store_true",
-            help="Search only regular user message bodies",
-        )
-        parser.add_argument(
-            "--only-assistant",
-            action="store_true",
-            help="Search only regular assistant message bodies",
-        )
-        parser.add_argument(
-            "-t",
-            "--tools",
-            action="append",
-            nargs="?",
-            const=True,
-            default=None,
-            help="Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
-        )
-        parser.add_argument(
-            "-a",
-            "--agents",
-            action="store_true",
-            help="Include agent messages and Pi agent custom records",
-        )
-        parser.add_argument(
-            "-b",
-            "--branches",
-            action="store_true",
-            help="Include messages from abandoned (rewound) branches",
-        )
-        parser.add_argument(
-            "-A",
-            "--all",
-            action="store_true",
-            help="Show everything, including arbitrary Pi custom records",
-        )
-        parser.add_argument(
-            "--plans",
-            action="store_true",
-            help="Show plan content (ExitPlanMode)",
-        )
-        case_group = parser.add_mutually_exclusive_group()
-        case_group.add_argument(
-            "-s",
-            "--case-sensitive",
-            dest="case_sensitive",
-            action="store_true",
-            help="Match letter case exactly (default: false)",
-        )
-        case_group.add_argument(
-            "-i",
-            "--case-insensitive",
-            dest="case_sensitive",
-            action="store_false",
-            help="Ignore letter case (default: true)",
-        )
-        parser.set_defaults(case_sensitive=False)
-        parser.add_argument(
-            "--short",
-            nargs="?",
-            const=True,
-            default=None,
-            help="Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)",
-        )
-        parser.add_argument(
-            "--color",
-            choices=["always", "never", "auto"],
-            default="auto",
-            help="Control Rich formatting: always, never, or auto (default: auto)",
-            type=init_module_console_from_color_arg,
-        )
-        parser.add_argument(
-            "--paging",
-            action="store_true",
-            default=None,
-            help="Enable paging (default: same as color)",
-        )
-        parser.add_argument(
-            "--no-paging",
-            dest="paging",
-            action="store_false",
-            help="Disable paging",
-        )
-        parser.add_argument(
-            "--no-metadata",
-            action="store_true",
-            help="Disable outputting metadata frontmatter",
-        )
-
-        args, unknown = parser.parse_known_args(sys.argv[2:])
-        args._short_uses_attached_value = _short_uses_attached_value(sys.argv[2:])
-        if unknown:
-            parser.error(f"unrecognized arguments: {' '.join(unknown)}")
-        _repair_short_option_positionals(args, input_attr="pattern", allow_slice=False)
-        if args.pattern is None:
-            parser.error("the following arguments are required: pattern")
-
-        output_mode = _resolve_search_output_mode(args)
-        if output_mode == SearchOutputMode.ONLY_ID or args.raw:
-            args.paging = False
-            args.color = "never"
-
-        args.no_user = False
-        args.no_assistant = False
-        _normalize_role_visibility_args(args)
-        try:
-            show_thinking, shorten_thinking = _resolve_thinking_mode(
-                args.thinking, args.all
-            )
-            short_policy = _resolve_short_policy(args.short)
-            show_tools = _resolve_show_tools(args.tools, args.all)
-        except ValueError as exc:
-            parser.error(str(exc))
-        message_selection = _resolve_message_selection(args)
-        flags = ConversationFlags(
-            message_selection=message_selection,
-            show_thinking=show_thinking,
-            show_tools=show_tools,
-            show_agents=args.agents or args.all,
-            show_custom=args.all,
-            show_branches=args.branches or args.all,
-            show_plans=args.plans or args.all,
-            shorten=short_policy is not None,
-            shorten_max_chars=(short_policy or DEFAULT_SHORT_POLICY).max_chars,
-            shorten_progressive=(short_policy or DEFAULT_SHORT_POLICY).progressive,
-            shorten_thinking=shorten_thinking,
-            color=args.color,
-            paging=args.paging,
-        )
-        cmd_search(
-            args.pattern,
-            flags,
-            PoolFilter.from_args(args),
-            case_sensitive=args.case_sensitive,
-            output_mode=output_mode,
-            output_format="raw" if args.raw else "xml",
-            emit_metadata=not (args.no_metadata or args.raw),
-        )
-    elif len(sys.argv) > 1 and sys.argv[1] == "name":
+    if len(sys.argv) > 1 and sys.argv[1] == "name":
         # Parse name arguments
         parser = argparse.ArgumentParser(
             prog="ch name",
@@ -614,6 +419,11 @@ def main():
             prog="ch",
             description="Parse and format supported AI CLI conversation histories",
             formatter_class=argparse.RawDescriptionHelpFormatter,
+            # ⚠ `search` is listed here and this file has no search arm. That is
+            # correct: this epilog is what `ch --help` prints, and `ch` serves
+            # search natively. Removing the line made `ch --help` stop listing a
+            # command the product has — caught by the surviving-journey diff, and
+            # it is the one thing in this file a search cleanup will reach for.
             epilog="""\
 Commands:
   parse    Rebuild XML-tagged Markdown from structured ch JSON

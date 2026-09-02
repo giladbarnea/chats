@@ -13,11 +13,9 @@ from chats import (
     ConversationFlags,
     MessageSelection,
     PoolFilter,
-    SearchOutputMode,
     SessionPool,
     cmd_parse,
     cmd_name,
-    cmd_search,
 )
 
 
@@ -337,38 +335,6 @@ def test_cmd_parse_provider_filter_limits_recent_negative_index_resolution(
     )
 
 
-def test_cmd_search_uses_all_supported_sessions(
-    tmp_path: Path,
-    monkeypatch,
-    capsys,
-) -> None:
-    """`search` should match content from non-Claude supported sessions too."""
-    temp_home = tmp_path / "home"
-    monkeypatch.setattr(Path, "home", lambda: temp_home)
-    _build_supported_session_space(temp_home)
-
-    with pytest.raises(SystemExit) as exc_info:
-        cmd_search(
-            "codex-search-token",
-            ConversationFlags(color="never", paging=False),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-
-    captured = capsys.readouterr()
-    assert exc_info.value.code == 0, (
-        "Expected `search` to exit successfully when a Codex session matches. "
-        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
-    )
-    assert (
-        "history_path: ~/.codex/sessions/2026/04/11/"
-        "rollout-2026-04-11T10-11-09-019d7b61-53d7-7891-9033-ad646f9d2ce7.jsonl"
-    ) in captured.out, (
-        "Expected `search` to include matching Codex sessions in the unified search space. "
-        f"Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
-    )
-
-
 def test_cmd_parse_resolves_latest_title_substring_across_ecosystems(
     tmp_path: Path,
     monkeypatch,
@@ -402,93 +368,4 @@ def test_cmd_parse_resolves_latest_title_substring_across_ecosystems(
     assert "cross-ecosystem-current-title-token" in captured.err, (
         "Expected metadata to surface the current resolved title after name-based resolution. "
         f"Got stderr:\n{captured.err}"
-    )
-
-
-def test_cmd_search_matches_only_latest_custom_title_across_ecosystems(
-    tmp_path: Path,
-    monkeypatch,
-    capsys,
-) -> None:
-    """Search should acknowledge only the latest title, even across native provider title shapes."""
-    temp_home = tmp_path / "home"
-    monkeypatch.setattr(Path, "home", lambda: temp_home)
-    paths = _build_supported_session_space(temp_home)
-
-    cmd_name(str(paths["pi"]), "historic-title-token")
-    cmd_name(str(paths["pi"]), "xyzzy-current-title-token")
-
-    with pytest.raises(SystemExit) as old_exc_info:
-        cmd_search(
-            "historic-title-token",
-            ConversationFlags(
-                color="never",
-                paging=False,
-                message_selection=MessageSelection.NO_ASSISTANT,
-            ),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-
-    old_captured = capsys.readouterr()
-    assert old_exc_info.value.code == 1, (
-        "Expected search not to acknowledge renamed-away historical titles. "
-        f"Got exit code: {old_exc_info.value.code}\nstdout:\n{old_captured.out}\nstderr:\n{old_captured.err}"
-    )
-
-    with pytest.raises(SystemExit) as current_exc_info:
-        cmd_search(
-            "current-title-token",
-            ConversationFlags(
-                color="never",
-                paging=False,
-                message_selection=MessageSelection.NO_ASSISTANT,
-            ),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-
-    current_captured = capsys.readouterr()
-    assert current_exc_info.value.code == 0, (
-        "Expected search to find the session via its latest title substring. "
-        f"Got exit code: {current_exc_info.value.code}\nstdout:\n{current_captured.out}\nstderr:\n{current_captured.err}"
-    )
-    assert "pi" in current_captured.out.lower(), (
-        f"Expected PI session path in output. Got stdout:\n{current_captured.out}"
-    )
-    assert "historic-title-token" not in current_captured.out, (
-        "Expected search output not to acknowledge the historical title once a newer title exists. "
-        f"Got stdout:\n{current_captured.out}"
-    )
-
-
-def test_cmd_search_only_id_prints_plain_session_id(
-    tmp_path: Path,
-    monkeypatch,
-    capsys,
-) -> None:
-    """`--only-id` should emit just the matching session identifier."""
-    temp_home = tmp_path / "home"
-    monkeypatch.setattr(Path, "home", lambda: temp_home)
-    _build_supported_session_space(temp_home)
-
-    with pytest.raises(SystemExit) as exc_info:
-        cmd_search(
-            "codex-search-token",
-            ConversationFlags(color="never", paging=False),
-            output_mode=SearchOutputMode.ONLY_ID,
-            emit_metadata=True,
-        )
-
-    captured = capsys.readouterr()
-    assert exc_info.value.code == 0, (
-        "Expected `search --only-id` to exit successfully when a Codex session matches. "
-        f"Got exit code: {exc_info.value.code}\nstdout:\n{captured.out}\nstderr:\n{captured.err}"
-    )
-    assert captured.out.strip() == "019d7b61-53d7-7891-9033-ad646f9d2ce7", (
-        "Expected `--only-id` to print only the matching session id, with no "
-        f"metadata or content. Got stdout:\n{captured.out}\nstderr:\n{captured.err}"
-    )
-    assert "history_path:" not in captured.out, (
-        f"Expected `--only-id` to suppress search metadata. Got stdout:\n{captured.out}"
     )

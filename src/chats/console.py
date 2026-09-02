@@ -38,53 +38,6 @@ class UnicodeSafePager(Pager):
         proc.wait()
 
 
-class StreamingPager:
-    """Page Rich output that is produced incrementally, chunk by chunk.
-
-    Unlike `Console.pager()`, which buffers every byte and only spawns the pager
-    on context exit, this spawns `less -r` up front and writes each chunk the
-    moment it is ready, so search results appear as they are found instead of
-    after the whole pool is scanned. The write path mirrors `UnicodeSafePager`,
-    so quitting `less` early (SIGPIPE) is handled identically. Falls back to
-    stdout when `less` is unavailable.
-    """
-
-    def __init__(self) -> None:
-        self.closed = False
-        try:
-            self._proc: subprocess.Popen | None = subprocess.Popen(
-                ["less", "-r"],
-                stdin=subprocess.PIPE,
-                errors="backslashreplace",
-            )
-        except FileNotFoundError:
-            self._proc = None
-
-    def write(self, chunk: str) -> None:
-        """Write one already-rendered chunk to the pager, flushing immediately."""
-        if self.closed or not chunk:
-            return
-        if self._proc is None:
-            sys.stdout.write(chunk)
-            return
-        assert self._proc.stdin is not None
-        try:
-            self._proc.stdin.write(chunk)
-            self._proc.stdin.flush()
-        except (BrokenPipeError, KeyboardInterrupt):
-            self.closed = True
-
-    def close(self) -> None:
-        """Close the pager's input and wait for the user to dismiss it."""
-        if self._proc is None:
-            return
-        try:
-            self._proc.stdin.close()
-        except BrokenPipeError:
-            pass
-        self._proc.wait()
-
-
 # Module-level console instance for consistent formatting
 _console: Console | None = None
 _error_console: Console | None = None
@@ -124,14 +77,3 @@ def print_warning(*print_args) -> None:
     if _warning_console is None:
         _warning_console = Console(stderr=True)
     _warning_console.print(*print_args, style="yellow")
-
-
-_hint_console: Console | None = None
-
-
-def print_hint(message: str) -> None:
-    """Print a low-key informational message (e.g. no results) to stderr, dimmed."""
-    global _hint_console
-    if _hint_console is None:
-        _hint_console = Console(stderr=True, theme=APP_THEME)
-    _hint_console.print(message, style="search.empty")

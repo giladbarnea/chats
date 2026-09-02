@@ -1,0 +1,22 @@
+{
+ "claims": {
+  "and-term-satisfied-by-summary-facet": {
+   "returncode": 0,
+   "stderr": "",
+   "stdout": "c3VtbWFyeS1jYXJyaWVzLXRlcm0K"
+  },
+  "not-excludes-when-negated-term-in-summary": {
+   "returncode": 0,
+   "stderr": "",
+   "stdout": "Y2xlYW4tc2Vzc2lvbgo="
+  }
+ },
+ "degradation": "BEFORE: `test_search_operators.py` ran the Python authority and asserted the port matched it on an operator term satisfied only by a session's summary. AFTER: this asserts the port still produces what Python produced on 2026-09-02 at oracle route digest sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0. It can no longer detect that this recording was itself wrong, because the route that would have said so is gone.",
+ "oracle_route_digest": "sha256:dd6ab701e9b8450ed2a1e45bb46998065155436752f4d251389020bdbbadcee0",
+ "oracle_route_digest_recipe": "tests/oracle_digest.py::oracle_route_digest",
+ "reference": "/Users/giladbarnea/dev/chats/.venv/bin/ch-legacy",
+ "reference_identity": "c1821a3a86ee9a88",
+ "revision": "e74f5a0479d76b06c55020d80d144c63b6870b0d",
+ "revision_note": "The revision the oracle route digest is re-derivable FROM, together with tests/data/oracle-route-inputs/. A revision alone cannot reproduce it: the digest covers .venv/bin/ch-legacy and the installed RECORD, and git holds neither.",
+ "what_this_is": "`ch-legacy`'s answers for the two claims in `test_search_operators.py` that had no counterpart anywhere else: a boolean operator term evaluated against the session SUMMARY facet. Recorded 2026-09-02 by g5-runner immediately before the Python search authority was deleted. Both routes were measured and agreed first, so this stores a verified-correct answer rather than a mystery."
+}

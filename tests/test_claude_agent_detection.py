@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from chats import cmd_search, ConversationFlags, SearchOutputMode
+from chats import ConversationFlags
 from chats.commands import _merge_agent_messages, find_agent_files_for_session
 from chats.formatting import format_to_xml
 from chats.parsing import find_all_supported_session_files, parse_jsonl
@@ -325,54 +325,3 @@ class TestFindAllSupportedSessionFilesNewLayout:
         assert project_dir / "main" / "subagents" / "agent-beef.jsonl" in all_files
         assert project_dir / "main" / "subagents" / "not-an-agent.jsonl" not in all_files
 
-
-# =============================================================================
-# Search integration: agents in subagents/ found by cmd_search
-# =============================================================================
-
-
-class TestSearchFindsAgentsInSubagents:
-    """cmd_search should find content in agent files stored in subagents/."""
-
-    def test_search_finds_agent_content_in_subagents_dir(
-        self, tmp_path: Path, monkeypatch, capsys
-    ):
-        home = tmp_path / "home"
-        monkeypatch.setattr(Path, "home", lambda: home)
-        project_dir = home / ".claude" / "projects" / "proj"
-
-        _write_jsonl(project_dir / "main.jsonl", [
-            {
-                "type": "user",
-                "timestamp": "2025-01-01T00:00:00Z",
-                "cwd": "/tmp",
-                "message": {"role": "user", "content": "hello"},
-            }
-        ])
-        _write_jsonl(
-            project_dir / "main" / "subagents" / "agent-deadbeef.jsonl",
-            [
-                {
-                    "type": "assistant",
-                    "agentId": "deadbeef",
-                    "timestamp": "2025-01-01T00:00:01Z",
-                    "cwd": "/tmp",
-                    "message": {
-                        "role": "assistant",
-                        "content": [{"type": "text", "text": "subagent-needle-xyz"}],
-                    },
-                }
-            ],
-        )
-
-        with pytest.raises(SystemExit) as exc_info:
-            cmd_search(
-                "subagent-needle-xyz",
-                ConversationFlags(color="never", paging=False, show_agents=True),
-                output_mode=SearchOutputMode.LIST,
-                emit_metadata=True,
-            )
-        assert exc_info.value.code == 0, (
-            "Expected --agents search to find content in subagents/ agent files. "
-            f"Got exit code: {exc_info.value.code}"
-        )

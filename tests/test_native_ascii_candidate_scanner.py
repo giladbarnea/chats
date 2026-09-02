@@ -1,3 +1,20 @@
+"""The native ASCII candidate scanner, reached directly at its PyO3 boundary.
+
+**The subject is Rust, and it always was.** This file used to reach the scanner
+through `chats.commands.search`, which was deleted with the Python search
+authority. That module was never this file's oracle — its three names were
+marshalling wrappers, `os.fsencode` and one `except OSError`, over the same
+`chats._native` entry points the `ch` binary's own `scanner` module serves. **So
+this is a repoint, not a frozen successor: there was no consultation to store,
+because nothing was being consulted.**
+
+The three adapters below are that marshalling and nothing else, kept so every call
+site reads as it did. **The one behaviour that did not come back is the wrapper's
+`except OSError: return True`** — a defer-on-unreadable policy that belonged to the
+caller, not to the scanner. `test_logical_json_candidate_file_errors_reach_the_caller`
+records where it went.
+"""
+
 from __future__ import annotations
 
 import os
@@ -5,11 +22,38 @@ from pathlib import Path
 
 import pytest
 
-import chats.commands.search as search_commands
-from chats.commands.search import (
-    _file_contains_ascii,
-    _file_contains_ascii_json_strings,
-)
+import chats._native as native
+
+
+def _file_contains_ascii(
+    path: Path,
+    needle: bytes,
+    *,
+    case_sensitive: bool,
+    evidence_groups: tuple[tuple[bytes, ...], ...] = (),
+) -> bool:
+    return native.file_contains_ascii(
+        os.fsencode(path), needle, case_sensitive, evidence_groups
+    )
+
+
+def _file_contains_ascii_json_strings(
+    path: Path,
+    needle: bytes,
+    *,
+    evidence_groups: tuple[tuple[bytes, ...], ...] = (),
+) -> bool:
+    return native.file_contains_ascii_json_strings(
+        os.fsencode(path), needle, evidence_groups
+    )
+
+
+def _files_contain_ascii_json_strings(
+    paths: list[Path], needle: bytes, *, pi_sessions: list[bool]
+) -> list[bool]:
+    return native.files_contain_ascii_json_strings(
+        [os.fsencode(path) for path in paths], needle, list(pi_sessions)
+    )
 
 
 @pytest.mark.parametrize(
@@ -137,7 +181,7 @@ def test_logical_json_string_batch_returns_decisions_in_input_order(
     for path, content in zip(paths, contents, strict=True):
         path.write_bytes(content)
 
-    actual = search_commands._files_contain_ascii_json_strings(
+    actual = _files_contain_ascii_json_strings(
         paths,
         b"client_id/card",
         pi_sessions=[False, False, False, False],
@@ -161,7 +205,7 @@ def test_logical_json_string_batch_keeps_pi_evidence_exact_and_per_path(
     for path, content in zip(paths, contents, strict=True):
         path.write_bytes(content)
 
-    actual = search_commands._files_contain_ascii_json_strings(
+    actual = _files_contain_ascii_json_strings(
         paths,
         b"absent-query",
         pi_sessions=[True, True, False],
@@ -422,17 +466,20 @@ def test_empty_needle_does_not_open_the_path(tmp_path: Path) -> None:
     )
 
 
-def test_logical_json_candidate_file_errors_defer_to_semantic_reads(
-    tmp_path: Path,
-) -> None:
+def test_logical_json_candidate_file_errors_reach_the_caller(tmp_path: Path) -> None:
+    """The defer-on-unreadable policy was the CALLER's, not the scanner's.
+
+    `commands/search.py` wrapped this entry point in `except OSError: return True`
+    so a candidate it could not read stayed a candidate. **That wrapper went with
+    the Python search authority, and the policy went with it** — the native
+    boundary raises, and the Rust route owns what to do about it. Recorded here
+    rather than deleted, because an assertion that quietly disappears reads as
+    coverage that was never there.
+    """
     missing_path = tmp_path / "missing.jsonl"
 
-    actual = _file_contains_ascii_json_strings(missing_path, b"needle")
-
-    assert actual is True, (
-        "Expected native read errors to remain candidates so Path.read_text keeps "
-        f"the public error contract. Got: {actual=!r}"
-    )
+    with pytest.raises(OSError):
+        _file_contains_ascii_json_strings(missing_path, b"needle")
 
 
 def test_candidate_file_errors_propagate_as_os_errors(tmp_path: Path) -> None:

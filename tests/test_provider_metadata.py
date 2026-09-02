@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from chats import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
+from chats import ConversationFlags, cmd_parse
 from chats.commands import _load_conversation_metadata
 from chats.model import ConversationMetadata
 
@@ -244,10 +244,6 @@ def test_cmd_parse_emits_codex_forked_from_when_present(tmp_path, capsys, monkey
     )
 
 
-# ---------------------------------------------------------------------------
-# Integration: cmd_search emits provider in metadata frontmatter
-# ---------------------------------------------------------------------------
-
 RENAME_FIXTURES_DIR = Path(__file__).parent / "data" / "rename_fixtures"
 
 
@@ -259,159 +255,3 @@ def temp_claude_home(tmp_path, monkeypatch):
     shutil.copytree(RENAME_FIXTURES_DIR / "projects", temp_projects)
     monkeypatch.setattr(Path, "home", lambda: temp_home)
     return temp_home
-
-
-def test_cmd_search_emits_provider_claude(temp_claude_home, capsys):
-    """Search results for a Claude session should include provider: claude."""
-    project_dir = temp_claude_home / ".claude" / "projects" / "test-project"
-    session = project_dir / "searchable.jsonl"
-    session.write_text(
-        json.dumps({
-            "type": "user",
-            "timestamp": "2025-01-01T00:00:00Z",
-            "cwd": "/tmp/proj",
-            "message": {"role": "user", "content": "unique_search_needle_claude"},
-        })
-        + "\n"
-    )
-
-    with pytest.raises(SystemExit) as exc_info:
-        cmd_search(
-            "unique_search_needle_claude",
-            ConversationFlags(color="never", paging=False),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-    assert exc_info.value.code == 0, (
-        f"Expected search to find a match; exit code: {exc_info.value.code}"
-    )
-    captured = capsys.readouterr()
-    assert "provider: claude" in captured.out, (
-        f"Expected 'provider: claude' in search metadata.\nstdout:\n{captured.out}"
-    )
-
-
-def test_cmd_search_emits_provider_pi(tmp_path, capsys, monkeypatch):
-    """Search results for a PI session should include provider: pi."""
-    home = tmp_path / "home"
-    pi_dir = home / ".pi" / "agent" / "sessions"
-    pi_dir.mkdir(parents=True)
-    session = pi_dir / "1234_abc.jsonl"
-    session.write_text(
-        json.dumps({"type": "session", "id": "abc"})
-        + "\n"
-        + json.dumps({
-            "type": "message",
-            "timestamp": "2025-01-01T00:00:00Z",
-            "message": {
-                "role": "user",
-                "content": [{"type": "text", "text": "unique_search_needle_pi"}],
-            },
-        })
-        + "\n"
-    )
-    monkeypatch.setattr(Path, "home", lambda: home)
-
-    with pytest.raises(SystemExit) as exc_info:
-        cmd_search(
-            "unique_search_needle_pi",
-            ConversationFlags(color="never", paging=False),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-    assert exc_info.value.code == 0, (
-        f"Expected search to find a match; exit code: {exc_info.value.code}"
-    )
-    captured = capsys.readouterr()
-    assert "provider: pi" in captured.out, (
-        f"Expected 'provider: pi' in search metadata.\nstdout:\n{captured.out}"
-    )
-
-
-def test_cmd_search_emits_provider_codex(tmp_path, capsys, monkeypatch):
-    """Search results for a Codex session should include provider: codex."""
-    home = tmp_path / "home"
-    codex_dir = home / ".codex" / "sessions"
-    codex_dir.mkdir(parents=True)
-    session = codex_dir / "rollout-abc.jsonl"
-    session.write_text(
-        json.dumps({"type": "session_meta", "payload": {"id": "abc"}})
-        + "\n"
-        + json.dumps({
-            "type": "response_item",
-            "timestamp": "2025-01-01T00:00:00Z",
-            "payload": {
-                "type": "message",
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": "unique_search_needle_codex"}
-                ],
-            },
-        })
-        + "\n"
-    )
-    monkeypatch.setattr(Path, "home", lambda: home)
-
-    with pytest.raises(SystemExit) as exc_info:
-        cmd_search(
-            "unique_search_needle_codex",
-            ConversationFlags(color="never", paging=False),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-    assert exc_info.value.code == 0, (
-        f"Expected search to find a match; exit code: {exc_info.value.code}"
-    )
-    captured = capsys.readouterr()
-    assert "provider: codex" in captured.out, (
-        f"Expected 'provider: codex' in search metadata.\nstdout:\n{captured.out}"
-    )
-
-
-def test_cmd_search_emits_codex_forked_from_when_present(tmp_path, capsys, monkeypatch):
-    """Search metadata should include Codex fork parent ids when the raw session has one."""
-    home = tmp_path / "home"
-    codex_dir = home / ".codex" / "sessions"
-    codex_dir.mkdir(parents=True)
-    session = codex_dir / "rollout-forked-search.jsonl"
-    forked_from_id = "019db42d-b894-7462-9de1-3229e3ccc892"
-    session.write_text(
-        json.dumps({
-            "type": "session_meta",
-            "payload": {
-                "id": "019db5f3-e555-7a70-afba-3e12469d3eb6",
-                "forked_from_id": forked_from_id,
-            },
-        })
-        + "\n"
-        + json.dumps({
-            "type": "response_item",
-            "timestamp": "2026-04-22T16:09:13.404Z",
-            "payload": {
-                "type": "message",
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": "unique_search_forked_codex"}
-                ],
-            },
-        })
-        + "\n"
-    )
-    monkeypatch.setattr(Path, "home", lambda: home)
-
-    with pytest.raises(SystemExit) as exc_info:
-        cmd_search(
-            "unique_search_forked_codex",
-            ConversationFlags(color="never", paging=False),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-
-    assert exc_info.value.code == 0, (
-        f"Expected search to find a match; exit code: {exc_info.value.code}"
-    )
-    captured = capsys.readouterr()
-    assert f"forked_from: {forked_from_id}" in captured.out, (
-        "Expected Codex fork parent id to appear in search metadata. "
-        f"stdout:\n{captured.out}"
-    )

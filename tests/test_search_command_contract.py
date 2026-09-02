@@ -63,7 +63,7 @@ from pathlib import Path
 
 import pytest
 
-import oracle_digest
+import oracle_provenance
 import query_pattern_corpus
 
 
@@ -153,41 +153,27 @@ def _case_id(pair: tuple[Corpus, dict[str, object]]) -> str:
     return f"{corpus.name}:{case['id']}"
 
 
-def _oracle_source_digest() -> str:
-    """The oracle's identity, defined once in `oracle_digest`."""
-    return oracle_digest.oracle_route_digest()
-
-
 @pytest.fixture(scope="session", autouse=True)
 def oracle_has_not_moved() -> object:
-    """Refuse to treat expectations as evidence when the oracle has moved.
+    """Refuse to treat these expectations as evidence for the wrong route.
 
-    Every expectation here was derived by running the Python product. That
-    product is reached through an editable install, so it resolves to the
-    `src/chats/` working tree rather than to a commit — naming a revision is
-    necessary and not sufficient, because an uncommitted edit leaves the revision
-    string true and the claim false.
+    ⚠ **This guard changed on 2026-09-02 and it is weaker.** It used to compare
+    the corpus's stamp against the LIVE Python route and re-check after the run,
+    because the differential ran two processes seconds apart. **The Python search
+    authority is deleted, so there is no live route to compare against and no
+    second process to race.** What it can still do is refuse a corpus that names
+    a route other than the one every frozen artifact here was characterized
+    against.
 
-    Checked twice. Before the run, so a moved oracle is reported as a moved
-    oracle rather than as several hundred parity failures. After the run, because
-    the differential runs two processes seconds apart and an oracle that moves
-    between them makes the comparison meaningless without either side erroring.
+    **What is lost, stated rather than implied:** a source edit that moved the
+    oracle under a stored expectation used to fail here. Nothing detects that now.
+    The route these 454 files describe is recoverable — `test_oracle_provenance.py`
+    proves it re-derives from `67d6053` — but it is not re-runnable.
     """
-    before = _oracle_source_digest()
-    assert before == ORACLE["source_digest"], (
-        f"The oracle has moved. These expectations were characterized against "
-        f"revision {ORACLE['revision'][:9]} with {ORACLE['source_digest']}; "
-        f"`src/chats/` now digests to {before}. Re-characterize with "
-        "`generate_fixtures.py`, or prove the behavior is unchanged, before "
-        "reading any result in this file as evidence."
+    oracle_provenance.assert_artifact_names_the_recorded_oracle(
+        ORACLE["source_digest"], "the contract corpus"
     )
     yield
-    after = _oracle_source_digest()
-    assert after == before, (
-        "The oracle moved while this suite was running, so its results describe "
-        f"no single implementation. `src/chats/` was {before} at the start and "
-        f"{after} at the end."
-    )
 
 
 def _rust_source_bytes() -> bytes:
@@ -378,50 +364,6 @@ def test_search_journey_matches_characterized_legacy_bytes(
 # ── 2. Live differential against the Python implementation ───────────────────
 
 
-@pytest.mark.parametrize("pair", ALL_CASES, ids=_case_id)
-def test_search_journey_matches_live_legacy_implementation(
-    checkout_built_ch: Path,
-    corpus_homes: dict[str, Path],
-    pair: tuple[Corpus, dict[str, object]],
-) -> None:
-    """`ch search` and `ch-legacy search` must produce identical bytes.
-
-    This is the oracle that cannot rot. It compares two live processes on the
-    same corpus instead of comparing one process against a recorded past.
-
-    One asymmetry, small but real: the two sides do not agree on `sys.argv[0]`.
-    `ch` execs its sibling, so the interpreter sees the launcher's path, while
-    `ch-legacy` invoked directly sees the virtualenv's. Anything the product
-    prints that names its own executable therefore differs between the two sides
-    for a reason that is not a parity break. Today exactly one thing does — a
-    traceback's first frame — and it is normalized. After cutover the native
-    route has no Python `argv[0]` at all, so the asymmetry disappears rather than
-    widening.
-    """
-    corpus, case = pair
-    contract_home = corpus_homes[corpus.name]
-    native = _run_search(checkout_built_ch, case, contract_home)
-    legacy = _run_search(CHECKOUT_LEGACY, case, contract_home)
-
-    assert native.returncode == legacy.returncode, (
-        f"Expected `ch search` and `ch-legacy search` to agree on exit status for "
-        f"{case['id']}. Got: native={native.returncode}, legacy={legacy.returncode}."
-    )
-    if str(case["id"]) in DELIBERATE:
-        _assert_deliberate_divergence_still_differs(
-            str(case["id"]),
-            _normalize(native.stdout, contract_home) + _normalize(native.stderr, contract_home),
-            _normalize(legacy.stdout, contract_home) + _normalize(legacy.stderr, contract_home),
-        )
-        return
-    assert _normalize(native.stdout, contract_home) == _normalize(
-        legacy.stdout, contract_home
-    ), f"Expected `ch search` and `ch-legacy search` to agree on stdout for {case['id']}."
-    assert _normalize(native.stderr, contract_home) == _normalize(
-        legacy.stderr, contract_home
-    ), f"Expected `ch search` and `ch-legacy search` to agree on stderr for {case['id']}."
-
-
 # ── 3. Native authority: the intended red ────────────────────────────────────
 
 
@@ -547,80 +489,6 @@ GENERATED_PATTERN_COUNT = 60
 GENERATED_PATTERN_WIDTHS = (52, 96, 110, 140)
 
 
-@pytest.mark.parametrize(
-    "name", sorted(query_pattern_corpus.DEFECT_PATTERNS), ids=lambda name: name
-)
-def test_named_defect_patterns_select_the_same_sessions(
-    checkout_built_ch: Path,
-    contract_home: Path,
-    name: str,
-) -> None:
-    """Patterns behind known defect classes must select identical sessions.
-
-    Held by name rather than by seed: these came from enumerating Unicode and
-    from reading engines, not from generation, so a seed change must not be able
-    to drop them.
-    """
-    case = {
-        "id": name,
-        "arguments": [query_pattern_corpus.DEFECT_PATTERNS[name], "-ll"],
-        "columns": 96,
-        "color": False,
-    }
-    native = _run_search(checkout_built_ch, case, contract_home)
-    legacy = _run_search(CHECKOUT_LEGACY, case, contract_home)
-
-    assert (native.returncode, native.stdout) == (legacy.returncode, legacy.stdout), (
-        f"Expected `ch search` and `ch-legacy search` to select the same sessions for "
-        f"defect pattern {name} ({query_pattern_corpus.DEFECT_PATTERNS[name]!r}). "
-        f"native=({native.returncode}, {native.stdout!r}) "
-        f"legacy=({legacy.returncode}, {legacy.stdout!r})."
-    )
-
-
-def test_generated_patterns_select_the_same_sessions(
-    checkout_built_ch: Path,
-    contract_home: Path,
-) -> None:
-    """Generated patterns must select identical sessions at varying widths.
-
-    Reported as one collected list rather than as a parameterized case per
-    pattern, because a validity disagreement is almost never singular: the
-    useful output is the whole disagreeing set, grouped, not the first one
-    alphabetically.
-    """
-    patterns = query_pattern_corpus.generate_patterns(
-        GENERATED_PATTERN_SEED, GENERATED_PATTERN_COUNT
-    )
-    assert len(patterns) == GENERATED_PATTERN_COUNT, (
-        f"Expected {GENERATED_PATTERN_COUNT} distinct generated patterns. "
-        f"Got {len(patterns)}."
-    )
-
-    divergences: list[str] = []
-    for index, pattern in enumerate(patterns):
-        columns = GENERATED_PATTERN_WIDTHS[index % len(GENERATED_PATTERN_WIDTHS)]
-        case = {
-            "id": f"generated-{index}",
-            "arguments": [pattern, "-l", "--color", "always", "--no-paging"],
-            "columns": columns,
-            "color": True,
-        }
-        native = _run_search(checkout_built_ch, case, contract_home)
-        legacy = _run_search(CHECKOUT_LEGACY, case, contract_home)
-        if (
-            native.returncode != legacy.returncode
-            or _normalize(native.stdout, contract_home)
-            != _normalize(legacy.stdout, contract_home)
-        ):
-            divergences.append(f"{pattern!r} at {columns} columns")
-
-    assert not divergences, (
-        "Expected `ch search` and `ch-legacy search` to agree on every generated "
-        f"pattern. {len(divergences)} of {len(patterns)} diverged: {divergences[:10]}."
-    )
-
-
 # ── Colored output on a real terminal ────────────────────────────────────────
 
 
@@ -686,43 +554,6 @@ TERMINAL_SHAPES = (
     ("wide-glyphs", ["Renderwide", "-f", "--no-paging", "--no-metadata"]),
     ("long-wrapped-lines", ["Renderwrap", "-f", "--no-paging", "--no-metadata"]),
 )
-
-
-@pytest.mark.parametrize("columns", TERMINAL_WIDTHS, ids=lambda value: f"cols{value}")
-@pytest.mark.parametrize("shape", TERMINAL_SHAPES, ids=lambda shape: shape[0])
-def test_colored_terminal_output_matches_live_legacy_implementation(
-    checkout_built_ch: Path,
-    contract_home: Path,
-    shape: tuple[str, list[str]],
-    columns: int,
-) -> None:
-    """Colored output on a real terminal must match the Python implementation.
-
-    A differential rather than a golden, because the size of a terminal is not
-    something a fixture can record. Both processes run within milliseconds of
-    each other against one corpus, so anything that differs is the renderer.
-    """
-    name, arguments = shape
-    native_status, native_output = _run_search_on_terminal(
-        checkout_built_ch, arguments, contract_home, columns=columns
-    )
-    legacy_status, legacy_output = _run_search_on_terminal(
-        CHECKOUT_LEGACY, arguments, contract_home, columns=columns
-    )
-
-    assert native_output, (
-        f"Expected {name} at {columns} columns to render something on a terminal."
-    )
-    assert native_status == legacy_status, (
-        f"Expected `ch` and `ch-legacy` to agree on exit status for {name} at "
-        f"{columns} columns. Got: native={native_status}, legacy={legacy_status}."
-    )
-    assert _normalize(native_output, contract_home) == _normalize(
-        legacy_output, contract_home
-    ), (
-        f"Expected `ch` and `ch-legacy` to render identical bytes for {name} at "
-        f"{columns} columns."
-    )
 
 
 def test_narrow_terminal_actually_elides(

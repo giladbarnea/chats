@@ -38,6 +38,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+import rich.markup
 
 import query_pattern_corpus
 
@@ -47,6 +48,8 @@ import query_pattern_corpus
 # prevent — the launcher guard was fixed in one of two files that held it, and 21
 # errors followed.
 from deliberate_divergences import (
+    MARKUP_DIVERGENCES,
+    MISSING_WARNING_DIVERGENCES,
     SELECTION_WARNING_DIVERGENCES,
     WARNING_PREFIX,
     WARNING_SOURCE_ECHO,
@@ -119,6 +122,65 @@ def _compare(actual, expected: dict, home: Path, what: str) -> None:
             f"{what}: {stream} differs from the recording.\n"
             f"  recorded: {want[:400]!r}\n  native:   {got[:400]!r}"
         )
+
+
+def _stderr_verdict(key: str, native: bytes, recorded: bytes) -> str | None:
+    """What is wrong with one row's stderr, or `None` when it is right.
+
+    **Every row is compared; three named classes are asserted as exact differences
+    rather than exempted.** The authority holds the classes and this holds their
+    shapes, so a row that stops diverging fails as an inert allowance and a row
+    whose difference changes character fails for saying so.
+    """
+    if key in SELECTION_WARNING_DIVERGENCES:
+        if native == recorded:
+            return (
+                "listed in `SELECTION_WARNING_DIVERGENCES` and now reproduces the "
+                "recording. Drop the name rather than leave an allowance that allows "
+                "nothing"
+            )
+        if recorded != WARNING_PREFIX + native + WARNING_SOURCE_ECHO:
+            return (
+                f"is no longer exactly CPython's warning decoration.\n"
+                f"      recorded: {recorded!r}\n      native:   {native!r}"
+            )
+        return None
+    if key in MISSING_WARNING_DIVERGENCES:
+        if native:
+            return (
+                f"listed in `MISSING_WARNING_DIVERGENCES` and now emits {native!r}. "
+                "**That is the named follow-up landing** — drop the name and this row "
+                "goes back on byte-parity"
+            )
+        if not (recorded.startswith(WARNING_PREFIX) and recorded.endswith(WARNING_SOURCE_ECHO)):
+            return (
+                f"`ch-legacy`'s side is no longer a decorated `FutureWarning`, so the "
+                f"allowance no longer describes it: {recorded!r}"
+            )
+        return None
+    if key in MARKUP_DIVERGENCES:
+        if native == recorded:
+            return (
+                "listed in `MARKUP_DIVERGENCES` and now reproduces the recording, which "
+                "means the port has started mangling the pattern too. Drop the name only "
+                "if that was intended"
+            )
+        # **The mechanism, asserted rather than described.** `console.print_hint` renders
+        # through Rich markup, so `ch-legacy`'s bytes are the port's bytes with every
+        # bracket group that parses as a style tag removed. Running Rich here couples this
+        # row to Rich's markup rules on purpose: if they move, the difference stops being
+        # the one that was ruled on and this must say so.
+        if rich.markup.render(native.decode()).plain.encode() != recorded:
+            return (
+                f"the difference is no longer exactly Rich markup consumption.\n"
+                f"      recorded:      {recorded!r}\n      native:        {native!r}\n"
+                f"      native, rendered through Rich markup: "
+                f"{rich.markup.render(native.decode()).plain.encode()!r}"
+            )
+        return None
+    if native != recorded:
+        return f"stderr differs.\n      recorded: {recorded!r}\n      native:   {native!r}"
+    return None
 
 
 def _assert_only_the_missing_warning_decoration(
@@ -215,30 +277,23 @@ def test_generated_patterns_match_the_recording(
     recording.** Reading it back would make the gate agree with itself about which
     width each pattern was taken at, which is the one thing it must not do.
 
-    ⚠ **This gate compares `returncode` and `stdout` only**, faithfully reproducing
-    the live gate it replaced. Strengthening it to compare stderr is a genuine
-    improvement and **it turns rows red for reasons that are already known**, so
-    they are named here rather than rediscovered. Measured 2026-09-02 at oracle
-    `sha256:dd6ab701…`, rust tree `7b3267a6a22e1f7c`, with both routes alive:
-    **7 of 60 rows differ on stderr.**
+    ⚠ **This gate compares all three streams. The live gate it replaced compared
+    `returncode` and `stdout` only, and that blindness was hiding five rows.**
+    Measured 2026-09-02 at oracle `sha256:dd6ab701…`, rust tree `7b3267a6a22e1f7c`,
+    with both routes alive: **7 of 60 rows differ on stderr**, in three classes,
+    all named in `deliberate_divergences` and asserted exactly by
+    `_stderr_verdict` rather than exempted.
 
-    - `generated-17` and `generated-58` carry the **ruled** warning divergence —
-      the same one `deliberate_divergences.SELECTION_WARNING_DIVERGENCES` names for
-      `posix_class_future_warning`, arrived at by generation rather than by name.
-    - `generated-51` (`[a&&b]`) is **not** covered by that ruling: `ch-legacy`
-      warns `Possible set intersection`, and the port emits **nothing at all**, so
-      the whole warning is absent rather than only its decoration.
-    - `generated-15`, `generated-32`, `generated-42` and `generated-59` differ for
-      an **unruled** reason, reported to `search-firstmate` on 2026-09-02 and
-      **verified live rather than read off the recording**: `console.print_hint`
-      passes the user's pattern through Rich console markup, so a bracket
-      expression that parses as a style tag is **deleted** from
-      `No sessions match "…"`. `ch-legacy` prints `No sessions match "+".` for the
-      pattern `[z-a]+`; the port prints the pattern. `[-a]` and `[123]` survive
-      because they do not parse as tags. **The port is the better output, which is
-      the direction `preserve-because-wrong` exists for.**
+    - `generated-17` and `generated-58` — the **ruled** warning decoration, arrived
+      at by generation rather than by name.
+    - `generated-51` — a warning the port **drops entirely**. The port is worse; a
+      named follow-up.
+    - `generated-15`, `generated-32`, `generated-42`, `generated-59` — `ch-legacy`
+      mangles the user's pattern through Rich markup. The port is better.
 
-    **Do not strengthen this gate without a ruling on those five rows.**
+    *Found because `g5-runner` named three rows in one family and the measurement
+    was widened from that family to the whole group. **Four of the seven were a
+    divergence nobody was looking for.***
     """
     recorded = _recorded("generated-patterns")
     patterns = query_pattern_corpus.generate_patterns(
@@ -276,10 +331,18 @@ def test_generated_patterns_match_the_recording(
             # (already normalised both sides here; `_compare` now does the same
             # for the other two gates.)
             divergences.append(f"{pattern!r} at {columns} columns")
+        problem = _stderr_verdict(
+            key,
+            _normalize(actual.stderr, contract_home),
+            _normalize(expected["stderr"], contract_home),
+        )
+        if problem:
+            divergences.append(f"{pattern!r} at {columns} columns: {problem}")
 
     assert not divergences, (
         "Expected `ch search` to reproduce the recording for every generated "
-        f"pattern. {len(divergences)} of {len(patterns)} diverged: {divergences[:10]}."
+        f"pattern. {len(divergences)} of {len(patterns)} diverged:\n  "
+        + "\n  ".join(divergences[:10])
     )
 
 

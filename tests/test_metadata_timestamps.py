@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from chats import ConversationFlags, SearchOutputMode, cmd_parse, cmd_search
+from chats import ConversationFlags, cmd_parse
 
 
 def _utc_to_local_display(utc_iso: str) -> str:
@@ -85,58 +85,4 @@ def test_cmd_parse_metadata_prefers_jsonl_timestamps_over_file_stat(
     assert 'modified: "2024-01-02 00:00"' not in captured.err, (
         "Expected parse metadata not to fall back to the stale filesystem "
         f"mtime when JSONL timestamps are available. Got stderr:\n{captured.err}"
-    )
-
-
-def test_cmd_search_metadata_prefers_jsonl_timestamps_over_file_stat(
-    temp_claude_home, capsys
-):
-    """Search metadata should use the same timestamp source as search ordering."""
-    conversation_path = (
-        temp_claude_home
-        / ".claude"
-        / "projects"
-        / "test-project"
-        / "recent-by-content.jsonl"
-    )
-    conversation_path.write_text(
-        "\n".join([
-            json.dumps({
-                "type": "summary",
-                "summary": "Timestamp search test",
-                "leafUuid": "leaf-search",
-            }),
-            json.dumps({
-                "type": "user",
-                "timestamp": "2025-03-04T05:06:07.000Z",
-                "cwd": "/tmp/project",
-                "message": {"role": "user", "content": "search needle"},
-            }),
-        ])
-        + "\n",
-        encoding="utf-8",
-    )
-    os.utime(conversation_path, (1_704_067_200, 1_704_067_200))  # 2024-01-02 00:00
-
-    with pytest.raises(SystemExit) as exc_info:
-        cmd_search(
-            "search needle",
-            ConversationFlags(color="never", paging=False),
-            output_mode=SearchOutputMode.LIST,
-            emit_metadata=True,
-        )
-
-    assert exc_info.value.code == 0, (
-        f"Expected cmd_search to succeed. Got exit code: {exc_info.value.code}"
-    )
-
-    captured = capsys.readouterr()
-    expected_time = _utc_to_local_display("2025-03-04T05:06:07.000Z")
-    assert f'modified: "{expected_time}"' in captured.out, (
-        "Expected search metadata to use the conversation timestamp for "
-        f"modified time (expected {expected_time}). Got output:\n{captured.out}\n{captured.err}"
-    )
-    assert 'modified: "2024-01-02 00:00"' not in captured.out, (
-        "Expected search metadata not to show the stale filesystem mtime "
-        f"when JSONL timestamps are available. Got output:\n{captured.out}"
     )

@@ -58,15 +58,6 @@ class ParseOutputMode(StrEnum):
     ONLY_ID = "only-id"
 
 
-class SearchOutputMode(StrEnum):
-    """Search result output modes."""
-
-    MATCHES = "matches"
-    FULL = "full"
-    LIST = "list"
-    ONLY_ID = "only-id"
-
-
 class MessageSelection(StrEnum):
     """Visible regular-message role selection."""
 

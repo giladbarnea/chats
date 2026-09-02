@@ -19,15 +19,11 @@ from ..model import (
 from ..model import (
     Provider as Provider,
 )
-from ..model import (
-    SearchOutputMode as SearchOutputMode,
-)
 from . import info as info
 from . import parse as parse
 from . import name as name
 from . import resolve as resolve
 from . import rm as rm
-from . import search as search
 from .info import (
     build_session_info as build_session_info,
 )
@@ -141,21 +137,6 @@ from .rm import (
 )
 from .rm import (
     cmd_rm as cmd_rm,
-)
-from .search import (
-    SearchHit as SearchHit,
-)
-from .search import (
-    _search_conversation_content as _search_conversation_content,
-)
-from .search import (
-    _search_hit_for_file as _search_hit_for_file,
-)
-from .search import (
-    cmd_search as cmd_search,
-)
-from .search import (
-    display_search_result as display_search_result,
 )
 
 

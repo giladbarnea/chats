@@ -35,7 +35,7 @@ from pathlib import Path
 
 import pytest
 
-import oracle_digest
+import oracle_provenance
 
 from chats.tool_filter import parse_tool_spec, resolve_tool_visibility
 
@@ -46,14 +46,16 @@ ORACLE = json.loads((FIXTURE_ROOT / "ORACLE.json").read_text(encoding="utf-8"))
 
 
 def test_table_oracle_records_the_oracle_it_was_generated_against() -> None:
-    """A table with no machine-checkable stamp cannot be known to be current."""
-    assert ORACLE["source_digest"] == oracle_digest.oracle_route_digest(), (
-        "This table records answers computed by a Python that has since changed. "
-        f"It was generated against {ORACLE['source_digest']} "
-        f"({ORACLE['human_stamp']}); the route now digests to "
-        f"{oracle_digest.oracle_route_digest()}. Regenerate it with "
-        "`teammates/reviewer-profiler/tool_visibility_oracle.py`, or prove the "
-        "behavior is unchanged, before any result compared against it is evidence."
+    """A table with no machine-checkable stamp cannot be traced to its source.
+
+    ⚠ **Not a currency check any more**, since the Python search route it named was
+    deleted on 2026-09-02. **The table's subject survives** — `resolve_tool_visibility`
+    is still live Python, and `test_table_oracle_still_describes_the_python_product`
+    below still runs it against every row. **That test is the currency check now**;
+    this one only says which route the table came from.
+    """
+    oracle_provenance.assert_artifact_names_the_recorded_oracle(
+        ORACLE["source_digest"], f"the tool-visibility table ({ORACLE['human_stamp']})"
     )
 
 

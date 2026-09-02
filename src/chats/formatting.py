@@ -741,47 +741,6 @@ def build_session_title(
     return title
 
 
-def build_messages_group(
-    messages: list[Message],
-    flags: ConversationFlags,
-    tool_id_map: dict[str, str] | None = None,
-    *,
-    highlight_regex: re.Pattern[str] | None = None,
-    conversation_tag: str | None = None,
-) -> Group:
-    """Build the inline Rich body for a conversation (the search Panel's content).
-
-    Each message renders as a one-line role badge over its parts, with ``---``
-    rules between messages. ``highlight_regex`` marks matched search terms in
-    bodies; ``conversation_tag`` restates the session's short id on each header.
-    """
-    input_by_id = _tool_input_by_id(messages)
-    print_targets = []
-
-    for i, msg in enumerate(messages):
-        parts = msg.iter_visible_parts(flags, tool_id_map)
-        if not parts:
-            continue
-
-        if i > 0:
-            print_targets.append(Markdown("---"))
-
-        print_targets.append(
-            _message_header_badge(msg, parts, conversation_tag=conversation_tag)
-        )
-        print_targets.append(Text(""))
-        print_targets.extend(
-            _message_content_renderables(
-                parts,
-                highlight_regex,
-                input_by_id,
-                _tool_result_label(msg, parts),
-            )
-        )
-
-    return Group(*print_targets)
-
-
 def build_message_panels(
     messages: list[Message],
     flags: ConversationFlags,

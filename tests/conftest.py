@@ -1,7 +1,8 @@
 """Test-wide fixtures.
 
-`chats.console` caches four `Console` objects in module globals and never
-resets them. A Rich `Console` freezes its world at construction rather than at
+`chats.console` caches its `Console` objects in module globals and never
+resets them. **Three of them today** — the hint console went with the Python
+search authority. A Rich `Console` freezes its world at construction rather than at
 use: width from `COLUMNS`, the colour system, and `no_color` are all resolved
 once, when the object is built. Nothing cleared those globals between tests, so
 the first test in a process to touch a console fixed width, colour and colour
@@ -27,7 +28,6 @@ _CACHED_CONSOLE_ATTRIBUTES = (
     "_console",
     "_error_console",
     "_warning_console",
-    "_hint_console",
 )
 
 

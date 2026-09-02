@@ -33,7 +33,6 @@ from pathlib import Path
 
 import pytest
 
-from test_search_command_contract import CHECKOUT_LEGACY
 
 # Absent, empty, ordinary, and then every shape the two parsers read differently: a
 # leading sign, surrounding whitespace, a zero, a negative, fullwidth and Arabic-Indic
@@ -98,31 +97,6 @@ def sweep_home(corpus_homes: dict[str, Path]) -> Path:
     comparison that cannot fail.
     """
     return corpus_homes["contract"]
-
-
-@pytest.mark.parametrize("columns", COLUMNS_VALUES, ids=lambda value: repr(value))
-@pytest.mark.parametrize("arguments", SHAPES)
-def test_columns_sweep_reproduces_legacy(
-    checkout_built_ch: Path,
-    sweep_home: Path,
-    arguments: list[str],
-    columns: str | None,
-) -> None:
-    native = _run(checkout_built_ch, arguments, columns, sweep_home)
-    legacy = _run(CHECKOUT_LEGACY, arguments, columns, sweep_home)
-
-    assert native.returncode == legacy.returncode, (
-        f"`ch {' '.join(arguments)}` exits {native.returncode} at COLUMNS={columns!r} "
-        f"where `ch-legacy` exits {legacy.returncode}."
-    )
-    assert native.stdout == legacy.stdout, (
-        f"stdout differs at COLUMNS={columns!r} for `ch {' '.join(arguments)}`.\n"
-        f"  legacy: {legacy.stdout[:400]!r}\n  native: {native.stdout[:400]!r}"
-    )
-    assert native.stderr == legacy.stderr, (
-        f"stderr differs at COLUMNS={columns!r} for `ch {' '.join(arguments)}`.\n"
-        f"  legacy: {legacy.stderr[:400]!r}\n  native: {native.stderr[:400]!r}"
-    )
 
 
 def test_the_sweep_spans_values_argparse_takes_and_values_it_ignores(

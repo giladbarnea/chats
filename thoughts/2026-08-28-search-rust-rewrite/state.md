@@ -14406,3 +14406,358 @@ theirs.**
 `67d6053` exists with `dd6ab701` **verified re-derivable** from it plus
 `tests/data/oracle-route-inputs/`; nine stored artifacts confirmed; the final live
 consultation recorded at 373 comparisons, all passed, **and unrepeatable.**
+
+## ▶▶▶ L370. 94 OF 94 GREEN. SECOND CHECKPOINT MADE: `e74f5a0`.
+
+*"Checkpoint: pre-deletion, frozen gates green", 24 paths, working tree clean. Both
+digests in the message body; **it states that nothing is deleted at that
+revision.***
+
+    oracle route digest  sha256:dd6ab701…badcee0
+    rust tree digest     7b3267a6a22e1f7c…
+
+**Identical to `parity-finisher`'s at close, so nothing moved across the seat
+change** — *and the new seat's rust-digest recipe reproduces `7b3267a6a22e` exactly,
+which is what says it is their recipe and not a second one.*
+
+    tests/test_legacy_selection_frozen.py      94 passed, 0 failed
+    tests/test_deliberate_divergences.py       11 passed
+    tests/test_search_command_contract.py     827 passed
+    whole Python suite (perf excluded)      2,488 passed, 3 skipped, 0 failed
+
+**The authority gained a NAME, not a copy.** `SELECTION_WARNING_DIVERGENCES` plus
+`WARNING_PREFIX` and `WARNING_SOURCE_ECHO` **moved** out of the divergence suite,
+which now imports them. **A separate name rather than an addition to `DELIBERATE`,
+because these are `DEFECT_PATTERNS` keys and not manifest ids** — a foreign id in
+`DELIBERATE` fails as an allowance pointing at nothing.
+
+**Three falsifiers RUN, authority verified byte-identical after each:** an id
+leaving the authority **restores byte-parity by itself**; an id that stops diverging
+fails as **an exempt case that has stopped diverging is not a pass**; and a
+difference that stops being the decoration fails.
+
+## ⚠⚠ L371. 281 TESTS THE ENUMERATION DOES NOT COVER — and the ruling is the SUBJECT test
+
+**`deletion-enumeration.md` enumerates instruments that consult `ch-legacy search`
+as an oracle. It does not enumerate tests that IMPORT the Python search module
+in-process, and those are the larger half: 16 files, 281 collected tests, breaking
+at import.** With the 372 live-twin comparisons, **≈653 of 2,488.**
+
+***The enumeration looked for subprocess consultations. An in-process import is a
+consultation too.*** **A real gap in a document `search-firstmate` accepted.**
+
+### ▶ RULED: classify by whether the SUBJECT survives, not by whether the import breaks
+
+**Where the SUBJECT DIES — the tests exercising Python search code — the test goes
+with the code.** ***Deleting a test for code that no longer exists is not deleting a
+gate.*** Coverage lives in the Rust suite and the contract suite, **which is the
+cutover's entire premise. No successor is owed.**
+
+**Where the SUBJECT SURVIVES and the ORACLE dies, it is decision 6 and the
+consultation is stored first.** **`test_native_ascii_candidate_scanner.py` grades
+the NATIVE scanner against Python's `_file_contains_ascii` — the subject outlives
+the deletion and only its oracle goes.**
+
+**Classify all 16 by that test, report before acting, freeze a successor for every
+file whose subject survives.** *`test_colored_rendering.py` at 36 is the one to look
+at hardest — its name does not say which side it grades.*
+
+## ▶ L372. F1 ACCEPTED; F2 ACCEPTED **AND** A NAMED FOLLOW-UP
+
+**F1 — the no-results message passes the user's pattern through Rich markup.**
+`ch-legacy search '[z-a]+' -l` prints `No sessions match "+".`; **the port prints
+the pattern intact.** `console.print_hint` calls `Console.print` with markup on, so
+a bracket expression that parses as a style tag is **deleted** from the message.
+
+**RULED: accepted as an asserted-exact divergence.** ***Reproducing it means
+deliberately mangling the user's own pattern inside a diagnostic about that
+pattern*** — **the same family as the fabricated traceback: a defect the port
+naturally avoids, which we would have to build on purpose.** Recorded so **the gate
+fails if the port ever starts mangling it too.** Four rows.
+
+**F2 — `[a&&b]` loses its whole warning, not its decoration.** Legacy warns
+`Possible set intersection`; the port emits **nothing**. **`WARNING_DIVERGENCES`
+covers a missing DECORATION and the ruling does not stretch.**
+
+**⚠ RULED: F1 is the port being BETTER; F2 is the port being WORSE.** **Recorded now
+as an asserted-exact divergence so it cannot drift, AND a named follow-up: emit the
+missing warning.** **Not fixed by this seat — the captain fixed its scope and one
+row does not widen it.** *Not perishable: what CPython's `re` warns on is knowable
+from CPython, not from `ch-legacy`.*
+
+### How F1 was found, and it is the week in one sentence
+
+**Three rows were reported carrying the ruled warning divergence. The measurement
+was re-derived and widened from that family to the whole group: 7 of 60 differ on
+stderr, not 3. Three are the ruled warning; the other four are F1, which nobody was
+looking for.**
+
+***A corpus can be clean of the fault you checked it for and carry a different
+one.***
+
+*Also: the two package `__init__` files had to be excluded as graph nodes — **with
+them in, every arm reaches everything and the derivation returns nothing.** ***A
+reachability graph through a re-export hub is not a reachability graph*** — found by
+getting an empty answer and not believing it. **And the derivation reached
+`pool_filter` on its own**, via `passes_path_for_index` called from
+`commands/resolve.py:142`: *a trap you were warned about, independently
+rediscovered by the method, is the method working.*
+
+### The derived deletion list
+
+**Modules reached only by the `search` arm:** `commands/search.py`, `search_query.py`,
+`session_scan.py`. **Symbols out of modules that stay:** `console.StreamingPager`,
+`console.print_hint`, `formatting.build_messages_group`,
+`parsing.extract_summaries_from_entries`,
+`parsing.extract_latest_custom_title_from_entries`, `model.SearchOutputMode`,
+`cli._resolve_search_output_mode`. **Explicit edits:** `cli.py`'s search arm
+(`main()` 348–529) and its epilog line; the search re-exports in both hubs.
+**`pool_filter.py` stays. The PyO3 extension is untouched.**
+
+## ▶▶ L373. THE 16 FILES CLASSIFIED — three buckets, and NO frozen successor is owed
+
+*Derived per test function by `probes/classify_tests.py`, vanishing symbols taken
+from the three modules' own ASTs. **It walks the tree rather than the top level —
+one file nests its tests in a class and a top-level scan reported it as holding no
+tests at all.*** *A classifier that silently reports zero is the same shape as a
+corpus that cannot express the case.*
+
+**A — subject dies, delete the file. 7 files, 124 collected.**
+`test_search_orchestration.py` 78, `test_search_operators.py` 22,
+`test_search_cli_args.py` 8, `test_search_visibility.py` 7,
+`test_search_output_modes.py` 6, `test_session_scan.py` 2,
+`test_message_selection.py` 1.
+
+**B — the file survives, only its search tests die. 8 files, 29 of 88 tests go.**
+**`test_colored_rendering.py` is the OPPOSITE of the first mate's worry: 27 of its
+30 are the `cmd_parse` half and survive untouched.**
+
+**C — repoint. 1 file, 59 collected, kept.**
+
+    lost                                                    153 collected tests
+    kept that a FILE-LEVEL rule would have thrown away      118
+
+***A file-level deletion would have destroyed 118 working tests, 59 of them the only
+in-tree coverage of the native scanner through its Python boundary.***
+
+### ⚠ `search-firstmate`'s decision-6 flag was WRONG, and the correction is in the product's favour
+
+**`test_native_ascii_candidate_scanner.py` does not grade the native scanner against
+a Python implementation — THERE IS NONE.** All three imported names are
+**marshalling wrappers over the PyO3 extension**: `_file_contains_ascii` →
+`_native.file_contains_ascii`, and so on. **`commands/search.py` is that file's
+ACCESS PATH, not its oracle.**
+
+***Nothing is consulted, so there is no consultation to store.*** **The successor is
+a repoint to `chats._native`, which exports all three names today. 59 tests kept,
+not frozen.** *One of its 18 does lose its subject — the wrapper's `except OSError`
+policy test — while the error-propagation test survives, because that error comes
+out of the native function itself.*
+
+***An import was described as a consultation without checking what was on the other
+end of it.***
+
+## ⚠ L374. ONE MEASUREMENT ORDERED BEFORE BUCKET A GOES
+
+**`test_search_operators.py`'s 22 boolean-grammar tests are the largest single
+semantic surface in bucket A, and the seat flagged that the premise under them is
+unmeasured** — *"nobody has measured how many of the 252 contract cases carry an
+operator, and I did not either."*
+
+**⚠ L371's ruling for bucket A rests on a premise: that coverage lives in the Rust
+suite and the contract suite. This is the one place that premise is unevidenced.**
+
+**RULED: measure it first. Two greps, not parity work** — how many contract cases
+carry `AND`/`OR`/`NOT` or their symbolic forms, **and what `search_query.rs` and its
+tests hold for the grammar.** **Coverage present → delete and RECORD THE NUMBER, so
+the premise is evidenced rather than believed. Coverage absent → stop; that is a
+real gap needing a ruling.**
+
+***"Before you remove anything, ask what consults it" applies to COVERAGE as well as
+to oracles.***
+
+## ▶ L375. F1 AND F2 LANDED — and the gate was STRENGTHENED rather than exempted
+
+**105 passed** (94 frozen + 11 divergence). **Three new names in the authority,
+split by WHAT differs rather than by which marker a row carries:**
+`SELECTION_WARNING_DIVERGENCES` + `generated-17`/`generated-58`;
+**`MISSING_WARNING_DIVERGENCES = ("generated-51",)`**; **`MARKUP_DIVERGENCES` = the
+four F1 rows.**
+
+**⚠ The generated gate now compares ALL THREE STREAMS for all 60 rows and asserts
+each class's SHAPE, not an exemption** — ***"asserted exactly" is not reachable
+through a gate that cannot see the stream.*** **60 rows of stderr covered where 0
+were. Strictly stronger, and not asked for.**
+
+**F1's shape is asserted BY THE MECHANISM:** `recorded == rich.markup.render(native)
+.plain`, **plus `native != recorded`.** ***The second assertion carries the weight —
+rendering an already-mangled string is a no-op, so a port that started mangling
+would otherwise pass.*** *Coupling to Rich's markup rules is deliberate: if they
+move, the difference stops being the one that was ruled on and the gate must say
+so.*
+
+**Seven falsifiers RUN, each restoring the authority byte-identical.** **G is the
+keeper: `generated-42` joining `MISSING_WARNING_DIVERGENCES` fails with *"that is
+the named follow-up landing"*.** ***A falsifier whose message names the future event
+that would legitimately change it.***
+
+### The deletion's own falsifier is captured BEFORE anything is removed
+
+**`probes/legacy_journeys.py --capture`: 36 journey runs — 18 surviving journeys
+through BOTH `.venv/bin/ch-legacy` and `target/release/ch`, because a capture of one
+side would miss a routing change.** Every surviving dispatch arm plus **`-1 -d`, the
+trap's own journey.** **It refuses on a short list and on any journey exiting 0 with
+both streams empty**, so a recording that came out empty cannot look like a corpus.
+`--verify` replays and diffs after.
+
+## ▶▶ L376. THE OPERATOR PREMISE IS EVIDENCED — 20 of 22 covered, and the Rust side says so itself
+
+**16 of 260 contract cases carry `AND`/`OR`/`NOT`** — `bool-and-cross-message`,
+`bool-or`, `bool-parens-precedence`, `bool-not-only`, `precedence-and-over-or`,
+`quoted-term-inside-operators`, `colored-highlight-painting`,
+`backtrack-pair-in-one-query`, `single-and-literal-icase`, **plus seven error
+paths**: `err-not-leading`, `err-and-trailing`, `err-or-leading`,
+`err-mixed-not-and`, `err-not-parens`, `err-not-double-term`, `err-not-trailing`.
+
+***The half most likely to be assumed rather than covered is the half that is
+covered.***
+
+**⚠ AND THE RUST SIDE SAYS IT IN ITS OWN WORDS.**
+`rust/search_query.rs::boolean_parser_precedence_errors_and_not_paths` carries:
+***"Migrated from the legacy Python route's operator suite: dangling AND/OR,
+lowercase operator words as one literal pattern, and bare operator words."***
+It also asserts AND-over-OR precedence, parenthesised grouping, **the three NOT
+error messages by exact text**, and that case sensitivity reaches a negated term.
+**The migration was deliberate and documented at the code.**
+
+***L371's premise evidenced rather than believed — which is why the measurement was
+worth ordering even though the answer was yes.***
+
+## ⚠ L377. TWO CLAIMS HAVE NO COUNTERPART — an operator term against the SUMMARY FACET
+
+    test_and_term_satisfied_by_summary_facet        'opname-alpha AND opname-bravo'
+    test_not_excludes_when_negated_term_in_summary  'opname-alpha NOT opname-bravo'
+
+**The corpus covers summary facets. It covers operators. It never covers them
+together.** The Rust suite tests `session::summaries` and tests the grammar,
+**separately.** **A term satisfied only by a session's summary still counting toward
+`AND`, and a negated term found only in a summary still excluding the session, is
+asserted nowhere else in the tree.**
+
+**MEASURED LIVE ON BOTH ROUTES BEFORE ESCALATING:**
+
+    'opname-alpha AND opname-bravo'   ch-legacy: ['summary-carries-term']   ch: ['summary-carries-term']
+    'opname-alpha NOT opname-bravo'   ch-legacy: ['clean-session']          ch: ['clean-session']
+
+***"A gap whose answer is unknown is a different problem from one whose answer is
+known."*** **The routes agree; the port is correct today.**
+
+### ▶ RULED: FREEZE BOTH, then delete the file
+
+***Decision 6 in its plainest form, stated better than the rule does: the subject
+survives, the oracle dies, there is no successor — and the port is right today and
+nothing would notice if it stopped being right.*** **Forty lines against a window
+that closes at the deletion. Eighth instance of cheap-now-impossible-after, and the
+cheapest since the 1,383 bytes.**
+
+**Storing a VERIFIED-CORRECT answer rather than a mystery is what makes it worth
+building** — *had the routes disagreed this would have been a defect report instead
+of a freeze request.* **Fixtures built the way `_write_session` builds them, so the
+recorded shape is the claim's own.** **Same refusals as every capture here, and the
+degradation recorded where it is read.**
+
+***And the reason the word was needed, in the seat's own framing: "the alternative
+is deciding your ruling's premise for you in the one place it did not hold."***
+**A seat that finds the single exception to an instruction, stops on exactly that,
+and proceeds with everything else is the shape this desk has been trying to
+build.**
+
+## ▶▶▶ L378. THE PYTHON SEARCH AUTHORITY IS DELETED. THE TREE IS GREEN.
+
+    oracle route digest  sha256:08f036afd97dd82f…   MOVED, as ruled
+    rust tree digest     7b3267a6a22e1f7c…          UNCHANGED — no Rust was touched
+    launchers            .venv/bin/ch = target/release/ch = ~/.local/bin/ch = 1f76081c
+    net                  288 insertions, 7,591 deletions across 36 files
+
+**1,963 Python tests pass, all 13 shell suites pass, and all 36 surviving journeys
+reproduce byte for byte** — captured through **both** binaries before, replayed
+after.
+
+**Removed:** `commands/search.py`, `search_query.py`, `session_scan.py`;
+`cli.main()`'s search arm and `_resolve_search_output_mode`; `SearchOutputMode`,
+`StreamingPager`, `print_hint`, `build_messages_group`, the two `parsing.py`
+extractors; the search re-exports in both hubs. **8 whole test files, 31 surgical
+removals across 9, the divergence suite, and the five live twins.**
+**`test_native_ascii_candidate_scanner.py` repointed to `chats._native` — 59 kept.**
+
+### Three things the plan did not predict, all caught by falsifiers rather than review
+
+**1 — A CLASS OF TEST REACHES THE AUTHORITY BY STRING.**
+`monkeypatch.setattr(cli, "cmd_search", …)` and `cli.sys.argv = ["ch", "search", …]`
+**name nothing an identifier scan can see.** It moved `test_search_case_sensitivity
+.py` to whole-file and **surfaced `test_short_cli_args.py`, a seventeenth file
+nobody had listed.** ***"A scan that answers the question you asked cannot tell you
+it was the wrong question"*** — the enumeration's own miss, one layer down.
+
+**2 — REMOVING THE `search` LINE FROM `cli.py`'s EPILOG WAS WRONG, and the journey
+diff caught it.** 33 of 36 reproduced; **all three diffs were `--help`, by exactly
+that line.** **`ch` serves search natively, so deleting it made the product stop
+listing a command it has.** **Restored with the reason at the site** — *a `search`
+line in a file with no search arm is the most obvious thing in the world for a later
+cleanup to take.* Then 36 of 36. **That falsifier paid for itself in one line of
+output.**
+
+### ⚠⚠ 3 — THE OVERWRITE, and the rule is worth more than what it cost
+
+**`.venv/bin/ch` was `22236c08`, built 2026-08-28, BEFORE the cutover. It delegated
+`search` to `ch-legacy`, so `test_progressive_shortening.py`,
+`test_pi_custom_messages.py` and `test_pi_inline_skills.py` had never been measuring
+the port.** **The deletion exposed it. The old bytes were copied over without being
+kept, and are gone.**
+
+***THE RULE: "ask what consults it before you remove it" applies to an OVERWRITE,
+not only a deletion.*** **Eight times in four days this desk said
+cheap-now-impossible-after about deletions, and nobody said it about a copy.**
+
+**Material cost: nil, and slightly positive.** Nothing depended on that identity —
+**the frozen reference moved to `.venv/bin/ch-legacy` this morning for exactly this
+class of reason** — and three files now measure the port. ***What was lost was
+optionality, not evidence.***
+
+**And the finding underneath the mistake: a stale binary in the path is a HELD
+PARAMETER NOBODY CHOSE** — the ninth on this mission, **and the only one that had
+been silently substituting one whole route for another.**
+
+**RATIFIED: one installed `RECORD` row updated to the bytes actually installed, and
+the reinstall REFUSED** — it would overwrite `target/release/ch`, the artifact every
+perf gate measures, **and produce a fourth identity.** **`tests/data/
+oracle-route-inputs/RECORD` untouched at `863d603b`, so the `dd6ab701`
+re-derivation runs off the stored copy.**
+
+### The three oracle guards: 538 errors from one cause, replaced by a mechanism
+
+All three asserted `ORACLE["source_digest"] == oracle_route_digest()`, **which after
+the deletion is permanently "moved".** **`tests/oracle_provenance.py` is the one
+authority; `test_oracle_provenance.py` EXECUTES the reconstruction** — `git archive
+67d6053`, the two stored non-git inputs, then the recipe. **`oracle_route_digest`
+grew a `root` parameter so the reconstruction is graded by the REAL recipe, not a
+second copy.** ***L365's hand-verification is now a gate.***
+
+**The degradation is at the module a reader meets: the live check caught a source
+edit that moved the oracle under a stored expectation, and nothing can do that
+now.** *One exception named:* `test_tool_visibility_oracle.py`'s subject survives,
+so its `..._still_describes_the_python_product` is the currency check there.
+
+## ⚠ NAMED FOLLOW-UP: `test_stderr_colour.py` flakes under `-n 8`
+
+**Four cases in one full-suite run, one in another, a DIFFERENT SET each time.
+241 of 241 green on three serial runs and on an `-n 8` run of that file alone.**
+**A pty test under eight workers; the subject is the native binary and the baseline
+is frozen — contention, not the deletion.** **`run_all.sh` uses `-n 8`, so expect
+it.** *Routed to `g5-runner` with the measurement attached so it is read as
+contention, not chased.*
+
+*`target/debug` (2.9 GiB) removed for disk — intermediates only, `target/release/ch`
+untouched at `1f76081c`. Disk 13 → 16 GiB.*
+
+**Nothing is committed. The commit follows `g5-runner`'s proof, not the deletion.**

@@ -14,6 +14,49 @@ subcommand.** Several entries below turn on exactly that.
 
 ---
 
+## ⚠ CORRECTION — THIS ENUMERATION WAS INCOMPLETE BY A WHOLE CLASS
+
+**Added 2026-09-02 by `g5-runner` after `deletion-owner` found the gap. Read this
+before the sections below, because they are organised on the axis that caused it.**
+
+**Sections A–C enumerate instruments that consult the authority through a
+SUBPROCESS — things that run `ch-legacy search`. They miss every instrument that
+IMPORTS the Python search module IN-PROCESS.** *A different mechanism of
+consultation, and the whole class was invisible to how I looked.*
+
+**Measured floor, verified by me rather than taken on report:**
+
+| file | imports | collected |
+| --- | --- | ---: |
+| `tests/test_search_orchestration.py` | `chats.commands.search` | **78** |
+| `tests/test_native_ascii_candidate_scanner.py` | `_file_contains_ascii` and others | **59** |
+| `tests/test_colored_rendering.py` | `cmd_search` | **36** |
+
+**`test_native_ascii_candidate_scanner.py` is the sharpest: it imports
+`_file_contains_ascii` from `commands/search.py` to GRADE THE NATIVE SCANNER
+AGAINST IT.** *An instrument consulting the Python authority as its oracle,
+reached by an import rather than a subprocess — exactly the shape this document
+was written to catalogue, and exactly the shape it could not see.*
+
+**51 test files import `chats` at all; 3 import `commands.search` directly.**
+`deletion-owner` counts **16 files and 281 tests** against a wider module set —
+**theirs is derived by reachability from `cli.py`'s dispatch and supersedes my
+floor.** *I am naming the class and the measurement; the list is theirs.*
+
+**⚠ AND I HAD THE EVIDENCE AND DID NOT USE IT.** Building this document I ran two
+sweeps: one for `ch-legacy` invocations and one for `chats` imports. **I
+classified the first and moved past the second.** *Not a search that missed — a
+result that was collected and never read. The same defect as reading an aggregate
+without dumping the instances, one layer up.*
+
+**The general form, which cost two seats an hour between them: a document can be
+clean of the fault you checked it for and carry a different one.** I wrote that
+sentence about my own recording an hour before this instance proved it about my
+own enumeration. **Neither of us found the other's half by looking harder at our
+own.**
+
+---
+
 ## A. STORED — the consultation is frozen. These survive.
 
 | artifact | size | gated by | note |

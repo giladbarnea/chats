@@ -232,11 +232,6 @@ def extract_summaries_from_content(content: str) -> list[str]:
     return _extract_field_from_content(content, "summary", "summary")
 
 
-def extract_summaries_from_entries(entries: list[dict]) -> list[str]:
-    """Extract all summary fields from parsed JSONL entries."""
-    return _extract_field_from_entries(entries, "summary", "summary")
-
-
 def extract_summaries_from_jsonl(file_path: Path) -> list[str]:
     """Extract all summary fields from a jsonl conversation file."""
     return _extract_field_from_jsonl(file_path, "summary", "summary")
@@ -313,15 +308,6 @@ def extract_custom_titles_from_entries(entries: list[dict]) -> list[str]:
         if custom_title := _extract_custom_title_from_entry(entry):
             values.append(custom_title)
     return values
-
-
-def extract_latest_custom_title_from_entries(entries: list[dict]) -> str | None:
-    """Extract only the latest shared custom-title value from parsed JSONL entries."""
-    latest_custom_title: str | None = None
-    for entry in entries:
-        if custom_title := _extract_custom_title_from_entry(entry):
-            latest_custom_title = custom_title
-    return latest_custom_title
 
 
 def extract_custom_titles_from_jsonl(file_path: Path) -> list[str]:

@@ -39,35 +39,6 @@ def _run_parse_cli(monkeypatch, *argv: str) -> tuple[int, dict[str, object]]:
     return exit_code, captured
 
 
-def _run_search_cli(monkeypatch, *argv: str) -> tuple[int, dict[str, object]]:
-    """Run search-mode CLI and capture the arguments that reach cmd_search."""
-    captured: dict[str, object] = {}
-
-    def fake_cmd_search(
-        pattern_arg: str,
-        flags,
-        pool_filter=None,
-        *,
-        case_sensitive=False,
-        output_mode=None,
-        output_format="xml",
-        emit_metadata=True,
-    ) -> None:
-        captured["pattern"] = pattern_arg
-        captured["flags"] = flags
-
-    monkeypatch.setattr(cli, "cmd_search", fake_cmd_search)
-    monkeypatch.setattr(cli.sys, "argv", ["ch", "search", *argv])
-
-    exit_code = 0
-    try:
-        cli.main()
-    except SystemExit as exc:  # pragma: no cover - argparse seam
-        exit_code = exc.code if isinstance(exc.code, int) else 1
-
-    return exit_code, captured
-
-
 def test_parse_bare_short_keeps_following_input_positional(monkeypatch) -> None:
     """Bare `--short` should leave the following token as parse input."""
     exit_code, captured = _run_parse_cli(monkeypatch, "--short", "session.jsonl")
@@ -177,26 +148,6 @@ def test_parse_tool_short_accepts_local_attached_max_chars(monkeypatch) -> None:
         "Expected `Bash:s=10` to store local max-chars 10. "
         f"Got: {tool_filters[0].short_max_chars!r}"
     )
-
-
-def test_search_bare_short_keeps_following_pattern_positional(monkeypatch) -> None:
-    """Bare `search --short` should keep the following token as the search pattern."""
-    exit_code, captured = _run_search_cli(monkeypatch, "--short", "needle")
-
-    assert exit_code == 0
-    assert captured["pattern"] == "needle"
-    assert captured["flags"].shorten is True
-    assert captured["flags"].shorten_max_chars == 500
-
-
-def test_search_short_accepts_detached_numeric_max_chars(monkeypatch) -> None:
-    """`search --short 120 needle` should propagate max-chars 120 and keep needle as the pattern."""
-    exit_code, captured = _run_search_cli(monkeypatch, "--short", "120", "needle")
-
-    assert exit_code == 0
-    assert captured["pattern"] == "needle"
-    assert captured["flags"].shorten is True
-    assert captured["flags"].shorten_max_chars == 120
 
 
 @pytest.mark.parametrize("invalid_value", ["7", "-1", "1:3"])

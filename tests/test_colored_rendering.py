@@ -1,7 +1,9 @@
-"""Characterization tests for the colored Rich rendering of parse and search.
+"""Characterization tests for the colored Rich rendering of parse.
 
-These pin *observable output* through the public commands (`cmd_parse`,
-`cmd_search`), never the internal renderers. A refactor is free to rename or
+These pin *observable output* through the public `cmd_parse`, never the internal
+renderers. **Three search rows were removed with the Python search authority**;
+the colour of a search render is pinned by `frozen_reference.json` and the
+contract corpus instead. A refactor is free to rename or
 merge the panel/rail/tool helpers as long as what reaches the terminal is
 preserved — these tests guard that, plus the colored-vs-plain split the redesign
 depends on. The rest of the suite exercises the plain/data path but not the
@@ -21,8 +23,7 @@ from rich.console import Console
 
 import chats.console as console_mod
 from chats.commands.parse import cmd_parse
-from chats.commands.search import cmd_search
-from chats.model import ConversationFlags, SearchOutputMode
+from chats.model import ConversationFlags
 from chats.theme import APP_THEME
 from chats.tool_filter import ToolFilter
 
@@ -836,89 +837,9 @@ def test_compaction_message_has_its_own_badge_and_hue(tmp_path, monkeypatch):
     )
 
 
-def test_colored_search_banner_leads_with_title(tmp_path, monkeypatch):
-    """A colored search hit is framed by a banner showing the custom title + full id."""
-    home = tmp_path / "home"
-    monkeypatch.setattr(Path, "home", lambda: home)
-    session_id = "88888888-aaaa-bbbb-cccc-000000000001"
-    _write_claude_session(
-        home, session_id,
-        [
-            {"type": "custom-title", "customTitle": "My Special Title",
-             "sessionId": session_id},
-            _assistant(text="the needle is in this message"),
-        ],
-    )
-
-    out = _render_colored(
-        monkeypatch, cmd_search, "needle",
-        ConversationFlags(color="always", paging=False),
-        output_mode=SearchOutputMode.FULL,
-    )
-
-    assert "My Special Title" in out, (
-        f"Expected the banner to lead with the custom title, not the UUID. Got:\n{out}"
-    )
-    first_line = out.splitlines()[0]
-    assert session_id in first_line, (
-        f"Expected the search banner to restate the full session id. Got:\n{out}"
-    )
-
-
-def test_colored_search_labels_bash_result_match_as_bash(tmp_path, monkeypatch):
-    """Colored search uses the same Bash-result presentation as colored parse."""
-    home = tmp_path / "home"
-    monkeypatch.setattr(Path, "home", lambda: home)
-    _write_claude_session(
-        home, "99999999-aaaa-bbbb-cccc-000000000002",
-        [
-            _assistant(content=[
-                {"type": "tool_use", "id": "toolu_0a", "name": "Bash",
-                 "input": {"command": "printf done"}},
-            ]),
-            _user([{"type": "tool_result", "tool_use_id": "toolu_0a",
-                    "content": "BASH_RESULT_NEEDLE"}]),
-        ],
-    )
-
-    out = _render_colored(
-        monkeypatch, cmd_search, "BASH_RESULT_NEEDLE",
-        ConversationFlags(color="always", paging=False, show_tools=True),
-        output_mode=SearchOutputMode.MATCHES,
-    )
-
-    assert "User" not in out, f"A matching Bash result must not be labeled User. Got:\n{out}"
-    assert "⎿ output" in out, f"Expected the matching Bash result marker to read output. Got:\n{out}"
-    assert out.count("Bash") == 1, (
-        f"Expected only the search message badge to name Bash. Got:\n{out}"
-    )
-
-
-def test_colored_search_highlights_matched_term(tmp_path, monkeypatch):
-    """The matched term is highlighted (amber) in the rendered body."""
-    home = tmp_path / "home"
-    monkeypatch.setattr(Path, "home", lambda: home)
-    _write_claude_session(
-        home, "99999999-aaaa-bbbb-cccc-000000000001",
-        [_assistant(text="the needle is in this message")],
-    )
-
-    styled = _render_colored(
-        monkeypatch, cmd_search, "needle",
-        ConversationFlags(color="always", paging=False),
-        output_mode=SearchOutputMode.MATCHES, styles=True,
-    )
-
-    assert "needle" in styled, f"Expected the matched term in output. Got:\n{styled}"
-    assert "48;2;230;180;80" in styled, (
-        f"Expected the amber match-highlight background (#e6b450). Got:\n{styled}"
-    )
-
-
 @pytest.mark.parametrize("module_name", [
     "chats.model",
     "chats.utils",
-    "chats.search_query",
     "chats.parsing",
     "chats.murmurs",
     "chats.commands.name",
