@@ -251,3 +251,60 @@ OptMem _does own_:
 **Note:**
 
 If the user has dictated a different memory policy for the current project, it should of course take precedence over these defaults. A project-specific policy should of course be memorized.
+
+## Memo’s role vs the rest of the project’s documentation means 
+
+Take the generalized principles from the following specification to fit the current project’s domain.
+
+**The canonical information layer structure should be:**
+
+1. **Source documents own evidence.**  
+   Meeting notes own observations. Financial documents own payment facts.
+
+2. **`README.md`’s own the present truth.**  
+   They explain what exists, how it works, and how to operate it.
+
+3. **Memo owns project change over time.**  
+   It records decisions, reversals, incidents, client feedback, and material validations.
+
+4. **`AGENTS.md`’s own operating rules.**  
+   They tells agents how to work in this project.
+
+5. **Code owns implementation detail.**  
+   READMEs should not restate details that the code makes obvious.
+
+### When Memo records a present truth (README overlap) 
+
+The angle must remain different.
+A decision can affect both Memo and the README without duplicating their information angle.
+
+**Memo:**
+
+> 2026-08-23: Abandoned the native app because durable Apple distribution required a paid account. The Safari PWA became the phone client.
+
+**README:**
+
+> The phone client is a Safari PWA.
+
+Memo owns the change and its reason. The README owns the resulting current state.
+
+### Memo should record only material changes
+
+Include:
+
+- A product or architecture decision and its reason.
+- A decision reversal.
+- A verified production incident and its cause.
+- Client feedback that changes the product.
+- A validation that closes an important uncertainty.
+- A durable constraint discovered through real use.
+
+Exclude:
+
+- Current commands, URLs, and component descriptions.
+- Temporary setup that was removed.
+- Routine deployments and successful test runs.
+- Facts already owned by a meeting or financial artifact.
+- Implementation details recoverable from code.
+- General working rules already present in `AGENTS.md`.
+
