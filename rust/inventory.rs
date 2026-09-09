@@ -486,6 +486,12 @@ mod tests {
             fs::create_dir_all(&path).expect("create temporary directory");
             Self(path)
         }
+
+        fn write(&self, name: &str, bytes: &[u8]) -> PathBuf {
+            let path = self.0.join(name);
+            fs::write(&path, bytes).expect("write session fixture");
+            path
+        }
     }
 
     impl Drop for TemporaryDirectory {
@@ -600,6 +606,60 @@ mod tests {
             "Expected a path outside all native roots to remain unclassified."
         );
     }
+
+    #[test]
+    fn top_level_empty_cwd_still_wins_over_codex_payload_cwd() {
+        let directory = TemporaryDirectory::new();
+        let path = directory.write(
+            "empty-top-level.jsonl",
+            br#"{"type":"session_meta","cwd":"","payload":{"cwd":"/payload"}}
+"#,
+        );
+
+        assert_eq!(
+            super::cwd_from_path(&path),
+            Some(String::new()),
+            "The existing top-level empty-string result must keep precedence over the new Codex fallback."
+        );
+    }
+
+    #[test]
+    fn empty_or_missing_codex_payload_cwd_continues_to_a_later_top_level_cwd() {
+        let directory = TemporaryDirectory::new();
+        for (name, first_line) in [
+            (
+                "empty-payload.jsonl",
+                r#"{"type":"session_meta","payload":{"cwd":""}}"#,
+            ),
+            (
+                "missing-payload.jsonl",
+                r#"{"type":"session_meta","payload":{"id":"session"}}"#,
+            ),
+        ] {
+            let content = format!("{first_line}\n{{\"cwd\":\"/later\"}}\n");
+            let path = directory.write(name, content.as_bytes());
+            assert_eq!(
+                super::cwd_from_path(&path).as_deref(),
+                Some("/later"),
+                "An empty or missing native payload cwd must not stop the existing forward scan for {name}."
+            );
+        }
+    }
+
+    #[test]
+    fn codex_payload_cwd_returns_before_invalid_later_bytes() {
+        let directory = TemporaryDirectory::new();
+        let path = directory.write(
+            "early-payload.jsonl",
+            b"{\"type\":\"session_meta\",\"payload\":{\"cwd\":\"/early\"}}\n\xff",
+        );
+
+        assert_eq!(
+            super::cwd_from_path(&path).as_deref(),
+            Some("/early"),
+            "A valid native Codex header must answer before the probe reads unrelated invalid later bytes."
+        );
+    }
 }
 
 /// The session's working directory, read by streaming rather than parsing.
@@ -608,23 +668,13 @@ mod tests {
 /// real, so this must not decode the whole session. It stops at the first entry
 /// carrying a `cwd`, which is the same entry `session::cwd` would pick.
 ///
-/// **No caller, today, and that is the only reason the gaps below are not
-/// defects.** `ch search`'s `-d` reaches cwd through `session::cwd(&entries)` at
-/// `search_confirm.rs`, not through here. This function is the port of Python's
-/// `extract_cwd_from_jsonl_file`, which serves `pool_filter.passes_path_for_index`
-/// — the `ch -1 -d` index path, which has not been ported.
+/// Search directory filters use this probe. It preserves the existing top-level
+/// `cwd` behavior, including an empty value, then reads native Codex
+/// `session_meta.payload.cwd`. Other generated Codex cwd shapes stay outside this
+/// narrow path screen.
 ///
-/// **Two gaps remain, left rather than fixed because nothing reaches them, and
-/// written down because the moment someone wires up `ch -1 -d` they become live:**
-///
-/// - Python requires a **truthy** cwd — `isinstance(cwd, str) and cwd` — so an
-///   empty string falls through to the next check. This returns `Some("")`.
-/// - Python then falls back to `_extract_cwd_from_codex_entry`, reading `cwd` out
-///   of a Codex `<environment_context>` block. This has no such fallback, so a
-///   Codex session yields nothing here.
-///
-/// A third, shared with every other line reader in this file: Python opens in
-/// **text** mode, so a lone `\r` is a line separator to it and not to
+/// A remaining difference shared with every other line reader in this file:
+/// Python opens in **text** mode, so a lone `\r` is a line separator to it and not to
 /// `BufRead::read_line`. See `python_io::universal_newlines`.
 pub fn cwd_from_path(path: &Path) -> Option<String> {
     let file = std::fs::File::open(path).ok()?;
@@ -645,11 +695,18 @@ pub fn cwd_from_path(path: &Path) -> Option<String> {
             continue;
         }
         let lenient = crate::session::detection_lenient(trimmed);
-        let Ok(entry) = serde_json::from_str::<serde_json::Value>(&lenient) else {
+        let Ok(serde_json::Value::Object(entry)) =
+            serde_json::from_str::<serde_json::Value>(&lenient)
+        else {
             continue;
         };
         if let Some(cwd) = entry.get("cwd").and_then(serde_json::Value::as_str) {
             return Some(cwd.to_string());
+        }
+        if entry.get("type").and_then(serde_json::Value::as_str) == Some("session_meta")
+            && let Some(cwd) = crate::session::cwd(std::slice::from_ref(&entry))
+        {
+            return Some(cwd);
         }
     }
 }
