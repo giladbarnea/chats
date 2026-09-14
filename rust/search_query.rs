@@ -953,7 +953,22 @@ fn extra_for(lowered: char) -> &'static [char] {
         .unwrap_or(&[])
 }
 
+#[cfg(test)]
+thread_local! {
+    static UNICODE_LITERAL_COMPARISONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+#[cfg(test)]
+fn record_unicode_literal_comparison() {
+    UNICODE_LITERAL_COMPARISONS.with(|count| count.set(count.get() + 1));
+}
+
 pub(crate) fn literal_matches_icase(pattern_character: char, text_character: char) -> bool {
+    if pattern_character.is_ascii() && text_character.is_ascii() {
+        return pattern_character.eq_ignore_ascii_case(&text_character);
+    }
+    #[cfg(test)]
+    record_unicode_literal_comparison();
     let lowered_pattern = tolower(pattern_character);
     let lowered_text = tolower(text_character);
     lowered_text == lowered_pattern
@@ -2232,6 +2247,73 @@ mod tests {
 
     fn compiles(pattern: &str) -> bool {
         Regex::compile(pattern, true).is_ok()
+    }
+
+    fn old_literal_matches_icase(pattern_character: char, text_character: char) -> bool {
+        let lowered_pattern = tolower(pattern_character);
+        let lowered_text = tolower(text_character);
+        lowered_text == lowered_pattern
+            || text_character == lowered_pattern
+            || extra_for(lowered_pattern).contains(&text_character)
+            || extra_for(lowered_text).contains(&pattern_character)
+            || pattern_character == text_character
+    }
+
+    #[test]
+    fn every_ascii_pair_uses_exact_ascii_equivalence_without_unicode_work() {
+        UNICODE_LITERAL_COMPARISONS.with(|count| count.set(0));
+        for pattern in 0u8..=127 {
+            for text in 0u8..=127 {
+                let pattern = char::from(pattern);
+                let text = char::from(text);
+                assert_eq!(
+                    literal_matches_icase(pattern, text),
+                    old_literal_matches_icase(pattern, text),
+                    "ASCII equivalence changed for {pattern:?} and {text:?}"
+                );
+            }
+        }
+        let unicode_comparisons = UNICODE_LITERAL_COMPARISONS.with(std::cell::Cell::get);
+        assert_eq!(
+            unicode_comparisons, 0,
+            "all 16,384 ASCII pairs must avoid Unicode lowering and EXTRA_CASES lookups"
+        );
+    }
+
+    #[test]
+    fn every_mixed_unicode_pair_keeps_the_existing_equivalence_logic() {
+        let mut unicode = EXTRA_CASES
+            .iter()
+            .flat_map(|(key, values)| std::iter::once(*key).chain(values.iter().copied()))
+            .chain(['İ', 'K', 'ß', 'ﬀ', 'Σ', 'ς', '中', 'é'])
+            .filter(|character| !character.is_ascii())
+            .collect::<Vec<_>>();
+        unicode.sort_unstable();
+        unicode.dedup();
+        let characters = (0u8..=127)
+            .map(char::from)
+            .chain(unicode)
+            .collect::<Vec<_>>();
+        UNICODE_LITERAL_COMPARISONS.with(|count| count.set(0));
+        let mut expected_unicode_comparisons = 0usize;
+        for pattern in &characters {
+            for text in &characters {
+                if pattern.is_ascii() && text.is_ascii() {
+                    continue;
+                }
+                expected_unicode_comparisons += 1;
+                assert_eq!(
+                    literal_matches_icase(*pattern, *text),
+                    old_literal_matches_icase(*pattern, *text),
+                    "Unicode equivalence changed for {pattern:?} and {text:?}"
+                );
+            }
+        }
+        assert_eq!(
+            UNICODE_LITERAL_COMPARISONS.with(std::cell::Cell::get),
+            expected_unicode_comparisons,
+            "every pair containing Unicode must execute the unchanged Unicode path"
+        );
     }
 
     #[test]
