@@ -10,7 +10,7 @@
 
 use crate::search::parse::SearchArguments;
 use crate::search::plan;
-use crate::search_confirm::Confirmation;
+use crate::search_confirm::{Confirmation, SearchHit};
 use crate::search_engine;
 use crate::search_output::{
     BufferingSink, PlainOutput, PlainSink, can_use_json_string_gate, confirmed_from,
@@ -18,7 +18,7 @@ use crate::search_output::{
 };
 use crate::search_query::{self, Query};
 use crate::session_pool::{CANDIDATE_WINDOW, SessionPool};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 const PER_FILE_WINDOW: usize = 6;
@@ -26,6 +26,17 @@ const PER_FILE_WINDOW: usize = 6;
 struct PreparedFile {
     confirmed: search_engine::Confirmed,
     undecidable: Option<String>,
+}
+
+pub(crate) trait ListSink: search_engine::HitSink {
+    fn prepare(&self, hit: SearchHit) -> Result<String, String>;
+    fn emit_prepared(&mut self, prepared: &str);
+}
+
+enum PreparedList {
+    Hit(String),
+    Miss,
+    Failed(String),
 }
 
 /// Run one search. The return value is the process exit status.
@@ -124,17 +135,27 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                     paging: arguments.flags.paging,
                 },
             );
-            stream_candidates(
-                &scan_order,
-                &mut sink,
-                &mut screen,
-                needle.as_deref(),
-                &query,
-                &arguments.flags,
-                &pi_files,
-                &confirmation,
-                &mut undecidable,
-            )
+            if needle.is_none() {
+                stream_continuous_list(
+                    &scan_order,
+                    &mut sink,
+                    &mut screen,
+                    |path| prepare_file(path, &query, &arguments.flags, &pi_files, &confirmation),
+                    &mut undecidable,
+                )
+            } else {
+                stream_candidates(
+                    &scan_order,
+                    &mut sink,
+                    &mut screen,
+                    needle.as_deref(),
+                    &query,
+                    &arguments.flags,
+                    &pi_files,
+                    &confirmation,
+                    &mut undecidable,
+                )
+            }
         } else if arguments.flags.color
             && matches!(
                 arguments.output_mode,
@@ -180,17 +201,29 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                 width,
                 metrics: crate::cells::CellMetrics::from_environment(),
             });
-            stream_candidates(
-                &scan_order,
-                &mut sink,
-                &mut screen,
-                needle.as_deref(),
-                &query,
-                &arguments.flags,
-                &pi_files,
-                &confirmation,
-                &mut undecidable,
-            )
+            if arguments.output_mode == crate::search::parse::SearchOutputMode::List
+                && needle.is_none()
+            {
+                stream_continuous_list(
+                    &scan_order,
+                    &mut sink,
+                    &mut screen,
+                    |path| prepare_file(path, &query, &arguments.flags, &pi_files, &confirmation),
+                    &mut undecidable,
+                )
+            } else {
+                stream_candidates(
+                    &scan_order,
+                    &mut sink,
+                    &mut screen,
+                    needle.as_deref(),
+                    &query,
+                    &arguments.flags,
+                    &pi_files,
+                    &confirmation,
+                    &mut undecidable,
+                )
+            }
         }
     };
 
@@ -212,6 +245,25 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
         emit_hint(&hint);
     }
     outcome.exit_status()
+}
+
+fn prepare_file(
+    path: &Path,
+    query: &Query,
+    flags: &crate::visibility::ConversationFlags,
+    pi_files: &HashSet<PathBuf>,
+    confirmation: &Confirmation<'_>,
+) -> PreparedFile {
+    let mut undecidable = None;
+    let confirmed = match path_candidate_matches(path, query, flags, pi_files.contains(path)) {
+        Ok(true) => confirmed_from(path, confirmation.hit(path), &mut undecidable),
+        Ok(false) => search_engine::Confirmed::Miss,
+        Err(message) => search_engine::Confirmed::Failed(message),
+    };
+    PreparedFile {
+        confirmed,
+        undecidable,
+    }
 }
 
 fn stream_candidates<S: search_engine::HitSink>(
@@ -249,29 +301,176 @@ fn stream_candidates<S: search_engine::HitSink>(
         |paths| {
             paths
                 .par_iter()
-                .map(|path| {
-                    let mut undecidable = None;
-                    let confirmed = match path_candidate_matches(
-                        path,
-                        query,
-                        flags,
-                        pi_files.contains(path),
-                    ) {
-                        Ok(true) => {
-                            confirmed_from(path, confirmation.hit(path), &mut undecidable)
-                        }
-                        Ok(false) => search_engine::Confirmed::Miss,
-                        Err(message) => search_engine::Confirmed::Failed(message),
-                    };
-                    PreparedFile {
-                        confirmed,
-                        undecidable,
-                    }
-                })
+                .map(|path| prepare_file(path, query, flags, pi_files, confirmation))
                 .collect()
         },
         first_undecidable,
     )
+}
+
+/// Keep six per-file List computations active and commit compact results in scan order.
+/// Refill can read far ahead of a blocked prefix; closure cannot cancel active reads.
+fn stream_continuous_list<S: ListSink>(
+    scan_order: &[PathBuf],
+    sink: &mut S,
+    mut screen: impl FnMut(&Path) -> search_engine::Gated,
+    evaluate: impl Fn(&Path) -> PreparedFile + Sync,
+    first_undecidable: &mut Option<String>,
+) -> search_engine::Outcome {
+    if scan_order.is_empty() {
+        return search_engine::Outcome::EmptyPool;
+    }
+    if sink.closed() {
+        return search_engine::Outcome::NoHits;
+    }
+
+    let mut found = false;
+    let mut next_start = 0usize;
+    let mut next_commit = 0usize;
+    let mut active = 0usize;
+    let mut completed = BTreeMap::<usize, (PreparedList, Option<String>)>::new();
+    let mut worker_panic: Option<Box<dyn std::any::Any + Send>> = None;
+
+    rayon::in_place_scope(|scope| {
+        let (sender, receiver) = std::sync::mpsc::channel::<(
+            usize,
+            Result<PreparedFile, Box<dyn std::any::Any + Send>>,
+        )>();
+        let evaluate = &evaluate;
+        let mut stopped = false;
+
+        loop {
+            while !stopped && active < PER_FILE_WINDOW && next_start < scan_order.len() {
+                if sink.closed() {
+                    stopped = true;
+                    break;
+                }
+                let index = next_start;
+                next_start += 1;
+                let prepared = match screen(&scan_order[index]) {
+                    search_engine::Gated::Rejected => Some((PreparedList::Miss, None)),
+                    search_engine::Gated::Failed(message) => {
+                        Some((PreparedList::Failed(message), None))
+                    }
+                    search_engine::Gated::Survives => {
+                        let path = &scan_order[index];
+                        let sender = sender.clone();
+                        scope.spawn(move |_| {
+                            let result = std::panic::catch_unwind(
+                                std::panic::AssertUnwindSafe(|| evaluate(path)),
+                            );
+                            let _ = sender.send((index, result));
+                        });
+                        active += 1;
+                        None
+                    }
+                };
+                if let Some(prepared) = prepared {
+                    assert!(completed.insert(index, prepared).is_none());
+                }
+                stopped = commit_list_results(
+                    &mut completed,
+                    &mut next_commit,
+                    sink,
+                    first_undecidable,
+                    &mut found,
+                );
+            }
+
+            if stopped {
+                if active == 0 {
+                    break;
+                }
+                let (_, result) = receiver
+                    .recv()
+                    .expect("every admitted List worker must return one result");
+                active -= 1;
+                if let Err(payload) = result {
+                    worker_panic.get_or_insert(payload);
+                }
+                continue;
+            }
+            if next_start == scan_order.len() && active == 0 {
+                break;
+            }
+            if active == 0 {
+                continue;
+            }
+
+            let (index, result) = receiver
+                .recv()
+                .expect("every admitted List worker must return one result");
+            active -= 1;
+            let prepared = match result {
+                Ok(prepared) => prepared,
+                Err(payload) => {
+                    worker_panic.get_or_insert(payload);
+                    stopped = true;
+                    continue;
+                }
+            };
+            let outcome = match prepared.confirmed {
+                search_engine::Confirmed::Hit(hit) => match sink.prepare(hit) {
+                    Ok(rendered) => PreparedList::Hit(rendered),
+                    Err(message) => PreparedList::Failed(message),
+                },
+                search_engine::Confirmed::Miss => PreparedList::Miss,
+                search_engine::Confirmed::Failed(message) => PreparedList::Failed(message),
+            };
+            assert!(
+                completed
+                    .insert(index, (outcome, prepared.undecidable))
+                    .is_none(),
+                "one result per List path",
+            );
+            stopped = commit_list_results(
+                &mut completed,
+                &mut next_commit,
+                sink,
+                first_undecidable,
+                &mut found,
+            );
+        }
+    });
+
+    if let Some(payload) = worker_panic {
+        std::panic::resume_unwind(payload);
+    }
+    if !sink.closed() {
+        sink.finish();
+    }
+    if found {
+        search_engine::Outcome::Hits
+    } else {
+        search_engine::Outcome::NoHits
+    }
+}
+
+fn commit_list_results<S: ListSink>(
+    completed: &mut BTreeMap<usize, (PreparedList, Option<String>)>,
+    next_commit: &mut usize,
+    sink: &mut S,
+    first_undecidable: &mut Option<String>,
+    found: &mut bool,
+) -> bool {
+    while let Some((prepared, undecidable)) = completed.remove(next_commit) {
+        if let Some(message) = undecidable {
+            first_undecidable.get_or_insert(message);
+        }
+        match prepared {
+            PreparedList::Hit(rendered) => {
+                sink.emit_prepared(&rendered);
+                *found = true;
+            }
+            PreparedList::Miss => {}
+            PreparedList::Failed(message) => sink.emit_error(&message),
+        }
+        *next_commit += 1;
+        if sink.closed() {
+            return true;
+        }
+    }
+    false
 }
 
 fn stream_precomputed_batches<S: search_engine::HitSink>(
@@ -774,15 +973,24 @@ fn codex_entry_has_default_visible_text(
 
 #[cfg(test)]
 mod ordered_per_file_tests {
-    use super::{PreparedFile, stream_precomputed_batches};
+    use super::{
+        ListSink, PER_FILE_WINDOW, PreparedFile, stream_continuous_list,
+        stream_precomputed_batches,
+    };
     use crate::search_engine::{Confirmed, Gated, HitSink, Outcome};
     use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::sync::{Arc, Barrier, Mutex};
+    use std::time::{Duration, Instant};
 
     #[derive(Default)]
     struct RecordingSink {
         events: Vec<String>,
         close_after_first: bool,
         initially_closed: bool,
+        commit_signal: Option<Arc<AtomicBool>>,
+        prepared_count: Option<Arc<AtomicUsize>>,
+        prepared_bytes: Option<Arc<AtomicUsize>>,
     }
 
     impl HitSink for RecordingSink {
@@ -800,6 +1008,26 @@ mod ordered_per_file_tests {
         }
     }
 
+    impl ListSink for RecordingSink {
+        fn prepare(&self, hit: crate::search_confirm::SearchHit) -> Result<String, String> {
+            let rendered = hit.metadata.path.display().to_string();
+            if let Some(count) = &self.prepared_count {
+                count.fetch_add(1, Ordering::AcqRel);
+            }
+            if let Some(bytes) = &self.prepared_bytes {
+                bytes.fetch_add(rendered.len(), Ordering::AcqRel);
+            }
+            Ok(rendered)
+        }
+
+        fn emit_prepared(&mut self, prepared: &str) {
+            self.events.push(format!("hit:{prepared}"));
+            if let Some(signal) = &self.commit_signal {
+                signal.store(true, Ordering::Release);
+            }
+        }
+    }
+
     fn hit(path: &Path) -> crate::search_confirm::SearchHit {
         let mut hit = crate::search_confirm::SearchHit::empty_for_doctest();
         hit.metadata.path = path.to_path_buf();
@@ -810,6 +1038,332 @@ mod ordered_per_file_tests {
         (0..count)
             .map(|index| PathBuf::from(index.to_string()))
             .collect()
+    }
+
+    fn hit_with_payload(path: &Path, bytes: usize) -> crate::search_confirm::SearchHit {
+        let mut hit = hit(path);
+        let mut message = crate::model::Message::new(
+            crate::model::MessageType::UserMessage,
+            "user".to_string(),
+            0.into(),
+        );
+        message.text = "x".repeat(bytes);
+        hit.messages.push(message);
+        hit.match_indices.push(0);
+        hit
+    }
+
+    #[test]
+    fn list_work_refills_six_slots_and_streams_ordered_results() {
+        let paths = paths(14);
+        let first_commit = Arc::new(AtomicBool::new(false));
+        let mut sink = RecordingSink {
+            commit_signal: Some(first_commit.clone()),
+            ..RecordingSink::default()
+        };
+        let starts = Arc::new(Mutex::new(Vec::<usize>::new()));
+        let prefix_release = Arc::new(AtomicBool::new(false));
+        let tail_started = Arc::new(AtomicBool::new(false));
+        let tail_started_before_commit = Arc::new(AtomicBool::new(false));
+        let tail_finished = Arc::new(AtomicBool::new(false));
+        let active = Arc::new(AtomicUsize::new(0));
+        let peak_active = Arc::new(AtomicUsize::new(0));
+
+        let observed_starts = starts.clone();
+        let observed_tail_started = tail_started.clone();
+        let release_prefix = prefix_release.clone();
+        let refill_observer = std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_millis(300);
+            while Instant::now() < deadline {
+                if observed_tail_started.load(Ordering::Acquire) {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            let reached_tail = observed_tail_started.load(Ordering::Acquire);
+            release_prefix.store(true, Ordering::Release);
+            (
+                reached_tail,
+                observed_starts.lock().expect("starts lock").clone(),
+            )
+        });
+
+        let worker_starts = starts.clone();
+        let worker_prefix_release = prefix_release.clone();
+        let worker_tail_started = tail_started.clone();
+        let worker_tail_started_before_commit = tail_started_before_commit.clone();
+        let worker_tail_finished = tail_finished.clone();
+        let worker_first_commit = first_commit.clone();
+        let worker_active = active.clone();
+        let worker_peak_active = peak_active.clone();
+        let mut first_undecidable = None;
+        let outcome = stream_continuous_list(
+            &paths,
+            &mut sink,
+            |path| match path.to_string_lossy().as_ref() {
+                "1" => Gated::Failed("screen-error".to_string()),
+                "2" => Gated::Rejected,
+                _ => Gated::Survives,
+            },
+            |path| {
+                let index = path
+                    .to_string_lossy()
+                    .parse::<usize>()
+                    .expect("numeric test path");
+                worker_starts.lock().expect("starts lock").push(index);
+                let active_now = worker_active.fetch_add(1, Ordering::AcqRel) + 1;
+                worker_peak_active.fetch_max(active_now, Ordering::AcqRel);
+                if index == 0 {
+                    while !worker_prefix_release.load(Ordering::Acquire) {
+                        std::thread::yield_now();
+                    }
+                }
+                if index == 13 {
+                    worker_tail_started.store(true, Ordering::Release);
+                    worker_tail_started_before_commit.store(
+                        !worker_first_commit.load(Ordering::Acquire),
+                        Ordering::Release,
+                    );
+                    while !worker_first_commit.load(Ordering::Acquire) {
+                        std::thread::yield_now();
+                    }
+                    worker_tail_finished.store(true, Ordering::Release);
+                }
+                let prepared = match index {
+                    0 | 5 => PreparedFile {
+                        confirmed: Confirmed::Hit(hit(path)),
+                        undecidable: None,
+                    },
+                    3 => PreparedFile {
+                        confirmed: Confirmed::Failed("file-error".to_string()),
+                        undecidable: None,
+                    },
+                    4 => PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: Some("first-undecidable".to_string()),
+                    },
+                    6 => PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: Some("later-undecidable".to_string()),
+                    },
+                    _ => PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: None,
+                    },
+                };
+                worker_active.fetch_sub(1, Ordering::AcqRel);
+                prepared
+            },
+            &mut first_undecidable,
+        );
+        let (tail_started_before_prefix_release, started) =
+            refill_observer.join().expect("refill observer exits");
+
+        assert!(
+            tail_started_before_prefix_release,
+            "Continuous admission must reach path 13 while path 0 remains blocked. Started: {started:?}",
+        );
+        assert!(
+            tail_started_before_commit.load(Ordering::Acquire),
+            "The tail must already be admitted when the first row commits.",
+        );
+        assert!(
+            tail_finished.load(Ordering::Acquire),
+            "The coordinator must join the blocked tail before returning.",
+        );
+        assert!(
+            peak_active.load(Ordering::Acquire) <= 6,
+            "At most six file computations may run at once.",
+        );
+        assert_eq!(
+            sink.events,
+            ["hit:0", "error:screen-error", "error:file-error", "hit:5"],
+            "Hits and both error kinds must commit in scan order.",
+        );
+        assert_eq!(
+            first_undecidable.as_deref(),
+            Some("first-undecidable"),
+            "Undecidable selection must follow scan order, not completion order.",
+        );
+        assert_eq!(outcome, Outcome::Hits, "The two committed hits decide the outcome.");
+    }
+
+    #[test]
+    fn list_close_stops_admission_and_drains_admitted_workers() {
+        let paths = paths(20);
+        let mut sink = RecordingSink {
+            close_after_first: true,
+            ..RecordingSink::default()
+        };
+        let barrier = Arc::new(Barrier::new(PER_FILE_WINDOW));
+        let starts = Arc::new(Mutex::new(Vec::<usize>::new()));
+        let finishes = Arc::new(AtomicUsize::new(0));
+        let worker_barrier = barrier.clone();
+        let worker_starts = starts.clone();
+        let worker_finishes = finishes.clone();
+        let mut first_undecidable = None;
+
+        let outcome = stream_continuous_list(
+            &paths,
+            &mut sink,
+            |_| Gated::Survives,
+            move |path| {
+                let index = path
+                    .to_string_lossy()
+                    .parse::<usize>()
+                    .expect("numeric test path");
+                worker_starts.lock().expect("starts lock").push(index);
+                worker_barrier.wait();
+                if index != 0 {
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+                worker_finishes.fetch_add(1, Ordering::AcqRel);
+                match index {
+                    0 => PreparedFile {
+                        confirmed: Confirmed::Hit(hit(path)),
+                        undecidable: None,
+                    },
+                    1 => PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: Some("discarded-undecidable".to_string()),
+                    },
+                    2 => PreparedFile {
+                        confirmed: Confirmed::Failed("discarded-error".to_string()),
+                        undecidable: None,
+                    },
+                    _ => PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: None,
+                    },
+                }
+            },
+            &mut first_undecidable,
+        );
+
+        let mut started = starts.lock().expect("starts lock").clone();
+        started.sort_unstable();
+        assert_eq!(
+            started,
+            [0, 1, 2, 3, 4, 5],
+            "The head write must close output before a seventh worker is admitted.",
+        );
+        assert_eq!(
+            finishes.load(Ordering::Acquire),
+            PER_FILE_WINDOW,
+            "Every admitted worker must finish before the coordinator returns.",
+        );
+        assert_eq!(sink.events, ["hit:0"], "Post-close results must not commit.");
+        assert!(
+            first_undecidable.is_none(),
+            "Post-close Undecidable state must not change process status.",
+        );
+        assert_eq!(outcome, Outcome::Hits, "The closing hit decides the outcome.");
+    }
+
+    #[test]
+    fn hit_rich_list_backlog_prepares_compact_rows_before_prefix_release() {
+        const PATH_COUNT: usize = 201;
+        const PAYLOAD_BYTES: usize = 256 * 1024;
+
+        let paths = paths(PATH_COUNT);
+        let prepared_count = Arc::new(AtomicUsize::new(0));
+        let prepared_bytes = Arc::new(AtomicUsize::new(0));
+        let mut sink = RecordingSink {
+            prepared_count: Some(prepared_count.clone()),
+            prepared_bytes: Some(prepared_bytes.clone()),
+            ..RecordingSink::default()
+        };
+        let release_prefix = Arc::new(AtomicBool::new(false));
+        let observed_count = prepared_count.clone();
+        let release = release_prefix.clone();
+        let observer = std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while Instant::now() < deadline {
+                if observed_count.load(Ordering::Acquire) == PATH_COUNT - 1 {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            let count = observed_count.load(Ordering::Acquire);
+            release.store(true, Ordering::Release);
+            count
+        });
+        let worker_release = release_prefix.clone();
+        let mut first_undecidable = None;
+
+        let outcome = stream_continuous_list(
+            &paths,
+            &mut sink,
+            |_| Gated::Survives,
+            move |path| {
+                if path == Path::new("0") {
+                    while !worker_release.load(Ordering::Acquire) {
+                        std::thread::yield_now();
+                    }
+                }
+                PreparedFile {
+                    confirmed: Confirmed::Hit(hit_with_payload(path, PAYLOAD_BYTES)),
+                    undecidable: None,
+                }
+            },
+            &mut first_undecidable,
+        );
+        let count_before_prefix_release = observer.join().expect("observer exits");
+
+        assert_eq!(
+            count_before_prefix_release,
+            PATH_COUNT - 1,
+            "Every tail hit must become a final row while the head remains blocked.",
+        );
+        assert!(
+            prepared_bytes.load(Ordering::Acquire) < 8 * 1024,
+            "The retained representation must scale with row text, not 256 KiB message graphs.",
+        );
+        assert_eq!(sink.events.len(), PATH_COUNT, "Every prepared row must commit.");
+        assert_eq!(outcome, Outcome::Hits, "The hit-rich scan must report hits.");
+    }
+
+    #[test]
+    fn list_worker_panic_propagates_after_admitted_workers_join() {
+        let paths = paths(PER_FILE_WINDOW);
+        let mut sink = RecordingSink::default();
+        let barrier = Arc::new(Barrier::new(PER_FILE_WINDOW));
+        let finished = Arc::new(AtomicUsize::new(0));
+        let worker_barrier = barrier.clone();
+        let worker_finished = finished.clone();
+        let mut first_undecidable = None;
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            stream_continuous_list(
+                &paths,
+                &mut sink,
+                |_| Gated::Survives,
+                move |path| {
+                    let index = path
+                        .to_string_lossy()
+                        .parse::<usize>()
+                        .expect("numeric test path");
+                    worker_barrier.wait();
+                    if index == 0 {
+                        panic!("authored worker panic");
+                    }
+                    std::thread::sleep(Duration::from_millis(10));
+                    worker_finished.fetch_add(1, Ordering::AcqRel);
+                    PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: None,
+                    }
+                },
+                &mut first_undecidable,
+            )
+        }));
+
+        assert!(result.is_err(), "A worker panic must reach the caller.");
+        assert_eq!(
+            finished.load(Ordering::Acquire),
+            PER_FILE_WINDOW - 1,
+            "Every peer admitted beside the panic must join before propagation.",
+        );
     }
 
     #[test]

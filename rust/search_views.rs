@@ -1340,6 +1340,17 @@ impl HitSink for ColouredListSink<'_> {
     }
 }
 
+impl crate::search_run::ListSink for ColouredListSink<'_> {
+    fn prepare(&self, hit: SearchHit) -> Result<String, String> {
+        Ok(self.render(&hit))
+    }
+
+    fn emit_prepared(&mut self, prepared: &str) {
+        self.write(prepared);
+        self.found += 1;
+    }
+}
+
 #[cfg(test)]
 mod sink_tests {
     use super::*;

@@ -379,6 +379,19 @@ impl<'a> PlainSink<'a> {
         rendered.push_str("\n\n");
         Ok(rendered)
     }
+
+    fn write_rendered(&mut self, rendered: &str) {
+        let mut stdout = std::io::stdout();
+        if stdout.write_all(rendered.as_bytes()).is_err() {
+            self.closed = true;
+            return;
+        }
+        // Per-line flush for id mode only, matching `search.py:350`. The other
+        // modes emit whole blocks and match Python's unflushed `print`.
+        if self.output.mode == SearchOutputMode::OnlyId && stdout.flush().is_err() {
+            self.closed = true;
+        }
+    }
 }
 
 /// Which messages a mode displays: all of them, or only the matched ones.
@@ -398,16 +411,7 @@ impl HitSink for PlainSink<'_> {
                 return;
             }
         };
-        let mut stdout = std::io::stdout();
-        if stdout.write_all(rendered.as_bytes()).is_err() {
-            self.closed = true;
-            return;
-        }
-        // Per-line flush for id mode only, matching `search.py:350`. The other
-        // modes emit whole blocks and match Python's unflushed `print`.
-        if self.output.mode == SearchOutputMode::OnlyId && stdout.flush().is_err() {
-            self.closed = true;
-        }
+        self.write_rendered(&rendered);
     }
 
     fn closed(&self) -> bool {
@@ -416,6 +420,16 @@ impl HitSink for PlainSink<'_> {
 
     fn emit_error(&mut self, message: &str) {
         print_error(message);
+    }
+}
+
+impl crate::search_run::ListSink for PlainSink<'_> {
+    fn prepare(&self, hit: SearchHit) -> Result<String, String> {
+        self.render(&hit)
+    }
+
+    fn emit_prepared(&mut self, prepared: &str) {
+        self.write_rendered(prepared);
     }
 }
 
