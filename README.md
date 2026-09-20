@@ -310,7 +310,7 @@ ch search -p codex "TODO"              # Search only Codex sessions
 - `-a` changes the search universe itself by including Claude sidechain agent sessions
 - Invalid regex patterns treated as literal strings (like `grep -F`)
 - Plain ASCII literal queries get a native raw-file candidate scan before the normal rendered-content confirmation pass. Under default unshortened visibility, case-insensitive scans continue across valid Unicode that cannot create an ASCII match under Python 3.14. Unicode casefold or regex risks, JSON Unicode escapes, invalid UTF-8, and generated-content modes still defer to semantic confirmation
-- Results stream to the terminal as each match is confirmed, so the first hit appears in well under a second instead of after the whole pool is scanned. Colored, paged output is streamed through `less -r` (quit early with `q` to stop the scan)
+- General queries evaluate files concurrently in ordered windows of six, then stream each completed window in scan order. Eligible single-literal queries keep the existing batch gate. Colored, paged output streams through `less -r` (quit early with `q` to stop the scan)
 - Results are displayed newest first by filesystem mtime (scan order) across Claude, PI, and Codex sessions. `-r/--raw` is the exception and stays buffered, since its single-message formatting needs every hit first. In the colored `-l` view, the `N sessions · newest first` count prints as a trailing summary
 - Extracts working directory from conversation files
 - `search --raw` mirrors parse raw output: a single visible message prints as content only; otherwise each session is labeled with a setext `Session <id>` heading and sessions are separated by one `---`
