@@ -21,6 +21,13 @@ use crate::session_pool::{CANDIDATE_WINDOW, SessionPool};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+const PER_FILE_WINDOW: usize = 6;
+
+struct PreparedFile {
+    confirmed: search_engine::Confirmed,
+    undecidable: Option<String>,
+}
+
 /// Run one search. The return value is the process exit status.
 pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
     let query = match search_query::parse_search_query(&arguments.pattern, arguments.case_sensitive)
@@ -68,32 +75,12 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
     let mut undecidable: Option<String> = None;
     let home_display = home.to_string_lossy().into_owned();
 
-    // Two gates, matching Python's two paths. One eligible term gets the batched
-    // JSON-string gate over 256 survivors at a time; everything else gets the
-    // per-file gate, one file at a time. Both may only ever *reject* a file that
-    // could not have matched — a false negative here costs the user a result they
-    // will never know they missed, which is why every uncertain case defers.
+    // Two gates, matching Python's two paths. One eligible term keeps the batched
+    // JSON-string gate over 256 survivors. Everything else evaluates the existing
+    // per-file gate-to-confirmation reread sequence in ordered windows of six.
     let needle = batch_needle(&query, arguments);
-    let batch_size = if needle.is_some() { CANDIDATE_WINDOW } else { 1 };
 
     let outcome = {
-        let mut probe = |paths: &[PathBuf]| match &needle {
-            Some(needle) => plan::probe(needle, |path| pi_files.contains(path))(paths),
-            None => paths
-                .iter()
-                .map(|path| {
-                    path_candidate_matches(
-                        path,
-                        &query,
-                        &arguments.flags,
-                        pi_files.contains(path),
-                    )
-                })
-                .collect(),
-        };
-        let mut confirm = |path: &Path| {
-            confirmed_from(path, confirmation.hit(path), &mut undecidable)
-        };
         let mut screen = plan::lazy_screen(&arguments.pool_filter);
 
         if arguments.raw_output {
@@ -102,13 +89,16 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
             // own exit from whether any section survived rendering, which is not
             // the same question as whether any session matched. A hit whose
             // visible messages all render empty is a match that prints nothing.
-            let _ = search_engine::stream_search(
+            let _ = stream_candidates(
                 &scan_order,
                 &mut sink,
-                batch_size,
                 &mut screen,
-                &mut probe,
-                &mut confirm,
+                needle.as_deref(),
+                &query,
+                &arguments.flags,
+                &pi_files,
+                &confirmation,
+                &mut undecidable,
             );
             if let Some(message) = &undecidable {
                 eprintln!("{message}");
@@ -134,13 +124,16 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                     paging: arguments.flags.paging,
                 },
             );
-            search_engine::stream_search(
+            stream_candidates(
                 &scan_order,
                 &mut sink,
-                batch_size,
                 &mut screen,
-                &mut probe,
-                &mut confirm,
+                needle.as_deref(),
+                &query,
+                &arguments.flags,
+                &pi_files,
+                &confirmation,
+                &mut undecidable,
             )
         } else if arguments.flags.color
             && matches!(
@@ -167,13 +160,16 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                     highlight: crate::search_views::highlight_regex(&query),
                 },
             );
-            search_engine::stream_search(
+            stream_candidates(
                 &scan_order,
                 &mut sink,
-                batch_size,
                 &mut screen,
-                &mut probe,
-                &mut confirm,
+                needle.as_deref(),
+                &query,
+                &arguments.flags,
+                &pi_files,
+                &confirmation,
+                &mut undecidable,
             )
         } else {
             let mut sink = PlainSink::new(PlainOutput {
@@ -184,13 +180,16 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                 width,
                 metrics: crate::cells::CellMetrics::from_environment(),
             });
-            search_engine::stream_search(
+            stream_candidates(
                 &scan_order,
                 &mut sink,
-                batch_size,
                 &mut screen,
-                &mut probe,
-                &mut confirm,
+                needle.as_deref(),
+                &query,
+                &arguments.flags,
+                &pi_files,
+                &confirmation,
+                &mut undecidable,
             )
         }
     };
@@ -213,6 +212,107 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
         emit_hint(&hint);
     }
     outcome.exit_status()
+}
+
+fn stream_candidates<S: search_engine::HitSink>(
+    scan_order: &[PathBuf],
+    sink: &mut S,
+    screen: impl FnMut(&Path) -> search_engine::Gated,
+    needle: Option<&[u8]>,
+    query: &Query,
+    flags: &crate::visibility::ConversationFlags,
+    pi_files: &HashSet<PathBuf>,
+    confirmation: &Confirmation<'_>,
+    first_undecidable: &mut Option<String>,
+) -> search_engine::Outcome {
+    if let Some(needle) = needle {
+        let mut probe = plan::probe(needle, |path| pi_files.contains(path));
+        let mut confirm = |path: &Path| {
+            confirmed_from(path, confirmation.hit(path), first_undecidable)
+        };
+        return search_engine::stream_search(
+            scan_order,
+            sink,
+            CANDIDATE_WINDOW,
+            screen,
+            &mut probe,
+            &mut confirm,
+        );
+    }
+
+    use rayon::prelude::*;
+    stream_precomputed_batches(
+        scan_order,
+        sink,
+        PER_FILE_WINDOW,
+        screen,
+        |paths| {
+            paths
+                .par_iter()
+                .map(|path| {
+                    let mut undecidable = None;
+                    let confirmed = match path_candidate_matches(
+                        path,
+                        query,
+                        flags,
+                        pi_files.contains(path),
+                    ) {
+                        Ok(true) => {
+                            confirmed_from(path, confirmation.hit(path), &mut undecidable)
+                        }
+                        Ok(false) => search_engine::Confirmed::Miss,
+                        Err(message) => search_engine::Confirmed::Failed(message),
+                    };
+                    PreparedFile {
+                        confirmed,
+                        undecidable,
+                    }
+                })
+                .collect()
+        },
+        first_undecidable,
+    )
+}
+
+fn stream_precomputed_batches<S: search_engine::HitSink>(
+    scan_order: &[PathBuf],
+    sink: &mut S,
+    batch_size: usize,
+    screen: impl FnMut(&Path) -> search_engine::Gated,
+    mut evaluate_batch: impl FnMut(&[PathBuf]) -> Vec<PreparedFile>,
+    first_undecidable: &mut Option<String>,
+) -> search_engine::Outcome {
+    let ready = std::cell::RefCell::new(std::collections::VecDeque::new());
+    search_engine::stream_search(
+        scan_order,
+        sink,
+        batch_size,
+        screen,
+        |paths| {
+            let outcomes = evaluate_batch(paths);
+            assert_eq!(
+                outcomes.len(),
+                paths.len(),
+                "parallel evaluator returned {} outcomes for {} paths",
+                outcomes.len(),
+                paths.len(),
+            );
+            let mut queued = ready.borrow_mut();
+            assert!(queued.is_empty(), "prior per-file window was not consumed");
+            queued.extend(outcomes);
+            vec![true; paths.len()]
+        },
+        |_path| {
+            let prepared = ready
+                .borrow_mut()
+                .pop_front()
+                .expect("one prepared outcome per per-file path");
+            if let Some(message) = prepared.undecidable {
+                first_undecidable.get_or_insert(message);
+            }
+            prepared.confirmed
+        },
+    )
 }
 
 /// One line to stderr, folded at the console's width the way Rich folds it.
@@ -669,5 +769,188 @@ fn codex_entry_has_default_visible_text(
             .iter()
             .any(|text| !crate::session::python_strip(text).is_empty()),
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod ordered_per_file_tests {
+    use super::{PreparedFile, stream_precomputed_batches};
+    use crate::search_engine::{Confirmed, Gated, HitSink, Outcome};
+    use std::path::{Path, PathBuf};
+
+    #[derive(Default)]
+    struct RecordingSink {
+        events: Vec<String>,
+        close_after_first: bool,
+        initially_closed: bool,
+    }
+
+    impl HitSink for RecordingSink {
+        fn emit(&mut self, hit: &crate::search_confirm::SearchHit) {
+            self.events
+                .push(format!("hit:{}", hit.metadata.path.display()));
+        }
+
+        fn closed(&self) -> bool {
+            self.initially_closed || (self.close_after_first && !self.events.is_empty())
+        }
+
+        fn emit_error(&mut self, message: &str) {
+            self.events.push(format!("error:{message}"));
+        }
+    }
+
+    fn hit(path: &Path) -> crate::search_confirm::SearchHit {
+        let mut hit = crate::search_confirm::SearchHit::empty_for_doctest();
+        hit.metadata.path = path.to_path_buf();
+        hit
+    }
+
+    fn paths(count: usize) -> Vec<PathBuf> {
+        (0..count)
+            .map(|index| PathBuf::from(index.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn hit_gate_failure_hit_commits_in_path_order() {
+        let paths = paths(3);
+        let mut sink = RecordingSink::default();
+        let mut first_undecidable = None;
+        let outcome = stream_precomputed_batches(
+            &paths,
+            &mut sink,
+            3,
+            |_| Gated::Survives,
+            |batch| {
+                vec![
+                    PreparedFile {
+                        confirmed: Confirmed::Hit(hit(&batch[0])),
+                        undecidable: None,
+                    },
+                    PreparedFile {
+                        confirmed: Confirmed::Failed("gate failed".to_string()),
+                        undecidable: None,
+                    },
+                    PreparedFile {
+                        confirmed: Confirmed::Hit(hit(&batch[2])),
+                        undecidable: None,
+                    },
+                ]
+            },
+            &mut first_undecidable,
+        );
+
+        assert_eq!(outcome, Outcome::Hits, "Both hits must count.");
+        assert_eq!(
+            sink.events,
+            ["hit:0", "error:gate failed", "hit:2"],
+            "The coordinator must commit the gate failure between its neighboring hits.",
+        );
+        assert!(first_undecidable.is_none(), "A gate failure is not Undecidable.");
+    }
+
+    #[test]
+    fn first_undecidable_is_selected_in_path_order() {
+        let paths = paths(3);
+        let mut sink = RecordingSink::default();
+        let mut first_undecidable = None;
+        stream_precomputed_batches(
+            &paths,
+            &mut sink,
+            3,
+            |_| Gated::Survives,
+            |batch| {
+                vec![
+                    PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: Some("first".to_string()),
+                    },
+                    PreparedFile {
+                        confirmed: Confirmed::Hit(hit(&batch[1])),
+                        undecidable: None,
+                    },
+                    PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: Some("later".to_string()),
+                    },
+                ]
+            },
+            &mut first_undecidable,
+        );
+
+        assert_eq!(sink.events, ["hit:1"], "Only the middle path is a hit.");
+        assert_eq!(
+            first_undecidable.as_deref(),
+            Some("first"),
+            "Parallel completion order must not select a later path's message.",
+        );
+    }
+
+    #[test]
+    fn close_discards_later_precomputed_undecidable_and_starts_no_next_batch() {
+        let paths = paths(3);
+        let mut sink = RecordingSink {
+            close_after_first: true,
+            ..RecordingSink::default()
+        };
+        let mut evaluated_batches = 0usize;
+        let mut first_undecidable = None;
+        let outcome = stream_precomputed_batches(
+            &paths,
+            &mut sink,
+            2,
+            |_| Gated::Survives,
+            |batch| {
+                evaluated_batches += 1;
+                assert_eq!(batch.len(), 2, "Only the first two-path batch may start.");
+                vec![
+                    PreparedFile {
+                        confirmed: Confirmed::Hit(hit(&batch[0])),
+                        undecidable: None,
+                    },
+                    PreparedFile {
+                        confirmed: Confirmed::Miss,
+                        undecidable: Some("discarded".to_string()),
+                    },
+                ]
+            },
+            &mut first_undecidable,
+        );
+
+        assert_eq!(outcome, Outcome::Hits, "The committed hit decides the outcome.");
+        assert_eq!(sink.events, ["hit:0"], "No result after close may commit.");
+        assert_eq!(evaluated_batches, 1, "Close must prevent a later batch from starting.");
+        assert!(
+            first_undecidable.is_none(),
+            "An unconsumed precomputed Undecidable must not change process status.",
+        );
+    }
+
+    #[test]
+    fn initially_closed_sink_starts_no_batch() {
+        let paths = paths(1);
+        let mut sink = RecordingSink {
+            initially_closed: true,
+            ..RecordingSink::default()
+        };
+        let mut evaluated_batches = 0usize;
+        let mut first_undecidable = None;
+        let outcome = stream_precomputed_batches(
+            &paths,
+            &mut sink,
+            1,
+            |_| Gated::Survives,
+            |_| {
+                evaluated_batches += 1;
+                Vec::new()
+            },
+            &mut first_undecidable,
+        );
+
+        assert_eq!(outcome, Outcome::NoHits, "No work means no hit.");
+        assert_eq!(evaluated_batches, 0, "A closed sink must start no batch.");
+        assert!(sink.events.is_empty(), "A closed sink must commit nothing.");
+        assert!(first_undecidable.is_none(), "A closed sink must merge nothing.");
     }
 }

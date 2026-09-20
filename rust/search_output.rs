@@ -993,7 +993,7 @@ pub fn path_candidate_matches(
     query: &Query,
     flags: &ConversationFlags,
     pi_session: bool,
-) -> bool {
+) -> Result<bool, String> {
     if let Query::Term(term) = query
         && can_use_json_string_gate(term, flags)
         && let Some(candidate) = term.literal_candidate.as_deref()
@@ -1006,12 +1006,12 @@ pub fn path_candidate_matches(
         // Python swallows `OSError` here and answers `true`. An unreadable file
         // then reaches confirmation, which fails to open it too and prints the
         // same `[Errno N]` line at the same scan position.
-        return crate::scanner::file_contains_ascii_json_strings_impl(
+        return Ok(crate::scanner::file_contains_ascii_json_strings_impl(
             path,
             candidate.as_bytes(),
             &evidence,
         )
-        .unwrap_or(true);
+        .unwrap_or(true));
     }
     // Python raises out of the whole prefilter on the first failure, so exactly
     // one error is printed and the file is skipped. Recording the failure and
@@ -1025,14 +1025,11 @@ pub fn path_candidate_matches(
         term_path_candidate_matches(path, term, flags, pi_session, &mut failure)
     });
     match failure {
-        Some(message) => {
-            print_error(&format!(
-                "Error processing conversation file {}: {message}",
-                path.display()
-            ));
-            false
-        }
-        None => survives,
+        Some(message) => Err(format!(
+            "Error processing conversation file {}: {message}",
+            path.display()
+        )),
+        None => Ok(survives),
     }
 }
 
@@ -1174,4 +1171,31 @@ fn term_can_match_generated_marker(term: &SearchTerm, flags: &ConversationFlags)
             crate::search_query::python_casefold(marker).contains(candidate)
         }
     })
+}
+
+#[cfg(test)]
+mod path_candidate_result_tests {
+    use super::path_candidate_matches;
+
+    #[test]
+    fn gate_io_failure_returns_data_for_ordered_coordinator_commit() {
+        let query = crate::search_query::parse_search_query("alpha AND beta", false)
+            .expect("The Boolean query must parse.");
+        let path = std::path::Path::new("/definitely/missing/ch-gate-result.jsonl");
+        let result = path_candidate_matches(
+            path,
+            &query,
+            &crate::visibility::ConversationFlags::default(),
+            false,
+        );
+
+        let message = result.expect_err("A missing path must return its gate failure.");
+        assert!(
+            message.starts_with(&format!(
+                "Error processing conversation file {}: ",
+                path.display()
+            )),
+            "The coordinator needs the complete existing error line. Got: {message}",
+        );
+    }
 }
