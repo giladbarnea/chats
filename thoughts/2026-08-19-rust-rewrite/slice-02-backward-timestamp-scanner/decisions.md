@@ -19,6 +19,8 @@ The slice keeps one-path calls instead of adding batch or parallel orchestration
 
 Tests follow vertical red-green cycles through the existing public Python datetime wrapper. These tests exercise the native I/O loop and the Python line callback together. A transient Python reference provides whole-pool differential evidence without leaving two production implementations.
 
-The real `~/.local/bin/ch` installation worked only after the user ran `uv tool install -e .`. Acceptance will not repeat that global operation without authorization. It will remove local stale native artifacts, rebuild through a named project path, inspect both interpreters, and run the exact launcher. The outcome must not claim project setup originally established the editable global tool.
+The real `~/.local/bin/ch` installation worked only after the user ran `uv tool install -e .`. Acceptance will not repeat that global operation without authorization.[^ch-install-policy] It will remove local stale native artifacts, rebuild through a named project path, inspect both interpreters, and run the exact launcher. The outcome must not claim project setup originally established the editable global tool.
 
 File discovery, forward timestamp scanning, provider parsing, session-pool construction, filters, ordering, and command orchestration remain candidates for later work. Slice two does not start that work.
+
+[^ch-install-policy]: no longer the policy, see [AGENTS.md](../../../AGENTS.md).
