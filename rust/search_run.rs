@@ -22,6 +22,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 const PER_FILE_WINDOW: usize = 6;
+const LIST_FILE_WINDOW: usize = 8;
 
 struct PreparedFile {
     confirmed: search_engine::Confirmed,
@@ -88,7 +89,8 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
 
     // Two gates, matching Python's two paths. One eligible term keeps the batched
     // JSON-string gate over 256 survivors. Everything else evaluates the existing
-    // per-file gate-to-confirmation reread sequence in ordered windows of six.
+    // per-file gate-to-confirmation reread sequence. List keeps eight files active;
+    // other output modes use ordered windows of six.
     let needle = batch_needle(&query, arguments);
 
     let outcome = {
@@ -308,7 +310,7 @@ fn stream_candidates<S: search_engine::HitSink>(
     )
 }
 
-/// Keep six per-file List computations active and commit compact results in scan order.
+/// Keep eight per-file List computations active and commit compact results in scan order.
 /// Refill can read far ahead of a blocked prefix; closure cannot cancel active reads.
 fn stream_continuous_list<S: ListSink>(
     scan_order: &[PathBuf],
@@ -340,7 +342,7 @@ fn stream_continuous_list<S: ListSink>(
         let mut stopped = false;
 
         loop {
-            while !stopped && active < PER_FILE_WINDOW && next_start < scan_order.len() {
+            while !stopped && active < LIST_FILE_WINDOW && next_start < scan_order.len() {
                 if sink.closed() {
                     stopped = true;
                     break;
@@ -974,7 +976,7 @@ fn codex_entry_has_default_visible_text(
 #[cfg(test)]
 mod ordered_per_file_tests {
     use super::{
-        ListSink, PER_FILE_WINDOW, PreparedFile, stream_continuous_list,
+        LIST_FILE_WINDOW, ListSink, PER_FILE_WINDOW, PreparedFile, stream_continuous_list,
         stream_precomputed_batches,
     };
     use crate::search_engine::{Confirmed, Gated, HitSink, Outcome};
@@ -1054,7 +1056,7 @@ mod ordered_per_file_tests {
     }
 
     #[test]
-    fn list_work_refills_six_slots_and_streams_ordered_results() {
+    fn list_work_refills_eight_slots_and_streams_ordered_results() {
         let paths = paths(14);
         let first_commit = Arc::new(AtomicBool::new(false));
         let mut sink = RecordingSink {
@@ -1172,8 +1174,8 @@ mod ordered_per_file_tests {
             "The coordinator must join the blocked tail before returning.",
         );
         assert!(
-            peak_active.load(Ordering::Acquire) <= 6,
-            "At most six file computations may run at once.",
+            peak_active.load(Ordering::Acquire) <= LIST_FILE_WINDOW,
+            "At most eight List file computations may run at once.",
         );
         assert_eq!(
             sink.events,
@@ -1213,7 +1215,9 @@ mod ordered_per_file_tests {
                     .parse::<usize>()
                     .expect("numeric test path");
                 worker_starts.lock().expect("starts lock").push(index);
-                worker_barrier.wait();
+                if index < PER_FILE_WINDOW {
+                    worker_barrier.wait();
+                }
                 if index != 0 {
                     std::thread::sleep(Duration::from_millis(20));
                 }
@@ -1244,13 +1248,13 @@ mod ordered_per_file_tests {
         started.sort_unstable();
         assert_eq!(
             started,
-            [0, 1, 2, 3, 4, 5],
-            "The head write must close output before a seventh worker is admitted.",
+            [0, 1, 2, 3, 4, 5, 6, 7],
+            "List must admit eight workers before the head write closes output.",
         );
         assert_eq!(
             finishes.load(Ordering::Acquire),
-            PER_FILE_WINDOW,
-            "Every admitted worker must finish before the coordinator returns.",
+            LIST_FILE_WINDOW,
+            "Every admitted List worker must finish before the coordinator returns.",
         );
         assert_eq!(sink.events, ["hit:0"], "Post-close results must not commit.");
         assert!(
