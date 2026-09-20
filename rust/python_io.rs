@@ -32,7 +32,9 @@ use std::path::Path;
 /// `Error processing conversation file {path}: {error}`.
 pub fn read_text(path: &Path) -> Result<String, String> {
     let bytes = std::fs::read(path).map_err(|error| python_io_error(&error, path))?;
-    decode_utf8(&bytes).map(universal_newlines)
+    String::from_utf8(bytes)
+        .map(universal_newlines)
+        .map_err(|error| decode_utf8(error.as_bytes()).expect_err("invalid UTF-8"))
 }
 
 /// Translate line endings the way Python's text mode does.
@@ -120,11 +122,81 @@ pub fn decode_utf8(bytes: &[u8]) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::alloc::{GlobalAlloc, Layout, System};
+    use std::cell::Cell;
     use std::fs;
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
 
     static TEMPORARY_DIRECTORY_ID: AtomicU64 = AtomicU64::new(0);
+
+    struct MeasuringAllocator;
+
+    thread_local! {
+        static ALLOCATED_BYTES: Cell<Option<usize>> = const { Cell::new(None) };
+    }
+
+    fn record_allocation(size: usize) {
+        let _ = ALLOCATED_BYTES.try_with(|allocated| {
+            if let Some(current) = allocated.get() {
+                allocated.set(Some(current + size));
+            }
+        });
+    }
+
+    unsafe impl GlobalAlloc for MeasuringAllocator {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            let pointer = unsafe { System.alloc(layout) };
+            if !pointer.is_null() {
+                record_allocation(layout.size());
+            }
+            pointer
+        }
+
+        unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+            let pointer = unsafe { System.alloc_zeroed(layout) };
+            if !pointer.is_null() {
+                record_allocation(layout.size());
+            }
+            pointer
+        }
+
+        unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+            unsafe { System.dealloc(pointer, layout) };
+        }
+
+        unsafe fn realloc(
+            &self,
+            pointer: *mut u8,
+            layout: Layout,
+            new_size: usize,
+        ) -> *mut u8 {
+            let resized = unsafe { System.realloc(pointer, layout, new_size) };
+            if !resized.is_null() {
+                record_allocation(new_size);
+            }
+            resized
+        }
+    }
+
+    #[global_allocator]
+    static ALLOCATOR: MeasuringAllocator = MeasuringAllocator;
+
+    fn measure_allocated<T>(operation: impl FnOnce() -> T) -> (T, usize) {
+        ALLOCATED_BYTES.with(|allocated| {
+            assert!(
+                allocated.replace(Some(0)).is_none(),
+                "allocation measurements must not nest"
+            );
+        });
+        let value = operation();
+        let allocated = ALLOCATED_BYTES.with(|allocated| {
+            allocated
+                .replace(None)
+                .expect("allocation measurement must be active")
+        });
+        (value, allocated)
+    }
 
     struct TemporaryDirectory(PathBuf);
 
@@ -159,6 +231,22 @@ mod tests {
     fn read_text_without_translation(path: &std::path::Path) -> Result<String, String> {
         let bytes = std::fs::read(path).map_err(|error| python_io_error(&error, path))?;
         decode_utf8(&bytes)
+    }
+
+    #[test]
+    fn valid_lf_input_allocates_only_one_file_sized_buffer() {
+        const FILE_BYTES: usize = 4 * 1024 * 1024;
+
+        let directory = TemporaryDirectory::new();
+        let path = directory.write("valid-lf", &vec![b'a'; FILE_BYTES]);
+        let (content, allocated) =
+            measure_allocated(|| read_text(&path).expect("read valid UTF-8"));
+
+        assert_eq!(content.len(), FILE_BYTES, "The complete file must survive decoding.");
+        assert!(
+            allocated < FILE_BYTES + FILE_BYTES / 2,
+            "The read must retain its owned byte buffer after UTF-8 validation. A second file-sized copy allocated {allocated} bytes for a {FILE_BYTES}-byte file."
+        );
     }
 
     /// **This gate is authored, not harvested.** 0 of 5,061 `.jsonl` files under
@@ -224,17 +312,34 @@ mod tests {
         );
     }
 
-    /// A decode failure reports Python's message and is not reached by
+    /// Decode failures report Python's messages and are not reached by
     /// translation, because text mode decodes first.
     #[test]
-    fn an_undecodable_file_reports_pythons_message_and_never_reaches_translation() {
+    fn undecodable_files_report_pythons_messages_before_translation() {
         let directory = TemporaryDirectory::new();
-        let path = directory.write("invalid", b"a\r\n\xff");
-        assert_eq!(
-            read_text(&path).expect_err("invalid UTF-8 must fail"),
-            "'utf-8' codec can't decode byte 0xff in position 3: invalid start byte",
-            "the decode error must be Python's, with byte offsets into the \
-             undecoded input — translating first would move position 3"
-        );
+        for (name, bytes, expected) in [
+            (
+                "invalid-start",
+                b"a\r\n\xff".as_slice(),
+                "'utf-8' codec can't decode byte 0xff in position 3: invalid start byte",
+            ),
+            (
+                "invalid-continuation",
+                b"a\r\n\xc2x".as_slice(),
+                "'utf-8' codec can't decode byte 0xc2 in position 3: invalid continuation byte",
+            ),
+            (
+                "truncated-sequence",
+                b"a\r\n\xf0\x9f".as_slice(),
+                "'utf-8' codec can't decode bytes in position 3-4: unexpected end of data",
+            ),
+        ] {
+            let path = directory.write(name, bytes);
+            assert_eq!(
+                read_text(&path).expect_err("invalid UTF-8 must fail"),
+                expected,
+                "the {name} error must keep Python's reason and byte offsets into the undecoded input; translating first would move position 3"
+            );
+        }
     }
 }
