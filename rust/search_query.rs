@@ -136,6 +136,7 @@ pub struct SearchTerm {
     pub engine: Regex,
     pub literal_candidate: Option<String>,
     pub case_sensitive: bool,
+    pub(crate) prepared_candidate_matcher: Option<crate::scanner::CandidateMatcher>,
 }
 
 const REGEX_META_CHARACTERS: &[char] = &['.', '^', '$', '*', '+', '?', '{', '}', '[', ']', '\\', '|', '(', ')'];
@@ -149,27 +150,29 @@ pub fn python_casefold(pattern: &str) -> String {
 }
 
 pub fn compile_search_term(pattern: &str, case_sensitive: bool) -> SearchTerm {
+    let build = |engine, literal_candidate: Option<String>| {
+        let prepared_candidate_matcher = literal_candidate.as_deref().and_then(|candidate| {
+            crate::scanner::CandidateMatcher::prepared(candidate.as_bytes(), case_sensitive)
+        });
+        SearchTerm {
+            pattern: pattern.to_string(),
+            engine,
+            literal_candidate,
+            case_sensitive,
+            prepared_candidate_matcher,
+        }
+    };
     if let Ok(engine) = Regex::compile(pattern, !case_sensitive) {
-            let literal_candidate = if is_plain_literal_search_pattern(pattern) {
-                Some(if case_sensitive { pattern.to_string() } else { python_casefold(pattern) })
-            } else {
-                None
-            };
-            return SearchTerm {
-                pattern: pattern.to_string(),
-                engine,
-                literal_candidate,
-                case_sensitive,
-            };
+        let literal_candidate = is_plain_literal_search_pattern(pattern).then(|| {
+            if case_sensitive { pattern.to_string() } else { python_casefold(pattern) }
+        });
+        return build(engine, literal_candidate);
     }
-    let escaped = python_regex_escape(pattern);
-    SearchTerm {
-        pattern: pattern.to_string(),
-        engine: Regex::compile(&escaped, !case_sensitive)
+    build(
+        Regex::compile(&python_regex_escape(pattern), !case_sensitive)
             .expect("escaped literals always compile"),
-        literal_candidate: Some(if case_sensitive { pattern.to_string() } else { python_casefold(pattern) }),
-        case_sensitive,
-    }
+        Some(if case_sensitive { pattern.to_string() } else { python_casefold(pattern) }),
+    )
 }
 
 /// Port of `re.escape`: escapes exactly CPython's special-character set.
@@ -2498,6 +2501,31 @@ mod tests {
         let term = compile_search_term(r"\y bad escape", true);
         assert_eq!(term.literal_candidate.as_deref(), Some(r"\y bad escape"));
         assert!(term.case_sensitive);
+    }
+
+    #[test]
+    fn only_nonempty_ascii_literal_candidates_prepare_the_byte_matcher() {
+        for (pattern, expected) in [
+            ("needle", true),
+            ("[z-a] range", true),
+            ("café", false),
+            ("n.*", false),
+            ("", false),
+        ] {
+            let term = compile_search_term(pattern, false);
+            assert_eq!(
+                term.prepared_candidate_matcher.is_some(),
+                expected,
+                "unexpected prepared matcher eligibility for {pattern:?}",
+            );
+        }
+        let oversized = "a".repeat(200_000);
+        assert!(
+            compile_search_term(&oversized, false)
+                .prepared_candidate_matcher
+                .is_none(),
+            "library compile limits must select the scalar fallback",
+        );
     }
 
     #[test]

@@ -1080,10 +1080,6 @@ fn term_path_candidate_matches(
         return true;
     }
 
-    let mut evidence: Vec<Vec<Vec<u8>>> = vec![vec![JSON_UNICODE_ESCAPE_EVIDENCE.to_vec()]];
-    if pi_session {
-        evidence.push(vec![PI_USER_AGENT_EVIDENCE.to_vec()]);
-    }
     // Python does **not** swallow here, so an unreadable file becomes a per-file
     // error. Answering `true` reaches the same *place* — confirmation opens the
     // same file and fails the same way — but **not the same line**.
@@ -1105,8 +1101,24 @@ fn term_path_candidate_matches(
     // Printing from inside a predicate looks wrong and mirrors Python exactly — the
     // raise propagates out of `_search_path_candidate_matches`, the per-file handler
     // prints it, and the file is skipped rather than confirmed.
-    match crate::scanner::file_contains_ascii_impl(path, &needle, term.case_sensitive, &evidence)
-    {
+    let scan = match &term.prepared_candidate_matcher {
+        Some(matcher) => {
+            crate::scanner::file_contains_prepared_ascii_impl(path, matcher, pi_session)
+        },
+        None => {
+            let mut evidence = vec![vec![JSON_UNICODE_ESCAPE_EVIDENCE.to_vec()]];
+            if pi_session {
+                evidence.push(vec![PI_USER_AGENT_EVIDENCE.to_vec()]);
+            }
+            crate::scanner::file_contains_ascii_impl(
+                path,
+                &needle,
+                term.case_sensitive,
+                &evidence,
+            )
+        }
+    };
+    match scan {
         Ok(found) => found,
         Err(error) => {
             // Recorded, not printed: the caller prints once for the whole file.

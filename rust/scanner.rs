@@ -1,13 +1,14 @@
 //! Candidate-gate scanners: byte-level probes over raw session files that
 //! reject a file before anything reads, decodes, or renders it.
 //!
-//! Lifted unchanged from `python_extension.rs`. The gate is conservative by
+//! Lifted from `python_extension.rs`. The gate is conservative by
 //! construction: every uncertainty resolves toward accepting the file, because
 //! a false accept costs a wasted parse and a false reject silently loses a
 //! user's search result.
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use rayon::prelude::*;
 
@@ -35,10 +36,12 @@ fn contains_exact(haystack: &[u8], needle: &[u8]) -> bool {
     haystack.windows(needle.len()).any(|window| window == needle)
 }
 
-struct CandidateMatcher {
+#[derive(Clone, Debug)]
+pub(crate) struct CandidateMatcher {
     needle: Vec<u8>,
     shifts: [usize; 256],
     case_sensitive: bool,
+    regex: Option<regex::bytes::Regex>,
 }
 
 impl CandidateMatcher {
@@ -51,7 +54,24 @@ impl CandidateMatcher {
             needle: needle.to_vec(),
             shifts,
             case_sensitive,
+            regex: None,
         }
+    }
+
+    pub(crate) fn prepared(needle: &[u8], case_sensitive: bool) -> Option<Self> {
+        let literal = std::str::from_utf8(needle).ok()?;
+        if needle.is_empty() || !literal.is_ascii() {
+            return None;
+        }
+        let escaped = regex::escape(literal);
+        let pattern = if case_sensitive {
+            format!("(?-u:{escaped})")
+        } else {
+            format!("(?i-u:{escaped})")
+        };
+        let mut matcher = Self::new(needle, case_sensitive);
+        matcher.regex = Some(regex::bytes::Regex::new(&pattern).ok()?);
+        Some(matcher)
     }
 
     fn normalized_haystack_byte(&self, byte: u8) -> u8 {
@@ -63,6 +83,9 @@ impl CandidateMatcher {
     }
 
     fn contains(&self, haystack: &[u8]) -> bool {
+        if let Some(regex) = &self.regex {
+            return regex.is_match(haystack);
+        }
         if self.case_sensitive && self.needle.len() <= LIBC_MEMMEM_MAX_NEEDLE_LENGTH {
             return contains_exact(haystack, &self.needle);
         }
@@ -70,6 +93,12 @@ impl CandidateMatcher {
     }
 
     fn contains_split(&self, first: &[u8], second: &[u8]) -> bool {
+        if let Some(regex) = &self.regex {
+            let mut boundary = Vec::with_capacity(first.len() + second.len());
+            boundary.extend_from_slice(first);
+            boundary.extend_from_slice(second);
+            return regex.is_match(&boundary);
+        }
         self.contains_with(first.len() + second.len(), |index| {
             if index < first.len() {
                 first[index]
@@ -107,6 +136,13 @@ impl CandidateMatcher {
         false
     }
 }
+
+static SEARCH_EVIDENCE_MATCHERS: LazyLock<[CandidateMatcher; 2]> = LazyLock::new(|| {
+    [
+        CandidateMatcher::prepared(b"\\u", true).expect("ASCII evidence compiles"),
+        CandidateMatcher::prepared(b"\"pi-user-agents\"", true).expect("ASCII evidence compiles"),
+    ]
+});
 
 const PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS: [char; 20] = [
     '\u{00df}', '\u{0130}', '\u{0131}', '\u{0149}', '\u{017f}', '\u{01f0}', '\u{1e96}',
@@ -313,36 +349,13 @@ fn validate_candidate_utf8_chunk(
     }
 }
 
-pub fn file_contains_ascii_impl(
-    path: &Path,
-    needle: &[u8],
-    case_sensitive: bool,
-    evidence_groups: &[Vec<Vec<u8>>],
+fn reader_contains_ascii(
+    reader: &mut impl Read,
+    needle_matcher: &CandidateMatcher,
+    evidence_matchers: &[Vec<CandidateMatcher>],
+    overlap_width: usize,
 ) -> std::io::Result<bool> {
-    if needle.is_empty() {
-        return Ok(true);
-    }
-
-    let mut file = std::fs::File::open(path)?;
-    let overlap_width = evidence_groups
-        .iter()
-        .flatten()
-        .map(|evidence| evidence.len())
-        .chain(std::iter::once(needle.len()))
-        .max()
-        .expect("needle supplies one candidate")
-        - 1;
-    let needle_matcher = CandidateMatcher::new(needle, case_sensitive);
-    let evidence_matchers = evidence_groups
-        .iter()
-        .map(|group| {
-            group
-                .iter()
-                .map(|evidence| CandidateMatcher::new(evidence, true))
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-    let mut evidence_matches = evidence_groups
+    let mut evidence_matches = evidence_matchers
         .iter()
         .map(|group| vec![false; group.len()])
         .collect::<Vec<_>>();
@@ -351,7 +364,7 @@ pub fn file_contains_ascii_impl(
     let mut block = vec![0; ASCII_CANDIDATE_SCAN_CHUNK_SIZE];
 
     loop {
-        let read_size = file.read(&mut block)?;
+        let read_size = reader.read(&mut block)?;
         if read_size == 0 {
             break;
         }
@@ -360,7 +373,7 @@ pub fn file_contains_ascii_impl(
             && !validate_candidate_utf8_chunk(
                 chunk,
                 &mut incomplete_code_point,
-                case_sensitive,
+                needle_matcher.case_sensitive,
             )
         {
             return Ok(true);
@@ -398,6 +411,79 @@ pub fn file_contains_ascii_impl(
         return Ok(true);
     }
     Ok(evidence_matches.iter().any(|group| group.iter().all(|found| *found)))
+}
+
+pub fn file_contains_ascii_impl(
+    path: &Path,
+    needle: &[u8],
+    case_sensitive: bool,
+    evidence_groups: &[Vec<Vec<u8>>],
+) -> std::io::Result<bool> {
+    if needle.is_empty() {
+        return Ok(true);
+    }
+
+    let mut file = std::fs::File::open(path)?;
+    let overlap_width = evidence_groups
+        .iter()
+        .flatten()
+        .map(Vec::len)
+        .chain(std::iter::once(needle.len()))
+        .max()
+        .expect("needle supplies one candidate")
+        - 1;
+    let needle_matcher = CandidateMatcher::new(needle, case_sensitive);
+    let evidence_matchers = evidence_groups
+        .iter()
+        .map(|group| {
+            group
+                .iter()
+                .map(|evidence| CandidateMatcher::new(evidence, true))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    reader_contains_ascii(
+        &mut file,
+        &needle_matcher,
+        &evidence_matchers,
+        overlap_width,
+    )
+}
+
+fn prepared_search_evidence(pi_session: bool) -> Vec<Vec<CandidateMatcher>> {
+    let mut evidence = vec![vec![SEARCH_EVIDENCE_MATCHERS[0].clone()]];
+    if pi_session {
+        evidence.push(vec![SEARCH_EVIDENCE_MATCHERS[1].clone()]);
+    }
+    evidence
+}
+
+pub fn file_contains_prepared_ascii_impl(
+    path: &Path,
+    matcher: &CandidateMatcher,
+    pi_session: bool,
+) -> std::io::Result<bool> {
+    let mut file = std::fs::File::open(path)?;
+    reader_contains_ascii(
+        &mut file,
+        matcher,
+        &prepared_search_evidence(pi_session),
+        matcher.needle.len().max(b"\"pi-user-agents\"".len()) - 1,
+    )
+}
+
+#[cfg(test)]
+fn reader_contains_prepared_ascii_impl(
+    reader: &mut impl Read,
+    matcher: &CandidateMatcher,
+    pi_session: bool,
+) -> std::io::Result<bool> {
+    reader_contains_ascii(
+        reader,
+        matcher,
+        &prepared_search_evidence(pi_session),
+        matcher.needle.len().max(b"\"pi-user-agents\"".len()) - 1,
+    )
 }
 
 pub struct LogicalJsonStringCandidateMatchers {
@@ -553,4 +639,147 @@ pub fn files_contain_ascii_json_strings_impl(
             },
         )
         .collect()
+}
+
+#[cfg(test)]
+mod prepared_ascii_candidate_tests {
+    use super::{
+        ASCII_CANDIDATE_SCAN_CHUNK_SIZE, CandidateMatcher,
+        file_contains_prepared_ascii_impl, reader_contains_prepared_ascii_impl,
+    };
+
+    struct FailsAfterPrefix {
+        prefix: &'static [u8],
+        delivered: bool,
+    }
+
+    impl std::io::Read for FailsAfterPrefix {
+        fn read(&mut self, block: &mut [u8]) -> std::io::Result<usize> {
+            if self.delivered {
+                return Err(std::io::Error::other("late read failure"));
+            }
+            self.delivered = true;
+            block[..self.prefix.len()].copy_from_slice(self.prefix);
+            Ok(self.prefix.len())
+        }
+    }
+
+    fn matcher(needle: &[u8]) -> CandidateMatcher {
+        CandidateMatcher::prepared(needle, false).expect("ASCII test needle prepares")
+    }
+
+    #[test]
+    fn raw_match_returns_before_late_error_but_escaped_match_waits_for_eof() {
+        let matcher = matcher(b"needle");
+        let mut raw_match = FailsAfterPrefix {
+            prefix: b"early NEEDLE",
+            delivered: false,
+        };
+        assert!(
+            reader_contains_prepared_ascii_impl(&mut raw_match, &matcher, false)
+                .expect("raw match returns before the failure"),
+        );
+        for prefix in [
+            br"early \u006e\u0065\u0065\u0064\u006c\u0065".as_slice(),
+            b"unrelated".as_slice(),
+        ] {
+            let mut reader = FailsAfterPrefix { prefix, delivered: false };
+            assert_eq!(
+                reader_contains_prepared_ascii_impl(&mut reader, &matcher, false)
+                    .expect_err("a non-term result must keep reading")
+                    .to_string(),
+                "late read failure",
+            );
+        }
+    }
+
+    #[test]
+    fn term_and_evidence_match_across_chunk_boundaries() {
+        let matcher = matcher(b"needle");
+        let mut term = vec![b'x'; ASCII_CANDIDATE_SCAN_CHUNK_SIZE - 3];
+        term.extend_from_slice(b"NEEDLE");
+        let mut escape = vec![b'x'; ASCII_CANDIDATE_SCAN_CHUNK_SIZE - 1];
+        escape.extend_from_slice(br"\u0061");
+        let mut pi = vec![b'x'; ASCII_CANDIDATE_SCAN_CHUNK_SIZE - 4];
+        pi.extend_from_slice(br#""pi-user-agents""#);
+
+        for (body, pi_session, expected) in [
+            (term, false, true),
+            (escape, false, true),
+            (pi.clone(), true, true),
+            (pi, false, false),
+        ] {
+            assert_eq!(
+                reader_contains_prepared_ascii_impl(
+                    &mut std::io::Cursor::new(body),
+                    &matcher,
+                    pi_session,
+                )
+                .expect("boundary scan succeeds"),
+                expected,
+            );
+        }
+    }
+
+    #[test]
+    fn standard_unicode_and_utf8_safety_decisions_stay_authoritative() {
+        let matcher = matcher(b"absent");
+        for candidate in [
+            "unrelated K".as_bytes(),
+            b"unrelated \xff".as_slice(),
+            b"truncated \xf0\x9f".as_slice(),
+        ] {
+            assert!(
+                reader_contains_prepared_ascii_impl(
+                    &mut std::io::Cursor::new(candidate),
+                    &matcher,
+                    false,
+                )
+                .expect("unsafe scan succeeds"),
+                "unsafe input must defer: {candidate:?}",
+            );
+        }
+        assert!(
+            !reader_contains_prepared_ascii_impl(
+                &mut std::io::Cursor::new("unrelated café".as_bytes()),
+                &matcher,
+                false,
+            )
+            .expect("safe Unicode scan succeeds"),
+        );
+    }
+
+    #[test]
+    fn case_sensitive_prepared_matcher_distinguishes_case() {
+        let matcher = CandidateMatcher::prepared(b"Needle", true)
+            .expect("case-sensitive ASCII needle prepares");
+        for (body, expected) in [(b"Needle".as_slice(), true), (b"NEEDLE".as_slice(), false)] {
+            assert_eq!(
+                reader_contains_prepared_ascii_impl(
+                    &mut std::io::Cursor::new(body),
+                    &matcher,
+                    false,
+                )
+                .expect("case-sensitive scan succeeds"),
+                expected,
+            );
+        }
+    }
+
+    #[test]
+    fn library_compile_limit_falls_back_without_panicking() {
+        let oversized = vec![b'a'; 200_000];
+        assert!(
+            CandidateMatcher::prepared(&oversized, false).is_none(),
+            "an oversized library pattern must select the scalar fallback",
+        );
+    }
+
+    #[test]
+    fn prepared_path_open_error_propagates() {
+        let missing = std::path::Path::new("/definitely/missing/prepared-candidate.jsonl");
+        let error = file_contains_prepared_ascii_impl(missing, &matcher(b"needle"), false)
+            .expect_err("missing path must fail");
+        assert_eq!(error.kind(), std::io::ErrorKind::NotFound);
+    }
 }
