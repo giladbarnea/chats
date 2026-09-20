@@ -319,6 +319,7 @@ mod tests {
 use crate::model::{Message, Tool};
 use crate::shortening::{shorten_data, truncate_middle};
 use crate::tool_filter::{FilterableTool, ToolIdMap, resolve_tool_visibility};
+use std::borrow::Cow;
 
 /// Map every tool id to the canonical name of the call it belongs to.
 ///
@@ -358,22 +359,22 @@ fn filterable(tool: &Tool) -> FilterableTool<'_> {
 ///
 /// Ported from `Message._tool_name_id_map`: a caller-supplied map always wins, and a
 /// local one is built only for a named filter list.
-fn tool_name_id_map(
+fn tool_name_id_map<'a>(
     message: &Message,
     visibility: &ToolVisibility,
-    supplied: Option<&ToolIdMap>,
-) -> ToolIdMap {
+    supplied: Option<&'a ToolIdMap>,
+) -> Cow<'a, ToolIdMap> {
     if let Some(map) = supplied.filter(|map| !map.is_empty()) {
-        return map.clone();
+        return Cow::Borrowed(map);
     }
     let needs_local = match visibility {
         ToolVisibility::Filters(filters) => filters.iter().any(|filter| filter.name.is_some()),
         ToolVisibility::All(_) => false,
     };
     if !needs_local {
-        return supplied.cloned().unwrap_or_default();
+        return supplied.map_or_else(|| Cow::Owned(ToolIdMap::new()), Cow::Borrowed);
     }
-    let mut map = supplied.cloned().unwrap_or_default();
+    let mut map = ToolIdMap::new();
     for tool in &message.tools {
         if let Tool::Use(use_tool) = tool
             && let Some(identifier) = &use_tool.id
@@ -381,7 +382,7 @@ fn tool_name_id_map(
             map.insert(identifier.clone(), use_tool.name.clone());
         }
     }
-    map
+    Cow::Owned(map)
 }
 
 /// Fill in a tool result's name from the call it belongs to.
@@ -581,4 +582,172 @@ pub fn visible_message(
     };
 
     visible
+}
+
+#[cfg(test)]
+mod tool_map_tests {
+    use super::*;
+    use crate::model::{MessageType, ToolResult, ToolUse};
+    use crate::python_io::tests::measure_allocated;
+    use crate::tool_filter::{ToolDirection, ToolFilter};
+    use serde_json::{Number, Value};
+
+    fn named_output_flags(progressive: bool) -> ConversationFlags {
+        ConversationFlags {
+            show_tools: ToolVisibility::Filters(vec![ToolFilter {
+                name: Some("Bash".to_string()),
+                direction: Some(ToolDirection::Output),
+                short: progressive,
+                short_max_chars: progressive.then_some(16),
+                short_progressive: progressive.then_some(true),
+                ..ToolFilter::default()
+            }]),
+            ..ConversationFlags::default()
+        }
+    }
+
+    fn nameless_result(index: usize) -> Message {
+        let mut message = Message::new(
+            MessageType::UserMessage,
+            "user".to_string(),
+            Number::from(index),
+        );
+        message.tools.push(Tool::Result(ToolResult {
+            name: None,
+            tool_use_id: Some("target".to_string()),
+            native_tool_call_id: None,
+            is_error: false,
+            content: Some(Value::String("abcdefghijklmnopqrstuvwxyz".to_string())),
+            has_content: true,
+        }));
+        message
+    }
+
+    fn tool_map(filler_entries: usize) -> ToolIdMap {
+        let mut map = ToolIdMap::with_capacity(filler_entries + 1);
+        map.insert("target".to_string(), "Bash".to_string());
+        for index in 0..filler_entries {
+            map.insert(format!("tool-{index:04}"), "Read".to_string());
+        }
+        map
+    }
+
+    #[test]
+    fn supplied_session_tool_map_is_not_copied_per_message() {
+        let message = nameless_result(1);
+        let flags = named_output_flags(false);
+        let small_map = tool_map(0);
+        let large_map = tool_map(4_096);
+        let project = |map: &ToolIdMap| {
+            measure_allocated(|| {
+                visible_message(
+                    &message,
+                    &flags,
+                    Some(map),
+                    &ProgressiveAssignment::default(),
+                    0,
+                )
+            })
+        };
+
+        let (small, small_allocated) = project(&small_map);
+        let (large, large_allocated) = project(&large_map);
+        for visible in [small, large] {
+            let Tool::Result(result) = &visible.tools[0] else {
+                panic!("the visible tool must stay a result");
+            };
+            assert_eq!(result.name.as_deref(), Some("Bash"));
+        }
+        assert!(
+            large_allocated <= small_allocated + 1_024,
+            "A supplied session map must be borrowed. Small map allocated {small_allocated} bytes; large map allocated {large_allocated} bytes."
+        );
+    }
+
+    #[test]
+    fn empty_local_and_supplied_maps_keep_name_resolution_rules() {
+        let flags = named_output_flags(false);
+        let mut local = Message::new(
+            MessageType::AssistantResponse,
+            "assistant".to_string(),
+            Number::from(1),
+        );
+        local.tools.push(Tool::Use(ToolUse {
+            name: "Bash".to_string(),
+            input: Value::Null,
+            id: Some("target".to_string()),
+            native_tool_call_id: None,
+            native_content_index: None,
+        }));
+        local.tools.extend(nameless_result(2).tools);
+
+        let empty = ToolIdMap::new();
+        for supplied in [None, Some(&empty)] {
+            let visible = visible_message(
+                &local,
+                &flags,
+                supplied,
+                &ProgressiveAssignment::default(),
+                0,
+            );
+            let Tool::Result(result) = &visible.tools[0] else {
+                panic!("the output filter must keep only the result");
+            };
+            assert_eq!(result.name.as_deref(), Some("Bash"));
+        }
+
+        let mut conflicting = local;
+        let Tool::Use(call) = &mut conflicting.tools[0] else {
+            panic!("the first tool must be the call");
+        };
+        call.name = "Read".to_string();
+        let supplied = tool_map(0);
+        let visible = visible_message(
+            &conflicting,
+            &flags,
+            Some(&supplied),
+            &ProgressiveAssignment::default(),
+            0,
+        );
+        let Tool::Result(result) = &visible.tools[0] else {
+            panic!("the supplied map must win over the conflicting local call");
+        };
+        assert_eq!(result.name.as_deref(), Some("Bash"));
+    }
+
+    #[test]
+    fn named_progressive_outputs_keep_session_wide_positions() {
+        let mut call = Message::new(
+            MessageType::AssistantResponse,
+            "assistant".to_string(),
+            Number::from(1),
+        );
+        call.tools.push(Tool::Use(ToolUse {
+            name: "Bash".to_string(),
+            input: Value::Null,
+            id: Some("target".to_string()),
+            native_tool_call_id: None,
+            native_content_index: None,
+        }));
+        let messages = vec![call, nameless_result(2), nameless_result(3)];
+        let flags = named_output_flags(true);
+        let map = build_tool_id_map(&messages);
+        let progressive = ProgressiveAssignment::compute(&messages, &flags, Some(&map));
+
+        assert_eq!(progressive.position(0), None);
+        assert_eq!(progressive.position(1), Some(0));
+        assert_eq!(progressive.position(2), Some(1));
+        assert_eq!(progressive.qualifying_count(), 2);
+
+        let visible = [1usize, 2].map(|index| {
+            visible_message(&messages[index], &flags, Some(&map), &progressive, index)
+        });
+        for (message, expected) in visible.iter().zip(["ab\n...\nz", "abcdef\n...\nvwxyz"]) {
+            let Tool::Result(result) = &message.tools[0] else {
+                panic!("the visible tool must stay a result");
+            };
+            assert_eq!(result.name.as_deref(), Some("Bash"));
+            assert_eq!(result.content.as_ref().and_then(Value::as_str), Some(expected));
+        }
+    }
 }

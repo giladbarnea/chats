@@ -363,13 +363,14 @@ impl<'a> PlainSink<'a> {
         if displayed.is_empty() {
             return Ok(rendered);
         }
+        let tool_id_map = crate::visibility::build_tool_id_map(&hit.messages);
         let visible: Vec<Message> = displayed
             .iter()
             .map(|index| {
                 crate::visibility::visible_message(
                     &hit.messages[*index],
                     self.output.flags,
-                    Some(&crate::visibility::build_tool_id_map(&hit.messages)),
+                    Some(&tool_id_map),
                     &hit.progressive,
                     *index,
                 )
@@ -1222,6 +1223,99 @@ mod path_candidate_result_tests {
                 path.display()
             )),
             "The coordinator needs the complete existing error line. Got: {message}",
+        );
+    }
+}
+
+#[cfg(test)]
+mod plain_map_tests {
+    use super::{
+        CellMetrics, ConversationFlags, Message, PlainOutput, PlainSink, SearchHit,
+        SearchOutputMode,
+    };
+    use crate::model::{MessageType, Tool, ToolResult, ToolUse};
+    use crate::python_io::tests::measure_allocated;
+    use crate::tool_filter::{ToolDirection, ToolFilter, ToolVisibility};
+    use serde_json::{Number, Value};
+
+    fn hit_with_linked_tool_results(result_count: usize) -> SearchHit {
+        let mut messages = Vec::with_capacity(result_count * 2);
+        for index in 0..result_count {
+            let mut call = Message::new(
+                MessageType::AssistantResponse,
+                "assistant".to_string(),
+                Number::from(index + 1),
+            );
+            call.tools.push(Tool::Use(ToolUse {
+                name: "Bash".to_string(),
+                input: Value::Null,
+                id: Some(format!("tool-{index}")),
+                native_tool_call_id: None,
+                native_content_index: None,
+            }));
+            messages.push(call);
+        }
+        for index in 0..result_count {
+            let mut result = Message::new(
+                MessageType::UserMessage,
+                "user".to_string(),
+                Number::from(result_count + index + 1),
+            );
+            result.tools.push(Tool::Result(ToolResult {
+                name: None,
+                tool_use_id: Some(format!("tool-{index}")),
+                native_tool_call_id: None,
+                is_error: false,
+                content: Some(Value::String(format!("linked output {index}"))),
+                has_content: true,
+            }));
+            messages.push(result);
+        }
+        let mut hit = SearchHit::empty_for_doctest();
+        hit.messages = messages;
+        hit.match_indices = (result_count..result_count * 2).collect();
+        hit
+    }
+
+    fn plain_matches_render_allocation(result_count: usize) -> (String, usize) {
+        let flags = ConversationFlags {
+            show_tools: ToolVisibility::Filters(vec![ToolFilter {
+                name: Some("Bash".to_string()),
+                direction: Some(ToolDirection::Output),
+                ..ToolFilter::default()
+            }]),
+            ..ConversationFlags::default()
+        };
+        let mut hit = hit_with_linked_tool_results(result_count);
+        let map = crate::visibility::build_tool_id_map(&hit.messages);
+        hit.progressive = crate::visibility::ProgressiveAssignment::compute(
+            &hit.messages,
+            &flags,
+            Some(&map),
+        );
+        let sink = PlainSink::new(PlainOutput {
+            mode: SearchOutputMode::Matches,
+            flags: &flags,
+            emit_metadata: false,
+            home: "/home",
+            width: 80,
+            metrics: CellMetrics::for_version(None),
+        });
+        std::hint::black_box(sink.render(&hit).expect("warm plain renderer"));
+        measure_allocated(|| sink.render(&hit).expect("render plain matching results"))
+    }
+
+    #[test]
+    fn plain_output_builds_and_borrows_the_session_tool_map_once() {
+        let (small, small_allocated) = plain_matches_render_allocation(16);
+        let (large, large_allocated) = plain_matches_render_allocation(64);
+
+        assert_eq!(small.matches("<tool-output name=\"Bash\"").count(), 16);
+        assert_eq!(large.matches("<tool-output name=\"Bash\"").count(), 64);
+        assert!(!small.contains("<tool-input") && !large.contains("<tool-input"));
+        assert!(
+            large_allocated <= small_allocated * 8,
+            "A full-session tool map must be built once and borrowed per displayed message. Small render allocated {small_allocated} bytes; large render allocated {large_allocated} bytes."
         );
     }
 }

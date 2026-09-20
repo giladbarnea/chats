@@ -120,7 +120,7 @@ pub fn decode_utf8(bytes: &[u8]) -> Result<String, String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::alloc::{GlobalAlloc, Layout, System};
     use std::cell::Cell;
@@ -182,7 +182,7 @@ mod tests {
     #[global_allocator]
     static ALLOCATOR: MeasuringAllocator = MeasuringAllocator;
 
-    fn measure_allocated<T>(operation: impl FnOnce() -> T) -> (T, usize) {
+    pub(crate) fn measure_allocated<T>(operation: impl FnOnce() -> T) -> (T, usize) {
         ALLOCATED_BYTES.with(|allocated| {
             assert!(
                 allocated.replace(Some(0)).is_none(),
