@@ -533,6 +533,63 @@ def _parse_task_notification_tool(content: str) -> dict | None:
     return {"type": "tool_use", "name": "TaskNotification", "input": input_data}
 
 
+_TAG_ATTRIBUTE_PATTERN = re.compile(r'([\w-]+)="([^"]*)"')
+_CLAUDE_PEER_MESSAGE_PREFIX = "Another Claude session sent a message:"
+_CLAUDE_PEER_BLOCK_OPENING_PATTERN = re.compile(
+    r"<(?P<tag>teammate-message|cross-session-message)(?P<attributes>[^>]*)>"
+)
+# The attribute naming the sending session, per peer block kind.
+_CLAUDE_PEER_SENDER_ATTRIBUTES: dict[str, str] = {
+    "teammate-message": "teammate_id",
+    "cross-session-message": "from-name",
+}
+
+
+def _split_claude_peer_blocks(content: str) -> list[tuple[str | None, str]]:
+    """Split a message relayed from another Claude session into (sender, body) pairs.
+
+    Claude Code stores a teammate or cross-session message as a user string:
+    a fixed prefix line, one block per relayed message, and a fixed trailer.
+    Anything else yields no blocks.
+
+    >>> _split_claude_peer_blocks(
+    ...     "Another Claude session sent a message:\\n"
+    ...     '<teammate-message teammate_id="scout" color="blue">\\nhello\\n</teammate-message>\\n'
+    ...     '<cross-session-message from="uds:/x.sock" from-name="lead">\\nhi\\n</cross-session-message>\\n'
+    ...     "\\nThis came from another Claude session.\\n"
+    ... )
+    [('scout', 'hello'), ('lead', 'hi')]
+    >>> _split_claude_peer_blocks('typed text mentioning <teammate-message teammate_id="x">')
+    []
+    """
+    if not content.lstrip().startswith(_CLAUDE_PEER_MESSAGE_PREFIX):
+        return []
+    blocks: list[tuple[str | None, str]] = []
+    cursor = 0
+    while opening := _CLAUDE_PEER_BLOCK_OPENING_PATTERN.search(content, cursor):
+        closing_tag = f"</{opening.group('tag')}>"
+        close_start = content.find(closing_tag, opening.end())
+        if close_start == -1:
+            break
+        attributes = dict(_TAG_ATTRIBUTE_PATTERN.findall(opening.group("attributes")))
+        sender = attributes.get(_CLAUDE_PEER_SENDER_ATTRIBUTES[opening.group("tag")])
+        blocks.append((sender, content[opening.end() : close_start].strip()))
+        cursor = close_start + len(closing_tag)
+    return blocks
+
+
+def _claude_peer_agent_message(entry: dict, sender: str | None, body: str) -> Message:
+    """Represent one relayed peer-session message as an agent block named after its sender."""
+    return Message(
+        role="agent",
+        agent_id=sender,
+        name=sender,
+        timestamp=entry.get("timestamp"),
+        text=body,
+        wrapper_type=ContentBlockType.AGENT,
+    )
+
+
 _COMMAND_TAG_LINE_PATTERN = re.compile(
     r"(?P<indent>[ \t]*)<(?P<tag>command-[a-z0-9-]+)>(?P<value>.*?)</(?P=tag)>[ \t]*",
     re.DOTALL,
@@ -653,20 +710,22 @@ def _parse_default_jsonl_entries(
 
         entry_type = entry.get("type")
         if entry_type == "user":
-            msg = _parse_user_entry(entry, index, flags)
+            parsed_messages = _parse_user_entry(entry, index, flags)
         elif entry_type == "assistant":
-            msg = _parse_assistant_entry(entry, index, flags)
+            parsed_messages = [_parse_assistant_entry(entry, index, flags)]
         elif entry_type == "system":
-            msg = _parse_system_entry(entry, index, flags)
+            parsed_messages = [_parse_system_entry(entry, index, flags)]
         elif entry_type == "attachment":
-            msg = _parse_hook_additional_context_entry(entry, index, flags)
+            parsed_messages = [_parse_hook_additional_context_entry(entry, index, flags)]
         else:
-            msg = None
+            parsed_messages = []
 
-        if msg and msg.has_content():
-            msg.branch_id = branch_id
-            messages.append(msg)
-            index += 1
+        for msg in parsed_messages:
+            if msg and msg.has_content():
+                msg.index = index
+                msg.branch_id = branch_id
+                messages.append(msg)
+                index += 1
 
     _suppress_claude_agent_dispatch(messages)
     return messages
@@ -1758,13 +1817,24 @@ def _append_meta_source_tool_result(
 
 def _parse_user_entry(
     entry: dict, index: int, flags: ConversationFlags
-) -> Message | None:
-    """Parse a user-type JSONL entry."""
+) -> list[Message]:
+    """Parse a user-type JSONL entry.
+
+    A message relayed from another Claude session yields one agent message per
+    relayed block, visible only with --agents; every other entry yields one message.
+    """
     message_data = entry.get("message", {})
     if message_data.get("role") != "user":
-        return None
+        return []
 
     content_data = message_data.get("content")
+    peer_blocks = _split_claude_peer_blocks(content_data) if isinstance(content_data, str) else []
+    if peer_blocks:
+        return [
+            _claude_peer_agent_message(entry, sender, body)
+            for sender, body in peer_blocks
+            if flags.show_agents
+        ]
     source_tool_use_id = (
         entry.get("sourceToolUseID")
         or entry.get("sourceToolUseId")
@@ -1781,13 +1851,13 @@ def _parse_user_entry(
     # Background-task notifications are dispatch plumbing — abstracted away by the
     # merged agent block (and its <subagent-task>), so they never render.
     if isinstance(content_data, str) and _parse_task_notification_tool(content_data):
-        return msg
+        return [msg]
 
     show_user_text = flags.show_user_messages and (not msg.is_meta or flags.show_tools)
 
     if isinstance(content_data, str):
         if _append_meta_source_tool_result(msg, source_tool_use_id, [content_data], flags):
-            return msg
+            return [msg]
         if show_user_text:
             msg.text, msg.wrapper_type = _parse_user_string_content(content_data)
     elif isinstance(content_data, list):
@@ -1801,7 +1871,7 @@ def _parse_user_entry(
                 msg.tools.append(item)
 
         if _append_meta_source_tool_result(msg, source_tool_use_id, text_blocks, flags):
-            return msg
+            return [msg]
         if text_blocks and show_user_text:
             msg.text = "\n\n".join(text_blocks)
 
@@ -1810,7 +1880,7 @@ def _parse_user_entry(
     if entry.get("isCompactSummary") is True:
         msg.wrapper_type = ContentBlockType.COMPACTION
 
-    return msg
+    return [msg]
 
 
 def _parse_assistant_entry(
@@ -1938,7 +2008,6 @@ def _normalize_pi_tool_name(name: str | None) -> str:
 
 _PI_SKILL_TOKEN_PATTERN = re.compile(r"<skill(?:\s[^>]*)?>|</skill>")
 _PI_SKILL_CLOSE_TAG = "</skill>"
-_PI_SKILL_ATTRIBUTE_PATTERN = re.compile(r'([\w-]+)="([^"]*)"')
 
 
 @dataclass(frozen=True)
@@ -1957,7 +2026,7 @@ def _parse_pi_skill_attributes(opening_tag: str) -> dict[str, str]:
     """
     return {
         ("skill" if key == "name" else key): value
-        for key, value in _PI_SKILL_ATTRIBUTE_PATTERN.findall(opening_tag)
+        for key, value in _TAG_ATTRIBUTE_PATTERN.findall(opening_tag)
     }
 
 

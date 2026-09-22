@@ -362,6 +362,58 @@ mod tests {
         decode_entries(content)
     }
 
+    /// A relayed peer-session message is an agent per block, never a user message.
+    ///
+    /// Claude Code stores it as a `user` entry; its text is the sender's, so the default
+    /// view drops it and `--agents` shows one agent per relayed block, named after the
+    /// sender. The same claim the Python parser's `tests/test_claude_peer_messages.py` makes.
+    #[test]
+    fn peer_session_messages_are_agents_not_user_messages() {
+        let relayed = concat!(
+            "Another Claude session sent a message:\n",
+            "<teammate-message teammate_id=\"scout\" color=\"blue\" summary=\"done\">\n",
+            "FIRST_MARKER\n",
+            "</teammate-message>\n",
+            "<cross-session-message from=\"uds:/tmp/x.sock\" from-name=\"lead\" from-mode=\"bypass\">\n",
+            "SECOND_MARKER\n",
+            "</cross-session-message>\n",
+            "\nThis came from another Claude session — not typed by your user.\n",
+        );
+        let content = format!(
+            "{}\n{}",
+            r#"{"type":"user","message":{"role":"user","content":"typed by the human"}}"#,
+            serde_json::json!({"type": "user", "isMeta": true, "message": {"role": "user", "content": relayed}}),
+        );
+        let decoded = entries(&content);
+
+        let hidden = parse_claude(&decoded, &ConversationFlags::default());
+        let hidden: Vec<(&str, &str)> = hidden
+            .iter()
+            .map(|message| (message.role.as_str(), message.text.as_str()))
+            .collect();
+        assert_eq!(hidden, vec![("user", "typed by the human")]);
+
+        let shown = parse_claude(
+            &decoded,
+            &ConversationFlags {
+                show_agents: true,
+                ..ConversationFlags::default()
+            },
+        );
+        let shown: Vec<(&str, Option<&str>, &str)> = shown
+            .iter()
+            .map(|message| (message.role.as_str(), message.name.as_deref(), message.text.as_str()))
+            .collect();
+        assert_eq!(
+            shown,
+            vec![
+                ("user", None, "typed by the human"),
+                ("agent", Some("scout"), "FIRST_MARKER"),
+                ("agent", Some("lead"), "SECOND_MARKER"),
+            ]
+        );
+    }
+
     #[test]
     fn the_first_non_blank_line_decides_the_format() {
         assert_eq!(detect_format("\n\n{\"type\": \"user\"}"), SessionFormat::Jsonl);
@@ -580,7 +632,7 @@ mod tests {
              CPython, so this opening tag must still be recognised"
         );
         assert_eq!(
-            pi_skill_attribute_regex()
+            tag_attribute_regex()
                 .captures("\u{bd}=\"x\"")
                 .map(|found| found[1].to_string()),
             Some("\u{bd}".to_string()),
@@ -588,7 +640,7 @@ mod tests {
              U+00BD; the crate's `\\w` rejects it"
         );
         assert!(
-            pi_skill_attribute_regex().captures("\u{301}=\"x\"").is_none(),
+            tag_attribute_regex().captures("\u{301}=\"x\"").is_none(),
             "and the difference runs the other way too: the crate's `\\w` accepts a \
              lone combining mark through `\\p{{M}}`, CPython's does not"
         );
@@ -1221,6 +1273,73 @@ fn is_task_notification(content: &str) -> bool {
     task_notification_regex().is_match(content)
 }
 
+const CLAUDE_PEER_MESSAGE_PREFIX: &str = "Another Claude session sent a message:";
+
+fn claude_peer_block_opening_regex() -> &'static Regex {
+    static REGEX: OnceLock<Regex> = OnceLock::new();
+    REGEX.get_or_init(|| {
+        Regex::new(r"<(?P<tag>teammate-message|cross-session-message)(?P<attributes>[^>]*)>")
+            .expect("claude peer block opening regex")
+    })
+}
+
+/// The attribute naming the sending session, per peer block kind.
+fn claude_peer_sender_attribute(tag: &str) -> &'static str {
+    match tag {
+        "teammate-message" => "teammate_id",
+        _ => "from-name",
+    }
+}
+
+/// Split a message relayed from another Claude session into (sender, body) pairs.
+///
+/// Claude Code stores a teammate or cross-session message as a user string: a fixed
+/// prefix line, one block per relayed message, and a fixed trailer. Anything else
+/// yields no blocks. Mirrors Python's `_split_claude_peer_blocks`.
+fn split_claude_peer_blocks(content: &str) -> Vec<(Option<String>, String)> {
+    if !python_strip_start(content).starts_with(CLAUDE_PEER_MESSAGE_PREFIX) {
+        return Vec::new();
+    }
+    let mut blocks = Vec::new();
+    let mut cursor = 0usize;
+    while let Some(captures) = claude_peer_block_opening_regex().captures_at(content, cursor) {
+        let opening = captures.get(0).expect("whole match");
+        let tag = &captures["tag"];
+        let closing_tag = format!("</{tag}>");
+        let Some(close_offset) = content[opening.end()..].find(&closing_tag) else {
+            break;
+        };
+        let close_start = opening.end() + close_offset;
+        let sender_attribute = claude_peer_sender_attribute(tag);
+        let sender = tag_attribute_regex()
+            .captures_iter(&captures["attributes"])
+            .filter(|attribute| &attribute[1] == sender_attribute)
+            .last()
+            .map(|attribute| attribute[2].to_string());
+        blocks.push((
+            sender,
+            python_strip(&content[opening.end()..close_start]).to_string(),
+        ));
+        cursor = close_start + closing_tag.len();
+    }
+    blocks
+}
+
+/// Represent one relayed peer-session message as an agent block named after its sender.
+fn claude_peer_agent_message(
+    entry: &Map<String, Value>,
+    index: usize,
+    sender: Option<String>,
+    body: String,
+) -> Message {
+    let mut message = new_message(index, "agent", MessageType::Agent);
+    message.agent_id = sender.clone();
+    message.name = sender;
+    message.timestamp = timestamp_of(entry);
+    message.text = body;
+    message
+}
+
 fn agent_id_of(entry: &Map<String, Value>) -> Option<&str> {
     entry.get("agentId").and_then(Value::as_str)
 }
@@ -1315,14 +1434,31 @@ fn append_meta_source_tool_result(
     true
 }
 
+/// Decode a user entry.
+///
+/// A message relayed from another Claude session yields one agent message per relayed
+/// block, visible only with `--agents`; every other entry yields at most one message.
 fn parse_user_entry(
     entry: &Map<String, Value>,
     index: usize,
     flags: &ConversationFlags,
-) -> Option<Message> {
-    let message_data = entry.get("message")?.as_object()?;
+) -> Vec<Message> {
+    let Some(message_data) = entry.get("message").and_then(Value::as_object) else {
+        return Vec::new();
+    };
     if message_data.get("role").and_then(Value::as_str) != Some("user") {
-        return None;
+        return Vec::new();
+    }
+    let peer_blocks = match message_data.get("content") {
+        Some(Value::String(text)) => split_claude_peer_blocks(text),
+        _ => Vec::new(),
+    };
+    if !peer_blocks.is_empty() {
+        return peer_blocks
+            .into_iter()
+            .filter(|_| flags.show_agents)
+            .map(|(sender, body)| claude_peer_agent_message(entry, index, sender, body))
+            .collect();
     }
     let source = source_tool_use_id(entry);
     let is_meta = entry.get("isMeta").and_then(Value::as_bool) == Some(true);
@@ -1338,7 +1474,7 @@ fn parse_user_entry(
     if let Value::String(text) = content
         && is_task_notification(text)
     {
-        return Some(message);
+        return vec![message];
     }
 
     let show_user_text = flags.show_user_messages() && (!is_meta || tools_requested(flags));
@@ -1347,7 +1483,7 @@ fn parse_user_entry(
         Value::String(text) => {
             let blocks = vec![text.clone()];
             if append_meta_source_tool_result(&mut message, source, &blocks, flags) {
-                return Some(message);
+                return vec![message];
             }
             if show_user_text && !is_hidden_user_command_text(text) {
                 message.text = text.clone();
@@ -1365,7 +1501,7 @@ fn parse_user_entry(
                 }
             }
             if append_meta_source_tool_result(&mut message, source, &blocks, flags) {
-                return Some(message);
+                return vec![message];
             }
             if !blocks.is_empty() && show_user_text {
                 message.text = blocks.join("\n\n");
@@ -1378,7 +1514,7 @@ fn parse_user_entry(
     if entry.get("isCompactSummary").and_then(Value::as_bool) == Some(true) {
         message.message_type = MessageType::Compaction;
     }
-    Some(message)
+    vec![message]
 }
 
 fn parse_assistant_entry(
@@ -1574,19 +1710,24 @@ pub fn parse_claude(entries: &[Map<String, Value>], flags: &ConversationFlags) -
         if branch_id.is_some() && !flags.show_branches {
             continue; // abandoned rewind branch, hidden unless --branches
         }
-        let message = match entry_type(entry) {
+        let parsed: Vec<Message> = match entry_type(entry) {
             Some("user") => parse_user_entry(entry, index, flags),
-            Some("assistant") => parse_assistant_entry(entry, index, flags),
-            Some("system") => parse_system_entry(entry, index, flags),
-            Some("attachment") => parse_hook_additional_context_entry(entry, index, flags),
-            _ => None,
+            Some("assistant") => parse_assistant_entry(entry, index, flags)
+                .into_iter()
+                .collect(),
+            Some("system") => parse_system_entry(entry, index, flags).into_iter().collect(),
+            Some("attachment") => parse_hook_additional_context_entry(entry, index, flags)
+                .into_iter()
+                .collect(),
+            _ => Vec::new(),
         };
-        if let Some(mut message) = message
-            && has_content(&message)
-        {
-            message.branch = branch_id.cloned();
-            messages.push(message);
-            index += 1;
+        for mut message in parsed {
+            if has_content(&message) {
+                message.original_index = index.into();
+                message.branch = branch_id.cloned();
+                messages.push(message);
+                index += 1;
+            }
         }
     }
 
@@ -1610,7 +1751,7 @@ fn pi_skill_token_regex() -> &'static Regex {
     })
 }
 
-fn pi_skill_attribute_regex() -> &'static Regex {
+fn tag_attribute_regex() -> &'static Regex {
     static REGEX: OnceLock<Regex> = OnceLock::new();
     REGEX.get_or_init(|| {
         Regex::new(&format!(r#"([{PYTHON_WORD_CLASS}-]+)="([^"]*)""#))
@@ -1621,7 +1762,7 @@ fn pi_skill_attribute_regex() -> &'static Regex {
 /// Map a skill opening tag's attributes to `Skill` tool input keys — `name` becomes `skill`.
 fn parse_pi_skill_attributes(opening: &str) -> Map<String, Value> {
     let mut input = Map::new();
-    for captures in pi_skill_attribute_regex().captures_iter(opening) {
+    for captures in tag_attribute_regex().captures_iter(opening) {
         let key = &captures[1];
         let key = if key == "name" { "skill" } else { key };
         input.insert(key.to_string(), Value::String(captures[2].to_string()));

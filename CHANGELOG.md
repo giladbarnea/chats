@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-09-22] Classify Claude peer-session messages as agents
+
+### Fixed
+
+- A message another Claude Code session sent to this one (`Another Claude session sent a message:` wrapping `<teammate-message>` or `<cross-session-message>` blocks) rendered as a regular user message. Each relayed block is now an `<agent>` named after its sender, hidden unless `--agents`, in both the Python parse path and the native search path. The relay prefix, tags, and permission trailer no longer render.
+
+---
 ## [2026-08-20] Preserve case-sensitive native candidate parity
 
 ### Fixed
