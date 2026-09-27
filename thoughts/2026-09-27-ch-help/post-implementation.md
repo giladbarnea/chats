@@ -8,9 +8,13 @@ This exposed missing title lookup, boolean search rules, conversion direction, f
 It also exposed overclaims about `--all`, role filters, and removal across providers.
 Catalog work was excluded at the user's request.
 
+The content review showed that complete syntax alone did not teach readers how to combine options.
+Examples now come before general rules. The final pass clarified lookup order, content categories, shortening, and flag differences between commands.
+The user stopped further external reviews. The final wording received a direct read-through of both rendered pages.
+
 Original search help recordings remain intact. Revised help has a separate reviewed fixture with an explicit source in the manifest.
 Width tests compare unusual `COLUMNS` values with Python's resolved numeric width because the old wording no longer applies.
 
-Validation: eight documented examples, all shortening value forms, 83 focused Python checks, three Rust help checks, shell tests, and four performance tests passed.
-The full Python suite had 54 baseline failures and 53 final failures. Every final failure also appeared in the baseline.
+Validation covered documented examples, all shortening value forms, tool-filter forms, copied files, and invalid boolean queries. The help checks cover both pages and terminal widths.
+The initial full-suite comparison had 54 baseline failures and 53 final failures. Every final failure also appeared in the baseline.
 Verified that global `ch`, the project environment, and the local build show identical help. The editable install points to this checkout.

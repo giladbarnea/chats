@@ -445,10 +445,11 @@ def main():
             description="""\
 Read and manage Claude Code, Codex, and Pi session histories.
 Without a command, display a session or export it as XML, JSON, or Markdown.
+By default, show the main conversation text. Add -t for tool calls and results, -T for thinking, or -a for messages from subagents and other sessions.
 
 Commands:
   search   Find sessions by regex or AND/OR/NOT queries
-  parse    Convert between structured ch JSON and XML-tagged Markdown
+  parse    Convert ch JSON exports to tagged Markdown, or back (-f json)
   name     Set a session title, or generate one with AI (--auto)
   rm       Preview and remove a session, with confirmation
   catalog  Catalog the first supplied session in sessions.yaml via pi
@@ -459,19 +460,30 @@ The options below apply to session display and export.""",
             formatter_class=HelpFormatter,
             epilog="""\
 Examples:
-  ch -p codex -d . -1                 Newest Codex session in this directory
-  ch -1 -t:s -- -5:                   Last five messages, with shortened tools
-  ch -1 -f json -o session.json       Export structured JSON
-  ch search 'docker AND timeout' -l  List matching sessions
+  ch -p codex -d . -1
+    Read the newest Codex session in this directory.
+  ch -1 -t:s -- -5:
+    Read the last five messages, with shortened tools.
+  ch -1 -f json -o session.json
+    Export the newest session as structured JSON.
+  ch parse session.json
+    Turn that JSON export into readable, XML-tagged Markdown.
+  ch search 'docker AND timeout' -l
+    List sessions containing both terms.
 
-Input:
-  Read session JSONL files, or raw CLI transcripts with > and ⏺ message prefixes.
-  You can read a copied Codex or Pi file from any directory. Keep its first JSON record: type=session_meta for Codex, or type=session with an integer version for Pi. This record identifies the provider.
-  Claude files have no such identifying record. Read them from ~/.claude/projects instead. A copied Claude file, or external JSONL without a recognized first record, is rejected.
-  Title substrings and summary prefixes ignore case. Only the latest title is used. If several sessions match, use a more specific name or a session ID.
+Session lookup and message selection:
+  Put the session first, then the message selectors: ch -1 1 shows the first message of the newest session. Recent sessions use negative numbers (-1, -2, ...). A bare ch 1 tries to find a session called 1.
+  For other input, ch tries an existing file path, an exact session ID or filename, a current title substring, then a summary prefix. A summary is a description saved in the session history.
+  Title and summary matching ignore case. Only the latest title is used. If several sessions match, use a more specific name or a session ID.
+  The -- separator ends option parsing. In ch -1 -- -5:, this makes -5: a message range instead of an option.
+
+Additional content:
+  Subagents are agents launched to help the main assistant. -a also includes messages from other sessions and agent work recorded by Pi. Claude /fork conversations, which continue from an existing conversation, are included too.
+  Rewind branches are messages abandoned when you rewind and try a different prompt. Include them with -b.
+  Pi custom records are extra entries written by Pi extensions. Include them with -A.
 
 Tool filters (also available in search):
-  Bare -t includes all tool calls and results, alongside regular messages.
+  Bare -t includes all tool calls and results, alongside the main conversation text.
   Add a filter to choose which tools to include:
     -t Bash        Include Bash calls and results
     -t Bash:i      Include Bash calls only
@@ -490,30 +502,41 @@ Tool filters (also available in search):
 Shortening:
   --short=200 limits each message body, thinking block, plan, and tool text value to 200 characters. A tool's command and output each get their own limit. This is not a total output budget.
   Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
-  --short=p=200 keeps more detail toward the end of the conversation. Among visible messages using this mode, limits grow evenly from 8 for the first to 200 for the last. Three messages get 8, 104, and 200. A single message gets 200.
+  --short=p=200 keeps more detail toward the end of the conversation. Among the messages you include using this mode, limits grow evenly from 8 for the first to 200 for the last. Three messages get 8, 104, and 200. A single message gets 200.
   Message selection happens before these limits are assigned. Metadata is never shortened.
   Accepted values: N, p, progressive, p=N, progressive=N. N is the character limit. p and progressive mean the same thing and default to a final limit of 500.
-  Both --short VALUE and --short=VALUE work, as does -s. Prefer = when also selecting messages: ch -1 -s=200 -- 3 shows message 3 with a 200-character limit.
+  Both --short VALUE and --short=VALUE work, as does -s. With =, the value unambiguously belongs to --short. For example:
+    ch -1 -s=200 -- 3
+      Show message 3 of the newest session, with a 200-character limit.
 
 Shortening tools:
-  Use -t:s to shorten tools alone. With no --short setting, it uses a fixed limit of 500.
+  Use -t s to shorten tools alone to 500 characters. You can attach the value to the option as -t:s. A --short setting changes this default.
   Add s or short to any tool filter. Both accept the same values as --short:
     -t Read:o:s=80       Limit each Read output text value to 80 characters
     -t Read:o:short=p=80 Grow Read output limits from 8 to 80
-  Bare :s copies both the limit and mode from --short. :s=p copies only the limit and switches to progressive mode. For example, --short=200 -t Read:o:s=p grows Read output limits from 8 to 200.
-  If several shortening filters match, the one with more conditions wins (tool name, input/output, error). If counts tie, the last filter wins.
-  For example, -t:s=80 -t Bash:s=200 gives Bash a limit of 200 and other tools 80.
+  Bare :s copies both the limit and mode from --short. :s=p copies only the limit and switches to progressive mode:
+    --short=200 -t Read:o:s=p
+      Grow Read output limits from 8 to 200. Other text stays fixed at 200.
+  To give one tool more room than the rest:
+    -t:s=80 -t Bash:s=200
+      Give Bash a limit of 200 and other tools 80. The Bash filter wins because it adds a tool-name condition.
+  In general, count the matching filter's conditions: tool name, input/output, and error. More conditions win. If counts tie, the last filter wins.
 
 Dates:
   -ma and -ca accept YYYY-MM-DD or YY-MM-DD. Add a time with T or a space, for example -ma '2026-09-27 14:30:45'. Seconds are optional.
   Relative ages count back from now: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).
+
+Copied files and pasted transcripts:
+  A raw CLI transcript is copied terminal text: user messages start with > and assistant replies with ⏺. Save it to a file or pipe it into ch.
+  You can read a copied Codex or Pi JSONL file from any directory. Keep its first JSON record: type=session_meta for Codex, or type=session with an integer version for Pi. This identifies the provider.
+  Claude files have no such identifying record. Read them from ~/.claude/projects instead. A copied Claude file, or external JSONL without a recognized first record, is rejected.
 """,
         )
 
         parser.add_argument(
             "input",
             nargs="?",
-            help="File path, session ID, current title substring, summary prefix, or recent index (-1 = newest). "
+            help="Session ID, file path, or -1 for newest (see Session lookup). "
             "Omit to read content or a session ID from stdin.",
         )
         parser.add_argument(
@@ -549,7 +572,7 @@ Dates:
             const="full",
             default=None,
             metavar="{full,short}",
-            help="Include thinking. Use -T short to shorten it (default: full)",
+            help="Include full thinking, or -T short for 500 characters (uses --short if set)",
         )
         parser.add_argument(
             "--only-user",
@@ -564,12 +587,12 @@ Dates:
         parser.add_argument(
             "--no-user",
             action="store_true",
-            help="Hide regular user messages",
+            help="Hide main user text, keeping explicitly enabled extras",
         )
         parser.add_argument(
             "--no-assistant",
             action="store_true",
-            help="Hide regular assistant messages",
+            help="Hide main assistant text, keeping explicitly enabled extras",
         )
         parser.add_argument(
             "-t",
@@ -584,7 +607,7 @@ Dates:
             parser,
             description="Only apply to -1, -2, ... inputs. Other inputs ignore these filters.\n"
             "Newest uses the last timestamp inside the transcript. If none is readable, use the file's modification time.\n"
-            "Recent indices exclude agent sidechain files.",
+            "Recent indices exclude separate Claude subagent files.",
             provider_help="Provider for recent-index lookup",
             dir_help="Exact session working directory for recent-index lookup",
             mafter_help="Sessions modified on or after DATE",
@@ -594,7 +617,7 @@ Dates:
             "-a",
             "--agents",
             action="store_true",
-            help="Include subagents, forks, peer messages, and Pi agent records",
+            help="Include messages from subagents and other sessions",
         )
         parser.add_argument(
             "-b",
@@ -619,7 +642,7 @@ Dates:
             nargs="?",
             const=True,
             default=None,
-            help="Shorten each string (see limits below)",
+            help="Shorten message and tool text (see Shortening below)",
         )
         parser.add_argument(
             "--color",
@@ -639,7 +662,7 @@ Dates:
             "-r",
             "--raw",
             action="store_true",
-            help="Alias for: -f raw (implies --no-metadata)",
+            help="Plain Markdown without metadata (same as -f raw)",
         )
         parser.add_argument(
             "--paging",

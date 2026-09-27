@@ -1,7 +1,8 @@
 usage: ch search [options] pattern
 
-Search Claude Code, Codex, and Pi sessions. Match visible messages, summaries, and the latest
-title. Hidden content does not match unless its visibility flag is enabled.
+Search Claude Code, Codex, and Pi sessions. By default, search the main conversation text,
+summaries, and latest title. The same options control what search can match and what it
+displays. For example, -t makes tool calls and results searchable.
 
 positional arguments:
   pattern               Regex or uppercase AND/OR/NOT query (see syntax below)
@@ -12,20 +13,21 @@ options:
   -ll, --only-id        Show only matching session IDs (implies --color never and --no-paging)
   -f, --full            Show full matching conversations instead of only matching messages
   -r, --raw             Plain Markdown output, without metadata, color, or paging
-  -T, --thinking [THINKING]
-                        Include thinking (full by default, or short)
-  --only-user           Search/display only regular user messages (see scope below)
-  --only-assistant      Search/display only regular assistant messages (see scope below)
-  -t, --tools [TOOLS]   Include tool calls/results, optionally filtered (see below)
-  -a, --agents          Include agent messages and search Claude sidechain sessions
+  -T, --thinking [{full,short}]
+                        Include full thinking, or -T short for 500 characters (uses --short if
+                        set)
+  --only-user           Search and display only user text (see Search scope below)
+  --only-assistant      Search and display only assistant text (see Search scope below)
+  -t, --tools [TOOLS]   Include all tool calls and results, or choose with a filter (below)
+  -a, --agents          Include messages from subagents and other sessions
   -b, --branches        Include abandoned Claude rewind branches
   -A, --all             Include thinking, tools, agents, branches, plans, and Pi custom
                         records
   --plans               Show plan content (ExitPlanMode)
-  -s, --case-sensitive  Match letter case exactly (default: false)
+  -s, --case-sensitive  Match letter case exactly
   -i, --case-insensitive
-                        Ignore letter case (default: true)
-  --short [SHORT]       Shorten strings before matching and display (see limits below)
+                        Make the default case-insensitive mode explicit
+  --short [SHORT]       Shorten text before matching and display (see Shortening below)
   --color {always,never,auto}
                         Formatted terminal display (auto: on in a terminal, off in pipes)
   --paging              Enable paging (default: same as color)
@@ -40,49 +42,114 @@ session pool filters:
                         Restrict search to sessions from a specific provider
 
 Query syntax:
-  Regex is case-insensitive by default, with multiline anchors and dot-all.
-  Invalid regex falls back to literal matching. Quote the pattern in the shell.
+  Regex is case-insensitive by default. ^ and $ match line boundaries, and . also matches
+  newlines. If a regex is invalid, ch searches that text literally without reporting the regex
+  error.
+  Quote the whole query in the shell so spaces and special characters reach ch unchanged.
   Put patterns starting with a dash after --: ch search -- '-flag'.
-  AND / OR combine terms across the whole session, including different messages.
-  AND binds tighter than OR. Parentheses group terms.
+  AND / OR combine terms across the whole session, including different messages. AND binds
+  tighter than OR. Parentheses group terms.
   A NOT B NOT C requires A and excludes sessions containing B or C.
-  NOT cannot mix with AND/OR or parentheses. Operators must be uppercase.
-  Within boolean queries, quote phrases and regex terms: '"error.*code" AND fix'.
-  Lowercase and mixed-case operator words stay in the regex.
+  Mixed queries such as 'docker AND timeout NOT crash' are not supported. NOT cannot mix with
+  AND/OR or boolean grouping parentheses.
+  Operators must be uppercase. Without them, the whole query is one regex, including spaces.
+  In a boolean query, words do not implicitly combine. 'foo bar AND baz' is an error. Choose
+  between:
+    'foo AND bar AND baz'   Require all three terms
+    '"foo bar" AND baz'     Require the phrase foo bar and the term baz
+  Within a boolean query, also quote any term containing spaces or regex parentheses: '"error
+  (code|status)" AND fix'. Without inner quotes, spaces separate terms and parentheses group
+  boolean expressions.
+  Regex terms without spaces or parentheses need no inner quotes:
+    ch search 'docker.* AND timeout'
 
 Examples:
   ch search 'docker AND (timeout OR crash)' -l
+    List sessions containing docker and either timeout or crash.
   ch search '"hello world" NOT goodbye' -p codex -ma 1w
+    Find Codex sessions active in the past week containing hello world but no goodbye.
   ch search 'error' -t e -f
+    Search main conversation text and failed tool results. Show all included messages from
+    each matching session.
   ch search '.' -d . -ll
+    Print IDs of sessions with searchable content in the current working directory.
+
+Additional content:
+  Subagents are agents launched to help the main assistant. -a also includes messages from
+  other sessions and agent work recorded by Pi. Search checks separate Claude subagent
+  transcripts, including /fork conversations that continue from an existing conversation, when
+  -a is enabled.
+  Rewind branches are messages abandoned when you rewind and try a different prompt. Include
+  them with -b.
+  Pi custom records are extra entries written by Pi extensions. Include them with -A.
 
 Tool filters:
-  -t Read:o       Read outputs      -t Bash:i      Bash inputs
-  -t e           Errors only       -t '!Bash'     Exclude Bash
-  -t Read:o:s=80  Shorten outputs   -t:s           Shorten all tools
-  Combine specs with OR: -t Read:o -t Bash:i or -t 'Read:o Bash:i'.
-  Exclusions win. Join criteria with colons. Each criterion must match.
-  Forms: -t FILTERS, -t:FILTERS, --tools FILTERS, --tools=FILTERS.
-  Known provider names work too (e.g. exec_command matches Bash).
-  Modifiers: i/input, o/output, e/error, s/short, s=SHORT/short=SHORT.
-  Order is free. Bare s inherits --short. s=p inherits its limit only.
-  Short specs with more name/direction/error criteria win. Later breaks ties.
-  --all enables all tools and overrides tool filters.
+  Bare -t includes all tool calls and results, alongside the main conversation text.
+  Add a filter to choose which tools to include:
+    -t Bash        Include Bash calls and results
+    -t Bash:i      Include Bash calls only
+    -t Read:o      Include Read results only
+    -t e           Include failed results from any tool
+    -t Bash:e      Include failed Bash results only
+    -t '!Bash'     Include every tool except Bash
+  Within one filter, all colon-separated conditions must match (AND). Between filters, any
+  match is enough (OR).
+  For example, -t Read:o -t Bash:i includes Read results and Bash calls. You can also write -t
+  'Read:o Bash:i'.
+  Put ! first to exclude matches. Exclusions take priority over inclusions.
+  Use i/input for calls, o/output for results, and e/error for failures. Order is flexible:
+  Read:o and o:Read mean the same thing.
+  Names match exactly, with known aliases: Codex exec_command also matches Bash.
+  Equivalent forms: -t FILTER, -t:FILTER, --tools FILTER, --tools=FILTER.
+  --all ignores tool filters and includes all tools.
 
-Short limits:
-  --short accepts N (fixed), p, progressive, p=N, or progressive=N. N >= 8.
-  Bare --short is fixed at 500. p and progressive default to N=500.
-  Accepts --short VALUE or --short=VALUE.
-  Across messages using progressive shortening, limits grow from 8 to N.
-  A single such message gets N. Each string has its own limit.
-  Search assigns limits before selecting matches.
-  Search reserves -s for case-sensitive matching.
+Shortening:
+  --short=200 limits each message body, thinking block, plan, and tool text value to 200
+  characters. A tool's command and output each get their own limit. This is not a total output
+  budget.
+  Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
+  --short=p=200 keeps more detail toward the end of each conversation. Among the messages you
+  include using this mode, limits grow evenly from 8 for the first to 200 for the last. Three
+  messages get 8, 104, and 200. A single message gets 200.
+  Search assigns these limits before looking for matches. Text removed by shortening cannot
+  match. Titles and summaries are never shortened.
+  Accepted values: N, p, progressive, p=N, progressive=N. N is the character limit. p and
+  progressive mean the same thing and default to a final limit of 500.
+  Both --short VALUE and --short=VALUE work. Search reserves -s for case-sensitive matching.
 
-Scope, dates, and exit status:
-  --only-user/--only-assistant override thinking, tools, agents, plans, and --all.
-  Titles and summaries still match under role filters and are never shortened.
-  Results use newest file mtime first.
-  DATE: YYYY-MM-DD or YY-MM-DD, optionally with THH:MM[:SS] (or a space).
-  relative: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).
-  Date filters use transcript timestamps, with filesystem times as fallback.
-  Exit status: 0 = matches, 1 = no matches or an error, 2 = invalid arguments/query.
+Shortening tools:
+  Use -t s to shorten tools alone to 500 characters. You can attach the value to the option as
+  -t:s. A --short setting changes this default.
+  Add s or short to any tool filter. Both accept the same values as --short:
+    -t Read:o:s=80       Limit each Read output text value to 80 characters
+    -t Read:o:short=p=80 Grow Read output limits from 8 to 80
+  Bare :s copies both the limit and mode from --short. :s=p copies only the limit and switches
+  to progressive mode:
+    --short=200 -t Read:o:s=p
+      Grow Read output limits from 8 to 200. Other text stays fixed at 200.
+  To give one tool more room than the rest:
+    -t:s=80 -t Bash:s=200
+      Give Bash a limit of 200 and other tools 80. The Bash filter wins because it adds a
+      tool-name condition.
+  In general, count the matching filter's conditions: tool name, input/output, and error. More
+  conditions win. If counts tie, the last filter wins.
+
+Search scope and output:
+  --only-user/--only-assistant disable thinking, tools, agents, plans, and --all. Titles and
+  summaries can still return a session even when no selected message matches.
+  Unlike ch SESSION, search uses -f for full sessions and -s for case-sensitive matching. -f
+  takes no value. Search has no JSON output mode. To export one result, use ch SESSION -f
+  json.
+
+Dates and result order:
+  Search sorts by the file's modification time, newest first. Date filters instead use
+  timestamps inside the transcript, with filesystem times as fallback. Copying or touching a
+  file can therefore change its search position without changing which dates it matches.
+  This differs from ch -1, which selects the newest session by its last transcript timestamp.
+  -ma and -ca accept YYYY-MM-DD or YY-MM-DD. Add a time with T or a space, for example -ma
+  '2026-09-27 14:30:45'. Seconds are optional.
+  Relative ages count back from now: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).
+
+Exit status:
+  0 means matches, 1 means no matches or a runtime error, and 2 means invalid arguments or
+  query syntax.
