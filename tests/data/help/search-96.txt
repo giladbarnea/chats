@@ -1,0 +1,88 @@
+usage: ch search [options] pattern
+
+Search Claude Code, Codex, and Pi sessions. Match visible messages, summaries, and the latest
+title. Hidden content does not match unless its visibility flag is enabled.
+
+positional arguments:
+  pattern               Regex or uppercase AND/OR/NOT query (see syntax below)
+
+options:
+  -h, --help            show this help message and exit
+  -l, --list            List mode - show only paths and metadata
+  -ll, --only-id        Show only matching session IDs (implies --color never and --no-paging)
+  -f, --full            Show full matching conversations instead of only matching messages
+  -r, --raw             Plain Markdown output, without metadata, color, or paging
+  -T, --thinking [THINKING]
+                        Include thinking (full by default, or short)
+  --only-user           Search/display only regular user messages (see scope below)
+  --only-assistant      Search/display only regular assistant messages (see scope below)
+  -t, --tools [TOOLS]   Include tool calls/results, optionally filtered (see below)
+  -a, --agents          Include agent messages and search Claude sidechain sessions
+  -b, --branches        Include abandoned Claude rewind branches
+  -A, --all             Include thinking, tools, agents, branches, plans, and Pi custom
+                        records
+  --plans               Show plan content (ExitPlanMode)
+  -s, --case-sensitive  Match letter case exactly (default: false)
+  -i, --case-insensitive
+                        Ignore letter case (default: true)
+  --short [SHORT]       Shorten strings before matching and display (see limits below)
+  --color {always,never,auto}
+                        Formatted terminal display (auto: on in a terminal, off in pipes)
+  --paging              Enable paging (default: same as color)
+  --no-paging           Disable paging
+  --no-metadata         Disable outputting metadata frontmatter
+
+session pool filters:
+  -d, --dir DIR         Match the session working directory exactly (not its subdirectories)
+  -ma, --mafter DATE    Sessions modified on or after DATE
+  -ca, --cafter DATE    Sessions created on or after DATE
+  -p, --provider {claude,pi,codex}
+                        Restrict search to sessions from a specific provider
+
+Query syntax:
+  Regex is case-insensitive by default, with multiline anchors and dot-all.
+  Invalid regex falls back to literal matching. Quote the pattern in the shell.
+  Put patterns starting with a dash after --: ch search -- '-flag'.
+  AND / OR combine terms across the whole session, including different messages.
+  AND binds tighter than OR. Parentheses group terms.
+  A NOT B NOT C requires A and excludes sessions containing B or C.
+  NOT cannot mix with AND/OR or parentheses. Operators must be uppercase.
+  Within boolean queries, quote phrases and regex terms: '"error.*code" AND fix'.
+  Lowercase and mixed-case operator words stay in the regex.
+
+Examples:
+  ch search 'docker AND (timeout OR crash)' -l
+  ch search '"hello world" NOT goodbye' -p codex -ma 1w
+  ch search 'error' -t e -f
+  ch search '.' -d . -ll
+
+Tool filters:
+  -t Read:o       Read outputs      -t Bash:i      Bash inputs
+  -t e           Errors only       -t '!Bash'     Exclude Bash
+  -t Read:o:s=80  Shorten outputs   -t:s           Shorten all tools
+  Combine specs with OR: -t Read:o -t Bash:i or -t 'Read:o Bash:i'.
+  Exclusions win. Join criteria with colons. Each criterion must match.
+  Forms: -t FILTERS, -t:FILTERS, --tools FILTERS, --tools=FILTERS.
+  Known provider names work too (e.g. exec_command matches Bash).
+  Modifiers: i/input, o/output, e/error, s/short, s=SHORT/short=SHORT.
+  Order is free. Bare s inherits --short. s=p inherits its limit only.
+  Short specs with more name/direction/error criteria win. Later breaks ties.
+  --all enables all tools and overrides tool filters.
+
+Short limits:
+  --short accepts N (fixed), p, progressive, p=N, or progressive=N. N >= 8.
+  Bare --short is fixed at 500. p and progressive default to N=500.
+  Accepts --short VALUE or --short=VALUE.
+  Across messages using progressive shortening, limits grow from 8 to N.
+  A single such message gets N. Each string has its own limit.
+  Search assigns limits before selecting matches.
+  Search reserves -s for case-sensitive matching.
+
+Scope, dates, and exit status:
+  --only-user/--only-assistant override thinking, tools, agents, plans, and --all.
+  Titles and summaries still match under role filters and are never shortened.
+  Results use newest file mtime first.
+  DATE: YYYY-MM-DD or YY-MM-DD, optionally with THH:MM[:SS] (or a space).
+  relative: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).
+  Date filters use transcript timestamps, with filesystem times as fallback.
+  Exit status: 0 = matches, 1 = no matches or an error, 2 = invalid arguments/query.

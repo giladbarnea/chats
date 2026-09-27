@@ -113,13 +113,14 @@ class PoolFilter:
 def add_pool_filter_args(
     parser: argparse.ArgumentParser,
     *,
+    description: str | None = None,
     provider_help: str = "Restrict to sessions from a specific provider",
     dir_help: str = "Restrict to sessions whose cwd exactly matches this directory",
     mafter_help: str = "Only sessions modified after DATE (e.g., 2024-12-15, 1d, 2w)",
     cafter_help: str = "Only sessions created after DATE",
 ) -> None:
     """Install the shared session-pool narrowing flags on a parser."""
-    group = parser.add_argument_group("session pool filters")
+    group = parser.add_argument_group("session pool filters", description)
     group.add_argument("-d", "--dir", type=str, default=None, help=dir_help)
     group.add_argument(
         "-ma", "--mafter", type=str, default=None, metavar="DATE", help=mafter_help

@@ -4,6 +4,7 @@ import argparse
 import os
 import re
 import sys
+import textwrap
 from pathlib import Path
 
 from .commands import (
@@ -28,6 +29,24 @@ from .shortening import (
     parse_short_spec,
 )
 from .tool_filter import ToolFilter, parse_tool_spec
+
+
+class HelpFormatter(argparse.RawDescriptionHelpFormatter):
+    def _fill_text(self, text: str, width: int, indent: str) -> str:
+        r"""Wrap section lines without losing their indentation.
+
+        >>> HelpFormatter("ch")._fill_text("  first second", 10, "")
+        '  first\n  second'
+        """
+        return "\n".join(
+            textwrap.fill(
+                line,
+                width,
+                initial_indent=indent,
+                subsequent_indent=indent + line[: len(line) - len(line.lstrip())],
+            )
+            for line in text.splitlines()
+        )
 
 
 def _resolve_thinking_mode(
@@ -336,11 +355,11 @@ def main():
         # Parse name arguments
         parser = argparse.ArgumentParser(
             prog="ch name",
-            description="Rename a conversation by updating its display name",
+            description="Set the current title of a Claude Code, Codex, or Pi session.",
         )
         parser.add_argument(
             "conversation_id",
-            help="Conversation/session ID, summary prefix, recent negative index, or file path",
+            help="Session ID, current title substring, summary prefix, recent index (-1, -2, ...), or file path",
         )
         parser.add_argument(
             "new_name",
@@ -357,7 +376,7 @@ def main():
             "-n",
             "--dry-run",
             action="store_true",
-            help="Print the resolved/generated name without modifying the session file",
+            help="Print the title without writing it (--auto still calls pi)",
         )
 
         args = parser.parse_args(sys.argv[2:])
@@ -377,10 +396,14 @@ def main():
         # Parse rm arguments
         parser = argparse.ArgumentParser(
             prog="ch rm",
-            description="Remove a conversation session and all associated files. "
-            "Shows a preview, then prompts for confirmation before removal.",
+            description="Preview a session, then ask for confirmation before removal. "
+            "Claude removal includes associated files and history entries. "
+            "Codex and Pi removal deletes the session file only.",
         )
-        parser.add_argument("session", help="Session UUID or file path")
+        parser.add_argument(
+            "session",
+            help="Session ID, current title substring, summary prefix, recent index (-1, -2, ...), or file path",
+        )
         parser.add_argument(
             "-n",
             "--dry-run",
@@ -398,11 +421,12 @@ def main():
     elif len(sys.argv) > 1 and sys.argv[1] == "info":
         parser = argparse.ArgumentParser(
             prog="ch info",
-            description="Show aggregated statistics for a Claude or PI session",
+            description="Show token usage, cost, durations, and message counts for a Claude or Pi session. "
+            "Codex is not supported.",
         )
         parser.add_argument(
             "session",
-            help="Conversation/session ID, name, recent negative index, or file path",
+            help="Session ID, current title substring, summary prefix, recent index (-1, -2, ...), or file path",
         )
         parser.add_argument(
             "-f",
@@ -417,53 +441,106 @@ def main():
         # Default parse behavior
         parser = argparse.ArgumentParser(
             prog="ch",
-            description="Parse and format supported AI CLI conversation histories",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            # ⚠ `search` is listed here and this file has no search arm. That is
-            # correct: this epilog is what `ch --help` prints, and `ch` serves
-            # search natively. Removing the line made `ch --help` stop listing a
-            # command the product has — caught by the surviving-journey diff, and
-            # it is the one thing in this file a search cleanup will reach for.
-            epilog="""\
+            usage="ch [options] [input] [selector ...]\n       ch COMMAND [options] ...",
+            description="""\
+Read and manage Claude Code, Codex, and Pi session histories.
+Without a command, display a session or export it as XML, JSON, or Markdown.
+
 Commands:
-  parse    Rebuild XML-tagged Markdown from structured ch JSON
-  search   Search conversations with regex patterns
-  name     Assign a custom display name to a conversation
-  rm       Remove a conversation session and all associated files
-  catalog  AI-powered session cataloging
-  info     Show aggregated statistics for a Claude or PI session
+  search   Find sessions by regex or AND/OR/NOT queries
+  parse    Convert between structured ch JSON and XML-tagged Markdown
+  name     Set a session title, or generate one with AI (--auto)
+  rm       Preview and remove a session, with confirmation
+  catalog  Catalog the first supplied session in sessions.yaml via pi
+  info     Show tokens, cost, durations, and counts (Claude and Pi)
+
+Search options: ch search --help
+The options below apply to session display and export.""",
+            formatter_class=HelpFormatter,
+            epilog="""\
+Examples:
+  ch -p codex -d . -1                 Newest Codex session in this directory
+  ch -1 -t:s -- -5:                   Last five messages, with shortened tools
+  ch -1 -f json -o session.json       Export structured JSON
+  ch search 'docker AND timeout' -l  List matching sessions
+
+Input:
+  Read session JSONL files, or raw CLI transcripts with > and ⏺ message prefixes.
+  You can read a copied Codex or Pi file from any directory. Keep its first JSON record: type=session_meta for Codex, or type=session with an integer version for Pi. This record identifies the provider.
+  Claude files have no such identifying record. Read them from ~/.claude/projects instead. A copied Claude file, or external JSONL without a recognized first record, is rejected.
+  Title substrings and summary prefixes ignore case. Only the latest title is used. If several sessions match, use a more specific name or a session ID.
+
+Tool filters (also available in search):
+  Bare -t includes all tool calls and results, alongside regular messages.
+  Add a filter to choose which tools to include:
+    -t Bash        Include Bash calls and results
+    -t Bash:i      Include Bash calls only
+    -t Read:o      Include Read results only
+    -t e           Include failed results from any tool
+    -t Bash:e      Include failed Bash results only
+    -t '!Bash'     Include every tool except Bash
+  Within one filter, all colon-separated conditions must match (AND). Between filters, any match is enough (OR).
+  For example, -t Read:o -t Bash:i includes Read results and Bash calls. You can also write -t 'Read:o Bash:i'.
+  Put ! first to exclude matches. Exclusions take priority over inclusions.
+  Use i/input for calls, o/output for results, and e/error for failures. Order is flexible: Read:o and o:Read mean the same thing.
+  Names match exactly, with known aliases: Codex exec_command also matches Bash.
+  Equivalent forms: -t FILTER, -t:FILTER, --tools FILTER, --tools=FILTER.
+  --all ignores tool filters and includes all tools.
+
+Shortening:
+  --short=200 limits each message body, thinking block, plan, and tool text value to 200 characters. A tool's command and output each get their own limit. This is not a total output budget.
+  Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
+  --short=p=200 keeps more detail toward the end of the conversation. Among visible messages using this mode, limits grow evenly from 8 for the first to 200 for the last. Three messages get 8, 104, and 200. A single message gets 200.
+  Message selection happens before these limits are assigned. Metadata is never shortened.
+  Accepted values: N, p, progressive, p=N, progressive=N. N is the character limit. p and progressive mean the same thing and default to a final limit of 500.
+  Both --short VALUE and --short=VALUE work, as does -s. Prefer = when also selecting messages: ch -1 -s=200 -- 3 shows message 3 with a 200-character limit.
+
+Shortening tools:
+  Use -t:s to shorten tools alone. With no --short setting, it uses a fixed limit of 500.
+  Add s or short to any tool filter. Both accept the same values as --short:
+    -t Read:o:s=80       Limit each Read output text value to 80 characters
+    -t Read:o:short=p=80 Grow Read output limits from 8 to 80
+  Bare :s copies both the limit and mode from --short. :s=p copies only the limit and switches to progressive mode. For example, --short=200 -t Read:o:s=p grows Read output limits from 8 to 200.
+  If several shortening filters match, the one with more conditions wins (tool name, input/output, error). If counts tie, the last filter wins.
+  For example, -t:s=80 -t Bash:s=200 gives Bash a limit of 200 and other tools 80.
+
+Dates:
+  -ma and -ca accept YYYY-MM-DD or YY-MM-DD. Add a time with T or a space, for example -ma '2026-09-27 14:30:45'. Seconds are optional.
+  Relative ages count back from now: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).
 """,
         )
 
         parser.add_argument(
             "input",
             nargs="?",
-            help="Input file path, conversation/session ID, recent negative index, or use stdin if omitted",
+            help="File path, session ID, current title substring, summary prefix, or recent index (-1 = newest). "
+            "Omit to read content or a session ID from stdin.",
         )
         parser.add_argument(
             "slice",
             nargs="?",
-            help='Message selector (1-indexed): "1", "-1", "2:", ":-2", "3:5". '
-            "Pass more positional selectors to OR them together. "
-            'For negative slices starting with -, use: -- -5: or quote: "-5:"',
+            metavar="selector",
+            help="Message index or range: 1 = first, -1 = last, 2:5 = messages 2 through 4. "
+            "Open ranges: 2:, :-2, -5:. Repeat to combine selections without duplicates. "
+            "Put negative ranges after --.",
         )
         parser.add_argument(
             "-o",
             "--out",
             type=Path,
-            help="Output file path (uses Rich display if omitted)",
+            help="Write plain output to a file (default: stdout)",
         )
         parser.add_argument(
             "-l",
             "--only-metadata",
             action="store_true",
-            help="Show only session metadata",
+            help="Show only metadata (requires a session or file)",
         )
         parser.add_argument(
             "-ll",
             "--only-id",
             action="store_true",
-            help="Show only the resolved session ID (implies --color never and --no-paging)",
+            help="Show only the resolved session ID, without color or paging",
         )
         parser.add_argument(
             "-T",
@@ -471,17 +548,18 @@ Commands:
             nargs="?",
             const="full",
             default=None,
-            help="Show thinking tokens (optional: short)",
+            metavar="{full,short}",
+            help="Include thinking. Use -T short to shorten it (default: full)",
         )
         parser.add_argument(
             "--only-user",
             action="store_true",
-            help="Show only regular user messages",
+            help="Only user text. Overrides -T, -t, -a, --plans, and -A",
         )
         parser.add_argument(
             "--only-assistant",
             action="store_true",
-            help="Show only regular assistant messages",
+            help="Only assistant text. Overrides -T, -t, -a, --plans, and -A",
         )
         parser.add_argument(
             "--no-user",
@@ -500,32 +578,35 @@ Commands:
             nargs="?",
             const=True,
             default=None,
-            help="Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
+            help="Include all tool calls and results, or choose with a filter (below)",
         )
         add_pool_filter_args(
             parser,
-            provider_help="Restrict recent-index resolution to a provider when input is -1, -2, ...",
-            dir_help="Restrict recent-index resolution to sessions whose cwd exactly matches this directory",
-            mafter_help="Restrict recent-index resolution to sessions modified after DATE",
-            cafter_help="Restrict recent-index resolution to sessions created after DATE",
+            description="Only apply to -1, -2, ... inputs. Other inputs ignore these filters.\n"
+            "Newest uses the last timestamp inside the transcript. If none is readable, use the file's modification time.\n"
+            "Recent indices exclude agent sidechain files.",
+            provider_help="Provider for recent-index lookup",
+            dir_help="Exact session working directory for recent-index lookup",
+            mafter_help="Sessions modified on or after DATE",
+            cafter_help="Sessions created on or after DATE",
         )
         parser.add_argument(
             "-a",
             "--agents",
             action="store_true",
-            help="Include agent messages and Pi agent custom records",
+            help="Include subagents, forks, peer messages, and Pi agent records",
         )
         parser.add_argument(
             "-b",
             "--branches",
             action="store_true",
-            help="Include messages from abandoned (rewound) branches",
+            help="Include abandoned Claude rewind branches",
         )
         parser.add_argument(
             "-A",
             "--all",
             action="store_true",
-            help="Show everything, including arbitrary Pi custom records",
+            help="Include thinking, tools, agents, branches, plans, and Pi custom records",
         )
         parser.add_argument(
             "--plans",
@@ -538,13 +619,13 @@ Commands:
             nargs="?",
             const=True,
             default=None,
-            help="Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)",
+            help="Shorten each string (see limits below)",
         )
         parser.add_argument(
             "--color",
             choices=["always", "never", "auto"],
             default="auto",
-            help="Control Rich formatting: always, never, or auto (default: auto)",
+            help="Formatted terminal display (auto: on in a terminal, off in pipes)",
             type=init_module_console_from_color_arg,
         )
         parser.add_argument(
@@ -552,7 +633,7 @@ Commands:
             "--format",
             choices=["xml", "json", "raw"],
             default="xml",
-            help="Output format: xml, json, or raw (default: xml)",
+            help="xml (default), structured json, or raw Markdown",
         )
         parser.add_argument(
             "-r",
@@ -575,7 +656,7 @@ Commands:
         parser.add_argument(
             "--no-metadata",
             action="store_true",
-            help="Disable outputting metadata frontmatter",
+            help="Hide session metadata (plain XML sends metadata to stderr)",
         )
 
         # Handle slices that end up in unknown args due to argparse quirks:

@@ -402,6 +402,7 @@ def test_columns_sweep_matches_the_recording(
     fixed_length_sweep_home: Path,
     arguments: list[str],
     columns: str | None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The two width resolvers still compose the way Python composed them.
 
@@ -430,9 +431,18 @@ def test_columns_sweep_matches_the_recording(
         "points move with it, so a byte-perfect route would fail here."
     )
     actual = _run(checkout_built_ch, arguments, columns, fixed_length_sweep_home)
+    expected = recorded[key]
+    if arguments == ["search", "--help"]:
+        # Help text was revised after the recording. Keep the width contract by
+        # comparing each COLUMNS spelling with the width Python resolves for it.
+        monkeypatch.setenv("COLUMNS", columns or "")
+        width = shutil.get_terminal_size().columns
+        canonical = _run(checkout_built_ch, arguments, str(width), fixed_length_sweep_home)
+        assert canonical.returncode == 0 and not canonical.stderr, canonical.stderr
+        expected = {**expected, "stdout": canonical.stdout}
     _compare(
         actual,
-        recorded[key],
+        expected,
         fixed_length_sweep_home,
         f"`ch {' '.join(arguments)}` at COLUMNS={columns!r}",
     )

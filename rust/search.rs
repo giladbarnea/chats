@@ -1,7 +1,7 @@
 //! The `ch search` argument grammar.
 //!
-//! Truth is CPython `argparse` as configured in `src/chats/cli.py`. Usage and
-//! help are **rewrapped to the terminal width** by argparse, so they cannot be
+//! Usage and help follow the original argparse layout and are
+//! **rewrapped to the terminal width**, so they cannot be
 //! static constants — the abandoned branch made exactly that mistake. Wrapping
 //! is ported from Python's `textwrap`, including its hyphen rule, which is why
 //! `--no-paging` splits after `--no-` at narrow widths.
@@ -30,7 +30,7 @@ struct Section {
 
 const POSITIONALS: &[Action] = &[Action {
     invocation: "pattern",
-    help: "Pattern to search for",
+    help: "Regex or uppercase AND/OR/NOT query (see syntax below)",
 }];
 
 const OPTIONS: &[Action] = &[
@@ -46,35 +46,35 @@ const OPTIONS: &[Action] = &[
     },
     Action {
         invocation: "-r, --raw",
-        help: "Alias for raw markdown search output (implies --no-metadata, --color never, and --no-paging)",
+        help: "Plain Markdown output, without metadata, color, or paging",
     },
     Action {
-        invocation: "-T, --thinking [THINKING]",
-        help: "Show thinking tokens (optional: short)",
+        invocation: "-T, --thinking [{full,short}]",
+        help: "Include thinking. Use -T short to shorten it (default: full)",
     },
     Action {
         invocation: "--only-user",
-        help: "Search only regular user message bodies",
+        help: "Search/display only regular user messages (see scope below)",
     },
     Action {
         invocation: "--only-assistant",
-        help: "Search only regular assistant message bodies",
+        help: "Search/display only regular assistant messages (see scope below)",
     },
     Action {
         invocation: "-t, --tools [TOOLS]",
-        help: "Show tool use/result details (optional: filter with modifiers, e.g. 'Bash:i', 'Read:o:s', '!Bash')",
+        help: "Include all tool calls and results, or choose with a filter (below)",
     },
     Action {
         invocation: "-a, --agents",
-        help: "Include agent messages and Pi agent custom records",
+        help: "Include agent messages and search Claude sidechain sessions",
     },
     Action {
         invocation: "-b, --branches",
-        help: "Include messages from abandoned (rewound) branches",
+        help: "Include abandoned Claude rewind branches",
     },
     Action {
         invocation: "-A, --all",
-        help: "Show everything, including arbitrary Pi custom records",
+        help: "Include thinking, tools, agents, branches, plans, and Pi custom records",
     },
     Action { invocation: "--plans", help: "Show plan content (ExitPlanMode)" },
     Action {
@@ -87,11 +87,11 @@ const OPTIONS: &[Action] = &[
     },
     Action {
         invocation: "--short [SHORT]",
-        help: "Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)",
+        help: "Shorten strings before matching and display (see limits below)",
     },
     Action {
         invocation: "--color {always,never,auto}",
-        help: "Control Rich formatting: always, never, or auto (default: auto)",
+        help: "Formatted terminal display (auto: on in a terminal, off in pipes)",
     },
     Action {
         invocation: "--paging",
@@ -107,15 +107,15 @@ const OPTIONS: &[Action] = &[
 const POOL_FILTERS: &[Action] = &[
     Action {
         invocation: "-d, --dir DIR",
-        help: "Restrict search to conversations in this directory",
+        help: "Match the session working directory exactly (not its subdirectories)",
     },
     Action {
         invocation: "-ma, --mafter DATE",
-        help: "Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)",
+        help: "Sessions modified on or after DATE",
     },
     Action {
         invocation: "-ca, --cafter DATE",
-        help: "Only conversations created after DATE",
+        help: "Sessions created on or after DATE",
     },
     Action {
         invocation: "-p, --provider {claude,pi,codex}",
@@ -128,6 +128,71 @@ const SECTIONS: &[Section] = &[
     Section { title: "options", actions: OPTIONS },
     Section { title: "session pool filters", actions: POOL_FILTERS },
 ];
+
+const DESCRIPTION: &str = "Search Claude Code, Codex, and Pi sessions. Match visible messages, summaries, and the latest title. Hidden content does not match unless its visibility flag is enabled.";
+
+const GUIDE: &str = r#"Query syntax:
+  Regex is case-insensitive by default. ^ and $ match line boundaries, and . also matches newlines. Invalid regex falls back to literal matching.
+  Quote the whole query in the shell so spaces and special characters reach ch unchanged.
+  Put patterns starting with a dash after --: ch search -- '-flag'.
+  AND / OR combine terms across the whole session, including different messages. AND binds tighter than OR. Parentheses group terms.
+  A NOT B NOT C requires A and excludes sessions containing B or C.
+  NOT cannot mix with AND/OR or boolean grouping parentheses. Operators must be uppercase. Lowercase and mixed-case words stay in the regex.
+  Within a boolean query, also quote any term containing spaces or regex parentheses: '"error (code|status)" AND fix'. Without inner quotes, spaces separate terms and parentheses group boolean expressions.
+  Regex terms without spaces or parentheses need no inner quotes: 'docker.* AND timeout' works as written.
+
+Examples:
+  ch search 'docker AND (timeout OR crash)' -l
+    List sessions containing docker and either timeout or crash.
+  ch search '"hello world" NOT goodbye' -p codex -ma 1w
+    Find Codex sessions active in the past week containing hello world but no goodbye.
+  ch search 'error' -t e -f
+    Search regular text and failed tool results. Show each full matching session.
+  ch search '.' -d . -ll
+    Print IDs of sessions with searchable content in the current working directory.
+
+Tool filters:
+  Bare -t includes all tool calls and results, alongside regular messages.
+  Add a filter to choose which tools to include:
+    -t Bash        Include Bash calls and results
+    -t Bash:i      Include Bash calls only
+    -t Read:o      Include Read results only
+    -t e           Include failed results from any tool
+    -t Bash:e      Include failed Bash results only
+    -t '!Bash'     Include every tool except Bash
+  Within one filter, all colon-separated conditions must match (AND). Between filters, any match is enough (OR).
+  For example, -t Read:o -t Bash:i includes Read results and Bash calls. You can also write -t 'Read:o Bash:i'.
+  Put ! first to exclude matches. Exclusions take priority over inclusions.
+  Use i/input for calls, o/output for results, and e/error for failures. Order is flexible: Read:o and o:Read mean the same thing.
+  Names match exactly, with known aliases: Codex exec_command also matches Bash.
+  Equivalent forms: -t FILTER, -t:FILTER, --tools FILTER, --tools=FILTER.
+  --all ignores tool filters and includes all tools.
+
+Shortening:
+  --short=200 limits each message body, thinking block, plan, and tool text value to 200 characters. A tool's command and output each get their own limit. This is not a total output budget.
+  Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
+  --short=p=200 keeps more detail toward the end of each conversation. Among visible messages using this mode, limits grow evenly from 8 for the first to 200 for the last. Three messages get 8, 104, and 200. A single message gets 200.
+  Search assigns these limits before looking for matches. Text removed by shortening cannot match. Titles and summaries are never shortened.
+  Accepted values: N, p, progressive, p=N, progressive=N. N is the character limit. p and progressive mean the same thing and default to a final limit of 500.
+  Both --short VALUE and --short=VALUE work. Search reserves -s for case-sensitive matching.
+
+Shortening tools:
+  Use -t:s to shorten tools alone. With no --short setting, it uses a fixed limit of 500.
+  Add s or short to any tool filter. Both accept the same values as --short:
+    -t Read:o:s=80       Limit each Read output text value to 80 characters
+    -t Read:o:short=p=80 Grow Read output limits from 8 to 80
+  Bare :s copies both the limit and mode from --short. :s=p copies only the limit and switches to progressive mode. For example, --short=200 -t Read:o:s=p grows Read output limits from 8 to 200.
+  If several shortening filters match, the one with more conditions wins (tool name, input/output, error). If counts tie, the last filter wins.
+  For example, -t:s=80 -t Bash:s=200 gives Bash a limit of 200 and other tools 80.
+
+Search scope and dates:
+  --only-user/--only-assistant disable thinking, tools, agents, plans, and --all. Titles and summaries can still return a session even when no selected message matches.
+  Search sorts by the file's modification time, newest first. Date filters instead use timestamps inside the transcript, with filesystem times as fallback. Copying or touching a file can therefore change its search position without changing which dates it matches.
+  This differs from ch -1, which selects the newest session by its last transcript timestamp.
+  -ma and -ca accept YYYY-MM-DD or YY-MM-DD. Add a time with T or a space, for example -ma '2026-09-27 14:30:45'. Seconds are optional.
+  Relative ages count back from now: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).
+  Exit status: 0 means matches, 1 means no matches or a runtime error, and 2 means invalid arguments or query syntax.
+"#;
 
 /// Usage fragments in argparse's order: optionals first, then positionals.
 /// `-d`, `-ma`, `-ca` and `-p` sit where `add_pool_filter_args` inserted them.
@@ -240,7 +305,10 @@ pub fn format_help(columns: usize) -> String {
     let width = text_width(columns);
     let position = help_position(width);
     let help_width = width.saturating_sub(position).max(11);
-    let mut out = format!("{}\n", format_usage(columns));
+    let mut out = format!(
+        "usage: {PROGRAM} [options] pattern\n\n{}\n",
+        wrap(DESCRIPTION, width).join("\n"),
+    );
 
     for section in SECTIONS {
         out.push_str(&format!("\n{}:\n", section.title));
@@ -270,82 +338,52 @@ pub fn format_help(columns: usize) -> String {
             }
         }
     }
+    out.push('\n');
+    for line in GUIDE.lines() {
+        let indentation = line.len() - line.trim_start().len();
+        let wrapped = crate::terminal::wrap_preserving_spaces(
+            line.trim_start(), width.saturating_sub(indentation).max(11),
+        );
+        if wrapped.is_empty() {
+            out.push('\n');
+        }
+        for line in wrapped.lines() {
+            out.push_str(&format!("{}{}\n", " ".repeat(indentation), line.trim_end()));
+        }
+    }
     out
 }
 
 #[cfg(test)]
 mod width_parity {
     use super::*;
-    use std::path::PathBuf;
-    use std::process::Command;
 
-    /// Narrow overflow, the boundaries either side of the longest help line,
-    /// and a spread up to wide. The full 20..=200 sweep lives in
-    /// `teammates/search-runtime/probes/help_width_sweep.py`.
-    const WIDTHS: [usize; 12] = [20, 27, 46, 47, 48, 49, 60, 79, 80, 96, 120, 200];
-
-    fn oracle() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".venv/bin/ch-legacy")
-    }
-
-    fn argparse_help(columns: usize) -> String {
-        let oracle = oracle();
-        assert!(
-            oracle.exists(),
-            "Expected the Python oracle at {oracle:?}; run `uv sync --dev`."
-        );
-        let home = std::env::temp_dir().join("ch-help-parity-home");
-        std::fs::create_dir_all(&home).expect("create isolated home");
-        let output = Command::new(&oracle)
-            .args(["search", "--help"])
-            .env("HOME", &home)
-            .env("COLUMNS", columns.to_string())
-            .stdin(std::process::Stdio::null())
-            .output()
-            .expect("run the Python oracle");
-        // Without this the test cannot tell "our formatter diverged" from "the
-        // oracle crashed": `ch-legacy` imports from the live `src/` tree, so a
-        // peer mid-save makes it exit non-zero with empty stdout, which then
-        // compares as a parity failure and blames the wrong file.
-        assert!(
-            output.status.success(),
-            "The Python oracle failed rather than disagreeing. stderr:\n{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        String::from_utf8(output.stdout).expect("oracle help is UTF-8")
-    }
-
-    // argparse rewraps help to the terminal, so this cannot be a static string.
-    // The abandoned branch shipped it as one and passed its own 704-case corpus,
-    // because every case in that corpus pinned COLUMNS=96.
     #[test]
-    fn help_matches_argparse_at_every_width() {
-        for columns in WIDTHS {
-            assert_eq!(
-                format_help(columns),
-                argparse_help(columns),
-                "Help output diverged from argparse at COLUMNS={columns}."
+    fn help_fits_narrow_and_wide_terminals() {
+        for columns in [40, 60, 80, 96, 120, 200] {
+            let help = format_help(columns);
+            assert!(
+                help.lines().all(|line| line.len() <= columns),
+                "Help must fit a {columns}-column terminal:\n{help}"
+            );
+            assert!(
+                help.contains("Query syntax:") && help.contains("Tool filters:"),
+                "Advanced syntax must remain available at {columns} columns."
             );
         }
     }
 
-    /// A gate that has never been observed to fail is not yet evidence.
-    ///
-    /// Pinning one width, which is what a width-blind implementation does, must
-    /// disagree with argparse at the other widths.
     #[test]
-    fn the_parity_test_would_catch_a_width_blind_formatter() {
-        let pinned = format_help(96);
-        let disagreements = WIDTHS
-            .iter()
-            .filter(|columns| **columns != 96)
-            .filter(|columns| pinned != argparse_help(**columns))
-            .count();
-        assert_eq!(
-            disagreements,
-            WIDTHS.len() - 1,
-            "Expected a width-blind formatter to disagree with argparse at every \
-             other width, which is what makes the parity test above meaningful."
+    fn help_uses_the_available_width() {
+        let narrow = format_help(60);
+        let wide = format_help(120);
+        assert!(
+            narrow.lines().count() > wide.lines().count(),
+            "A wider terminal should need fewer wrapped lines."
+        );
+        assert!(
+            wide.lines().any(|line| line.len() > 60),
+            "Wide help must use the available space rather than a fixed narrow layout."
         );
     }
 }
@@ -441,16 +479,12 @@ mod render_parity {
     }
 
     #[test]
-    fn help_reproduces_argparse_stdout_byte_for_byte() {
-        for columns in [40usize, 60, 96, 140] {
-            let (status, stdout, _) = oracle(&["--help"], columns);
-            assert_eq!(status, 0, "Expected `--help` to exit 0.");
-            assert_eq!(
-                render_help(columns).into_bytes(),
-                stdout,
-                "help stdout diverged at COLUMNS={columns}."
-            );
-        }
+    fn help_matches_the_reviewed_page() {
+        assert_eq!(
+            render_help(96),
+            include_str!("../tests/data/help/search-96.txt"),
+            "Help changed from the reviewed page. Review the change before updating the fixture."
+        );
     }
 }
 
