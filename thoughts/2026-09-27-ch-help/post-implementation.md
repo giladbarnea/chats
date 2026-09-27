@@ -1,21 +1,23 @@
-# Help coverage audit
+# CLI help audit
 
-The help pages now describe the actual capabilities, including advanced syntax, without treating help as a copy of the README.
-Both pages stand alone. Shared tool and shortening syntax appears on each page so search users need no second lookup.
+Bare help covers session display and search because both are common workflows. Dedicated search help remains self-contained.
+YAML examples make structured metadata discoverable and explain the choice between metadata records (`-l`) and IDs (`-ll`).
+Catalog was excluded because the user plans to retire it.
 
-The audit used the argument parsers, session resolver, visibility rules, and [tool](../../TOOL_SPEC.md) and [shortening](../../SHORT_SPEC.md) contracts.
-This exposed missing title lookup, boolean search rules, conversion direction, filter forms, and precedence rules.
-It also exposed overclaims about `--all`, role filters, and removal across providers.
-Catalog work was excluded at the user's request.
+## Complete syntax also needs procedural guidance
 
-The content review showed that complete syntax alone did not teach readers how to combine options.
-Examples now come before general rules. The final pass clarified lookup order, content categories, shortening, and flag differences between commands.
-The [last Claude review](claude-review-before-search-section.md) preceded the combined help page. The final wording received a direct read-through of both rendered pages.
-Bare help now covers search too, so the two common workflows need only one help call. YAML examples make metadata and the distinction between `-l` and `-ll` explicit.
+The audit compared help with the argument parsers, resolver, visibility rules, and [tool](../../TOOL_SPEC.md) and [shortening](../../SHORT_SPEC.md) contracts.
+Correct syntax alone left readers unsure how to combine options. Reviewers trusted commands paired with an expected result and a reason.
+Concrete examples clarified lookup order, boolean search output, content selection, flag meanings across commands, and which shortening filter wins.
+The remaining wording fixes defined titles versus summaries, explained thinking limits, and distinguished transcript dates from file ordering.
 
-Original search help recordings remain intact. Revised help has a separate reviewed fixture with an explicit source in the manifest.
-Width tests compare unusual `COLUMNS` values with Python's resolved numeric width because the old wording no longer applies.
+Claude's last independent review said both pages “read well overall.” It preceded the Search section in bare help and the metadata examples.
+The final pass used direct reading of the rendered pages and help tests. The review's actionable findings were addressed, except catalog's excluded wording.
 
-Validation covered documented examples, all shortening value forms, tool-filter forms, copied files, and invalid boolean queries. The help checks cover both pages and terminal widths.
+## Verification preserved the original evidence
+
+Original search help recordings remain intact. Revised help uses a separate fixture with an explicit source in the manifest.
+Width checks compare unusual `COLUMNS` values with Python's resolved numeric width because the original wording no longer applies.
+Validation covered documented examples, all shortening value forms, tool filters, copied files, invalid boolean queries, and terminal widths. The final help checks passed.
 The initial full-suite comparison had 54 baseline failures and 53 final failures. Every final failure also appeared in the baseline.
-Verified that global `ch`, the project environment, and the local build show identical help. The editable install points to this checkout.
+Global `ch`, the project environment, and the local build produced identical help. The editable install pointed to this checkout.
