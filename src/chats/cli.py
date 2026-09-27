@@ -455,10 +455,66 @@ Commands:
   catalog  Catalog the first supplied session in sessions.yaml via pi
   info     Show tokens, cost, durations, and counts (Claude and Pi)
 
-Search options: ch search --help
-The options below apply to session display and export.""",
+Search:
+  ch search [options] PATTERN
+  Search conversation text, current titles, and saved summaries across Claude, Codex, and Pi sessions.
+
+  ch search 'docker AND timeout' -l
+    List sessions containing both terms, even in different messages.
+  ch search '.' -d . -ll
+    Print IDs of sessions with searchable content in this directory.
+  ch search 'error' -t e -f
+    Search conversation text and failed tool results. Show the full matching sessions with the selected content options.
+
+  Choose the search output:
+    -l, --list             List matching sessions and metadata
+    -ll, --only-id         Print only session IDs, without color or paging
+    -f, --full             Show all included messages from matching sessions
+    -r, --raw              Plain Markdown without metadata, color, or paging
+  By default, show only matching messages. For 'docker AND timeout', a session must contain both terms, but each displayed message can contain either one.
+  Search -f takes no format value. To export a result as JSON, use ch SESSION -f json.
+
+  Write a query:
+    Quote the whole query in the shell. Without boolean operators, it is one regex, including spaces. ^ and $ match line boundaries, and . also matches newlines. Invalid regex is searched literally without reporting the regex error.
+    -s, --case-sensitive    Match letter case exactly
+    -i, --case-insensitive  Make the default case-insensitive mode explicit
+    Choose either -s or -i. In search, use --short for shortening, not -s.
+    Uppercase AND / OR combine terms across the session. AND binds tighter. Use parentheses to group terms: 'docker AND (timeout OR crash)'.
+    'docker NOT crash NOT timeout' requires docker and excludes sessions containing either excluded term. NOT cannot mix with AND/OR or boolean grouping parentheses.
+    Within a boolean query, quote phrases and regex parentheses: '"error (code|status)" AND fix'. Unquoted words do not implicitly combine:
+      'foo AND bar AND baz'   Require all three terms
+      '"foo bar" AND baz'     Require the phrase foo bar and the term baz
+    'foo bar AND baz' is an error. 'docker.* AND timeout' needs no inner quotes. For a pattern starting with a dash, use ch search -- '-flag'.
+
+  Narrow the search:
+    -d DIR matches the session's working directory exactly. -p chooses claude, pi, or codex. -ma DATE filters by last activity, and -ca DATE by creation. For example, -d . -p codex -ma 1w finds Codex sessions active here in the past week.
+    The content options below also control what can match: -T makes thinking searchable, -t includes tools, and -a includes agents. -b and --plans include abandoned branches and plans. -A includes all these plus Pi custom records.
+    --only-user/--only-assistant select user/assistant text and disable those additions. Titles and summaries can still match. --short changes the text before matching, so removed text cannot match. Progressive limits are assigned within each session before choosing matching messages.
+    Search also accepts --color, --paging, --no-paging, and --no-metadata. See the shared content, tool-filter, shortening, and date explanations below.
+
+  Results list recently modified files first. Date filters use timestamps inside the transcript, with filesystem times as fallback. File copies can therefore affect result order without changing the activity dates.
+  Exit status: 0 means matches, 1 means no matches or a runtime error, and 2 means invalid arguments or query syntax.
+
+  ch search --help shows search on its own.
+
+Session display and export:
+  The positional arguments and options below apply to ch SESSION.""",
             formatter_class=HelpFormatter,
             epilog="""\
+Metadata:
+  Metadata is a YAML record with the session ID, provider, working directory, history file, timestamps, and message count. It can also include a title or fork parent.
+  ch -l -1 prints only this record for the newest session. ch -ll -1 prints only its ID. In search, -l lists matching sessions and their metadata, while -ll prints one ID per line. Use --color never for search metadata as YAML instead of a formatted list.
+  Example record (history path abbreviated):
+    session_id: 11111111-1111-4111-8111-111111111111
+    provider: codex
+    directory: ~/work/shop
+    history_path: ~/.codex/sessions/.../session.jsonl
+    created: "2026-09-27 09:00"
+    modified: "2026-09-27 10:30"
+    messages: 25
+    custom_title: "Investigate timeouts"
+  Search also reports matches and, when applicable, matched_summary. Fork ancestry appears as forked_from when available.
+
 Examples:
   ch -p codex -d . -1
     Read the newest Codex session in this directory.
@@ -468,12 +524,10 @@ Examples:
     Export the newest session as structured JSON.
   ch parse session.json
     Turn that JSON export into readable, XML-tagged Markdown.
-  ch search 'docker AND timeout' -l
-    List sessions containing both terms.
 
 Session lookup and message selection:
   Put the session first, then the message selectors: ch -1 1 shows the first message of the newest session. Recent sessions use negative numbers (-1, -2, ...). A bare ch 1 tries to find a session called 1.
-  For other input, ch tries an existing file path, an exact session ID or filename, a current title substring, then a summary prefix. A summary is a description saved in the session history.
+  For other input, ch tries an existing file path, an exact session ID or filename, a current title substring, then a summary prefix. A title is the session name set with ch name or the provider's naming command. A summary is a description saved in the session history.
   Title and summary matching ignore case. Only the latest title is used. If several sessions match, use a more specific name or a session ID.
   The -- separator ends option parsing. In ch -1 -- -5:, this makes -5: a message range instead of an option.
 
@@ -500,10 +554,13 @@ Tool filters (also available in search):
   --all ignores tool filters and includes all tools.
 
 Shortening:
-  --short=200 limits each message body, thinking block, plan, and tool text value to 200 characters. A tool's command and output each get their own limit. This is not a total output budget.
+  Shortening is a powerful means to understand what a session of potentially hundreds of messages is about while keeping the token cost of consuming it low. It is the recommended approach to start with when looking up content across and within sessions to pin down where, in that large search space, to zoom in without shortening (it's recall first, precision later). The shortening API is optimized to enable effective and efficient searches of vague purposes over a large data space without costing the searching agent its entire context window.
+  --short limits each message body, thinking block, plan, and tool text value to a default of 500 characters. A tool's command and output each get their own limit. This is not a total output budget.
+  Shortened text is truncated in the middle. This because the start and end of a message typically has the more important information.
+  --short=200 limits each to 200 characters.
   Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
   --short=p=200 keeps more detail toward the end of the conversation. Among the messages you include using this mode, limits grow evenly from 8 for the first to 200 for the last. Three messages get 8, 104, and 200. A single message gets 200.
-  Message selection happens before these limits are assigned. Metadata is never shortened.
+  Message selection happens first. For example, ch -1 --short=p=200 -- -5: spreads the limits from 8 to 200 across the last five messages, rather than the whole conversation. Metadata is never shortened.
   Accepted values: N, p, progressive, p=N, progressive=N. N is the character limit. p and progressive mean the same thing and default to a final limit of 500.
   Both --short VALUE and --short=VALUE work, as does -s. With =, the value unambiguously belongs to --short. For example:
     ch -1 -s=200 -- 3
@@ -520,7 +577,7 @@ Shortening tools:
   To give one tool more room than the rest:
     -t:s=80 -t Bash:s=200
       Give Bash a limit of 200 and other tools 80. The Bash filter wins because it adds a tool-name condition.
-  In general, count the matching filter's conditions: tool name, input/output, and error. More conditions win. If counts tie, the last filter wins.
+  Count one condition for a tool name, one for input/output, and one for error. s and short do not count. More conditions win. If counts tie, the last filter wins. Only the winning filter controls shortening. Limits are never added or combined.
 
 Dates:
   -ma and -ca accept YYYY-MM-DD or YY-MM-DD. Add a time with T or a space, for example -ma '2026-09-27 14:30:45'. Seconds are optional.
@@ -557,7 +614,7 @@ Copied files and pasted transcripts:
             "-l",
             "--only-metadata",
             action="store_true",
-            help="Show only metadata (requires a session or file)",
+            help="Print only YAML metadata (requires a session or file)",
         )
         parser.add_argument(
             "-ll",
@@ -572,7 +629,7 @@ Copied files and pasted transcripts:
             const="full",
             default=None,
             metavar="{full,short}",
-            help="Include full thinking, or -T short for 500 characters (uses --short if set)",
+            help="Include full thinking. -T short limits it to 500 characters, replaced by --short if set",
         )
         parser.add_argument(
             "--only-user",
@@ -587,12 +644,12 @@ Copied files and pasted transcripts:
         parser.add_argument(
             "--no-user",
             action="store_true",
-            help="Hide main user text, keeping explicitly enabled extras",
+            help="Hide main user text, keeping enabled tools and agents",
         )
         parser.add_argument(
             "--no-assistant",
             action="store_true",
-            help="Hide main assistant text, keeping explicitly enabled extras",
+            help="Hide main assistant text, keeping enabled thinking, tools, and agents",
         )
         parser.add_argument(
             "-t",
@@ -605,11 +662,11 @@ Copied files and pasted transcripts:
         )
         add_pool_filter_args(
             parser,
-            description="Only apply to -1, -2, ... inputs. Other inputs ignore these filters.\n"
+            description="For ch -1, -2, ... these filters choose which sessions to count. For example, ch -p codex -1 selects the newest Codex session. Other input forms ignore these filters.\n"
             "Newest uses the last timestamp inside the transcript. If none is readable, use the file's modification time.\n"
-            "Recent indices exclude separate Claude subagent files.",
-            provider_help="Provider for recent-index lookup",
-            dir_help="Exact session working directory for recent-index lookup",
+            "These session lookups exclude separate Claude subagent files.",
+            provider_help="Choose a provider before selecting -1, -2, ...",
+            dir_help="Match the working directory before selecting -1, -2, ...",
             mafter_help="Sessions modified on or after DATE",
             cafter_help="Sessions created on or after DATE",
         )
@@ -679,7 +736,7 @@ Copied files and pasted transcripts:
         parser.add_argument(
             "--no-metadata",
             action="store_true",
-            help="Hide session metadata (plain XML sends metadata to stderr)",
+            help="Hide session metadata (XML with --color never sends it to stderr)",
         )
 
         # Handle slices that end up in unknown args due to argparse quirks:

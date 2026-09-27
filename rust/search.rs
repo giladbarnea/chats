@@ -35,7 +35,7 @@ const POSITIONALS: &[Action] = &[Action {
 
 const OPTIONS: &[Action] = &[
     Action { invocation: "-h, --help", help: "show this help message and exit" },
-    Action { invocation: "-l, --list", help: "List mode - show only paths and metadata" },
+    Action { invocation: "-l, --list", help: "List matching sessions and metadata (see Metadata below)" },
     Action {
         invocation: "-ll, --only-id",
         help: "Show only matching session IDs (implies --color never and --no-paging)",
@@ -50,7 +50,7 @@ const OPTIONS: &[Action] = &[
     },
     Action {
         invocation: "-T, --thinking [{full,short}]",
-        help: "Include full thinking, or -T short for 500 characters (uses --short if set)",
+        help: "Search and show full thinking. -T short limits it to 500 characters, replaced by --short if set",
     },
     Action {
         invocation: "--only-user",
@@ -136,6 +136,7 @@ const GUIDE: &str = r#"Query syntax:
   Quote the whole query in the shell so spaces and special characters reach ch unchanged.
   Put patterns starting with a dash after --: ch search -- '-flag'.
   AND / OR combine terms across the whole session, including different messages. AND binds tighter than OR. Parentheses group terms.
+  By default, show only matching messages. For 'docker AND timeout', a session must contain both terms, but each displayed message can contain either one. Use -f to show all included messages from that session.
   A NOT B NOT C requires A and excludes sessions containing B or C.
   Mixed queries such as 'docker AND timeout NOT crash' are not supported. NOT cannot mix with AND/OR or boolean grouping parentheses.
   Operators must be uppercase. Without them, the whole query is one regex, including spaces.
@@ -179,7 +180,10 @@ Tool filters:
   --all ignores tool filters and includes all tools.
 
 Shortening:
-  --short=200 limits each message body, thinking block, plan, and tool text value to 200 characters. A tool's command and output each get their own limit. This is not a total output budget.
+  Shortening is a powerful means to understand what a session of potentially hundreds of messages is about while keeping the token cost of consuming it low. It is the recommended approach to start with when looking up content across and within sessions to pin down where, in that large search space, to zoom in without shortening (it's recall first, precision later). The shortening API is optimized to enable effective and efficient searches of vague purposes over a large data space without costing the searching agent its entire context window.
+  --short limits each message body, thinking block, plan, and tool text value to a default of 500 characters. A tool's command and output each get their own limit. This is not a total output budget.
+  Shortened text is truncated in the middle. This because the start and end of a message typically has the more important information.
+  --short=200 limits each to 200 characters.
   Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
   --short=p=200 keeps more detail toward the end of each conversation. Among the messages you include using this mode, limits grow evenly from 8 for the first to 200 for the last. Three messages get 8, 104, and 200. A single message gets 200.
   Search assigns these limits before looking for matches. Text removed by shortening cannot match. Titles and summaries are never shortened.
@@ -197,14 +201,30 @@ Shortening tools:
   To give one tool more room than the rest:
     -t:s=80 -t Bash:s=200
       Give Bash a limit of 200 and other tools 80. The Bash filter wins because it adds a tool-name condition.
-  In general, count the matching filter's conditions: tool name, input/output, and error. More conditions win. If counts tie, the last filter wins.
+  Count one condition for a tool name, one for input/output, and one for error. s and short do not count. More conditions win. If counts tie, the last filter wins. Only the winning filter controls shortening. Limits are never added or combined.
 
 Search scope and output:
+  A title is the session name set with ch name or the provider's naming command. A summary is a description saved in the session history.
   --only-user/--only-assistant disable thinking, tools, agents, plans, and --all. Titles and summaries can still return a session even when no selected message matches.
   Unlike ch SESSION, search uses -f for full sessions and -s for case-sensitive matching. -f takes no value. Search has no JSON output mode. To export one result, use ch SESSION -f json.
 
+Metadata:
+  Metadata is a YAML record with the session ID, provider, working directory, history file, timestamps, message count, and match count. It can also include a title, fork parent, or matched summary.
+  -l lists matching sessions and their metadata. Add --color never to show YAML instead of a formatted list. -ll prints only session IDs, one per line. For one session's metadata alone, use ch -l SESSION.
+  Example block (history path abbreviated):
+    session_id: 11111111-1111-4111-8111-111111111111
+    provider: codex
+    directory: ~/work/shop
+    history_path: ~/.codex/sessions/.../session.jsonl
+    created: "2026-09-27 09:00"
+    modified: "2026-09-27 10:30"
+    messages: 25
+    matches: 2
+    custom_title: "Investigate timeouts"
+  Optional fields also include forked_from and matched_summary.
+
 Dates and result order:
-  Search sorts by the file's modification time, newest first. Date filters instead use timestamps inside the transcript, with filesystem times as fallback. Copying or touching a file can therefore change its search position without changing which dates it matches.
+  Use -ma and -ca to filter by conversation activity. Search lists recently modified files first so results can appear as they are found. Date filters use timestamps inside the transcript, with filesystem times as fallback. Copying or touching a file can therefore change its search position without changing which dates it matches.
   This differs from ch -1, which selects the newest session by its last transcript timestamp.
   -ma and -ca accept YYYY-MM-DD or YY-MM-DD. Add a time with T or a space, for example -ma '2026-09-27 14:30:45'. Seconds are optional.
   Relative ages count back from now: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).

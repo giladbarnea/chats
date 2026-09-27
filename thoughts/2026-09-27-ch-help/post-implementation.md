@@ -10,7 +10,8 @@ Catalog work was excluded at the user's request.
 
 The content review showed that complete syntax alone did not teach readers how to combine options.
 Examples now come before general rules. The final pass clarified lookup order, content categories, shortening, and flag differences between commands.
-The user stopped further external reviews. The final wording received a direct read-through of both rendered pages.
+The [last Claude review](claude-review-before-search-section.md) preceded the combined help page. The final wording received a direct read-through of both rendered pages.
+Bare help now covers search too, so the two common workflows need only one help call. YAML examples make metadata and the distinction between `-l` and `-ll` explicit.
 
 Original search help recordings remain intact. Revised help has a separate reviewed fixture with an explicit source in the manifest.
 Width tests compare unusual `COLUMNS` values with Python's resolved numeric width because the old wording no longer applies.
