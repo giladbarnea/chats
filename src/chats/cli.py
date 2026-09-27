@@ -8,7 +8,6 @@ import textwrap
 from pathlib import Path
 
 from .commands import (
-    cmd_catalog,
     cmd_info,
     cmd_name,
     cmd_parse,
@@ -414,10 +413,6 @@ def main():
         args = parser.parse_args(sys.argv[2:])
 
         cmd_rm(args.session, dry_run=args.dry_run)
-    elif len(sys.argv) > 1 and sys.argv[1] == "catalog":
-        # Pass all remaining arguments to catalog command
-        # This is a simple passthrough to the shell script
-        cmd_catalog(sys.argv[2:])
     elif len(sys.argv) > 1 and sys.argv[1] == "info":
         parser = argparse.ArgumentParser(
             prog="ch info",
@@ -452,7 +447,6 @@ Commands:
   parse    Convert ch JSON exports to tagged Markdown, or back (-f json)
   name     Set a session title, or generate one with AI (--auto)
   rm       Preview and remove a session, with confirmation
-  catalog  Catalog the first supplied session in sessions.yaml via pi
   info     Show tokens, cost, durations, and counts (Claude and Pi)
 
 Search:
@@ -583,8 +577,7 @@ Dates:
   -ma and -ca accept YYYY-MM-DD or YY-MM-DD. Add a time with T or a space, for example -ma '2026-09-27 14:30:45'. Seconds are optional.
   Relative ages count back from now: 1h, 2d, 3w, 4m (30-day months), 5y (365-day years).
 
-Copied files and pasted transcripts:
-  A raw CLI transcript is copied terminal text: user messages start with > and assistant replies with ⏺. Save it to a file or pipe it into ch.
+Copied JSONL files:
   You can read a copied Codex or Pi JSONL file from any directory. Keep its first JSON record: type=session_meta for Codex, or type=session with an integer version for Pi. This identifies the provider.
   Claude files have no such identifying record. Read them from ~/.claude/projects instead. A copied Claude file, or external JSONL without a recognized first record, is rejected.
 """,

@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import sys
-
-from ..console import print_error
 from ..formatting import render_message_inner_xml as render_message_inner_xml
 from ..model import (
     ConversationFlags,
@@ -138,14 +135,3 @@ from .rm import (
 from .rm import (
     cmd_rm as cmd_rm,
 )
-
-
-def cmd_catalog(args: list[str]) -> None:
-    """Catalog conversation sessions into sessions.yaml."""
-    from ..catalog import catalog_sessions
-
-    try:
-        catalog_sessions(args)
-    except Exception as error:
-        print_error(f"Error executing catalog: {error}")
-        sys.exit(1)

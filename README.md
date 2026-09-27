@@ -9,23 +9,20 @@ Format and search supported AI CLI conversation history files. The `ch` CLI conv
 **Core functions:**
 - **Parse**: Convert conversation history to XML-tagged markdown
 - **Search**: Find conversations using regex patterns with rich display
-- **Format**: Convert between JSONL and raw transcript formats
+- **Format**: Convert between structured JSON and XML-tagged Markdown
 - **Remove**: Safely delete conversation sessions and all associated files
 - **Name**: Assign custom titles to conversations for easier discovery
-- **Catalog**: AI-powered session cataloging to sessions.yaml files
 - **Info**: Aggregate per-session statistics (tokens, cost, durations, message counts) for Claude and PI
 
 ## When to Use
 
 Use `ch` when you want to:
 - Format or convert a .jsonl conversation history file
-- Parse raw conversation transcripts (with ⏺ and > prefixes)
 - Search across all supported sessions for specific content or patterns
 - Find conversations mentioning specific topics
 - Export conversation history
 - Delete or remove conversation sessions
 - Clean up old conversations
-- Catalog or organize conversation sessions
 - Work with files from `~/.claude/projects/*/`, `~/.codex/sessions/**`, or `~/.pi/agent/sessions/**`
 
 ## Commands
@@ -70,11 +67,9 @@ ch <id> "1" "2"   # First and second messages
 ch <id> "1:7" "-2" "8:-3"
 ```
 
-**Format Detection:**
+**Session Input:**
 
-Automatically detects input format by examining **first non-empty line only** (deterministic, not heuristic):
-- **JSONL**: Line contains valid JSON with `type` field
-- **Raw transcript**: Line has `> ` or `⏺ ` CLI prefix
+Session input must be JSONL. The first non-empty line must contain a JSON object with a `type` field.
 
 For JSONL, provider resolution checks the native file path first. External files then require a recognized first object: Codex uses `type: "session_meta"`; PI uses `type: "session"` with an integer `version`. Other external JSONL files fail instead of being assumed to be Claude. Claude files are recognized through their native `~/.claude/projects/` path because Claude has no stable first-object signature.
 
@@ -391,40 +386,6 @@ Dry-run still performs `--auto` generation work; it just stops before writing JS
 - **Recent negative index**: `-1`, `-2`, ... across the unified supported-session space
 - **Session UUID**: `5078a7c7-0646-43cc-9412-7e1454a282b4`
 
-### Catalog Mode
-
-Catalog conversation sessions by upserting entries to a sessions.yaml file.
-
-```bash
-ch catalog [SESSION_IDS OR FILE_PATHS] [-a STRING]
-```
-
-This command uses an AI model (via the `claude` CLI) to analyze conversation sessions and maintain a `sessions.yaml` catalog file. The command reads session content and either creates new entries or updates existing ones with meaningful descriptions organized by date.
-
-**Input Methods:**
-- **Direct session IDs**: `ch catalog 00000000-0000-0000-0000-000000000000`
-- **File paths**: `ch catalog path/to/session.jsonl`
-- **Piped input**: `ch search -ca 1d . -l | ch catalog`
-- **Multiple sessions**: Accepts multiple sessions but **only catalogs the first one found**.
-
-**Features:**
-- Automatically creates sessions.yaml if it doesn't exist
-- Groups sessions by date with `# Mon DD YYYY` comments
-- Updates existing session descriptions when new information is added
-- Skips sessions already cataloged with the same message count
-- Supports an 'ignored' list for empty/meaningless sessions
-
-**Options:**
-- `-a STRING`, `--append-prompt STRING`: Append extra instructions to the AI user message, wrapped in `<additional-instructions>` tags.
-
-**Examples:**
-- Catalog a specific session: `ch catalog 5078a7c7-0646-43cc-9412-7e1454a282b4`
-- Catalog from search results (uses only first result): `ch search -ca 1d . -l | ch catalog`
-- Catalog from multiple IDs (uses only first ID): `ch catalog id1 id2`
-- Catalog with extra instructions: `ch catalog <id> -a "Note the primary language used."`
-
-**Note:** This command requires the `claude` CLI to be configured in the user's environment.
-
 ### Info Mode
 
 Aggregate and print one session's statistics.
@@ -599,7 +560,6 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 - Python 3.14 only
 - Rust 1.85+ when building from source
 - Rich library (for formatting)
-- PyYAML (for catalog/sessions.yaml handling)
 
 **Key Functions:**
 - `extract_summaries_from_jsonl()` - Extract all summary fields from file
@@ -607,9 +567,8 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 - `SessionPool.discover()` - Build the unified pool from Rust-supplied path, provider, and mtime inventory rows
 - `SessionScan.from_content()` - Decode one session once into search facets and visible messages
 - `get_input_content()` - Resolve input from CLI arg, stdin, or conversation/session ID
-- `detect_format()` - Deterministic format detection (first line only)
+- `validate_jsonl()` - Validate the first non-empty JSONL line
 - `parse_jsonl()` / `parse_jsonl_entries()` - Parse JSONL conversation files
-- `parse_raw_cli_transcript()` - Parse raw CLI transcripts
 - `format_to_xml()` - Convert messages to XML format
 - `render_message_panels()` - Colored per-message panel rendering (parse color path)
 - `print_metadata()` - Unified metadata output to stderr

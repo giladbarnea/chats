@@ -18,13 +18,12 @@ from ..formatting import format_to_xml
 from ..model import ConversationFlags
 from ..parsing import (
     decode_jsonl_entries,
-    detect_format,
     extract_cwd_from_jsonl,
     get_jsonl_first_timestamp,
     get_jsonl_session_adapter,
     get_native_session_id,
     parse_jsonl,
-    parse_raw_cli_transcript,
+    validate_jsonl,
 )
 from . import resolve
 from .common import _build_tool_id_map
@@ -85,13 +84,9 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
         paging=False,
     )
 
-    format_type = detect_format(content)
-    if format_type == "jsonl":
-        messages = parse_jsonl(content, flags, source_path=conv_file)
-        cwd = extract_cwd_from_jsonl(content)
-    else:
-        messages = parse_raw_cli_transcript(content, flags)
-        cwd = None
+    validate_jsonl(content)
+    messages = parse_jsonl(content, flags, source_path=conv_file)
+    cwd = extract_cwd_from_jsonl(content)
 
     transcript = format_to_xml(messages, flags, _build_tool_id_map(messages))
     cwd_name = Path(cwd).name if cwd else conv_file.parent.parent.name

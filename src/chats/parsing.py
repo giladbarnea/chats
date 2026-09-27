@@ -426,16 +426,11 @@ def extract_resolution_facets_from_jsonl(file_path: Path) -> tuple[str | None, l
     )
 
 
-def detect_format(content: str) -> str:
-    """
-    Detect if content is JSONL or raw format.
+def validate_jsonl(content: str) -> None:
+    """Raise ValueError unless the first non-empty line is a typed JSON object.
 
-    JSONL format: First non-empty line is valid JSON with a 'type' field.
-    Raw format: CLI transcript with "> " and "... " prefixes (never valid JSON).
-
-    These formats are mutually exclusive - the first non-empty line is deterministic.
+    >>> validate_jsonl('{"type": "user"}')
     """
-    # Find first non-empty line
     for line in content.split("\n"):
         line = line.strip()
         if not line:
@@ -444,12 +439,12 @@ def detect_format(content: str) -> str:
         try:
             obj = json.loads(line)
             if isinstance(obj, dict) and "type" in obj:
-                return "jsonl"
+                return
         except (json.JSONDecodeError, ValueError):
             pass
         break
 
-    return "raw"
+    raise ValueError("Expected JSONL input with a 'type' field in its first non-empty line.")
 
 
 def _iter_jsonl_entries(content: str) -> list[dict]:
@@ -2606,71 +2601,6 @@ def _extract_cwd_from_codex_entry(entry: dict) -> str | None:
             return cwd
 
     return None
-
-
-def _is_system_message(line: str) -> bool:
-    """Check if a '> ' prefixed line is a system message (not user input)."""
-    return line.startswith("> ") and "is running" in line.lower()
-
-
-def parse_raw_cli_transcript(
-    content: str,
-    flags: ConversationFlags,
-) -> list[Message]:
-    """
-    Parse raw CLI transcript format.
-
-    User messages start with: "> " (actual user text)
-    Assistant responses start with: "... " and include system messages like "> /cmd is running"
-    """
-    messages = []
-    index = 1
-    current_role: str | None = None
-    current_lines: list[str] = []
-
-    def save_current_message() -> None:
-        nonlocal index, current_lines
-        if current_role and current_lines:
-            if current_role == "user" and not flags.show_user_messages:
-                current_lines = []
-                return
-            if current_role == "assistant" and not flags.show_assistant_messages:
-                current_lines = []
-                return
-            messages.append(
-                Message(role=current_role, text="\n".join(current_lines), index=index)
-            )
-            index += 1
-        current_lines = []
-
-    for line in content.split("\n"):
-        if line.startswith("\u23fa "):  # ⏺
-            # Assistant response marker
-            if current_role != "assistant":
-                save_current_message()
-                current_role = "assistant"
-            current_lines.append(line)
-
-        elif line.startswith("> "):
-            if _is_system_message(line):
-                # System message - part of assistant response
-                if current_role != "assistant":
-                    save_current_message()
-                    current_role = "assistant"
-                current_lines.append(line)
-            else:
-                # User message
-                if current_role != "user":
-                    save_current_message()
-                    current_role = "user"
-                current_lines.append(line[2:])  # Strip "> " prefix
-
-        elif current_role:
-            # Continuation line
-            current_lines.append(line)
-
-    save_current_message()
-    return messages
 
 
 def _extract_cwd_from_entry(entry: dict) -> str | None:

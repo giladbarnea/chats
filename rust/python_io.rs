@@ -44,11 +44,8 @@ pub fn read_text(path: &Path) -> Result<String, String> {
 /// session file is text mode, so this is the only line-ending policy the oracle
 /// has.
 ///
-/// It changes two answers downstream. `session::decode_entries` splits on `\n`
-/// alone, so a file terminated with lone `\r` is one unparseable line and the
-/// session decodes to nothing; and `raw_transcript` neither splits on `\r` nor
-/// strips one, so a CRLF transcript keeps a `\r` at the end of every rendered
-/// line.
+/// `session::decode_entries` splits on `\n` alone, so a file terminated with
+/// lone `\r` would otherwise be one unparseable line.
 ///
 /// The guard is an economy, not caution: **0 of 5,061 files in the real pool
 /// carry a literal `\r`** (measured 2026-09-01), and the search route reads every

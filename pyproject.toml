@@ -10,7 +10,6 @@ requires-python = "==3.14.*"
 dependencies = [
     "nltk>=3.9.4",
     "orjson>=3.11.5",
-    "pyyaml>=6.0.3",
     "rich",
 ]
 

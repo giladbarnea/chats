@@ -9,7 +9,6 @@ pub mod inventory;
 pub mod scanner;
 pub mod model;
 pub mod pager;
-pub mod raw_transcript;
 pub mod pool_filter;
 pub mod python_io;
 pub mod search;

@@ -23,12 +23,11 @@ from ..model import (
     assign_progressive_shortening,
 )
 from ..parsing import (
-    detect_format,
     extract_cwd_from_jsonl,
     extract_latest_custom_title_from_content,
     get_display_session_id,
     parse_jsonl,
-    parse_raw_cli_transcript,
+    validate_jsonl,
 )
 from ..pool_filter import PoolFilter
 from . import resolve
@@ -162,19 +161,15 @@ def cmd_parse(
     if output_mode == ParseOutputMode.ONLY_METADATA and input_file_path is None:
         resolve._require_file_backed_input(input_file_path, "`--only-metadata`")
 
-    format_type = detect_format(content)
-    if format_type == "jsonl":
-        try:
-            messages = parse_jsonl(content, flags, source_path=input_file_path)
-        except ValueError as error:
-            print_error(str(error))
-            sys.exit(1)
-        cwd = extract_cwd_from_jsonl(content)
-    else:
-        messages = parse_raw_cli_transcript(content, flags)
-        cwd = None
+    try:
+        validate_jsonl(content)
+        messages = parse_jsonl(content, flags, source_path=input_file_path)
+    except ValueError as error:
+        print_error(str(error))
+        sys.exit(1)
+    cwd = extract_cwd_from_jsonl(content)
 
-    if flags.show_agents and input_file_path and format_type == "jsonl":
+    if flags.show_agents and input_file_path:
         messages = _merge_agent_messages(messages, input_file_path, flags)
 
     if not messages:
@@ -193,11 +188,7 @@ def cmd_parse(
             sys.exit(0)
     assign_progressive_shortening(messages, flags, tool_id_map)
 
-    current_custom_title = (
-        extract_latest_custom_title_from_content(content)
-        if format_type == "jsonl"
-        else None
-    )
+    current_custom_title = extract_latest_custom_title_from_content(content)
     metadata = (
         resolve._load_conversation_metadata(input_file_path)
         if input_file_path is not None

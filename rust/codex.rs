@@ -41,8 +41,8 @@
 //!
 //! **What this module cannot decide, and what does not belong here.** Eight large
 //! Codex rollouts are absent from `search .`, and none of them reaches this file:
-//! their first line is an object with no `type` key, so `detect_format` routes
-//! them to `raw_transcript`. A decoder made more permissive to "recover" them
+//! their first line is an object with no `type` key, so JSONL validation rejects
+//! them. A decoder made more permissive to "recover" them
 //! cannot, and would wrongly surface 36 genuinely trivial sessions instead.
 
 use crate::model::{Message, MessageType, Tool, ToolResult, ToolUse};

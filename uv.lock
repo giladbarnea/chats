@@ -18,7 +18,6 @@ source = { editable = "." }
 dependencies = [
     { name = "nltk" },
     { name = "orjson" },
-    { name = "pyyaml" },
     { name = "rich" },
 ]
 
@@ -33,7 +32,6 @@ dev = [
 requires-dist = [
     { name = "nltk", specifier = ">=3.9.4" },
     { name = "orjson", specifier = ">=3.11.5" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "rich" },
 ]
 

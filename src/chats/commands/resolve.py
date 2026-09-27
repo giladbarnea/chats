@@ -315,15 +315,12 @@ def _looks_like_explicit_content(content: str) -> bool:
     """Detect clear pasted/stdin content that should not trigger session lookup.
 
     A trailing newline after one identifier is still one logical line and must keep
-    resolving, while multiline content, JSONL entries, and raw transcript markers
-    are unambiguously content.
+    resolving, while multiline content and JSONL entries are unambiguously content.
     """
     first_line = _first_non_empty_line(content)
     if first_line is None:
         return False
     if _is_jsonl_content_line(first_line):
-        return True
-    if first_line.startswith(("> ", "\u23fa ")):
         return True
     return sum(1 for line in content.splitlines() if line.strip()) > 1
 

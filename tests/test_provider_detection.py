@@ -420,3 +420,23 @@ def test_unknown_external_jsonl_only_id_exits_cleanly(
         "Expected id-only provider rejection without a traceback. "
         f"Got stderr:\n{captured.err}"
     )
+
+
+def test_non_jsonl_file_exits_with_an_input_error(tmp_path: Path, capsys) -> None:
+    """Session input must start with a typed JSON object."""
+    session_path = tmp_path / "invalid.jsonl"
+    session_path.write_text("This is not JSON.\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as exit_info:
+        cmd_parse(
+            ConversationFlags(color="never", paging=False),
+            str(session_path),
+            slice_str=None,
+            output_file=None,
+            emit_metadata=False,
+        )
+
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1, "Invalid session input must fail with status 1."
+    assert "Expected JSONL input" in captured.err, captured.err
+    assert captured.out == "", "Invalid session input must not produce conversation output."

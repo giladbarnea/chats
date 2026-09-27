@@ -46,7 +46,7 @@ last_updated: 2026/08/20
 │                                                        │                  │
 │  ┌─────────────────────────────────────────────────────▼────────────────┐  │
 │  │                  COMMAND ORCHESTRATION (commands/)                    │  │
-│  │ cmd_parse  cmd_search  cmd_name  cmd_rm  cmd_catalog                 │  │
+│  │ cmd_parse  cmd_search  cmd_name  cmd_rm                              │  │
 │  └──────────────┬───────────────────────────────┬────────────────────────┘  │
 │                 │                               │                           │
 │  ┌──────────────▼─────────────┐   ┌─────────────▼────────────────────────┐  │
@@ -60,8 +60,8 @@ last_updated: 2026/08/20
 │                 │                               │                           │
 │  ┌──────────────▼────────────────────────────────▼────────────────────────┐  │
 │  │                 LEGACY SESSION PARSING (parsing.py)                   │  │
-│  │  detect_format  decode_jsonl_entries  parse_jsonl_entries             │  │
-│  │  extract_*_from_entries  parse_raw_cli_transcript                     │  │
+│  │  validate_jsonl  decode_jsonl_entries  parse_jsonl_entries             │  │
+│  │  extract_*_from_entries                                              │  │
 │  │  JSONL session adapters: Claude / PI / Codex                           │  │
 │  └──────────────┬─────────────────────────────────────────────────────────┘  │
 │                 │                                                            │
@@ -70,11 +70,6 @@ last_updated: 2026/08/20
 │  │                              xml_transport.py)                        │  │
 │  │  Provider messages / session output / search semantic rendering      │  │
 │  │  (uncompleted default session parse and search remain here)           │  │
-│  └──────────────┬─────────────────────────────────────────────────────────┘  │
-│                 │                                                            │
-│  ┌──────────────▼─────────────────────────────────────────────────────────┐  │
-│  │                         CATALOG MODULE (catalog/)                     │  │
-│  │  catalog_sessions() -> cmd_parse() capture -> external pi CLI        │  │
 │  └────────────────────────────────────────────────────────────────────────┘  │
 │                                                                             │
 ╞═════════════════════════════════════════════════════════════════════════════╡
@@ -83,10 +78,10 @@ last_updated: 2026/08/20
 │  │ ~/.claude/projects/  │  │ ~/.pi/agent/     │  │ ~/.codex/sessions/    │  │
 │  │   */*.jsonl          │  │   sessions/*.jsonl│ │   **/*.jsonl          │  │
 │  └──────────────────────┘  └──────────────────┘  └───────────────────────┘  │
-│  ┌──────────────────────┐  ┌──────────────────┐                             │
-│  │ ~/.claude/history.   │  │ sessions.yaml    │                             │
-│  │   jsonl              │  │ (per-project)    │                             │
-│  └──────────────────────┘  └──────────────────┘                             │
+│  ┌──────────────────────┐                                                   │
+│  │ ~/.claude/history.   │                                                   │
+│  │   jsonl              │                                                   │
+│  └──────────────────────┘                                                   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -136,15 +131,13 @@ TIME   ACTOR                    ACTION                                         T
 │
 ├───►  cmd_parse                [if --only-id] print session ID + exit     ──► stdout / file
 │
-├───►  cmd_parse                detect_format(content)                     ──► "jsonl" | "raw"
+├───►  cmd_parse                validate_jsonl(content)                     ──► Reject invalid input
 │
 ├───►  cmd_parse                parse_jsonl(content, flags, source_path)   ──► parsing.py
 │      │                        ├── decode_jsonl_entries()
 │      │                        ├── parse_jsonl_entries()
 │      │                        ├── _select_jsonl_session_adapter()
 │      │                        └── adapter-owned entry parser             ──► list[Message]
-│                               OR
-│      cmd_parse                parse_raw_cli_transcript(content, flags)   ──► list[Message]
 │
 ├───►  cmd_parse                _merge_agent_messages() [if --agents]      ──► Merges agent timeline
 │      │                        ├── find_agent_files_for_session()
@@ -238,7 +231,7 @@ TIME   ACTOR                    ACTION                                         T
 │      │                        ├── content = path.read_text()
 │      │                        ├── _search_conversation_content(path, ..., pool_filter)
 │      │                        │   ├── SessionScan.from_content()
-│      │                        │   │   ├── detect_format()
+│      │                        │   │   ├── validate_jsonl()
 │      │                        │   │   ├── decode_jsonl_entries()
 │      │                        │   │   ├── extract_*_from_entries()
 │      │                        │   │   └── parse_jsonl_entries() or raw parse
@@ -354,61 +347,6 @@ TIME   ACTOR                    ACTION                                         T
 └───►  cmd_rm                   Print summary                              ──► console
 ```
 
-### Feature 5: Catalog (`ch catalog <args>`)
-
-```
-TIME   ACTOR                    ACTION                                         TARGET
-│
-├───►  User                     Runs `ch catalog <session_ids|greppable>` ──► native `ch`
-│                               (may also pipe content via stdin)
-│      rust/main.rs             Replaces itself with `ch-legacy`          ──► cli.py:main()
-│
-├───►  main()                   Detects sys.argv[1] == "catalog"           ──► cmd_catalog(argv[2:])
-│      cmd_catalog              catalog_sessions(args)                     ──► catalog/__init__.py
-│
-├───►  catalog_sessions         Classify args:                             ──► session_id, greppable
-│      │                        ├── _is_session_id(arg) / _is_file_path()
-│      │                        ├── Read piped stdin if not tty
-│      │                        └── Extract session ID from greppable
-│      │                            (regex on session_id: <UUID>,
-│      │                             or _extract_metadata fallback)
-│
-├───►  catalog_sessions         Resolve single session ID:                ──► session_id | exit(1)
-│      │                        _resolve_session_id(args, piped_content)
-│
-├───►  catalog_sessions         Catalog that session:
-│      │
-│      ├── _get_session_content(session_id)                                ──► str | None
-│      │   └── cmd_parse(flags, session_id, format="xml",                  ──► captured stdout
-│      │         emit_metadata=True) via redirect_stdout
-│      │
-│      ├── _extract_metadata(content)                                      ──► {session_id, directory, ...}
-│      │   └── Parse YAML frontmatter between --- markers
-│      │
-│      ├── Resolve sessions.yaml path                                      ──► Path
-│      │   ├── From metadata "directory" field
-│      │   └── Fallback: ~/.claude/sessions.yaml
-│      │
-│      ├── Create sessions.yaml if missing                                 ──► File
-│      │   └── Copy TEMPLATE_PATH or write minimal YAML
-│      │
-│      ├── Skip checks:
-│      │   ├── Skip if session in yaml_data["ignored"]
-│      │   └── Skip if updated_when_message_count_was unchanged
-│      │
-│      ├── Build prompt:                                                   ──► full_prompt string
-│      │   ├── Tag session content in <attached-ai-session-for-cataloging>
-│      │   └── Fill PROMPT_TEMPLATE with sessions_path
-│      │
-│      └── subprocess.run(                                                 ──► External Process
-│          ["pi", "--model=google/gemini-3-flash-preview",
-│           "--thinking=high", "--print",
-│           "--system-prompt", full_prompt],
-│          cwd=session_directory)
-│
-└───►  catalog_sessions         Print "Done."                              ──► console
-```
-
 ---
 
 ## Data Flow Diagram (Matter)
@@ -439,15 +377,12 @@ Summary prefix ─────────────► │ extract_summaries_
                                content string + source_path
                                          │
                            ┌─────────────▼─────────────┐
-                           │ detect_format()           │
-                           │  ├─ jsonl                 │
-                           │  │   ├─ decode entries    │
-                           │  │   ├─ extract cwd /     │
-                           │  │   │   summaries /      │
-                           │  │   │   current title    │
-                           │  │   └─ parse_jsonl_      │
-                           │  │       entries()        │
-                           │  └─ raw transcript        │
+                           │ validate_jsonl()          │
+                           │  ├─ decode entries        │
+                           │  ├─ extract cwd /         │
+                           │  │   summaries /          │
+                           │  │   current title        │
+                           │  └─ parse_jsonl_entries() │
                            └─────────────┬─────────────┘
                                          │
                           parse path ────┼────► visible Message objects
@@ -465,9 +400,7 @@ Summary prefix ─────────────► │ extract_summaries_
                                          │
                           name path ─────┼────► append provider-native rename entry/entries
                                          │
-                          rm path ───────┼────► collect artifacts + delete
-                                         │
-                          catalog path ──┴────► cmd_parse capture -> pi CLI
+                          rm path ───────┴────► collect artifacts + delete
 
 Structured ch JSON ───────────────────► rust/codecs.rs::json_to_xml()
                                                 │
@@ -651,49 +584,6 @@ Both native conversion branches bypass Python, inventory, resolution, provider a
                                                  └──────────────┘
 ```
 
-### Catalog Feature State Machine
-
-```
-                 ┌───────────────┐       ┌──────────────────┐
-  args/stdin ───►│ RESOLVE       │──────►│ _resolve_session_│
-                 │ single        │       │ id():            │
-                 │ session ID    │       │ • arg or file    │
-                 │               │       │ • greppable UUID │
-                 └───────────────┘       │ • piped stdin    │
-                                         └────────┬─────────┘
-                                                  │
-                                  no ID ──► exit(1)
-                                                  │
-                                         ┌────────▼─────────┐
-                                     no  │ Get content?     │──► exit
-                                         │ _get_session_    │
-                                         │ content() or     │
-                                         │ preloaded        │
-                                         └────────┬─────────┘
-                                                  │ yes
-                                         ┌────────▼─────────┐
-                                         │ Resolve dir +    │
-                                         │ sessions.yaml    │
-                                         │ path             │
-                                         └────────┬─────────┘
-                                                  │
-                                         ┌────────▼─────────┐
-                                     yes │ In ignored[]?    │──► SKIP
-                                         └────────┬─────────┘
-                                                  │ no
-                                         ┌────────▼─────────┐
-                                     yes │ Message count    │──► SKIP (unchanged)
-                                         │ unchanged?       │
-                                         └────────┬─────────┘
-                                                  │ no / new
-                                         ┌────────▼─────────┐
-                                         │ Build prompt +   │
-                                         │ subprocess.run   │──► pi CLI
-                                         │ (pi --model=...  │    modifies sessions.yaml
-                                         │  --print ...)    │
-                                         └─────────────────┘
-```
-
 ---
 
 ## Call Graph (Logic)
@@ -713,7 +603,6 @@ rust/main.rs
             ├── "search" → argparse → cmd_search()
             ├── "name"   → argparse → cmd_name()
             ├── "rm"     → argparse → cmd_rm()
-            ├── "catalog"→ cmd_catalog(argv[2:])
             └── default   → argparse → cmd_parse()
 
 cli.py:main() after native legacy routing
@@ -725,7 +614,7 @@ cli.py:main() after native legacy routing
 │
 │       1. Resolve input → (content, source_path)
 │          Session pool, negative indices, exact IDs, summary prefixes
-│       2. Detect format (jsonl vs raw transcript)
+│       2. Validate the first non-empty JSONL line
 │       3. Parse → list[Message] via provider adapter
 │       4. Merge agents, build tool-id map, apply slices
 │       5. Format & emit (xml/json/raw, stdout/file, Rich/plain)
@@ -746,15 +635,10 @@ cli.py:main() after native legacy routing
 │       resolve → optional auto-name generation → optional dry-run print
 │       → adapter.build_name_entries() → append to file
 │
-├── [rm mode]
-│   └── cmd_rm(session_id, dry_run)
-│       resolve → collect artifacts (files, dirs, history)
-│       → preview → confirm → execute removal
-│
-└── [catalog mode]
-    └── cmd_catalog(args)
-        catalog_sessions(): classify args → get content via cmd_parse
-        → build prompt → shell out to pi CLI → update sessions.yaml
+└── [rm mode]
+    └── cmd_rm(session_id, dry_run)
+        resolve → collect artifacts (files, dirs, history)
+        → preview → confirm → execute removal
 ```
 
 ---
@@ -779,7 +663,6 @@ cli.py
 │   ├── resolve.py    → model, parsing, session_pool, ordering, utils
 │   ├── rm.py         → model, parsing, console, utils
 │   └── common.py     → model
-├── catalog/          → commands, console, model
 ├── formatting.py     → model, parsing, console, tools, utils, xml_transport
 ├── parsing.py        → chats._native (Rust), model, utils
 ├── tools.py          → parts, registry, utils, xml_transport
@@ -816,13 +699,12 @@ cli.py
 12. **Metadata Message Counts After Slicing**: parse-mode metadata reports `len(messages)` after slice application, not the original conversation length.
 13. **Tool Names Precede the ID Map**: name filtering first uses an explicit parsed `name` and any `name_aliases`; only a nameless result resolves through `_build_tool_id_map()`. The map is built before parse-mode slicing so a surviving result can still inherit the name of a sliced-out call. Known provider-native and canonical names compare symmetrically. Claude `isMeta` payloads linked by `sourceToolUseID` therefore share the same direction and name filtering as ordinary outputs.
 14. **Agent Merge Heuristics**: `_merge_agent_messages()` performs a timestamp-based merge of Claude sidechains into the main timeline. It infers placement from `Task` dispatch timing rather than a strict relational join.
-15. **Catalog API Coupling**: `catalog` captures `cmd_parse()` stdout as an internal API boundary, then shells out to an external `claude` process for summarization.
 16. **Shared Session-Title Semantics**: metadata/resolution/search treat provider-native session-name records as one current-title abstraction: Claude `custom-title`, Codex `event_msg.payload.thread_name` when `payload.type == "thread_name_updated"`, and PI `session_info.name`. Only the latest title is acknowledged; historical titles are ignored.
 17. **Parse Pool-Filter Scope**: parse-mode `-p/--provider`, `-d/--dir`, `-ma/--mafter`, `-ca/--cafter` narrow only recent negative-index lookup. Exact identifiers, file paths, summary prefixes, and stdin stay unfiltered; the CLI warns when any of these flags would otherwise be ignored. The four flags share a single declarative `PoolFilter` consumed by both `cmd_parse` and `cmd_search`, installed via `add_pool_filter_args`.
 18. **Asymmetrical Removal**: `cmd_rm` is Claude-heavy. Native Claude sessions lose sidecar artifacts, history lines, and directories; PI/Codex sessions currently resolve to deleting the single JSONL file.
 20. **Boolean Search Is Session-Scoped**: `parse_search_query` interprets only bare uppercase `AND`/`OR`/`NOT` word tokens as operators (`AND`/`OR` support parentheses; `AND` binds tighter). `NOT` is a separate flat form (`term NOT term [NOT term ...]`) that cannot be mixed with `AND`/`OR` and does not support parentheses. Each positive term is satisfied by a match anywhere in the session's facets (summaries, current title, rendered messages), so `AND` terms may match in different messages; displayed matches are the union over positive terms. `NOT` terms exclude sessions where the negated term matches in any facet. `-s/--case-sensitive` changes every term's matching mode without changing the uppercase-only operator grammar; `-i/--case-insensitive` is the explicit spelling of the default. Patterns without uppercase operator tokens — including lowercase or mixed-case operator words, regex parens, and unterminated quotes — keep verbatim single-regex semantics. Malformed boolean queries exit 2. The literal candidate prefilter evaluates the same tree over per-term raw-content plausibility, treating `NOT` conservatively (never rejects).
 21. **Search Displays As It Scans**: `cmd_search` streams each `SearchHit` the instant `iter_hits()` confirms it, in scan order (newest first by filesystem mtime), instead of buffering, re-sorting by in-band mtime, then paging. `_stream_search_results` renders each hit via `get_console().capture()` and feeds the ANSI to a `StreamingPager` (a long-lived `less -r`) that flushes per hit; quitting `less` early sets `pager.closed`, which stops the scan. Display order therefore remains filesystem mtime, not semantic mtime, because streaming search optimizes for sub-second first results; recent-index resolution is separate and now uses JSONL recency (note 3). Two consequences for the colored `-l` view, whose aggregates can't be known mid-stream: the `N sessions · newest first` line is a trailing summary, and per-row provider labels key off whether the candidate pool spans providers rather than the final hit set. `-r/--raw` opts out (collect-all, single buffered emit) because its single-visible-message rule needs the whole set.
-22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL/raw transcript content as content, not a possible identifier, so stdin and pasted transcripts do not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
+22. **Parse Resolution Avoids Work for Obvious Content and ID-Only Output**: `_resolve_input_content()` treats explicit JSONL and multiline input as content, not a possible identifier, so that input does not pay global session-pool discovery. A one-line piped id still resolves. `ParseOutputMode.ONLY_ID` uses `_resolve_input_path()` and stops after identity resolution instead of reading and parsing the session body.
 23. **Search Has a Native Conservative Byte Candidate Gate**: `_search_path_candidate_matches()` rejects only safe ASCII literal misses before `read_text`. Rust scans raw files with bounded 1 MiB reads, preserves cross-chunk needles and evidence groups, and lowercases only ASCII haystack bytes for insensitive terms. Case-sensitive scans continue across all valid non-ASCII scalars. Under default unshortened visibility, case-insensitive scans continue across valid non-ASCII scalars that cannot create an ASCII match under Python 3.14. The 20 casefold or regex risks defer to semantic confirmation. Both case modes also defer on invalid or incomplete UTF-8, raw JSON Unicode escapes, and default joined-Pi agent evidence. Non-default generated content, shortening, JSON-unstable queries, non-ASCII literals, regex terms, and render-dependent terms bypass native rejection. Every survivor goes directly to `_search_conversation_content()` and its sole `SessionScan` rendered-message authority.
 24. **`search . -ll` Projection Is Deliberately Narrow**: `_can_project_dot_only_id()` is the eligibility boundary for the only projection fast path: exact dot query, `ONLY_ID`, default visibility, no role/extras, no dir/date filters, and non-raw output. `_project_default_dot_match()` is tri-state; branchable Claude transcripts, read errors, or uncertain cases fall back to `SessionScan`. The projection mirrors default-hidden protocol/tool/thinking/task-notification behavior and should not be broadened without equivalence tests against the full search path.
 25. **`ch parse` Is a Native Provider-Free, Post-Visibility Boundary**: the package-owned Rust launcher routes exact `ch parse` to `rust/codecs.rs`. Default output follows strict JSON validation → reusable Rust model → canonical XML. `-f json` follows canonical XML validation → the same Rust model → structured JSON. Neither direction starts or loads Python, calls PyO3, performs session lookup, parses a provider session, discovers agents, filters visibility, or shortens content. XML-to-JSON preserves represented semantics but canonicalizes intentional losses: dates have minute precision, tool IDs remain shortened, attributes are strings, only schema-visible tool input fields exist, and tool outputs are rendered strings. Canonical XML escapes wrapper attributes on messages with `custom_type` metadata and applies reversible HTML transport encoding at delimiter collisions. Both compositions are byte-stable after projection.

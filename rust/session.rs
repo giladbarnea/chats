@@ -1,11 +1,11 @@
-//! Session decoding: format detection, entry decoding, provider selection, and the
+//! Session decoding: input validation, entry decoding, provider selection, and the
 //! per-file facets search matches against.
 //!
 //! Ported from `src/chats/parsing.py` and `src/chats/session_scan.py` at oracle
 //! revision `8cb4c5f`.
 //!
 //! **Three different first-line policies live here, and they disagree by design.**
-//! `detect_format` reads the first non-blank line with the *stdlib* JSON parser and
+//! `validate_jsonl` reads the first non-blank line with the *stdlib* JSON parser and
 //! requires an object carrying a `type` key. `first_entry` reads it with *orjson* and
 //! aborts on anything malformed. `decode_entries` reads every line with orjson and
 //! *skips* what it cannot parse. The parsers differ too: a line containing `NaN` is
@@ -47,19 +47,18 @@ impl Provider {
     }
 }
 
-/// Whether content is provider JSONL or a raw CLI transcript.
+/// Require a typed JSON object on the first non-blank line.
 ///
 /// The first non-blank line decides, and it must parse as an object carrying a
 /// `type` key. Uses the lenient parse, matching Python's stdlib `json` here — which
 /// accepts `NaN` and `Infinity` where the decoders below do not.
 ///
 /// ```
-/// use _native::session::{detect_format, SessionFormat};
-/// assert_eq!(detect_format("{\"type\": \"user\"}"), SessionFormat::Jsonl);
-/// assert_eq!(detect_format("> a raw transcript"), SessionFormat::Raw);
-/// assert_eq!(detect_format("{\"no\": \"type key\"}"), SessionFormat::Raw);
+/// use _native::session::validate_jsonl;
+/// assert!(validate_jsonl("{\"type\": \"user\"}").is_ok());
+/// assert!(validate_jsonl("{\"no\": \"type key\"}").is_err());
 /// ```
-pub fn detect_format(content: &str) -> SessionFormat {
+pub fn validate_jsonl(content: &str) -> Result<(), String> {
     for line in content.split('\n') {
         let line = python_strip(line);
         if line.is_empty() {
@@ -68,17 +67,17 @@ pub fn detect_format(content: &str) -> SessionFormat {
         if let Ok(Value::Object(entry)) = serde_json::from_str::<Value>(&detection_lenient(line))
             && entry.contains_key("type")
         {
-            return SessionFormat::Jsonl;
+            return Ok(());
         }
         // The first non-blank line decides either way.
         break;
     }
-    SessionFormat::Raw
+    Err("Expected JSONL input with a 'type' field in its first non-empty line.".into())
 }
 
 /// Make a line parseable for *detection only*, matching what stdlib `json` accepts.
 ///
-/// `detect_format` asks one question — is this an object with a `type` key — so the
+/// `validate_jsonl` asks one question — is this an object with a `type` key — so the
 /// values need only survive parsing, not round-trip. `NaN` becomes `null` on that
 /// basis. This deliberately does not extend the codec's
 /// `normalize_python_json_constants`, which serves a different contract: its output
@@ -116,18 +115,12 @@ pub(crate) fn detection_lenient(line: &str) -> String {
     normalized
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum SessionFormat {
-    Jsonl,
-    Raw,
-}
-
 /// Strip the characters Python's `str.strip()` strips.
 ///
 /// Not Rust's `trim`: Python strips every character where `str.isspace()` is true,
 /// which includes U+001C..U+001F. Rust's `char::is_whitespace` is the Unicode
 /// `White_Space` property, which does not. A line prefixed with U+001C is decoded by
-/// Python and would be dropped by `trim`, taking the whole file from JSONL to raw.
+/// Python and would be dropped by `trim`, rejecting the whole JSONL file.
 pub fn python_strip(value: &str) -> &str {
     value.trim_matches(python_is_space)
 }
@@ -415,58 +408,41 @@ mod tests {
     }
 
     #[test]
-    fn the_first_non_blank_line_decides_the_format() {
-        assert_eq!(detect_format("\n\n{\"type\": \"user\"}"), SessionFormat::Jsonl);
-        assert_eq!(detect_format("{\"no\": \"type\"}\n{\"type\": \"user\"}"), SessionFormat::Raw);
-        assert_eq!(detect_format("not json\n{\"type\": \"user\"}"), SessionFormat::Raw);
-        assert_eq!(detect_format(""), SessionFormat::Raw);
+    fn the_first_non_blank_line_must_be_typed_json() {
+        assert_eq!(validate_jsonl("\n\n{\"type\": \"user\"}"), Ok(()));
+        for content in ["{\"no\": \"type\"}\n{\"type\": \"user\"}", "not json\n{\"type\": \"user\"}", ""] {
+            assert_eq!(
+                validate_jsonl(content),
+                Err("Expected JSONL input with a 'type' field in its first non-empty line.".into()),
+                "a later valid entry must not hide an invalid first line: {content:?}"
+            );
+        }
     }
 
     #[test]
-    fn detect_format_accepts_what_the_stdlib_parser_accepts() {
-        // Python's `detect_format` uses stdlib json, which takes NaN; the decoders
+    fn validation_accepts_what_the_stdlib_parser_accepts() {
+        // Python's `validate_jsonl` uses stdlib json, which takes NaN; the decoders
         // use orjson, which does not. So this file is JSONL and loses that entry.
         let content = "{\"type\": \"user\", \"v\": NaN}\n{\"type\": \"user\"}";
-        assert_eq!(detect_format(content), SessionFormat::Jsonl);
+        assert_eq!(validate_jsonl(content), Ok(()));
         assert_eq!(entries(content).len(), 1);
     }
 
     #[test]
     fn python_strip_removes_the_c0_separators_rust_trim_leaves() {
         let content = "\u{1c}{\"type\": \"user\"}";
-        assert_eq!(detect_format(content), SessionFormat::Jsonl);
+        assert_eq!(validate_jsonl(content), Ok(()));
         assert_eq!(entries(content).len(), 1);
         // Rust's own trim would leave the byte and lose the line entirely.
         assert!(content.trim().starts_with('\u{1c}'));
     }
 
-    /// F1's first consequence, and it decides whether a session exists at all.
-    ///
-    /// **Authored, not harvested.** 0 of 5,061 `.jsonl` files under `~/.claude`,
-    /// `~/.pi` and `~/.codex` carry a literal `\r` (measured 2026-09-01), so no
-    /// corpus of any size can grade this. The expected rows were transcribed from
-    /// a Python run at oracle revision `8cb4c5f`, recorded by
-    /// `teammates/parity-finisher/probes/make_newline_fixtures.py`.
-    ///
-    /// `detect_format` and `decode_entries` split on `\n` alone. A file whose
-    /// lines end with a lone `\r` is therefore one unparseable line: the file is
-    /// classified `Raw`, goes to the transcript decoder, and yields **nothing**.
-    /// Python's text-mode read turned every `\r` into `\n` before `detect_format`
-    /// saw a character, so it decodes the whole session.
     #[test]
     fn every_line_ending_decodes_to_the_same_session_python_decodes() {
         let home = NewlineFixtures::new();
         for (name, expected) in [
             ("jsonl-crlf.jsonl", vec![("user", "alpha question"), ("assistant", "beta answer")]),
             ("jsonl-lone-cr.jsonl", vec![("user", "alpha question"), ("assistant", "beta answer")]),
-            (
-                "raw-transcript-crlf.jsonl",
-                vec![("user", "alpha question"), ("assistant", "\u{23fa} beta answer\ngamma continuation")],
-            ),
-            (
-                "raw-transcript-lone-cr.jsonl",
-                vec![("user", "alpha question"), ("assistant", "\u{23fa} beta answer\ngamma continuation")],
-            ),
         ] {
             let scanned = home.scan(name);
             let actual: Vec<(&str, &str)> = scanned
@@ -481,50 +457,21 @@ mod tests {
         }
     }
 
-    /// The falsifier for the gate above, naming which two cases carry it.
-    ///
-    /// A reader that skips translation is caught **only** by the two lone-`\r`
-    /// cases, and it is caught differently in each: the JSONL session loses every
-    /// message, and the transcript collapses two messages into one. The two CRLF
-    /// cases catch nothing here — `python_strip` already removes a trailing `\r`
-    /// from a JSONL line, and the transcript's `\r` shows up in the message text
-    /// rather than in the shape asserted above. **Recorded because a gate whose
-    /// four cases look alike but where only two can fail is a gate half its
-    /// apparent size.**
     #[test]
     fn the_gate_catches_a_reader_that_skips_translation() {
         let home = NewlineFixtures::new();
-
-        assert!(
-            home.scan_untranslated("jsonl-lone-cr.jsonl").is_empty(),
-            "the falsifier must reproduce the pre-F1 behaviour it stands for: a \
-             lone-\\r JSONL session is classified Raw and decodes to nothing. If \
-             this holds no longer, the gate above proves nothing."
+        let path = home.path("jsonl-lone-cr.jsonl");
+        let content = std::fs::read_to_string(&path).expect("read untranslated fixture");
+        let scanned = crate::search_confirm::scan_session(
+            &path,
+            &content,
+            &crate::visibility::ConversationFlags::default(),
+            &home.0,
         );
-        assert_eq!(
-            home.scan_untranslated("raw-transcript-lone-cr.jsonl").len(),
-            1,
-            "the falsifier must reproduce the pre-F1 behaviour it stands for: a \
-             lone-\\r transcript is one line, so its three lines collapse into a \
-             single user message"
-        );
-        assert_eq!(
-            home.scan_untranslated("jsonl-crlf.jsonl"),
-            home.scan("jsonl-crlf.jsonl"),
-            "the CRLF JSONL case is deliberately blind to F1 — `python_strip` \
-             already removes the trailing \\r — and must stay recorded as blind \
-             rather than counted as coverage"
-        );
-        assert_ne!(
-            home.scan_untranslated("jsonl-lone-cr.jsonl"),
-            home.scan("jsonl-lone-cr.jsonl"),
-            "the gate is blind: the production read and an untranslated read agree \
-             on a lone-\\r session, so nothing above would catch the F1 regression"
-        );
+        assert!(scanned.is_err(), "an untranslated lone-CR file must fail JSONL validation");
+        assert_eq!(home.scan("jsonl-lone-cr.jsonl").len(), 2);
     }
 
-    /// The four authored newline fixtures, under a fake home, because both routes
-    /// classify a session's provider by its location rather than by its content.
     struct NewlineFixtures(std::path::PathBuf);
 
     impl NewlineFixtures {
@@ -533,9 +480,6 @@ mod tests {
             "\n",
             r#"{"type": "assistant", "uuid": "a1", "parentUuid": "u1", "message": {"role": "assistant", "content": [{"type": "text", "text": "beta answer"}]}}"#,
         );
-        const TRANSCRIPT: &'static str =
-            "> alpha question\n\u{23fa} beta answer\ngamma continuation";
-
         fn new() -> Self {
             static IDENTIFIER: std::sync::atomic::AtomicU64 =
                 std::sync::atomic::AtomicU64::new(0);
@@ -549,8 +493,6 @@ mod tests {
             for (name, body, terminator) in [
                 ("jsonl-crlf.jsonl", Self::CLAUDE, "\r\n"),
                 ("jsonl-lone-cr.jsonl", Self::CLAUDE, "\r"),
-                ("raw-transcript-crlf.jsonl", Self::TRANSCRIPT, "\r\n"),
-                ("raw-transcript-lone-cr.jsonl", Self::TRANSCRIPT, "\r"),
             ] {
                 std::fs::write(directory.join(name), body.replace('\n', terminator))
                     .expect("write fixture");
@@ -566,14 +508,6 @@ mod tests {
         fn scan(&self, name: &str) -> Vec<(String, String)> {
             let path = self.path(name);
             let content = crate::python_io::read_text(&path).expect("read fixture");
-            self.messages(&path, &content)
-        }
-
-        /// The same route with the pre-F1 read spliced in.
-        fn scan_untranslated(&self, name: &str) -> Vec<(String, String)> {
-            let path = self.path(name);
-            let bytes = std::fs::read(&path).expect("read fixture");
-            let content = crate::python_io::decode_utf8(&bytes).expect("decode fixture");
             self.messages(&path, &content)
         }
 

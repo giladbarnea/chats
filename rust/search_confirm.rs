@@ -24,7 +24,7 @@
 use crate::model::Message;
 use crate::pool_filter::{self, PoolFilter};
 use crate::search_query::{Query, SearchTerm};
-use crate::session::{self, SessionFormat};
+use crate::session;
 use crate::visibility::{self, ConversationFlags, ProgressiveAssignment};
 use chrono::NaiveDateTime;
 use std::path::{Path, PathBuf};
@@ -349,20 +349,7 @@ pub fn scan_session(
     flags: &ConversationFlags,
     home: &Path,
 ) -> Result<Scanned, String> {
-    if session::detect_format(content) == SessionFormat::Raw {
-        // Raw carries no facets at all — not merely none found. This is why eight
-        // large Codex rollouts are absent from `search .`: their first line is an
-        // object with no `type` key, so they never reach a decoder.
-        return Ok(Scanned {
-            provider: session::Provider::Claude,
-            native_id: None,
-            forked_from: None,
-            cwd: None,
-            summaries: Vec::new(),
-            custom_title: None,
-            messages: crate::raw_transcript::parse_raw_cli_transcript(content, flags),
-        });
-    }
+    session::validate_jsonl(content)?;
 
     let entries = session::decode_entries(content);
     let path_provider = crate::inventory::classify_native_session_path_impl(path, home)
