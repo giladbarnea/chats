@@ -101,7 +101,7 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
             [
                 "pi",
                 "--model",
-                "openai-codex/gpt-5.4-mini",
+                "openai-codex/gpt-6-luna",
                 "--thinking",
                 "high",
                 "--no-skills",
@@ -113,7 +113,7 @@ def _generate_auto_name(conv_file: Path, content: str) -> str:
                 "--print",
                 "--system-prompt",
                 prompt,
-                "Follow the task instructions.",
+                "Name as instructed.",
             ],
             capture_output=True,
             text=True,
