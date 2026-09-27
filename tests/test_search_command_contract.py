@@ -35,10 +35,10 @@ handoff and reports zero Python libraries for a route that is entirely Python.
 Both pass today, for a route that is entirely Python. Only the absence of the
 `ch-legacy` file on disk can fail.
 
-Normalization is confessed, not silent. Colored views render an age token and an
-age style, both functions of wall clock against a fixed fixture timestamp, so
-both are replaced with placeholders in the byte lock. That blinds the byte lock
-to the age formatter and its style buckets, so
+The clock is pinned to the recording period because age-token width affects
+layout before normalization. Age tokens and styles remain normalized across
+recordings taken on different days. That blinds the byte lock to the age
+formatter and its style buckets, so
 `test_search_age_token_and_style_track_the_clock` pins that mapping directly.
 The unmerged cycle-02 branch normalized the token but not the style, and its
 colored expectations silently rotted from green to red in three days.
@@ -152,6 +152,8 @@ AGE_STYLE_SEQUENCES = (
     b"\x1b[38;2;107;112;118m",
     b"\x1b[38;2;86;91;97m",
 )
+# The frozen selection recording was captured on 2026-09-01.
+CONTRACT_NOW = "2026-09-01T12:00:00"
 
 
 def _case_id(pair: tuple[Corpus, dict[str, object]]) -> str:
@@ -283,6 +285,7 @@ def _environment(
     environment.update({
         "HOME": str(home),
         "TZ": "Asia/Jerusalem",
+        "CH_NOW": CONTRACT_NOW,
         "COLUMNS": str(columns),
         "LINES": "40",
         "TERM": "xterm-256color",
@@ -534,6 +537,7 @@ def _run_search_on_terminal(
     environment.update({
         "HOME": str(home),
         "TZ": "Asia/Jerusalem",
+        "CH_NOW": CONTRACT_NOW,
         "TERM": "xterm-256color",
         "COLORTERM": "truecolor",
     })
@@ -609,7 +613,7 @@ STREAM_MARKER = "streammarker"
 # fast byte gate is bypassed. Every file then gets a full semantic scan, which is
 # what makes the scan long enough to separate from interpreter startup.
 STREAM_PATTERN = f"{STREAM_MARKER}|zzznope"
-STREAM_DECOY_COUNT = 800
+STREAM_DECOY_COUNT = 2400
 STREAM_DECOY_BODY = "unrelated filler content " * 400
 
 
@@ -699,6 +703,10 @@ def test_first_session_id_reaches_a_pipe_before_the_scan_finishes(
     expected_id = _build_streaming_home(newest_home, match_newest=True)
     assert _build_streaming_home(oldest_home, match_newest=False) == expected_id
 
+    # A copied executable's first launch can cost hundreds of milliseconds on macOS.
+    subprocess.run(
+        [str(checkout_built_ch), "search", "--help"], stdout=subprocess.DEVNULL, check=True
+    )
     newest_first_at, newest_total, newest_id = _time_to_first_id(checkout_built_ch, newest_home)
     oldest_first_at, _oldest_total, oldest_id = _time_to_first_id(checkout_built_ch, oldest_home)
 
@@ -724,14 +732,8 @@ def test_first_session_id_reaches_a_pipe_before_the_scan_finishes(
 
 EARLY_CLOSE_MARKER = "closemarker"
 EARLY_CLOSE_PATTERN = f"{EARLY_CLOSE_MARKER}|zzznope"
-# Raised from 800 after the cutover. The same corpus took 557 ms through the
-# Python route and 153 ms through the native one, which fell under this
-# test's own 400 ms floor — so the control refused to report a ratio it
-# could no longer measure. **A corpus adjustment, not a relaxed
-# expectation:** the floor and the 0.7 ratio are unchanged; only the amount
-# of work is, so that the comparison stays measurable against a faster
-# implementation.
-EARLY_CLOSE_SESSION_COUNT = 3000
+# Keep enough work to exceed the 400 ms control on the native route.
+EARLY_CLOSE_SESSION_COUNT = 6000
 
 
 def _build_early_close_home(home: Path) -> None:
@@ -807,6 +809,10 @@ def test_a_closed_reader_stops_the_scan(
     home = tmp_path / "home"
     _build_early_close_home(home)
 
+    # Give both measurements the same executable-startup conditions.
+    subprocess.run(
+        [str(checkout_built_ch), "search", "--help"], stdout=subprocess.DEVNULL, check=True
+    )
     full_elapsed, full_lines = _time_until_exit(
         checkout_built_ch, home, close_after_first=False
     )
@@ -1039,7 +1045,11 @@ def test_search_age_token_and_style_track_the_clock(
     """
     home = tmp_path / "home"
     session = home / ".claude" / "projects" / "age" / "age-session.jsonl"
-    _write_claude_session(session, text="agecontract body", timestamp=datetime.now() - age)
+    _write_claude_session(
+        session,
+        text="agecontract body",
+        timestamp=datetime.fromisoformat(f"{CONTRACT_NOW}+03:00") - age,
+    )
 
     case = {
         "id": "age",

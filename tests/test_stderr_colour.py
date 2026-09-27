@@ -75,19 +75,18 @@ def _run(executable: Path, case: dict) -> tuple[bytes, int]:
         env=environment,
         close_fds=True,
     )
-    os.close(secondary)
+    # macOS discards queued output when the last slave closes before capture.
     chunks: list[bytes] = []
     while True:
-        ready, _, _ = select.select([primary], [], [], 60.0)
-        if not ready:
+        ready, _, _ = select.select([primary], [], [], 0.01)
+        if ready:
+            chunks.append(os.read(primary, 65536))
+            continue
+        if process.poll() is not None:
             break
-        try:
-            data = os.read(primary, 65536)
-        except OSError:
-            break
-        if not data:
-            break
-        chunks.append(data)
+    while select.select([primary], [], [], 0)[0]:
+        chunks.append(os.read(primary, 65536))
+    os.close(secondary)
     os.close(primary)
     return b"".join(chunks), process.wait()
 
@@ -153,6 +152,39 @@ def test_stderr_reproduces_the_frozen_legacy_bytes(checkout_built_ch: Path, case
         "stderr's tty-ness alone, `--color never` included, and a route that resolves "
         "the choice once and applies it everywhere is *more correct* and diverges on "
         "every no-results search run in a terminal."
+    )
+
+
+@pytest.mark.parametrize("read_timeout", [False, True], ids=["before-read", "after-timeout"])
+def test_stderr_capture_keeps_output_after_child_exit(
+    checkout_built_ch: Path, monkeypatch: pytest.MonkeyPatch, read_timeout: bool
+) -> None:
+    case = next(
+        case for case in BASELINE_CASES
+        if case["id"] == "hint-no-results-filtered/bare/eight-bit/40"
+    )
+    start_process = subprocess.Popen
+
+    def finish_before_capture(
+        arguments: list[str], **options: object
+    ) -> subprocess.Popen[bytes]:
+        process = start_process(arguments, **options)
+        process.wait(timeout=10)
+        return process
+
+    monkeypatch.setattr(subprocess, "Popen", finish_before_capture)
+    original_select = select.select
+
+    def timeout_before_exit_check(*arguments: object) -> tuple[list[int], list[int], list[int]]:
+        monkeypatch.setattr(select, "select", original_select)
+        return [], [], []
+
+    if read_timeout:
+        monkeypatch.setattr(select, "select", timeout_before_exit_check)
+    stderr, status = _run(checkout_built_ch, case)
+    assert status == case["exit_status"], f"Unexpected child exit: {status}"
+    assert stderr == case["stderr"].encode("latin-1"), (
+        f"The PTY capture lost output after child exit: {stderr!r}"
     )
 
 

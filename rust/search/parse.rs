@@ -819,67 +819,27 @@ fn python_quoted(value: &str) -> String {
 #[cfg(test)]
 mod argparse_parity {
     use super::*;
-    use std::path::PathBuf;
-    use std::process::Command;
-
-    /// Shapes whose outcome the grammar alone decides: every error, plus help,
-    /// plus the positionals argparse accepts. Cases that reach the pool need the
-    /// engine and are not decidable here.
-    const CASES: &[&[&str]] = &[
-        &[],
-        &["needle", "extra"],
-        &["needle", "--bogus"],
-        &["-s", "-i", "needle"],
-        &["--color", "bogus", "needle"],
-        &["-p", "bogus", "needle"],
-        &["-T", "bogus", "needle"],
-        &["--help"],
-        &["-h"],
-        &["-"],
-        &["--", "needle"],
-        &["needle"],
-    ];
-
-    fn argparse(tokens: &[&str]) -> (i32, String) {
-        let oracle = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".venv/bin/ch-legacy");
-        assert!(oracle.exists(), "Expected the Python oracle at {oracle:?}.");
-        let home = std::env::temp_dir().join("ch-grammar-parity-home");
-        std::fs::create_dir_all(&home).expect("create isolated home");
-        let output = Command::new(&oracle)
-            .arg("search")
-            .args(tokens)
-            .env("HOME", &home)
-            .env("COLUMNS", "96")
-            .stdin(std::process::Stdio::null())
-            .output()
-            .expect("run the Python oracle");
-        let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
-        // Precondition, not a comparison: the oracle imports `chats` from the live
-        // `src/` tree that other sessions edit, so a mid-save crash yields a
-        // traceback and an empty stdout. Without this the failure accuses the
-        // parser instead of naming the crash.
-        //
-        // Deliberately not `status.success()`: argparse legitimately exits 2 on a
-        // rejected argv, and that status is what the caller compares.
-        assert!(
-            !stderr.contains("Traceback (most recent call last):"),
-            "The Python oracle crashed rather than disagreeing. stderr:\n{stderr}"
-        );
-        (output.status.code().unwrap_or(-1), stderr)
-    }
 
     fn outcome(tokens: &[&str]) -> SearchOutcome {
         let argv: Vec<OsString> = tokens.iter().map(OsString::from).collect();
         parse_search_arguments(&argv).outcome
     }
 
+    /// Keep the original parser outcomes without invoking the removed Python search route.
     #[test]
-    fn every_grammar_decidable_case_agrees_with_argparse() {
-        for tokens in CASES {
-            let (status, stderr) = argparse(tokens);
-            match outcome(tokens) {
-                SearchOutcome::Error(message) => {
-                    assert_eq!(status, 2, "argparse accepted {tokens:?}; we rejected it.");
+    fn every_recorded_case_preserves_its_grammar_outcome() {
+        let records: Vec<serde_json::Value> = serde_json::from_str(super::super::GRAMMAR_ORACLE)
+            .expect("the recorded grammar oracle is valid JSON");
+        assert_eq!(records.len(), 76, "All recorded grammar cases must remain covered.");
+        for row in records {
+            let tokens: Vec<&str> = row["args"].as_array().expect("recorded arguments")
+                .iter().map(|value| value.as_str().expect("an argument"))
+                .collect();
+            let status = row["exit"].as_i64().expect("recorded exit status");
+            let stdout = row["stdout"].as_str().expect("recorded stdout");
+            let stderr = row["stderr"].as_str().expect("recorded stderr");
+            match (outcome(&tokens), status) {
+                (SearchOutcome::Error(message), 2) => {
                     let expected = stderr
                         .split_once("ch search: error: ")
                         .expect("argparse error carries its marker")
@@ -890,13 +850,16 @@ mod argparse_parity {
                         "Error text diverged from argparse for {tokens:?}."
                     );
                 }
-                SearchOutcome::Help => assert_eq!(
-                    status, 0,
-                    "Treated {tokens:?} as help where argparse did not."
+                (SearchOutcome::Help, 0) => assert!(
+                    stdout.starts_with("usage: ch search"),
+                    "Treated {tokens:?} as help where recorded argparse did not."
                 ),
-                SearchOutcome::Run(_) => assert_ne!(
-                    status, 2,
-                    "argparse rejected {tokens:?}; we accepted it."
+                (SearchOutcome::Run(_), 0 | 1) => assert!(
+                    !stdout.starts_with("usage: ch search"),
+                    "Expected recorded help for {tokens:?}, not search execution."
+                ),
+                (actual, _) => panic!(
+                    "Grammar outcome {actual:?} disagrees with recorded exit {status} for {tokens:?}."
                 ),
             }
         }

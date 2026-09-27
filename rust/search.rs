@@ -14,6 +14,10 @@ use crate::visibility::SearchOutputMode;
 pub mod parse;
 pub mod plan;
 
+#[cfg(test)]
+pub(crate) const GRAMMAR_ORACLE: &str =
+    include_str!("../tests/data/search-grammar/grammar-oracle.json");
+
 /// One row of the help body, and its usage fragment.
 struct Action {
     /// How the option appears in the left column of the help body.
@@ -446,74 +450,28 @@ mod render_parity {
     use super::*;
     use crate::search::parse::{SearchOutcome, parse_search_arguments};
     use std::ffi::OsString;
-    use std::path::PathBuf;
-    use std::process::Command;
 
-    const REJECTED: &[&[&str]] = &[
-        &[],
-        &["needle", "extra"],
-        &["needle", "--bogus"],
-        &["-s", "-i", "needle"],
-        &["--color", "bogus", "needle"],
-        &["-p", "bogus", "needle"],
-        &["-T", "bogus", "needle"],
-    ];
-
-    fn oracle(tokens: &[&str], columns: usize) -> (i32, Vec<u8>, Vec<u8>) {
-        let binary = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".venv/bin/ch-legacy");
-        assert!(binary.exists(), "Expected the Python oracle at {binary:?}.");
-        let home = std::env::temp_dir().join("ch-render-parity-home");
-        std::fs::create_dir_all(&home).expect("create isolated home");
-        let output = Command::new(&binary)
-            .arg("search")
-            .args(tokens)
-            .env("HOME", &home)
-            .env("COLUMNS", columns.to_string())
-            .stdin(std::process::Stdio::null())
-            .output()
-            .expect("run the Python oracle");
-        assert_oracle_did_not_crash(&output.stderr);
-        (
-            output.status.code().unwrap_or(-1),
-            output.stdout,
-            output.stderr,
-        )
-    }
-
-    /// The oracle imports `chats` from the live `src/` tree, which other sessions
-    /// edit, so a mid-save crash gives an empty stdout and a traceback. That is a
-    /// **precondition** failure, not a disagreement — asserting it here makes the
-    /// message name the real cause instead of accusing the implementation.
-    ///
-    /// Deliberately not `status.success()`: a rejected argv legitimately exits 2
-    /// and a fruitless search exits 1, so the status is the caller's to compare.
-    /// The question here is only whether the oracle ran at all.
-    fn assert_oracle_did_not_crash(stderr: &[u8]) {
-        let text = String::from_utf8_lossy(stderr);
-        assert!(
-            !text.contains("Traceback (most recent call last):"),
-            "The Python oracle crashed rather than disagreeing. stderr:\n{text}"
-        );
-    }
-
-    /// Whole stderr, not just the message: the usage block is wrapped by the
-    /// same width rule and a wrong one would still produce the right message.
+    /// Preserve the recorded argparse stderr after the Python search route's removal.
     #[test]
-    fn rejected_argv_reproduces_argparse_stderr_byte_for_byte() {
-        for columns in [40usize, 60, 96, 140] {
-            for tokens in REJECTED {
-                let (status, _, stderr) = oracle(tokens, columns);
-                assert_eq!(status, 2, "Expected argparse to reject {tokens:?}.");
-                let argv: Vec<OsString> = tokens.iter().map(OsString::from).collect();
-                let SearchOutcome::Error(message) = parse_search_arguments(&argv).outcome else {
-                    panic!("Expected {tokens:?} to be rejected by the native grammar.");
-                };
-                assert_eq!(
-                    render_error(&message, columns).into_bytes(),
-                    stderr,
-                    "stderr diverged for {tokens:?} at COLUMNS={columns}."
-                );
-            }
+    fn rejected_argv_reproduces_recorded_argparse_stderr() {
+        let records: Vec<serde_json::Value> = serde_json::from_str(GRAMMAR_ORACLE)
+            .expect("the recorded grammar oracle is valid JSON");
+        let rejected: Vec<_> = records.iter().filter(|row| row["exit"] == 2).collect();
+        assert_eq!(rejected.len(), 22, "All recorded rejection cases must remain covered.");
+        for row in rejected {
+            let argv: Vec<OsString> = row["args"].as_array().expect("recorded arguments")
+                .iter().map(|value| OsString::from(value.as_str().expect("an argument")))
+                .collect();
+            let columns: usize = row["columns"].as_str().expect("recorded columns")
+                .parse().expect("numeric columns");
+            let SearchOutcome::Error(message) = parse_search_arguments(&argv).outcome else {
+                panic!("Expected recorded rejection for {argv:?}.");
+            };
+            assert_eq!(
+                render_error(&message, columns),
+                row["stderr"].as_str().expect("recorded stderr"),
+                "stderr diverged for {argv:?} at COLUMNS={columns}."
+            );
         }
     }
 

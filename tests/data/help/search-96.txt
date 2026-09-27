@@ -107,9 +107,19 @@ Tool filters:
   --all ignores tool filters and includes all tools.
 
 Shortening:
-  --short=200 limits each message body, thinking block, plan, and tool text value to 200
-  characters. A tool's command and output each get their own limit. This is not a total output
-  budget.
+  Shortening is a powerful means to understand what a session of potentially hundreds of
+  messages is about while keeping the token cost of consuming it low. It is the recommended
+  approach to start with when looking up content across and within sessions to pin down where,
+  in that large search space, to zoom in without shortening (it's recall first, precision
+  later). The shortening API is optimized to enable effective and efficient searches of vague
+  purposes over a large data space without costing the searching agent its entire context
+  window.
+  --short limits each message body, thinking block, plan, and tool text value to a default of
+  500 characters. A tool's command and output each get their own limit. This is not a total
+  output budget.
+  Shortened text is truncated in the middle. This because the start and end of a message
+  typically has the more important information.
+  --short=200 limits each to 200 characters.
   Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
   --short=p=200 keeps more detail toward the end of each conversation. Among the messages you
   include using this mode, limits grow evenly from 8 for the first to 200 for the last. Three

@@ -1,0 +1,802 @@
+[
+ {
+  "columns": "96",
+  "args": [],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--help"
+  ],
+  "exit": 0,
+  "stdout": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\n\npositional arguments:\n  pattern               Pattern to search for\n\noptions:\n  -h, --help            show this help message and exit\n  -l, --list            List mode - show only paths and metadata\n  -ll, --only-id        Show only matching session IDs (implies --color never and --no-paging)\n  -f, --full            Show full matching conversations instead of only matching messages\n  -r, --raw             Alias for raw markdown search output (implies --no-metadata, --color\n                        never, and --no-paging)\n  -T, --thinking [THINKING]\n                        Show thinking tokens (optional: short)\n  --only-user           Search only regular user message bodies\n  --only-assistant      Search only regular assistant message bodies\n  -t, --tools [TOOLS]   Show tool use/result details (optional: filter with modifiers, e.g.\n                        'Bash:i', 'Read:o:s', '!Bash')\n  -a, --agents          Include agent messages and Pi agent custom records\n  -b, --branches        Include messages from abandoned (rewound) branches\n  -A, --all             Show everything, including arbitrary Pi custom records\n  --plans               Show plan content (ExitPlanMode)\n  -s, --case-sensitive  Match letter case exactly (default: false)\n  -i, --case-insensitive\n                        Ignore letter case (default: true)\n  --short [SHORT]       Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)\n  --color {always,never,auto}\n                        Control Rich formatting: always, never, or auto (default: auto)\n  --paging              Enable paging (default: same as color)\n  --no-paging           Disable paging\n  --no-metadata         Disable outputting metadata frontmatter\n\nsession pool filters:\n  -d, --dir DIR         Restrict search to conversations in this directory\n  -ma, --mafter DATE    Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)\n  -ca, --cafter DATE    Only conversations created after DATE\n  -p, --provider {claude,pi,codex}\n                        Restrict search to sessions from a specific provider\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-h"
+  ],
+  "exit": 0,
+  "stdout": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\n\npositional arguments:\n  pattern               Pattern to search for\n\noptions:\n  -h, --help            show this help message and exit\n  -l, --list            List mode - show only paths and metadata\n  -ll, --only-id        Show only matching session IDs (implies --color never and --no-paging)\n  -f, --full            Show full matching conversations instead of only matching messages\n  -r, --raw             Alias for raw markdown search output (implies --no-metadata, --color\n                        never, and --no-paging)\n  -T, --thinking [THINKING]\n                        Show thinking tokens (optional: short)\n  --only-user           Search only regular user message bodies\n  --only-assistant      Search only regular assistant message bodies\n  -t, --tools [TOOLS]   Show tool use/result details (optional: filter with modifiers, e.g.\n                        'Bash:i', 'Read:o:s', '!Bash')\n  -a, --agents          Include agent messages and Pi agent custom records\n  -b, --branches        Include messages from abandoned (rewound) branches\n  -A, --all             Show everything, including arbitrary Pi custom records\n  --plans               Show plan content (ExitPlanMode)\n  -s, --case-sensitive  Match letter case exactly (default: false)\n  -i, --case-insensitive\n                        Ignore letter case (default: true)\n  --short [SHORT]       Shorten strings in output (optional: SHORT_SPEC, e.g. p=128)\n  --color {always,never,auto}\n                        Control Rich formatting: always, never, or auto (default: auto)\n  --paging              Enable paging (default: same as color)\n  --no-paging           Disable paging\n  --no-metadata         Disable outputting metadata frontmatter\n\nsession pool filters:\n  -d, --dir DIR         Restrict search to conversations in this directory\n  -ma, --mafter DATE    Only conversations modified after DATE (e.g., 2024-12-15, 1d, 2w)\n  -ca, --cafter DATE    Only conversations created after DATE\n  -p, --provider {claude,pi,codex}\n                        Restrict search to sessions from a specific provider\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "needle",
+   "extra"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: unrecognized arguments: extra\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "needle",
+   "--bogus"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: unrecognized arguments: --bogus\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--only-id",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "aaaa1111-2222-3333-4444-555555555555\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-ll",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "aaaa1111-2222-3333-4444-555555555555\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-l",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-f",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-r",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "needle here\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--only-id",
+   "--paging",
+   "--color",
+   "always",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "aaaa1111-2222-3333-4444-555555555555\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--raw",
+   "--paging",
+   "--color",
+   "always",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "needle here\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-s",
+   "-i",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: argument -i/--case-insensitive: not allowed with argument -s/--case-sensitive\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--color",
+   "bogus",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: argument --color: invalid choice: 'bogus' (choose from 'always', 'never', 'auto')\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-p",
+   "bogus",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: argument -p/--provider: invalid choice: 'bogus' (choose from 'claude', 'pi', 'codex')\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--short",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--short=p=128",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--short",
+   "128",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--short",
+   "7",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: Invalid short value: '7'. Expected N, p, progressive, p=N, or progressive=N with N >= 8.\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--short",
+   "8",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "No sessions match \"needle\".\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-t",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-t",
+   "Bash:i",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-t",
+   "Bash",
+   "-t",
+   "Read",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-T",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-T",
+   "short",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-T",
+   "bogus",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: Invalid thinking mode: 'bogus'. Expected one of: full, short.\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--only-user",
+   "--only-assistant",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Warning: `--only-user` and `--only-assistant` are contradictory; continuing with both filters \nactive.\nNo sessions match \"needle\".\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--only-assistant",
+   "--thinking",
+   "--tools",
+   "--agents",
+   "--plans",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Warning: `--only-assistant` overrides `--thinking`, `--tools`, `--agents`, `--plans`; disabling \nthose options.\nNo sessions match \"needle\".\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-d",
+   "/tmp/g",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-ma",
+   "1d",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "No sessions match \"needle\" with the current filters.\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-ca",
+   "bogus-date",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error processing conversation file \n<HOME>/.claude/projects/p/aaaa1111-2222-33\n33-4444-555555555555.jsonl: Invalid date format: 'bogus-date'\nNo sessions match \"needle\" with the current filters.\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-A",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-a",
+   "-b",
+   "--plans",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--no-metadata",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR] [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]] [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans] [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging] [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "96",
+  "args": [
+   "--",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "96",
+  "args": [
+   "-"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "No sessions match \"-\".\n"
+ },
+ {
+  "columns": "60",
+  "args": [],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--help"
+  ],
+  "exit": 0,
+  "stdout": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\n\npositional arguments:\n  pattern               Pattern to search for\n\noptions:\n  -h, --help            show this help message and exit\n  -l, --list            List mode - show only paths and\n                        metadata\n  -ll, --only-id        Show only matching session IDs\n                        (implies --color never and --no-\n                        paging)\n  -f, --full            Show full matching conversations\n                        instead of only matching messages\n  -r, --raw             Alias for raw markdown search\n                        output (implies --no-metadata,\n                        --color never, and --no-paging)\n  -T, --thinking [THINKING]\n                        Show thinking tokens (optional:\n                        short)\n  --only-user           Search only regular user message\n                        bodies\n  --only-assistant      Search only regular assistant\n                        message bodies\n  -t, --tools [TOOLS]   Show tool use/result details\n                        (optional: filter with modifiers,\n                        e.g. 'Bash:i', 'Read:o:s',\n                        '!Bash')\n  -a, --agents          Include agent messages and Pi\n                        agent custom records\n  -b, --branches        Include messages from abandoned\n                        (rewound) branches\n  -A, --all             Show everything, including\n                        arbitrary Pi custom records\n  --plans               Show plan content (ExitPlanMode)\n  -s, --case-sensitive  Match letter case exactly\n                        (default: false)\n  -i, --case-insensitive\n                        Ignore letter case (default: true)\n  --short [SHORT]       Shorten strings in output\n                        (optional: SHORT_SPEC, e.g. p=128)\n  --color {always,never,auto}\n                        Control Rich formatting: always,\n                        never, or auto (default: auto)\n  --paging              Enable paging (default: same as\n                        color)\n  --no-paging           Disable paging\n  --no-metadata         Disable outputting metadata\n                        frontmatter\n\nsession pool filters:\n  -d, --dir DIR         Restrict search to conversations\n                        in this directory\n  -ma, --mafter DATE    Only conversations modified after\n                        DATE (e.g., 2024-12-15, 1d, 2w)\n  -ca, --cafter DATE    Only conversations created after\n                        DATE\n  -p, --provider {claude,pi,codex}\n                        Restrict search to sessions from a\n                        specific provider\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-h"
+  ],
+  "exit": 0,
+  "stdout": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\n\npositional arguments:\n  pattern               Pattern to search for\n\noptions:\n  -h, --help            show this help message and exit\n  -l, --list            List mode - show only paths and\n                        metadata\n  -ll, --only-id        Show only matching session IDs\n                        (implies --color never and --no-\n                        paging)\n  -f, --full            Show full matching conversations\n                        instead of only matching messages\n  -r, --raw             Alias for raw markdown search\n                        output (implies --no-metadata,\n                        --color never, and --no-paging)\n  -T, --thinking [THINKING]\n                        Show thinking tokens (optional:\n                        short)\n  --only-user           Search only regular user message\n                        bodies\n  --only-assistant      Search only regular assistant\n                        message bodies\n  -t, --tools [TOOLS]   Show tool use/result details\n                        (optional: filter with modifiers,\n                        e.g. 'Bash:i', 'Read:o:s',\n                        '!Bash')\n  -a, --agents          Include agent messages and Pi\n                        agent custom records\n  -b, --branches        Include messages from abandoned\n                        (rewound) branches\n  -A, --all             Show everything, including\n                        arbitrary Pi custom records\n  --plans               Show plan content (ExitPlanMode)\n  -s, --case-sensitive  Match letter case exactly\n                        (default: false)\n  -i, --case-insensitive\n                        Ignore letter case (default: true)\n  --short [SHORT]       Shorten strings in output\n                        (optional: SHORT_SPEC, e.g. p=128)\n  --color {always,never,auto}\n                        Control Rich formatting: always,\n                        never, or auto (default: auto)\n  --paging              Enable paging (default: same as\n                        color)\n  --no-paging           Disable paging\n  --no-metadata         Disable outputting metadata\n                        frontmatter\n\nsession pool filters:\n  -d, --dir DIR         Restrict search to conversations\n                        in this directory\n  -ma, --mafter DATE    Only conversations modified after\n                        DATE (e.g., 2024-12-15, 1d, 2w)\n  -ca, --cafter DATE    Only conversations created after\n                        DATE\n  -p, --provider {claude,pi,codex}\n                        Restrict search to sessions from a\n                        specific provider\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "needle",
+   "extra"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: unrecognized arguments: extra\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "needle",
+   "--bogus"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: unrecognized arguments: --bogus\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--only-id",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "aaaa1111-2222-3333-4444-555555555555\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-ll",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "aaaa1111-2222-3333-4444-555555555555\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-l",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-f",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-r",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "needle here\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--only-id",
+   "--paging",
+   "--color",
+   "always",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "aaaa1111-2222-3333-4444-555555555555\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--raw",
+   "--paging",
+   "--color",
+   "always",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "needle here\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-s",
+   "-i",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: argument -i/--case-insensitive: not allowed with argument -s/--case-sensitive\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--color",
+   "bogus",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: argument --color: invalid choice: 'bogus' (choose from 'always', 'never', 'auto')\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-p",
+   "bogus",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: argument -p/--provider: invalid choice: 'bogus' (choose from 'claude', 'pi', 'codex')\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--short",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--short=p=128",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--short",
+   "128",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--short",
+   "7",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: Invalid short value: '7'. Expected N, p, progressive, p=N, or progressive=N with N >= 8.\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--short",
+   "8",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "No sessions match \"needle\".\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-t",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-t",
+   "Bash:i",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-t",
+   "Bash",
+   "-t",
+   "Read",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-T",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-T",
+   "short",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-T",
+   "bogus",
+   "needle"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: Invalid thinking mode: 'bogus'. Expected one of: full, short.\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--only-user",
+   "--only-assistant",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Warning: `--only-user` and `--only-assistant` are \ncontradictory; continuing with both filters active.\nNo sessions match \"needle\".\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--only-assistant",
+   "--thinking",
+   "--tools",
+   "--agents",
+   "--plans",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Warning: `--only-assistant` overrides `--thinking`, \n`--tools`, `--agents`, `--plans`; disabling those options.\nNo sessions match \"needle\".\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-d",
+   "/tmp/g",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-ma",
+   "1d",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "No sessions match \"needle\" with the current filters.\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-ca",
+   "bogus-date",
+   "needle"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error processing conversation file \n<HOME>\n/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jso\nnl: Invalid date format: 'bogus-date'\nNo sessions match \"needle\" with the current filters.\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-A",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-a",
+   "-b",
+   "--plans",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--no-metadata",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--"
+  ],
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: ch search [-h] [-l] [-ll] [-f] [-r] [-d DIR]\n                 [-ma DATE] [-ca DATE]\n                 [-p {claude,pi,codex}] [-T [THINKING]]\n                 [--only-user] [--only-assistant]\n                 [-t [TOOLS]] [-a] [-b] [-A] [--plans]\n                 [-s | -i] [--short [SHORT]]\n                 [--color {always,never,auto}] [--paging]\n                 [--no-paging] [--no-metadata]\n                 [pattern]\nch search: error: the following arguments are required: pattern\n"
+ },
+ {
+  "columns": "60",
+  "args": [
+   "--",
+   "needle"
+  ],
+  "exit": 0,
+  "stdout": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 aaaa1111-2222-3333-4444-555555555555 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n---\nsession_id: aaaa1111-2222-3333-4444-555555555555\nprovider: claude\ndirectory: /tmp/g\nhistory_path: ~/.claude/projects/p/aaaa1111-2222-3333-4444-555555555555.jsonl\ncreated: \"2026-08-20 15:00\"\nmodified: \"2026-08-20 15:00\"\nmessages: 1\nmatches: 1\n---\n<user-message i=\"1\" date=\"2026-08-20 15:00\">\n## User\n\nneedle here\n</user-message>\n\n",
+  "stderr": ""
+ },
+ {
+  "columns": "60",
+  "args": [
+   "-"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "No sessions match \"-\".\n"
+ }
+]
