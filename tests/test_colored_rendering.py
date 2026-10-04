@@ -61,6 +61,7 @@ def _user(content, ts: str = "2026-06-16T11:01:00Z") -> dict:
 def _render_colored(monkeypatch, func, *args, styles: bool = False,
                     width: int = 96, **kwargs) -> str:
     """Run a command against a recording truecolor console and return its output."""
+    monkeypatch.setenv("TERM", "xterm-256color")
     recorder = Console(theme=APP_THEME, width=width, force_terminal=True,
                        color_system="truecolor", record=True)
     monkeypatch.setattr(console_mod, "_console", recorder)
@@ -906,12 +907,18 @@ def test_wide_console_shows_the_whole_tool_path(tmp_path, monkeypatch):
     )
 
 
-def test_narrow_console_keeps_the_tool_header_on_one_line(tmp_path, monkeypatch):
+@pytest.mark.parametrize("terminal", ["dumb", "xterm-256color"])
+def test_narrow_console_keeps_the_tool_header_on_one_line(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    terminal: str,
+) -> None:
     """A narrow terminal elides the tool path instead of wrapping the header.
 
     A path clipped to a constant width overflows a narrow panel and pushes the
     header onto extra lines; the elided tail must stay on the marker's line.
     """
+    monkeypatch.setenv("TERM", terminal)
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
     sid = _read_call_session(home, "55555555-aaaa-bbbb-cccc-000000000002")

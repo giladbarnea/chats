@@ -88,6 +88,7 @@ def _run_ch(
     environment = os.environ.copy()
     if "--color=always" in arguments:
         environment.pop("NO_COLOR", None)
+        environment["TERM"] = "xterm-256color"
     environment["HOME"] = str(home)
     environment["TZ"] = "Asia/Jerusalem"
     environment["COLORTERM"] = "truecolor"
@@ -1406,9 +1407,13 @@ def test_raw_output_preserves_normalized_pi_agent_interactions(
     )
 
 
+@pytest.mark.parametrize("terminal", ["dumb", "xterm-256color"])
 def test_colored_output_uses_agent_panels_and_shared_error_styling(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    terminal: str,
 ) -> None:
+    monkeypatch.setenv("TERM", terminal)
     home, session_path = _copy_pi_custom_fixture(tmp_path)
 
     completed = _run_ch(
