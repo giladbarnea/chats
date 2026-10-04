@@ -376,7 +376,8 @@ fn parse_tokens(
         }
         if options_enabled && optional_option_matches(token, "--tools", "-t") {
             let (value, consumed, _) = optional_value(&normalized, index, "-t");
-            raw.tool_values.push(value.filter(|value| !value.is_empty()));
+            let value = token.strip_prefix("-t:").map(str::to_string).or(value);
+            raw.tool_values.push(value);
             index += consumed;
             continue;
         }
@@ -470,7 +471,12 @@ fn finish_arguments(
         paging = false;
     }
 
+    let tools = match build_tool_visibility(&raw.tool_values, raw.all) {
+        Ok(tools) => tools,
+        Err(error) => return SearchOutcome::Error(error),
+    };
     normalize_role_visibility(&mut raw, warnings);
+    let tools = if raw.tool_values.is_empty() { ToolVisibility::All(raw.all) } else { tools };
     let selection = if raw.only_user && raw.only_assistant {
         MessageSelection::None
     } else if raw.only_user {
@@ -492,10 +498,6 @@ fn finish_arguments(
     }
     let short = match resolve_short_policy(&raw) {
         Ok(short) => short,
-        Err(error) => return SearchOutcome::Error(error),
-    };
-    let tools = match build_tool_visibility(&raw.tool_values, raw.all) {
-        Ok(tools) => tools,
         Err(error) => return SearchOutcome::Error(error),
     };
     let short_policy = short.unwrap_or_else(crate::shortening::default_short_policy);
@@ -606,25 +608,25 @@ fn build_tool_visibility(
     values: &[Option<String>],
     show_all: bool,
 ) -> Result<ToolVisibility, String> {
-    if show_all {
-        return Ok(ToolVisibility::All(true));
-    }
     if values.is_empty() {
-        return Ok(ToolVisibility::All(false));
+        return Ok(ToolVisibility::All(show_all));
     }
     let specs = values
         .iter()
         .filter_map(Option::as_ref)
-        .flat_map(|value| value.split_whitespace())
+        .flat_map(|value| {
+            let specs = value.split_whitespace().collect::<Vec<_>>();
+            if specs.is_empty() { vec![""] } else { specs }
+        })
         .collect::<Vec<_>>();
     if specs.is_empty() {
         return Ok(ToolVisibility::All(true));
     }
-    specs
+    let filters = specs
         .into_iter()
         .map(|spec| crate::tool_filter::parse_tool_spec(spec))
-        .collect::<Result<Vec<_>, _>>()
-        .map(ToolVisibility::Filters)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(if show_all { ToolVisibility::All(true) } else { ToolVisibility::Filters(filters) })
 }
 
 fn repair_short_positional(raw: &mut RawArguments) {

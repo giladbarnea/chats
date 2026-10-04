@@ -63,50 +63,67 @@ class ToolFilter:
 
 
 def parse_tool_spec(spec: str) -> ToolFilter:
-    """Parse a single tool filter spec string into a ToolFilter.
+    """Parse unique name, direction, error, and short slots, raising on invalid syntax.
 
-    Syntax: [!][Name][:modifier[:modifier...]]
-    Modifiers: i/input, o/output, e/error, s/short, s=SHORT_SPEC/short=SHORT_SPEC
-    Order of tokens doesn't matter. Leading colon is optional.
+    >>> parse_tool_spec("i:Bash").direction
+    'input'
     """
     negate = spec.startswith("!")
     body = spec[1:] if negate else spec
+    if not body:
+        raise _invalid_tool_spec(spec, "Expected an item: a tool name or i/o/e/s.")
+    if "!" in body:
+        raise _invalid_tool_spec(spec, "'!' is allowed only once, at the start.")
+    if any(character.isspace() for character in body):
+        raise _invalid_tool_spec(spec, "A single spec cannot contain whitespace.")
 
     tf = ToolFilter(negate=negate)
     tokens = body.split(":")
     position = 0
-    parsed_short_value: str | None = None
     while position < len(tokens):
         token = tokens[position]
         if not token:
-            position += 1
-            continue
+            raise _invalid_tool_spec(
+                spec, "An empty item is not allowed. Put ':' only between items."
+            )
+        if token.isdecimal():
+            raise _invalid_tool_spec(
+                spec,
+                f"Bare number {token!r} is not a tool name. "
+                f"Use s={token} for a short limit."
+            )
         token_keyword, separator, token_value = token.partition("=")
         token_keyword = token_keyword.lower()
-        if token_keyword in SHORT_MODIFIERS:
-            consumed, parsed_short_value = _apply_short_modifier(
-                tf,
-                tokens,
-                position,
-                separator,
-                token_value,
+        action = MODIFIERS.get(token.lower())
+        slot = "short" if token_keyword in SHORT_MODIFIERS else (
+            action[0] if action else "name"
+        )
+        if getattr(tf, slot):
+            raise _invalid_tool_spec(
+                spec, f"The {slot.removesuffix('_only')} slot is already filled."
             )
+        if token_keyword in SHORT_MODIFIERS:
+            try:
+                consumed = _apply_short_modifier(
+                    tf, tokens, position, separator, token_value
+                )
+            except ValueError as failure:
+                raise _invalid_tool_spec(spec, str(failure)) from failure
             position += consumed
             continue
-        action = MODIFIERS.get(token.lower())
+        if separator:
+            raise _invalid_tool_spec(spec, "Values can follow only s or short with '='.")
         if action:
             setattr(tf, *action)
-        elif tf.name is None or not tf.short:
-            tf.name = token
-        else:
-            value = (
-                f"{parsed_short_value}:{token}"
-                if parsed_short_value is not None
-                else token
-            )
-            raise ValueError(f"Invalid tool short value: {value!r}.")
+            position += 1
+            continue
+        tf.name = token
         position += 1
     return tf
+
+
+def _invalid_tool_spec(spec: str, reason: str) -> ValueError:
+    return ValueError(f"Invalid tool spec: {spec!r}. {reason}")
 
 
 def _apply_short_modifier(
@@ -115,12 +132,10 @@ def _apply_short_modifier(
     position: int,
     separator: str,
     token_value: str,
-) -> tuple[int, str | None]:
-    if tool_filter.short:
-        raise ValueError("Invalid tool short value: repeated short modifier.")
+) -> int:
     tool_filter.short = True
     if not separator:
-        return 1, None
+        return 1
 
     candidate, additional_components = _tool_short_value(
         tokens,
@@ -130,7 +145,7 @@ def _apply_short_modifier(
     short_spec = parse_short_spec(candidate)
     tool_filter.short_max_chars = short_spec.max_chars
     tool_filter.short_progressive = short_spec.progressive
-    return additional_components + 1, candidate
+    return additional_components + 1
 
 
 def _tool_short_value(

@@ -1,8 +1,9 @@
 # Tool Spec Definition
 
-This document captures the **intended completion-truth definition** of the tool spec format.
-
-It deliberately does **not** model buggy or overly permissive behavior from the current parser. The goal is to define the form we want to support and encourage.
+This document defines the tool-spec grammar enforced by parse and search.
+Invalid specs exit with code 2 before session resolution or search.
+Errors show the invalid spec, the violated rule, and a correction when applicable.
+Visibility overrides such as `--all` and `--only-user` still validate supplied specs.
 
 Short values and progressive behavior are defined by [SHORT_SPEC.md](SHORT_SPEC.md).
 
@@ -10,6 +11,8 @@ Short values and progressive behavior are defined by [SHORT_SPEC.md](SHORT_SPEC.
 
 * `FILTERS := SPEC (WS SPEC)*`
 * Tool filters accept all four carriers: `-t FILTERS`, `-t:FILTERS`, `--tools FILTERS`, and `--tools=FILTERS`.
+* The colon in `-t:FILTERS` belongs to the carrier, not to the first `SPEC`.
+* Bare `-t` or `--tools` includes all tools. An explicitly empty `FILTERS` is invalid.
 * Repeating a carrier is equivalent to providing more `SPEC`s.
 * Cross-`SPEC` validation is intentionally out of scope.
 * After a space, state resets to a fresh `SPEC`.
@@ -50,6 +53,10 @@ And:
 * `ERROR := e | error`
 * `SHORT := s [=SHORT_SPEC] | short [=SHORT_SPEC]`
 * `SHORT_SPEC :=` the grammar in [SHORT_SPEC.md](SHORT_SPEC.md)
+
+A `NAME` cannot contain whitespace, `:`, `!`, or `=` and cannot be a bare decimal integer.
+Numbers require a short assignment. For example, `-t:i:200` fails with a suggestion to use `s=200`.
+Use `-t:i:s=200` to shorten tool inputs to 200 characters.
 
 ## Name equivalence
 
@@ -219,4 +226,4 @@ That is outside the scope of this spec.
 * Each `ITEM` fills one unique slot.
 * No slot may be filled twice.
 * `:` is allowed only between items, and only while some slot remains unfilled.
-* The definition is intentionally stricter than the current parser, so it does not encourage buggy or undesirable forms.
+* Parse and search enforce the same grammar.

@@ -67,21 +67,33 @@ def _resolve_show_tools(
     raw_tools: list[bool | str] | None, show_all: bool
 ) -> bool | list[ToolFilter]:
     """Convert raw --tools CLI args to the value ConversationFlags expects."""
-    if show_all:
-        return True
     if raw_tools is None:
-        return False
+        return show_all
 
     specs: list[str] = []
     for v in raw_tools:
         if v is True:
             continue  # bare --tools, no filter spec
-        specs.extend(v.split())
+        specs.extend(v.split() or [""])
 
     if not specs:
         return True  # only bare --tools with no filters
 
-    return [parse_tool_spec(s) for s in specs]
+    filters = [parse_tool_spec(s) for s in specs]
+    return True if show_all else filters
+
+
+def _normalize_tool_carriers(argv_tokens: list[str]) -> list[str]:
+    """Remove the carrier colon from attached tool values before argparse.
+
+    >>> _normalize_tool_carriers(["-t:i", "--", "-t:o"])
+    ['--tools=i', '--', '-t:o']
+    """
+    option_count = argv_tokens.index("--") if "--" in argv_tokens else len(argv_tokens)
+    return [
+        f"--tools={token[3:]}" if index < option_count and token.startswith("-t:") else token
+        for index, token in enumerate(argv_tokens)
+    ]
 
 
 def _looks_like_positive_integer(candidate: str) -> bool:
@@ -192,7 +204,10 @@ def _resolve_message_selection(args: argparse.Namespace) -> MessageSelection:
     return MessageSelection.ALL
 
 
-def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
+def _build_parse_flags(
+    args: argparse.Namespace,
+    show_tools: bool | list[ToolFilter],
+) -> ConversationFlags:
     """Convert normalized parse-mode args into ConversationFlags."""
     show_thinking, shorten_thinking = _resolve_thinking_mode(args.thinking, args.all)
     message_selection = _resolve_message_selection(args)
@@ -200,7 +215,7 @@ def _build_parse_flags(args: argparse.Namespace) -> ConversationFlags:
     return ConversationFlags(
         message_selection=message_selection,
         show_thinking=show_thinking,
-        show_tools=_resolve_show_tools(args.tools, args.all),
+        show_tools=show_tools,
         show_agents=args.agents or args.all,
         show_custom=args.all,
         show_branches=args.branches or args.all,
@@ -280,6 +295,7 @@ def _repair_visibility_option_positionals(
         and args.tools is not None
         and len(args.tools) == 1
         and isinstance(args.tools[0], str)
+        and not args._tools_use_attached_value
     ):
         candidate = args.tools[0]
         if _looks_like_session_input(candidate):
@@ -292,6 +308,7 @@ def _repair_visibility_option_positionals(
         and args.tools is not None
         and len(args.tools) == 1
         and isinstance(args.tools[0], str)
+        and not args._tools_use_attached_value
     ):
         candidate = args.tools[0]
         if _looks_like_slice(candidate):
@@ -735,7 +752,12 @@ Copied JSONL files:
         # Handle slices that end up in unknown args due to argparse quirks:
         # 1. Negative slices like "-5:" get interpreted as flags
         # 2. Positional args after --flag=value end up in unknown with nargs='?'
-        args, unknown = parser.parse_known_args()
+        argv_tokens = _normalize_tool_carriers(sys.argv[1:])
+        args, unknown = parser.parse_known_args(argv_tokens)
+        args._tools_use_attached_value = any(
+            token.startswith("--tools=") or (token.startswith("-t") and token != "-t")
+            for token in argv_tokens[:argv_tokens.index("--") if "--" in argv_tokens else len(argv_tokens)]
+        )
         args._short_uses_attached_value = _short_uses_attached_value(sys.argv[1:])
 
         _repair_visibility_option_positionals(
@@ -779,9 +801,12 @@ Copied JSONL files:
             )
             pool_filter = PoolFilter()
 
-        _normalize_role_visibility_args(args)
         try:
-            flags = _build_parse_flags(args)
+            show_tools = _resolve_show_tools(args.tools, args.all)
+            _normalize_role_visibility_args(args)
+            flags = _build_parse_flags(
+                args, show_tools if args.tools is not None else args.all
+            )
         except ValueError as exc:
             parser.error(str(exc))
 

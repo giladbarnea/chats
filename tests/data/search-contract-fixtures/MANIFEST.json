@@ -1851,6 +1851,7 @@
     },
     {
       "id": "tools-multi-name-spec-narrows",
+      "revised_contract": "2026-10-04: TOOL_SPEC.md rejects a second name instead of overwriting the first.",
       "arguments": [
         "longtooloutput",
         "-t",
@@ -1859,7 +1860,7 @@
       ],
       "columns": 96,
       "color": false,
-      "exit_status": 1,
+      "exit_status": 2,
       "expected_stdout": "expected/tools-multi-name-spec-narrows.stdout",
       "expected_stderr": "expected/tools-multi-name-spec-narrows.stderr"
     },

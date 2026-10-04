@@ -3,7 +3,7 @@
 Tests for granular tool filtering: parsing, matching, and integration.
 
 Covers:
-- Spec parsing (lax syntax: order-independent, short/long forms, optional colon)
+- Spec parsing (unique slots, order-independent, short/long forms)
 - Filter matching (criteria AND'd, negation inverts, positive OR'd, negative AND'd as blocklist)
 - Integration with Message.iter_visible_parts (direction, name, error, shortening)
 """
@@ -107,10 +107,6 @@ class TestParseToolSpec:
             ("i:Bash", {"name": "Bash", "direction": "input"}),
             ("short:Bash:i", {"name": "Bash", "direction": "input", "short": True}),
             ("s:o:Read", {"name": "Read", "direction": "output", "short": True}),
-            # --- Optional leading colon ---
-            (":o", {"direction": "output"}),
-            (":o:s", {"direction": "output", "short": True}),
-            (":short", {"short": True}),
             # --- Mixed short/long modifiers ---
             ("Read:output:s", {"name": "Read", "direction": "output", "short": True}),
             ("Bash:i:short", {"name": "Bash", "direction": "input", "short": True}),
@@ -121,8 +117,6 @@ class TestParseToolSpec:
             # --- Name only ---
             ("Bash", {"name": "Bash"}),
             ("Read", {"name": "Read"}),
-            # --- Empty (bare --tools) ---
-            ("", {}),
         ],
         ids=lambda x: repr(x) if isinstance(x, str) else None,
     )

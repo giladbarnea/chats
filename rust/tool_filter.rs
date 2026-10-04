@@ -1,13 +1,9 @@
 //! Tool filter specs: the `--tools` grammar, matching, and short-policy resolution.
 //!
-//! Ported from `src/chats/tool_filter.py` at oracle revision `8cb4c5f`.
-//!
-//! The grammar is order-insensitive and its short modifier can swallow a following
-//! token, so the parser walks tokens with an explicit cursor rather than folding.
-//! Both are reproduced exactly; the lookahead in particular is easy to simplify into
-//! something that behaves differently on `s:8:p`.
+//! `TOOL_SPEC.md` defines four unique slots and strict separators.
 
 use std::collections::HashMap;
+use unicode_general_category::{GeneralCategory, get_general_category};
 
 use crate::model::normalize_tool_filter_name;
 use crate::shortening::{ShortPolicy, is_progressive_component, parse_short_spec};
@@ -202,6 +198,15 @@ fn is_short_component(candidate: &str) -> bool {
 pub fn parse_tool_spec(spec: &str) -> Result<ToolFilter, String> {
     let negate = spec.starts_with('!');
     let body = if negate { &spec[1..] } else { spec };
+    if body.is_empty() {
+        return Err(invalid_tool_spec(spec, "Expected an item: a tool name or i/o/e/s."));
+    }
+    if body.contains('!') {
+        return Err(invalid_tool_spec(spec, "'!' is allowed only once, at the start."));
+    }
+    if body.chars().any(char::is_whitespace) {
+        return Err(invalid_tool_spec(spec, "A single spec cannot contain whitespace."));
+    }
 
     let mut filter = ToolFilter {
         negate,
@@ -209,50 +214,67 @@ pub fn parse_tool_spec(spec: &str) -> Result<ToolFilter, String> {
     };
     let tokens: Vec<&str> = body.split(':').collect();
     let mut position = 0usize;
-    let mut parsed_short_value: Option<String> = None;
 
     while position < tokens.len() {
         let token = tokens[position];
         if token.is_empty() {
-            position += 1;
-            continue;
+            return Err(invalid_tool_spec(
+                spec, "An empty item is not allowed. Put ':' only between items."
+            ));
+        }
+        if token.chars().all(|character| get_general_category(character) == GeneralCategory::DecimalNumber) {
+            return Err(invalid_tool_spec(spec, &format!(
+                "Bare number {} is not a tool name. Use s={token} for a short limit.",
+                crate::model::python_repr_string(token)
+            )));
         }
         let (keyword, separator, value) = match token.find('=') {
             Some(index) => (&token[..index], true, &token[index + 1..]),
             None => (token, false, ""),
         };
         let keyword_lower = keyword.to_lowercase();
+        let (slot, filled) = match keyword_lower.as_str() {
+            "s" | "short" => ("short", filter.short),
+            "i" | "input" | "o" | "output" if !separator => ("direction", filter.direction.is_some()),
+            "e" | "error" if !separator => ("error", filter.error_only),
+            _ => ("name", filter.name.is_some()),
+        };
+        if filled {
+            return Err(invalid_tool_spec(spec, &format!("The {slot} slot is already filled.")));
+        }
 
         if matches!(keyword_lower.as_str(), "s" | "short") {
-            let (consumed, short_value) =
-                apply_short_modifier(&mut filter, &tokens, position, separator, value)?;
-            parsed_short_value = short_value;
+            let consumed = apply_short_modifier(&mut filter, &tokens, position, separator, value)
+                .map_err(|reason| invalid_tool_spec(spec, &reason))?;
             position += consumed;
             continue;
         }
+        if separator {
+            return Err(invalid_tool_spec(spec, "Values can follow only s or short with '='."));
+        }
 
         match token.to_lowercase().as_str() {
-            "i" | "input" => filter.direction = Some(ToolDirection::Input),
-            "o" | "output" => filter.direction = Some(ToolDirection::Output),
-            "e" | "error" => filter.error_only = true,
-            _ => {
-                if filter.name.is_none() || !filter.short {
-                    filter.name = Some(token.to_string());
+            "i" | "input" | "o" | "output" => {
+                filter.direction = Some(if keyword_lower.starts_with('i') {
+                    ToolDirection::Input
                 } else {
-                    let reported = match &parsed_short_value {
-                        Some(previous) => format!("{previous}:{token}"),
-                        None => token.to_string(),
-                    };
-                    return Err(format!(
-                        "Invalid tool short value: {}.",
-                        crate::model::python_repr_string(&reported)
-                    ));
-                }
+                    ToolDirection::Output
+                });
+            }
+            "e" | "error" => {
+                filter.error_only = true;
+            }
+            _ => {
+                filter.name = Some(token.to_string());
             }
         }
         position += 1;
     }
     Ok(filter)
+}
+
+fn invalid_tool_spec(spec: &str, reason: &str) -> String {
+    format!("Invalid tool spec: {}. {reason}", crate::model::python_repr_string(spec))
 }
 
 fn apply_short_modifier(
@@ -261,20 +283,17 @@ fn apply_short_modifier(
     position: usize,
     separator: bool,
     value: &str,
-) -> Result<(usize, Option<String>), String> {
-    if filter.short {
-        return Err("Invalid tool short value: repeated short modifier.".to_string());
-    }
+) -> Result<usize, String> {
     filter.short = true;
     if !separator {
-        return Ok((1, None));
+        return Ok(1);
     }
 
     let (candidate, additional) = tool_short_value(tokens, position, value);
     let spec = parse_short_spec(&candidate)?;
     filter.short_max_chars = spec.max_chars;
     filter.short_progressive = Some(spec.progressive);
-    Ok((additional + 1, Some(candidate)))
+    Ok(additional + 1)
 }
 
 /// Collect the short-spec components without consuming tool modifiers.
@@ -418,9 +437,31 @@ mod tests {
     }
 
     #[test]
-    fn a_later_bare_token_overwrites_the_name_when_short_is_absent() {
-        // Python assigns unconditionally while `not tf.short`, so the last one wins.
-        let filter = parse_tool_spec("Bash:Read").expect("valid");
-        assert_eq!(filter.name.as_deref(), Some("Read"));
+    fn a_second_name_is_rejected() {
+        let error = parse_tool_spec("Bash:Read").expect_err("duplicate name");
+        assert!(error.contains("name slot is already filled"), "{error}");
+    }
+
+    #[test]
+    fn slot_reuse_is_rejected_from_every_reachable_state() {
+        let slots = [
+            ("name", "Bash", "Read"),
+            ("direction", "i", "output"),
+            ("error", "e", "error"),
+            ("short", "s", "short=200"),
+        ];
+        for state in 1..16 {
+            let filled: Vec<_> = slots.iter().enumerate()
+                .filter(|(index, _)| state & (1 << index) != 0)
+                .map(|(_, slot)| slot)
+                .collect();
+            let specification = filled.iter().map(|(_, item, _)| *item).collect::<Vec<_>>().join(":");
+            parse_tool_spec(&specification).expect("one item per slot is valid");
+            for (slot, _, repeated_item) in filled {
+                let invalid = format!("{specification}:{repeated_item}");
+                let error = parse_tool_spec(&invalid).expect_err("filled slots cannot be reused");
+                assert!(error.contains(&format!("{slot} slot is already filled")), "{invalid}: {error}");
+            }
+        }
     }
 }
