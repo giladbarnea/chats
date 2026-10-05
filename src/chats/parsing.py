@@ -17,6 +17,7 @@ import orjson
 from ._native import (
     classify_native_session_path,
     discover_session_files,
+    files_contain_ascii_json_strings,
     find_last_jsonl_timestamp,
     scan_resolution_facets,
 )
@@ -424,6 +425,26 @@ def extract_resolution_facets_from_jsonl(file_path: Path) -> tuple[str | None, l
         _jsonl_line_resolution_facets,
         json.JSONDecodeError,
     )
+
+
+_JSON_ESCAPED_ASCII_CHARACTERS = frozenset('"\\') | {chr(code) for code in range(0x20)}
+
+
+def files_possibly_containing_text(files: list[Path], text: str) -> list[Path]:
+    """Drop files whose JSON strings cannot contain `text`, case-insensitively.
+
+    A conservative parallel byte gate that never drops a file holding the text.
+    Text the gate cannot express (non-ASCII, or characters JSON escapes) keeps every file.
+
+    >>> files_possibly_containing_text([Path("/missing.jsonl")], 'say "hi"')
+    [PosixPath('/missing.jsonl')]
+    """
+    if not text.isascii() or not _JSON_ESCAPED_ASCII_CHARACTERS.isdisjoint(text):
+        return files
+    decisions = files_contain_ascii_json_strings(
+        [os.fsencode(file) for file in files], text.encode("ascii"), [False] * len(files)
+    )
+    return [file for file, decision in zip(files, decisions, strict=True) if decision]
 
 
 def validate_jsonl(content: str) -> None:

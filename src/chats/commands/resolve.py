@@ -13,6 +13,7 @@ from ..ordering import is_single_negative_index
 from ..parsing import (
     extract_codex_subagent_metadata,
     extract_resolution_facets_from_jsonl,
+    files_possibly_containing_text,
     find_codex_subagent_transcripts,
     get_display_session_id,
     get_jsonl_first_timestamp,
@@ -213,7 +214,7 @@ def _try_resolve_conversation_file(
     query_lower = stripped.lower()
     title_matches: list[tuple[Path, str]] = []
     summary_matches: list[tuple[Path, str]] = []
-    for conversation_file in conversation_files:
+    for conversation_file in files_possibly_containing_text(conversation_files, stripped):
         current_title, summaries = extract_resolution_facets_from_jsonl(
             conversation_file
         )

@@ -717,6 +717,85 @@ class TestCurrentTitleResolution:
             f"Got: {path!r}"
         )
 
+    def test_title_scan_skips_files_without_the_query_text(self, temp_claude_home):
+        """Only files whose bytes can contain the query reach the facet scan."""
+        session_path = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "kkkk1111-gated-title.jsonl"
+        )
+        _write_custom_title_session(session_path, '"Gated Title Token"')
+        scanned_files: list[Path] = []
+        real_extract = resolve_commands.extract_resolution_facets_from_jsonl
+
+        def tracked_extract(session_file: Path):
+            scanned_files.append(session_file)
+            return real_extract(session_file)
+
+        with patch.object(
+            resolve_commands, "extract_resolution_facets_from_jsonl", tracked_extract
+        ):
+            path, ambiguous = _try_resolve_conversation_file("gated title")
+
+        assert (path, ambiguous) == (session_path, []), (
+            f"Expected a unique title match. Got: {(path, ambiguous)!r}"
+        )
+        assert scanned_files == [session_path], (
+            "Expected the byte gate to skip files that cannot contain the query. "
+            f"Scanned: {scanned_files!r}"
+        )
+
+    @pytest.mark.parametrize(
+        ("raw_title", "query"),
+        [
+            ('"Esc\\u0061ped title token"', "escaped title"),
+            ('"\\u212aelvin title token"', "kelvin title"),
+            ('"say \\"hi\\" title token"', 'say "hi" title'),
+        ],
+        ids=["unicode-escape", "case-folds-onto-ascii", "json-escaped-quote"],
+    )
+    def test_title_gate_keeps_titles_that_differ_from_raw_bytes(
+        self, temp_claude_home, raw_title: str, query: str
+    ):
+        """Titles whose decoded text differs from the raw bytes still resolve."""
+        session_path = (
+            temp_claude_home
+            / ".claude"
+            / "projects"
+            / "test-project"
+            / "llll2222-escaped-title.jsonl"
+        )
+        _write_custom_title_session(session_path, raw_title)
+
+        path, ambiguous = _try_resolve_conversation_file(query)
+
+        assert (path, ambiguous) == (session_path, []), (
+            f"Expected {query!r} to resolve the title {raw_title}. "
+            f"Got: {(path, ambiguous)!r}"
+        )
+
+
+def _write_custom_title_session(session_path: Path, raw_json_title: str) -> None:
+    """Write a minimal Claude session whose custom title is the given raw JSON string."""
+    session_id = session_path.stem
+    user_entry = json.dumps(
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "cwd": "/tmp/project",
+            "timestamp": "2026-05-08T10:00:00.000Z",
+            "message": {"role": "user", "content": "hello"},
+            "uuid": "msg-1",
+        }
+    )
+    title_entry = (
+        '{"type": "custom-title", "customTitle": '
+        f'{raw_json_title}, "sessionId": "{session_id}"}}'
+    )
+    session_path.write_text(f"{user_entry}\n{title_entry}\n", encoding="utf-8")
+
 
 if __name__ == "__main__":
     import subprocess

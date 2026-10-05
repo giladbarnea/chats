@@ -3,6 +3,15 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-10-05] Gate title and summary resolution with the native byte scan
+
+### Changed
+
+- After an exact-id miss, title and summary resolution now runs the existing parallel Rust JSON-string gate first. Files that cannot contain a plain ASCII query are skipped before the per-file facet scan.
+- Matching semantics stay the same. Files with JSON escapes, casefold-risk characters, or invalid UTF-8 still reach the full scan, and non-ASCII or quote/backslash queries skip the gate.
+- On the live 5.4k-file, 10.7 GB pool, resolving a session by its title dropped from about 17s to about 4s.
+
+---
 ## [2026-09-22] Classify Claude peer-session messages as agents
 
 ### Fixed
