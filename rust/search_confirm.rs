@@ -265,12 +265,6 @@ impl Confirmation<'_> {
         path: &Path,
         content: &str,
     ) -> Result<Option<SearchHit>, ConfirmError> {
-        // A pool file without a typed first line (empty, or a pre-`session_meta`
-        // Codex rollout) is not a session, so it cannot hold a hit. Reporting it
-        // only when the byte gate defers would make errors depend on the query.
-        if session::validate_jsonl(content).is_err() {
-            return Ok(None);
-        }
         let scan = self.scan(path, content)?;
 
         if !self.filter.passes_cwd(scan.cwd.as_deref()) {

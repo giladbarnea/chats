@@ -3,13 +3,6 @@
 All notable changes to the `conversations` skill.
 
 ---
-## [2026-10-06] Skip non-session files in search silently
-
-### Fixed
-
-- `ch search` printed `Error processing conversation file ...: Expected JSONL input with a 'type' field ...` for empty files and old pre-`session_meta` Codex rollouts, but only for queries the byte gate cannot decide, such as `'<previous-review>'`. Search now treats a pool file without a typed first line as a non-match, for every query. `ch <file>` on such a file still fails with the same error.
-
----
 ## [2026-10-05] Gate title and summary resolution with the native byte scan
 
 ### Changed

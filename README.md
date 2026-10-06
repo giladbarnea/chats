@@ -69,7 +69,7 @@ ch <id> "1:7" "-2" "8:-3"
 
 **Session Input:**
 
-Session input must be JSONL. The first non-empty line must contain a JSON object with a `type` field. `ch search` skips pool files that fail this check, such as empty files and old pre-`session_meta` Codex rollouts.
+Session input must be JSONL. The first non-empty line must contain a JSON object with a `type` field.
 
 For JSONL, provider resolution checks the native file path first. External files then require a recognized first object: Codex uses `type: "session_meta"`; PI uses `type: "session"` with an integer `version`. Other external JSONL files fail instead of being assumed to be Claude. Claude files are recognized through their native `~/.claude/projects/` path because Claude has no stable first-object signature.
 
