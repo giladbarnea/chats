@@ -1554,18 +1554,6 @@
       "expected_stderr": "expected/pi-agent-record-default-miss.stderr"
     },
     {
-      "id": "pi-user-agent-joined-visible-default",
-      "arguments": [
-        "piuseragentresponse",
-        "-ll"
-      ],
-      "columns": 96,
-      "color": false,
-      "exit_status": 0,
-      "expected_stdout": "expected/pi-user-agent-joined-visible-default.stdout",
-      "expected_stderr": "expected/pi-user-agent-joined-visible-default.stderr"
-    },
-    {
       "id": "pi-arbitrary-custom-needs-all",
       "arguments": [
         "piarbitrarycustom",

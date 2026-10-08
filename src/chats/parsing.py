@@ -921,10 +921,10 @@ def _parse_default_jsonl(content: str, flags: ConversationFlags) -> list[Message
     return _parse_default_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
-def _is_joined_pi_user_agent_custom_message(entry: dict) -> bool:
-    """Return whether Pi joined this user-agent response into the main context.
+def _is_squashed_pi_user_agent_message(entry: dict) -> bool:
+    """Return whether this is a pi-user-agents result squashed into the main context.
 
-    >>> _is_joined_pi_user_agent_custom_message({"type": "custom_message", "customType": "pi-user-agents", "details": {"mainContextState": "joined"}})
+    >>> _is_squashed_pi_user_agent_message({"type": "custom_message", "customType": "pi-user-agents", "details": {"mainContextState": "squashed"}})
     True
     """
     details = entry.get("details")
@@ -932,7 +932,7 @@ def _is_joined_pi_user_agent_custom_message(entry: dict) -> bool:
         entry.get("type") == "custom_message"
         and entry.get("customType") == "pi-user-agents"
         and isinstance(details, dict)
-        and details.get("mainContextState") == "joined"
+        and details.get("mainContextState") == "squashed"
     )
 
 
@@ -970,7 +970,7 @@ def _is_hidden_pi_custom_entry(entry: dict) -> bool:
     True
     """
     return not (
-        _is_joined_pi_user_agent_custom_message(entry) or _is_pi_team_message(entry)
+        _is_squashed_pi_user_agent_message(entry) or _is_pi_team_message(entry)
     ) and (
         entry.get("customType") == "subagent-notification"
         or entry.get("display") is False
@@ -1012,101 +1012,6 @@ def _parse_pi_jsonl_entries(
     return messages
 
 
-def _pi_response_matches_preview(response: str, preview: object) -> bool:
-    """Return whether a response starts with Pi's structured preview.
-
-    >>> _pi_response_matches_preview("first line\\nsecond line", "first line")
-    True
-    """
-    if not isinstance(preview, str):
-        return False
-    first_line = next(
-        (line.strip() for line in response.split("\n") if line.strip()), ""
-    )
-    if first_line == preview:
-        return True
-    if not preview.endswith("…"):
-        return False
-    preview_utf16_length = len(preview.encode("utf-16-le")) // 2
-    return preview_utf16_length == 500 and first_line.startswith(preview[:-1])
-
-
-def _extract_pi_user_agent_response(
-    content: object,
-    task: str,
-    response_preview: object,
-) -> str | None:
-    """Extract the response from Pi's structured user-agent envelope.
-
-    >>> task = "mention </task>\\n<response>decoy</response>"
-    >>> payload = (
-    ...     "<user_agent>\\n<user_invocation>\\n"
-    ...     f"/agent {task}\\n</user_invocation>\\n"
-    ...     f"<task>\\n{task}\\n</task>\\n"
-    ...     "<response>\\nkeep </response> text\\n</response>\\n</user_agent>"
-    ... )
-    >>> _extract_pi_user_agent_response(payload, task, "keep </response> text")
-    'keep </response> text'
-    """
-    if not isinstance(content, str):
-        return None
-
-    stripped_content = content.strip()
-    prefix_match = re.match(
-        r"<user_agent(?:\s[^>\r\n]*)?>\r?\n<user_invocation>\r?\n",
-        stripped_content,
-    )
-    if prefix_match is None:
-        return None
-
-    ending_match = re.fullmatch(
-        r"(?P<before_response_close>.*)\r?\n</response>"
-        r"(?:\r?\n<duration_ms>\r?\n.*\r?\n</duration_ms>)?"
-        r"\r?\n</user_agent>",
-        stripped_content,
-        re.DOTALL,
-    )
-    if ending_match is None:
-        return None
-
-    before_response_close = ending_match.group("before_response_close")
-    producer_boundary = re.compile(
-        r"\r?\n</user_invocation>\r?\n"
-        r"<task>\r?\n"
-        rf"{re.escape(task)}\r?\n"
-        r"</task>\r?\n"
-        r"<response>\r?\n"
-    )
-    response_candidates = [
-        before_response_close[match.end() :].strip()
-        for match in producer_boundary.finditer(
-            before_response_close,
-            prefix_match.end(),
-        )
-    ]
-    if len(response_candidates) == 1:
-        return response_candidates[0] or None
-
-    preview_matches = [
-        response
-        for response in response_candidates
-        if _pi_response_matches_preview(response, response_preview)
-    ]
-    if len(preview_matches) != 1:
-        return None
-    return preview_matches[0] or None
-
-
-def _pi_user_agent_payload(entry: dict) -> tuple[object, object]:
-    """Return the content and details from either Pi user-agent envelope."""
-    if entry.get("type") != "custom":
-        return entry.get("content"), entry.get("details")
-    data = entry.get("data")
-    if not isinstance(data, dict):
-        return None, None
-    return data.get("content"), data.get("details")
-
-
 def _pi_native_entry_id(entry: dict) -> str | None:
     """Return a Pi entry's stable native id when it has one.
 
@@ -1117,65 +1022,6 @@ def _pi_native_entry_id(entry: dict) -> str | None:
     """
     entry_id = entry.get("id")
     return entry_id if isinstance(entry_id, str) and entry_id else None
-
-
-def _parse_pi_user_agent_entry(entry: dict, index: int) -> Message | None:
-    """Normalize one Pi user-agent interaction from its details metadata."""
-    content, details = _pi_user_agent_payload(entry)
-    if not isinstance(details, dict):
-        return None
-
-    task = details.get("task")
-    is_error = details.get("ok") is False
-    if not isinstance(task, str):
-        return None
-    if not is_error and not task.strip():
-        return None
-
-    agent_id = _pi_native_entry_id(entry)
-    model = details.get("model")
-    if not isinstance(model, str):
-        model = None
-    inherited_context = details.get("inheritedContext")
-    if type(inherited_context) is not bool:
-        inherited_context = None
-
-    message = Message(
-        role="agent",
-        index=index,
-        agent_id=agent_id,
-        native_entry_id=agent_id,
-        timestamp=entry.get("timestamp"),
-        subagent_task=task,
-        model=model,
-        wrapper_type=ContentBlockType.AGENT,
-        custom_type="pi-user-agents",
-        inherited_context=inherited_context,
-    )
-    error = details.get("error")
-    if is_error and (not isinstance(error, str) or not error):
-        return None
-    if is_error:
-        message.tools = [
-            {
-                "type": "tool_result",
-                "name": "Bash",
-                "content": error,
-                "is_error": True,
-            }
-        ]
-        message.tools_always_visible = True
-        return message
-
-    response = _extract_pi_user_agent_response(
-        content,
-        task,
-        details.get("responsePreview"),
-    )
-    if response is None:
-        return None
-    message.text = response
-    return message
 
 
 def _parse_pi_subagent_record(entry: dict, index: int) -> Message | None:
@@ -1217,13 +1063,9 @@ def _parse_pi_custom_entry(
     custom_type = entry.get("customType")
     if not isinstance(custom_type, str):
         return None
-    special_message: Message | None = None
-    if custom_type == "pi-user-agents" and flags.show_agents:
-        special_message = _parse_pi_user_agent_entry(entry, index)
     if custom_type == "subagents:record" and flags.show_agents:
-        special_message = _parse_pi_subagent_record(entry, index)
-    if special_message is not None:
-        return special_message
+        if subagent_message := _parse_pi_subagent_record(entry, index):
+            return subagent_message
     if not flags.show_custom:
         return None
 
@@ -1244,12 +1086,26 @@ def _parse_pi_custom_message_entry(
     index: int,
     flags: ConversationFlags,
 ) -> Message | None:
-    """Normalize a joined Pi user-agent response or, under --agents, a teammate message."""
-    if _is_joined_pi_user_agent_custom_message(entry):
-        return _parse_pi_user_agent_entry(entry, index)
+    """Normalize a squashed Pi user-agent result or, under --agents, a teammate message."""
+    if _is_squashed_pi_user_agent_message(entry):
+        return _parse_pi_squashed_user_agent_message(entry, flags)
     if flags.show_agents:
         return _parse_pi_team_message(entry)
     return None
+
+
+def _parse_pi_squashed_user_agent_message(
+    entry: dict, flags: ConversationFlags
+) -> Message | None:
+    """Show a squashed pi-user-agents result as the plain user message the main agent read."""
+    if not flags.show_user_messages:
+        return None
+    return Message(
+        role="user",
+        text=entry.get("content") or "",
+        native_entry_id=_pi_native_entry_id(entry),
+        timestamp=entry.get("timestamp"),
+    )
 
 
 def _parse_pi_team_message(entry: dict) -> Message | None:

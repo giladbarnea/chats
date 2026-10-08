@@ -578,12 +578,6 @@ mod tests {
             "and the difference runs the other way too: the crate's `\\w` accepts a \
              lone combining mark through `\\p{{M}}`, CPython's does not"
         );
-        assert!(
-            pi_user_agent_prefix_regex()
-                .is_match("<user_agent\u{1c}id=\"1\">\n<user_invocation>\n"),
-            "the user-agent envelope's attribute separator is `\\s` in CPython; \
-             failing it here drops the whole agent response"
-        );
     }
 
     /// The falsifier for the gate above: the crate's bare classes, run on the same
@@ -597,8 +591,6 @@ mod tests {
         let bare_space = Regex::new(r"(?s)^\s*<local-command-stdout>.*?</local-command-stdout>\s*$")
             .expect("bare space pattern");
         let bare_skill = Regex::new(r"<skill(?:\s[^>]*)?>|</skill>").expect("bare skill pattern");
-        let bare_agent = Regex::new(r"^<user_agent(?:\s[^>\r\n]*)?>\r?\n<user_invocation>\r?\n")
-            .expect("bare agent pattern");
         let bare_word = Regex::new(r#"([\w-]+)="([^"]*)""#).expect("bare word pattern");
 
         assert!(
@@ -610,10 +602,6 @@ mod tests {
         assert!(
             !bare_skill.is_match("<skill\u{1c}name=\"x\">"),
             "same, for the Pi skill token"
-        );
-        assert!(
-            !bare_agent.is_match("<user_agent\u{1c}id=\"1\">\n<user_invocation>\n"),
-            "same, for the user-agent envelope"
         );
         assert!(
             bare_word.captures("\u{bd}=\"x\"").is_none(),
@@ -1832,14 +1820,14 @@ fn parse_pi_team_message(entry: &Map<String, Value>, index: usize) -> Option<Mes
 
 /// Whether a Pi custom envelope is hidden duplicate plumbing.
 fn is_hidden_pi_custom_entry(entry: &Map<String, Value>) -> bool {
-    !(is_joined_pi_user_agent_custom_message(entry) || is_pi_team_message(entry))
+    !(is_squashed_pi_user_agent_message(entry) || is_pi_team_message(entry))
         && (entry.get("customType").and_then(Value::as_str) == Some("subagent-notification")
             || entry.get("display") == Some(&Value::Bool(false))
             || entry_type(entry) == Some("custom_message"))
 }
 
-/// Whether Pi joined this user-agent response into the main context.
-fn is_joined_pi_user_agent_custom_message(entry: &Map<String, Value>) -> bool {
+/// Whether this is a pi-user-agents result squashed into the main context.
+fn is_squashed_pi_user_agent_message(entry: &Map<String, Value>) -> bool {
     entry_type(entry) == Some("custom_message")
         && entry.get("customType").and_then(Value::as_str) == Some("pi-user-agents")
         && entry
@@ -1847,7 +1835,7 @@ fn is_joined_pi_user_agent_custom_message(entry: &Map<String, Value>) -> bool {
             .and_then(Value::as_object)
             .and_then(|details| details.get("mainContextState"))
             .and_then(Value::as_str)
-            == Some("joined")
+            == Some("squashed")
 }
 
 fn parse_pi_compaction_entry(
@@ -1866,144 +1854,24 @@ fn parse_pi_compaction_entry(
     Some(message)
 }
 
-/// Whether a response starts with Pi's structured preview.
-///
-/// The truncated form is measured in **UTF-16 code units**, not code points and not
-/// bytes — a third counting unit, and it must not be unified with the others.
-fn pi_response_matches_preview(response: &str, preview: Option<&str>) -> bool {
-    let Some(preview) = preview else {
-        return false;
-    };
-    let first_line = response
-        .split('\n')
-        .map(python_strip)
-        .find(|line| !line.is_empty())
-        .unwrap_or("");
-    if first_line == preview {
-        return true;
-    }
-    if !preview.ends_with('\u{2026}') {
-        return false;
-    }
-    let utf16_length = preview.chars().map(char::len_utf16).sum::<usize>();
-    let without_ellipsis = &preview[..preview.len() - '\u{2026}'.len_utf8()];
-    utf16_length == 500 && first_line.starts_with(without_ellipsis)
-}
-
-fn pi_user_agent_prefix_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| {
-        Regex::new(&format!(
-            r"^<user_agent(?:[{PYTHON_SPACE_CLASS}][^>\r\n]*)?>\r?\n<user_invocation>\r?\n"
-        ))
-        .expect("pi user agent prefix")
-    })
-}
-
-fn pi_user_agent_ending_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| {
-        // `<duration_ms>` is OPTIONAL. The prior native port required it and joined
-        // user-agent responses vanished from output through a green suite and a review.
-        Regex::new(
-            r"(?s)^(?P<before>.*)\r?\n</response>(?:\r?\n<duration_ms>\r?\n.*\r?\n</duration_ms>)?\r?\n</user_agent>$",
-        )
-        .expect("pi user agent ending")
-    })
-}
-
-/// Extract the response from Pi's structured user-agent envelope.
-///
-/// Conservative by construction: one candidate wins outright, otherwise
-/// `responsePreview` must resolve to exactly one, otherwise **nothing**. Ambiguity
-/// yields no response rather than a guess.
-fn extract_pi_user_agent_response(
-    content: Option<&str>,
-    task: &str,
-    preview: Option<&str>,
-) -> Option<String> {
-    let stripped = python_strip(content?);
-    let prefix = pi_user_agent_prefix_regex().find(stripped)?;
-    let ending = pi_user_agent_ending_regex().captures(stripped)?;
-    let before = ending.name("before")?.as_str();
-
-    let boundary = Regex::new(&format!(
-        r"\r?\n</user_invocation>\r?\n<task>\r?\n{}\r?\n</task>\r?\n<response>\r?\n",
-        regex::escape(task)
-    ))
-    .ok()?;
-
-    let search_from = prefix.end().min(before.len());
-    let candidates: Vec<String> = boundary
-        .find_iter(&before[search_from..])
-        .map(|found| python_strip(&before[search_from + found.end()..]).to_string())
-        .collect();
-
-    if candidates.len() == 1 {
-        return candidates.into_iter().next().filter(|value| !value.is_empty());
-    }
-    let mut matching = candidates
-        .into_iter()
-        .filter(|candidate| pi_response_matches_preview(candidate, preview));
-    let first = matching.next()?;
-    if matching.next().is_some() {
+/// Show a squashed pi-user-agents result as the plain user message the main agent read.
+/// Mirrors Python's `_parse_pi_squashed_user_agent_message`.
+fn parse_pi_squashed_user_agent_message(
+    entry: &Map<String, Value>,
+    index: usize,
+    flags: &ConversationFlags,
+) -> Option<Message> {
+    if !flags.show_user_messages() {
         return None;
     }
-    (!first.is_empty()).then_some(first)
-}
-
-fn pi_user_agent_payload(entry: &Map<String, Value>) -> (Option<&Value>, Option<&Value>) {
-    if entry_type(entry) != Some("custom") {
-        return (entry.get("content"), entry.get("details"));
-    }
-    match entry.get("data").and_then(Value::as_object) {
-        Some(data) => (data.get("content"), data.get("details")),
-        None => (None, None),
-    }
-}
-
-fn parse_pi_user_agent_entry(entry: &Map<String, Value>, index: usize) -> Option<Message> {
-    let (content, details) = pi_user_agent_payload(entry);
-    let details = details?.as_object()?;
-    let task = details.get("task")?.as_str()?;
-    let is_error = details.get("ok") == Some(&Value::Bool(false));
-    if !is_error && python_strip(task).is_empty() {
-        return None;
-    }
-
-    let agent_id = pi_native_entry_id(entry);
-    let mut message = new_message(index, "agent", MessageType::Agent);
-    message.agent_id = agent_id.clone();
-    message.native_entry_id = agent_id;
+    let mut message = new_message(index, "user", MessageType::UserMessage);
+    message.text = entry
+        .get("content")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    message.native_entry_id = pi_native_entry_id(entry);
     message.timestamp = timestamp_of(entry);
-    message.subagent_task = Some(task.to_string());
-    message.model = details.get("model").and_then(Value::as_str).map(str::to_string);
-    message.custom_type = Some("pi-user-agents".to_string());
-    message.inherited_context = match details.get("inheritedContext") {
-        Some(Value::Bool(value)) => Some(*value),
-        _ => None,
-    };
-
-    let error = details.get("error").and_then(Value::as_str);
-    if is_error {
-        let error = error.filter(|value| !value.is_empty())?;
-        message.tools = vec![Tool::Result(ToolResult {
-            name: Some("Bash".to_string()),
-            tool_use_id: None,
-            native_tool_call_id: None,
-            is_error: true,
-            content: Some(Value::String(error.to_string())),
-            has_content: true,
-        })];
-        message.tools_always_visible = true;
-        return Some(message);
-    }
-
-    message.text = extract_pi_user_agent_response(
-        content.and_then(Value::as_str),
-        task,
-        details.get("responsePreview").and_then(Value::as_str),
-    )?;
     Some(message)
 }
 
@@ -2040,13 +1908,10 @@ fn parse_pi_custom_entry(
     flags: &ConversationFlags,
 ) -> Option<Message> {
     let custom_type = entry.get("customType")?.as_str()?;
-    let special = match custom_type {
-        "pi-user-agents" if flags.show_agents => parse_pi_user_agent_entry(entry, index),
-        "subagents:record" if flags.show_agents => parse_pi_subagent_record(entry, index),
-        _ => None,
-    };
-    if special.is_some() {
-        return special;
+    if custom_type == "subagents:record" && flags.show_agents {
+        if let Some(message) = parse_pi_subagent_record(entry, index) {
+            return Some(message);
+        }
     }
     if !flags.show_custom {
         return None;
@@ -2225,8 +2090,10 @@ pub fn parse_pi(entries: &[Map<String, Value>], flags: &ConversationFlags) -> Ve
                 .collect(),
             Some("custom") => parse_pi_custom_entry(entry, index, flags).into_iter().collect(),
             Some("custom_message") => {
-                if is_joined_pi_user_agent_custom_message(entry) {
-                    parse_pi_user_agent_entry(entry, index).into_iter().collect()
+                if is_squashed_pi_user_agent_message(entry) {
+                    parse_pi_squashed_user_agent_message(entry, index, flags)
+                        .into_iter()
+                        .collect()
                 } else if flags.show_agents {
                     parse_pi_team_message(entry, index).into_iter().collect()
                 } else {

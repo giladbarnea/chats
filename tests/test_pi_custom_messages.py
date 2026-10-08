@@ -15,21 +15,6 @@ SOURCE_FIXTURE = PROJECT_ROOT / "tests" / "data" / "pi-custom-message.jsonl"
 CH_EXECUTABLE = Path(sys.executable).with_name("ch")
 
 
-def _current_pi_entry(line: str) -> str:
-    entry: dict[str, object] = json.loads(line)
-    if (
-        entry.get("type") == "custom_message"
-        and entry.get("customType") == "pi-user-agents"
-        and entry.get("display") is True
-    ):
-        details = entry.get("details")
-        assert isinstance(details, dict), f"Expected agent details. Got: {details!r}."
-        entry["display"] = False
-        details["mainContextState"] = "joined"
-        return json.dumps(entry, ensure_ascii=False) + "\n"
-    return line
-
-
 def _copy_pi_fixture(tmp_path: Path) -> tuple[Path, Path]:
     home = tmp_path / "home"
     session_path = home / ".pi" / "agent" / "sessions" / "project" / SOURCE_FIXTURE.name
@@ -37,8 +22,7 @@ def _copy_pi_fixture(tmp_path: Path) -> tuple[Path, Path]:
     with SOURCE_FIXTURE.open(encoding="utf-8") as source, session_path.open(
         "w", encoding="utf-8"
     ) as target:
-        for line in source:
-            target.write(_current_pi_entry(line))
+        target.write(source.read())
     return home, session_path
 
 
@@ -51,7 +35,7 @@ def _copy_pi_custom_fixture(tmp_path: Path) -> tuple[Path, Path]:
         for line in source:
             entry = json.loads(line)
             if entry.get("type") in {"session", "custom", "custom_message"}:
-                target.write(_current_pi_entry(line))
+                target.write(line)
     return home, session_path
 
 
@@ -74,7 +58,7 @@ def _derive_pi_fixture(
             if matched or not selector(entry):
                 continue
             mutate(entry)
-            target.write(_current_pi_entry(json.dumps(entry, ensure_ascii=False)))
+            target.write(json.dumps(entry, ensure_ascii=False) + "\n")
             matched = True
     assert matched, "Expected to derive one matching record from the Pi fixture."
     return home, session_path
@@ -103,90 +87,24 @@ def _run_ch(
     )
 
 
-def _pi_user_agent_content(
-    *,
-    task: str,
-    response: str,
-    invocation: str | None = None,
-    model: str = "test/model",
-) -> str:
-    resolved_invocation = invocation or f"/agent {task}"
-    return (
-        f'<user_agent command="/agent" model="{model}">\n'
-        "<user_invocation>\n"
-        f"{resolved_invocation}\n"
-        "</user_invocation>\n"
-        "<task>\n"
-        f"{task}\n"
-        "</task>\n"
-        "<response>\n"
-        f"{response}\n"
-        "</response>\n"
-        "<duration_ms>\n1\n</duration_ms>\n"
-        "</user_agent>"
-    )
-
-
-def test_default_output_includes_joined_pi_user_agent_custom_messages(
+def test_unsquashed_pi_user_agent_custom_messages_stay_hidden(
     tmp_path: Path,
 ) -> None:
-    task = "JOINED_AGENT_TASK"
-    response = "JOINED_AGENT_RESPONSE"
-
-    def select(entry: dict[str, object]) -> bool:
-        if entry.get("type") != "custom_message":
-            return False
-        if entry.get("customType") != "pi-user-agents":
-            return False
-        details = entry.get("details")
-        return (
-            entry.get("display") is True
-            and isinstance(details, dict)
-            and details.get("ok") is True
-        )
-
-    def mutate(entry: dict[str, object]) -> None:
-        details = entry.get("details")
-        assert isinstance(details, dict), f"Expected agent details. Got: {details!r}."
-        entry["display"] = False
-        entry["content"] = _pi_user_agent_content(task=task, response=response)
-        details["task"] = task
-        details["mainContextState"] = "joined"
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--color=never",
-        "--no-metadata",
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    assert task in completed.stdout and response in completed.stdout, (
-        "Expected a joined Pi user-agent message in default parse output. "
-        f"stdout: {completed.stdout!r}."
-    )
-
-
-def test_default_output_hides_unjoined_pi_user_agent_custom_messages(
-    tmp_path: Path,
-) -> None:
-    task = "UNJOINED_AGENT_TASK"
-    response = "UNJOINED_AGENT_RESPONSE"
+    task = "UNSQUASHED_AGENT_TASK"
+    response = "UNSQUASHED_AGENT_RESPONSE"
 
     def select(entry: dict[str, object]) -> bool:
         return (
             entry.get("type") == "custom_message"
             and entry.get("customType") == "pi-user-agents"
-            and entry.get("display") is False
         )
 
     def mutate(entry: dict[str, object]) -> None:
         details = entry.get("details")
         assert isinstance(details, dict), f"Expected agent details. Got: {details!r}."
-        entry["content"] = _pi_user_agent_content(task=task, response=response)
+        entry["content"] = f"{task}\n{response}"
         details["task"] = task
-        details["mainContextState"] = "background"
+        details["mainContextState"] = "separate"
 
     home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
     completed = _run_ch(
@@ -198,7 +116,7 @@ def test_default_output_hides_unjoined_pi_user_agent_custom_messages(
 
     assert completed.returncode == 0, completed.stderr
     assert task not in completed.stdout and response not in completed.stdout, (
-        "Expected a non-joined Pi user-agent message to stay out of default output. "
+        "Expected an unsquashed Pi user-agent message to stay out of default output. "
         f"stdout: {completed.stdout!r}."
     )
 
@@ -246,7 +164,6 @@ def test_generic_pi_custom_messages_are_hidden_by_default_and_shown_by_all(
 @pytest.mark.parametrize(
     ("custom_type", "sentinel"),
     [
-        pytest.param("pi-user-agents", "PARTIAL_USER_AGENT", id="user-agent"),
         pytest.param(
             "subagents:record", "PARTIAL_SUBAGENT_RECORD", id="subagent-record"
         ),
@@ -337,31 +254,22 @@ def test_generic_pi_custom_type_round_trips_xml_attribute_characters(
     )
 
 
-@pytest.mark.parametrize(
-    "custom_type",
-    [
-        pytest.param("pi-user-agents", id="model"),
-        pytest.param("subagents:record", id="subagent-type"),
-    ],
-)
 def test_pi_agent_metadata_round_trips_xml_attribute_characters(
     tmp_path: Path,
-    custom_type: str,
 ) -> None:
     metadata_value = 'metadata "quoted" & <angled>'
-    is_user_agent = custom_type == "pi-user-agents"
-    xml_attribute = "model" if is_user_agent else "subagent_type"
-    source_field = "model" if is_user_agent else "type"
+    xml_attribute = "subagent_type"
 
     def select(entry: dict[str, object]) -> bool:
-        return entry.get("type") == "custom" and entry.get("customType") == custom_type
+        return (
+            entry.get("type") == "custom"
+            and entry.get("customType") == "subagents:record"
+        )
 
     def mutate(entry: dict[str, object]) -> None:
         data = entry.get("data")
         assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
-        target = data.get("details") if is_user_agent else data
-        assert isinstance(target, dict), f"Expected agent metadata. Got: {target!r}."
-        target[source_field] = metadata_value
+        data["type"] = metadata_value
 
     home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
     native_xml = _run_ch(
@@ -395,520 +303,6 @@ def test_pi_agent_metadata_round_trips_xml_attribute_characters(
     assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
     assert rebuilt_xml.stdout == native_xml.stdout, (
         f"Expected escaped {xml_attribute} metadata to stabilize."
-    )
-
-
-def test_agents_render_successful_pi_user_agents_as_interactions(
-    tmp_path: Path,
-) -> None:
-    home, session_path = _copy_pi_fixture(tmp_path)
-
-    default = _run_ch(
-        home,
-        str(session_path),
-        "--color=never",
-        "--no-metadata",
-    )
-    agents = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-
-    task = "where's the js/css/html of the visual map?"
-    response = "The visual map is one self-contained HTML file:"
-    assert default.returncode == 0, default.stderr
-    assert task not in default.stdout and response not in default.stdout, (
-        "Expected default Pi output to hide user-agent interactions. "
-        f"stdout: {default.stdout!r}."
-    )
-    assert agents.returncode == 0, (
-        "Expected `--agents` to parse successful Pi user agents. "
-        f"stderr: {agents.stderr!r}."
-    )
-    assert (
-        "<agent " in agents.stdout and 'custom_type="pi-user-agents"' in agents.stdout
-    ), (
-        "Expected a successful Pi user agent to use the shared agent wrapper. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert 'model="openai-codex/gpt-5.6-luna (gpt56l)"' in agents.stdout, (
-        "Expected the agent model to come from details metadata. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert 'model="claude-bridge/claude-opus-5 (Claude Opus 5)"' in agents.stdout, (
-        "Expected Pi model metadata to stay byte-faithful even with a claude prefix. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert 'inherited_context="true"' in agents.stdout, (
-        "Expected inherited-context details to remain agent metadata. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert "<subagent-task>" in agents.stdout and task in agents.stdout, (
-        "Expected details.task to render with agent-input semantics. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert response in agents.stdout, (
-        "Expected only the response element body to become the agent response. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert "<user_agent" not in agents.stdout, (
-        "Expected the native Pi wrapper to be normalized instead of printed verbatim. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert "stale_queued_tool_results_dropped" not in agents.stdout, (
-        "Expected `--agents` not to expose unrelated custom data. "
-        f"stdout: {agents.stdout!r}."
-    )
-
-
-def test_successful_pi_user_agents_use_details_metadata_and_response_content(
-    tmp_path: Path,
-) -> None:
-    def select(entry: dict[str, object]) -> bool:
-        return (
-            entry.get("type") == "custom"
-            and entry.get("customType") == "pi-user-agents"
-        )
-
-    def mutate(entry: dict[str, object]) -> None:
-        data = entry.get("data")
-        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
-        details = data.get("details")
-        assert isinstance(details, dict), (
-            f"Expected details metadata. Got: {details!r}."
-        )
-        details["task"] = "DETAILS_TASK_SENTINEL"
-        details["model"] = "DETAILS_MODEL_SENTINEL"
-        details["inheritedContext"] = False
-        data["content"] = _pi_user_agent_content(
-            task="DETAILS_TASK_SENTINEL",
-            response="CONTENT_RESPONSE_SENTINEL",
-            invocation="CONTENT_TASK_SENTINEL DETAILS_TASK_SENTINEL",
-            model="CONTENT_MODEL_SENTINEL",
-        )
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    assert "DETAILS_TASK_SENTINEL" in completed.stdout, (
-        f"Expected the task from details metadata. stdout: {completed.stdout!r}."
-    )
-    assert 'model="DETAILS_MODEL_SENTINEL"' in completed.stdout, (
-        f"Expected the model from details metadata. stdout: {completed.stdout!r}."
-    )
-    assert 'inherited_context="false"' in completed.stdout, (
-        f"Expected inherited context from details metadata. stdout: {completed.stdout!r}."
-    )
-    assert "CONTENT_RESPONSE_SENTINEL" in completed.stdout, (
-        f"Expected the response element body from native content. stdout: {completed.stdout!r}."
-    )
-    assert "CONTENT_TASK_SENTINEL" not in completed.stdout, (
-        f"Expected native task content to be ignored. stdout: {completed.stdout!r}."
-    )
-    assert "CONTENT_MODEL_SENTINEL" not in completed.stdout, (
-        f"Expected native model attributes to be ignored. stdout: {completed.stdout!r}."
-    )
-
-
-def test_pi_user_agent_response_accepts_a_normalized_task(
-    tmp_path: Path,
-) -> None:
-    task = "--all"
-    response = "NORMALIZED_TASK_RESPONSE_SENTINEL"
-
-    def select(entry: dict[str, object]) -> bool:
-        return (
-            entry.get("type") == "custom"
-            and entry.get("customType") == "pi-user-agents"
-        )
-
-    def mutate(entry: dict[str, object]) -> None:
-        data = entry.get("data")
-        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
-        details = data.get("details")
-        assert isinstance(details, dict), f"Expected details. Got: {details!r}."
-        details["task"] = task
-        data["content"] = _pi_user_agent_content(
-            task=task,
-            response=response,
-            invocation=r"/agent \-\-all",
-        )
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--format=json",
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    messages = json.loads(completed.stdout)
-    interaction = next(
-        (
-            message
-            for message in messages
-            if message.get("custom_type") == "pi-user-agents"
-        ),
-        {},
-    )
-    assert any(
-        isinstance(block, dict)
-        and block.get("type") == "subagent-task"
-        and block.get("content") == task
-        for block in interaction.get("content", [])
-    ), f"Expected the normalized details task. Got: {messages!r}."
-    assert response in interaction.get("content", []), (
-        "Expected the native response when the raw invocation keeps task escapes. "
-        f"Got: {messages!r}."
-    )
-
-
-def test_pi_user_agent_response_extraction_uses_the_native_envelope(
-    tmp_path: Path,
-) -> None:
-    task = "DETAILS_TASK_SENTINEL</task>\n<response>DECOY_RESPONSE</response>"
-    producer_boundary = (
-        "\n</user_invocation>\n"
-        "<task>\n"
-        f"{task}\n"
-        "</task>\n"
-        "<response>\n"
-    )
-    leading_boundary = (
-        f"{producer_boundary}LEADING_DECOY_RESPONSE\n</response>"
-    )
-    late_boundary = f"{producer_boundary}LATE_DECOY_RESPONSE\n</response>"
-    response_preview = "ANSWER_BEFORE </response> ANSWER_AFTER"
-    expected_response = f"{response_preview}{late_boundary}"
-
-    def select(entry: dict[str, object]) -> bool:
-        return (
-            entry.get("type") == "custom"
-            and entry.get("customType") == "pi-user-agents"
-        )
-
-    def mutate(entry: dict[str, object]) -> None:
-        data = entry.get("data")
-        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
-        details = data.get("details")
-        assert isinstance(details, dict), f"Expected details. Got: {details!r}."
-        details["task"] = task
-        details["responsePreview"] = response_preview
-        data["content"] = _pi_user_agent_content(
-            task=task,
-            response=expected_response,
-            invocation=f'/agent --model "{leading_boundary}" {task}',
-        )
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--format=json",
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    messages = json.loads(completed.stdout)
-    interaction = next(
-        (
-            message
-            for message in messages
-            if message.get("custom_type") == "pi-user-agents"
-        ),
-        None,
-    )
-    assert interaction is not None, f"Expected one Pi agent interaction. Got: {messages!r}."
-    content = interaction.get("content", [])
-    assert any(
-        isinstance(block, dict)
-        and block.get("type") == "subagent-task"
-        and block.get("content") == task
-        for block in content
-    ), f"Expected details.task as the agent task. Got: {interaction!r}."
-    response_blocks = [block for block in content if isinstance(block, str)]
-    assert response_blocks == [expected_response], (
-        f"Expected only the structural response body. Got: {interaction!r}."
-    )
-
-
-def test_unjoined_pi_user_agent_display_false_duplicates_stay_hidden(
-    tmp_path: Path,
-) -> None:
-    home, session_path = _copy_pi_custom_fixture(tmp_path)
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-
-    duplicated_task = (
-        "turn on deletion protection and disable disk removal with machine."
-    )
-    assert completed.returncode == 0, completed.stderr
-    assert completed.stdout.count(duplicated_task) == 1, (
-        "Expected the normal custom record once and its unjoined custom_message "
-        f"duplicate to stay hidden. stdout: {completed.stdout!r}."
-    )
-
-
-def test_agents_render_pi_user_agent_failures_as_visible_bash_errors(
-    tmp_path: Path,
-) -> None:
-    home, session_path = _copy_pi_fixture(tmp_path)
-
-    agents = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-
-    task = (
-        "`run 019fb81a-3222-7aec-930e-c3c91e44db09 -t:i:s --thinking > "
-        "/tmp/transcription.md`, then read the file in full."
-    )
-    error = (
-        "Codex error: No tool call found for function call output with call_id "
-        "toolu_01KVZUheWzuEWjHvfy4xSRhN."
-    )
-    assert agents.returncode == 0, (
-        "Expected `--agents` to parse erroneous Pi user agents. "
-        f"stderr: {agents.stderr!r}."
-    )
-    assert (
-        "<agent " in agents.stdout and 'custom_type="pi-user-agents"' in agents.stdout
-    ), (
-        "Expected an erroneous Pi user agent to remain an agent interaction. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert task in agents.stdout, (
-        "Expected the failed agent input to come from details.task. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert error in agents.stdout, (
-        "Expected the failed agent error to come from details.error. "
-        f"stdout: {agents.stdout!r}."
-    )
-    assert '<tool-output name="Bash" is_error="true">' in agents.stdout, (
-        "Expected `--agents` alone to show failures through the shared Bash error path. "
-        f"stdout: {agents.stdout!r}."
-    )
-
-
-def test_pi_user_agent_error_with_empty_task_round_trips_as_agent(
-    tmp_path: Path,
-) -> None:
-    error = "EMPTY_TASK_ERROR_SENTINEL"
-
-    def select(entry: dict[str, object]) -> bool:
-        if entry.get("type") != "custom_message":
-            return False
-        if entry.get("customType") != "pi-user-agents":
-            return False
-        details = entry.get("details")
-        return isinstance(details, dict) and details.get("ok") is False
-
-    def mutate(entry: dict[str, object]) -> None:
-        details = entry.get("details")
-        assert isinstance(details, dict), f"Expected error details. Got: {details!r}."
-        details["task"] = ""
-        details["error"] = error
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    native_xml = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-
-    assert native_xml.returncode == 0, native_xml.stderr
-    assert error in native_xml.stdout, (
-        f"Expected the empty-task agent error to remain visible. stdout: {native_xml.stdout!r}."
-    )
-    assert 'custom_type="pi-user-agents"' in native_xml.stdout, (
-        f"Expected the error to retain its agent identity. stdout: {native_xml.stdout!r}."
-    )
-
-    canonical_json = _run_ch(
-        home,
-        "parse",
-        "--format=json",
-        input_text=native_xml.stdout,
-    )
-    assert canonical_json.returncode == 0, canonical_json.stderr
-    messages = json.loads(canonical_json.stdout)
-    interaction = messages[0] if messages else {}
-    assert interaction.get("role") == "agent", (
-        f"Expected the empty-task error role to survive XML parsing. Got: {messages!r}."
-    )
-    assert any(
-        isinstance(block, dict)
-        and block.get("type") == "tool-output"
-        and block.get("is_error") is True
-        and block.get("content") == error
-        for block in interaction.get("content", [])
-    ), f"Expected the Bash error to survive XML parsing. Got: {messages!r}."
-
-    rebuilt_xml = _run_ch(home, "parse", input_text=canonical_json.stdout)
-    assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
-    assert rebuilt_xml.stdout == native_xml.stdout, (
-        "Expected the empty-task agent error transport to stabilize."
-    )
-
-
-def test_erroneous_pi_user_agents_ignore_native_task_and_error_content(
-    tmp_path: Path,
-) -> None:
-    def select(entry: dict[str, object]) -> bool:
-        if entry.get("type") != "custom_message":
-            return False
-        if entry.get("customType") != "pi-user-agents":
-            return False
-        details = entry.get("details")
-        return isinstance(details, dict) and details.get("ok") is False
-
-    def mutate(entry: dict[str, object]) -> None:
-        details = entry.get("details")
-        content = entry.get("content")
-        assert isinstance(details, dict), f"Expected error details. Got: {details!r}."
-        assert isinstance(content, str), (
-            f"Expected native error content. Got: {content!r}."
-        )
-        details["task"] = "DETAILS_ERROR_TASK_SENTINEL"
-        details["error"] = "DETAILS_ERROR_SENTINEL"
-        content = re.sub(
-            r"<task>.*?</task>",
-            "<task>CONTENT_ERROR_TASK_SENTINEL</task>",
-            content,
-            count=1,
-            flags=re.DOTALL,
-        )
-        entry["content"] = re.sub(
-            r"<error>.*?</error>",
-            "<error>CONTENT_ERROR_SENTINEL</error>",
-            content,
-            count=1,
-            flags=re.DOTALL,
-        )
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    assert "DETAILS_ERROR_TASK_SENTINEL" in completed.stdout, (
-        f"Expected error input from details.task. stdout: {completed.stdout!r}."
-    )
-    assert "DETAILS_ERROR_SENTINEL" in completed.stdout, (
-        f"Expected error output from details.error. stdout: {completed.stdout!r}."
-    )
-    assert "CONTENT_ERROR_TASK_SENTINEL" not in completed.stdout, (
-        f"Expected native error task content to be ignored. stdout: {completed.stdout!r}."
-    )
-    assert "CONTENT_ERROR_SENTINEL" not in completed.stdout, (
-        f"Expected native error body content to be ignored. stdout: {completed.stdout!r}."
-    )
-
-
-@pytest.mark.parametrize(
-    ("case_name", "ok_value", "remove_ok"),
-    [
-        pytest.param("true", True, False, id="true"),
-        pytest.param("zero", 0, False, id="zero"),
-        pytest.param("null", None, False, id="null"),
-        pytest.param("missing", None, True, id="missing"),
-    ],
-)
-def test_pi_user_agent_error_detection_requires_the_false_singleton(
-    tmp_path: Path,
-    case_name: str,
-    ok_value: bool | int | None,
-    remove_ok: bool,
-) -> None:
-    task = f"IDENTITY_TASK_{case_name}"
-    response = f"IDENTITY_RESPONSE_{case_name}"
-    error = f"IDENTITY_ERROR_{case_name}"
-
-    def select(entry: dict[str, object]) -> bool:
-        if entry.get("type") != "custom_message":
-            return False
-        if entry.get("customType") != "pi-user-agents":
-            return False
-        details = entry.get("details")
-        return (
-            entry.get("display") is True
-            and isinstance(details, dict)
-            and details.get("ok") is True
-        )
-
-    def mutate(entry: dict[str, object]) -> None:
-        details = entry.get("details")
-        assert isinstance(details, dict), f"Expected success details. Got: {details!r}."
-        if remove_ok:
-            details.pop("ok", None)
-        else:
-            details["ok"] = ok_value
-        details["task"] = task
-        details["error"] = error
-        entry["content"] = _pi_user_agent_content(task=task, response=response)
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--format=json",
-    )
-
-    assert completed.returncode == 0, (
-        f"Expected ok={case_name} to parse as a successful interaction. "
-        f"stderr: {completed.stderr!r}."
-    )
-    messages = json.loads(completed.stdout)
-    interaction = next(
-        message
-        for message in messages
-        if any(
-            isinstance(block, dict)
-            and block.get("type") == "subagent-task"
-            and block.get("content") == task
-            for block in message.get("content", [])
-        )
-    )
-    assert response in interaction.get("content", []), (
-        f"Expected ok={case_name} to use its response body. Got: {interaction!r}."
-    )
-    assert not any(
-        isinstance(block, dict)
-        and block.get("type") == "tool-output"
-        and block.get("is_error") is True
-        for block in interaction.get("content", [])
-    ), f"Expected only the False singleton to mark an error. Got: {interaction!r}."
-    assert error not in completed.stdout, (
-        f"Expected ok={case_name} not to expose details.error. "
-        f"stdout: {completed.stdout!r}."
     )
 
 
@@ -1012,63 +406,6 @@ def test_agents_emit_structured_pi_custom_messages_as_agent_data(
         f"Expected structured Pi agent output to succeed. stderr: {completed.stderr!r}."
     )
     messages = json.loads(completed.stdout)
-    success_task = "where's the js/css/html of the visual map?"
-    success = next(
-        message
-        for message in messages
-        if any(
-            block.get("type") == "subagent-task"
-            and block.get("content") == success_task
-            for block in message.get("content", [])
-            if isinstance(block, dict)
-        )
-    )
-    assert success.get("type") == "agent", (
-        f"Expected a structured agent wrapper. Got: {success!r}."
-    )
-    assert success.get("custom_type") == "pi-user-agents", (
-        f"Expected the native custom type as metadata. Got: {success!r}."
-    )
-    assert success.get("inherited_context") is True, (
-        f"Expected inherited context to remain a JSON boolean. Got: {success!r}."
-    )
-    assert success.get("model") == "openai-codex/gpt-5.6-luna (gpt56l)", (
-        f"Expected the details model in structured output. Got: {success!r}."
-    )
-    assert success.get("native_entry_id") == "928ca38d", (
-        f"Expected the source Pi custom entry id. Got: {success!r}."
-    )
-    assert any(
-        isinstance(block, str)
-        and block.startswith("The visual map is one self-contained HTML file:")
-        for block in success.get("content", [])
-    ), f"Expected the extracted response as agent text. Got: {success!r}."
-
-    failed = next(
-        message
-        for message in messages
-        if any(
-            isinstance(block, dict)
-            and block.get("type") == "tool-output"
-            and block.get("is_error") is True
-            for block in message.get("content", [])
-        )
-    )
-    error_block = next(
-        block
-        for block in failed["content"]
-        if isinstance(block, dict) and block.get("type") == "tool-output"
-    )
-    assert error_block.get("name") == "Bash", (
-        f"Expected structured errors to use shared Bash semantics. Got: {error_block!r}."
-    )
-    assert str(error_block.get("content", "")).startswith("Codex error:"), (
-        f"Expected details.error as structured error content. Got: {error_block!r}."
-    )
-    assert failed.get("native_entry_id") == "f48ec81e", (
-        f"Expected the source Pi custom-message entry id. Got: {failed!r}."
-    )
-
     record = next(
         message
         for message in messages
@@ -1088,84 +425,11 @@ def test_agents_emit_structured_pi_custom_messages_as_agent_data(
     ), f"Expected notification duplicates to stay absent. Got: {messages!r}."
 
 
-def test_pi_agent_inner_block_delimiters_round_trip_through_xml(
-    tmp_path: Path,
-) -> None:
-    task = "TASK_BEFORE\n</subagent-task>\nTASK_AFTER"
-    error = "ERROR_BEFORE\n</tool-output>\nERROR_AFTER"
-
-    def select(entry: dict[str, object]) -> bool:
-        if entry.get("type") != "custom_message":
-            return False
-        if entry.get("customType") != "pi-user-agents":
-            return False
-        details = entry.get("details")
-        return isinstance(details, dict) and details.get("ok") is False
-
-    def mutate(entry: dict[str, object]) -> None:
-        details = entry.get("details")
-        assert isinstance(details, dict), f"Expected error details. Got: {details!r}."
-        details["task"] = task
-        details["error"] = error
-
-    home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    native_xml = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-    assert native_xml.returncode == 0, native_xml.stderr
-
-    canonical_json = _run_ch(
-        home,
-        "parse",
-        "--format=json",
-        input_text=native_xml.stdout,
-    )
-    assert canonical_json.returncode == 0, canonical_json.stderr
-    messages = json.loads(canonical_json.stdout)
-    task_blocks = [
-        block
-        for message in messages
-        for block in message.get("content", [])
-        if isinstance(block, dict) and block.get("type") == "subagent-task"
-    ]
-    error_blocks = [
-        block
-        for message in messages
-        for block in message.get("content", [])
-        if isinstance(block, dict)
-        and block.get("type") == "tool-output"
-        and block.get("is_error") is True
-    ]
-    assert [block.get("content") for block in task_blocks] == [task], (
-        f"Expected XML parsing to restore the complete Pi agent task. Got: {messages!r}."
-    )
-    assert [block.get("content") for block in error_blocks] == [error], (
-        f"Expected XML parsing to restore the complete Pi agent error. Got: {messages!r}."
-    )
-
-    rebuilt_xml = _run_ch(home, "parse", input_text=canonical_json.stdout)
-    assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
-    assert rebuilt_xml.stdout == native_xml.stdout, (
-        "Expected inner block delimiter encoding to stabilize across XML and JSON."
-    )
-
-
-@pytest.mark.parametrize(
-    "custom_type",
-    [
-        pytest.param("pi-user-agents", id="user-agent-response"),
-        pytest.param("subagents:record", id="subagent-record-result"),
-    ],
-)
 def test_pi_agent_text_inner_blocks_round_trip_as_text(
     tmp_path: Path,
-    custom_type: str,
 ) -> None:
     literal_text = "<thinking>\nLITERAL_AGENT_TEXT\n</thinking>"
+    custom_type = "subagents:record"
 
     def select(entry: dict[str, object]) -> bool:
         return entry.get("type") == "custom" and entry.get("customType") == custom_type
@@ -1173,16 +437,7 @@ def test_pi_agent_text_inner_blocks_round_trip_as_text(
     def mutate(entry: dict[str, object]) -> None:
         data = entry.get("data")
         assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
-        if custom_type == "subagents:record":
-            data["result"] = literal_text
-            return
-        details = data.get("details")
-        assert isinstance(details, dict), f"Expected agent details. Got: {details!r}."
-        details["task"] = "LITERAL_TEXT_TASK"
-        data["content"] = _pi_user_agent_content(
-            task="LITERAL_TEXT_TASK",
-            response=literal_text,
-        )
+        data["result"] = literal_text
 
     home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
     native_xml = _run_ch(
@@ -1348,27 +603,6 @@ def test_pi_custom_message_json_and_xml_round_trips_stabilize(
         f"JSON stderr: {canonical_json.stderr!r}; XML stderr: {stabilized_xml.stderr!r}."
     )
     assert stabilized_json.returncode == 0, stabilized_json.stderr
-    canonical_messages = json.loads(canonical_json.stdout)
-    failed_interaction = next(
-        (
-            message
-            for message in canonical_messages
-            if message.get("custom_type") == "pi-user-agents"
-            and any(
-                isinstance(block, dict)
-                and block.get("type") == "tool-output"
-                and block.get("is_error") is True
-                for block in message.get("content", [])
-            )
-        ),
-        None,
-    )
-    assert failed_interaction is not None, (
-        f"Expected the canonical transport to retain a Pi agent error. Got: {canonical_messages!r}."
-    )
-    assert failed_interaction.get("role") == "agent", (
-        f"Expected the Pi agent error role to survive XML parsing. Got: {failed_interaction!r}."
-    )
     assert stabilized_xml.stdout == rebuilt_xml.stdout, (
         "Expected Pi custom-message XML to stabilize after canonical JSON conversion."
     )
@@ -1393,11 +627,8 @@ def test_raw_output_preserves_normalized_pi_agent_interactions(
     assert "<subagent-task>" in completed.stdout, (
         f"Expected raw output to retain agent inputs. stdout: {completed.stdout!r}."
     )
-    assert "The visual map is one self-contained HTML file:" in completed.stdout, (
-        f"Expected raw output to retain extracted agent responses. stdout: {completed.stdout!r}."
-    )
-    assert '<tool-output name="Bash" is_error="true">' in completed.stdout, (
-        f"Expected raw output to retain agent failure semantics. stdout: {completed.stdout!r}."
+    assert "# The live cloud confirms GIL-10" in completed.stdout, (
+        f"Expected raw output to retain subagent results. stdout: {completed.stdout!r}."
     )
     assert "## Custom" in completed.stdout, (
         f"Expected `--all` raw output to identify generic custom records. stdout: {completed.stdout!r}."
@@ -1408,7 +639,7 @@ def test_raw_output_preserves_normalized_pi_agent_interactions(
 
 
 @pytest.mark.parametrize("terminal", ["dumb", "xterm-256color"])
-def test_colored_output_uses_agent_panels_and_shared_error_styling(
+def test_colored_output_uses_agent_panels(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     terminal: str,
@@ -1435,15 +666,8 @@ def test_colored_output_uses_agent_panels_and_shared_error_styling(
     assert "Agent" in plain and "✻ subagent task" in plain, (
         f"Expected shared agent panels and input markers. stdout: {plain!r}."
     )
-    assert "The visual map is one self-contained HTML file:" in plain, (
-        f"Expected colored output to retain extracted responses. stdout: {plain!r}."
-    )
-    assert "⎿ Bash" in plain and "·  error" in plain, (
-        f"Expected the shared Bash error marker for agent failures. stdout: {plain!r}."
-    )
-    assert "38;2;226;120;129" in completed.stdout, (
-        "Expected the same red error style that regular Bash failures use. "
-        f"stdout: {completed.stdout!r}."
+    assert "The live cloud confirms GIL-10" in plain, (
+        f"Expected colored output to retain subagent results. stdout: {plain!r}."
     )
     assert "Custom" in plain and "stale_queued_tool_results_dropped" in plain, (
         f"Expected `--all` color output to render generic custom records. stdout: {plain!r}."
@@ -1457,7 +681,7 @@ def test_search_uses_pi_custom_message_visibility_flags(
     tmp_path: Path,
 ) -> None:
     home, _session_path = _copy_pi_custom_fixture(tmp_path)
-    agent_needle = "The visual map is one self-contained HTML file"
+    agent_needle = "The live cloud confirms GIL-10"
     custom_needle = "stale_queued_tool_results_dropped"
 
     hidden_agent = _run_ch(
@@ -1496,7 +720,7 @@ def test_search_uses_pi_custom_message_visibility_flags(
         f"stdout: {hidden_agent.stdout!r}; stderr: {hidden_agent.stderr!r}."
     )
     assert shown_agent.returncode == 0, (
-        "Expected `--agents` search to find Pi user-agent responses. "
+        "Expected `--agents` search to find Pi subagent results. "
         f"stderr: {shown_agent.stderr!r}."
     )
     assert shown_agent.stdout.strip() == "019fb81a-3222-7aec-930e-c3c91e44db09", (
@@ -1529,34 +753,6 @@ def test_search_confirms_text_generated_by_pi_custom_normalization(
         "--case-sensitive",
     )
 
-    def select_error(entry: dict[str, object]) -> bool:
-        if entry.get("type") != "custom_message":
-            return False
-        if entry.get("customType") != "pi-user-agents":
-            return False
-        details = entry.get("details")
-        return isinstance(details, dict) and details.get("ok") is False
-
-    def isolate_error(entry: dict[str, object]) -> None:
-        details = entry.get("details")
-        assert isinstance(details, dict), f"Expected error details. Got: {details!r}."
-        details["task"] = "CANDIDATE_GATE_AGENT_TASK"
-        details["error"] = "CANDIDATE_GATE_AGENT_ERROR"
-        entry["content"] = "<user_agent_error></user_agent_error>"
-
-    agent_home, _session_path = _derive_pi_fixture(
-        tmp_path / "agent", select_error, isolate_error
-    )
-    synthetic_bash = _run_ch(
-        agent_home,
-        "search",
-        "Bash",
-        "--provider=pi",
-        "--only-id",
-        "--agents",
-        "--case-sensitive",
-    )
-
     expected_session_id = "019fb81a-3222-7aec-930e-c3c91e44db09"
     assert pretty_json.returncode == 0, (
         "Expected search to inspect pretty-printed Pi custom JSON after raw gates. "
@@ -1564,11 +760,4 @@ def test_search_confirms_text_generated_by_pi_custom_normalization(
     )
     assert pretty_json.stdout.strip() == expected_session_id, (
         f"Expected the Pi custom JSON session. stdout: {pretty_json.stdout!r}."
-    )
-    assert synthetic_bash.returncode == 0, (
-        "Expected search to inspect the synthetic Pi agent Bash error after raw gates. "
-        f"stderr: {synthetic_bash.stderr!r}."
-    )
-    assert synthetic_bash.stdout.strip() == expected_session_id, (
-        f"Expected the Pi agent error session. stdout: {synthetic_bash.stdout!r}."
     )
