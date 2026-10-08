@@ -9,6 +9,7 @@ All notable changes to the `conversations` skill.
 
 - A squashed `pi-user-agents` result (`custom_message` with `details.mainContextState: "squashed"`) now renders by default as a plain user message. Its body is the record's `content` as it is: the exchange text the main agent read. Successes and failures render the same way, whatever the record's `display` value. Search finds this text by default.
 - `ch` no longer recognizes old-format `pi-user-agents` records: `custom` entries, `joined` custom messages, and the `<user_invocation>`/`<response>` envelope. They stay hidden, and `--all` shows old `custom` entries as generic data.
+- Native search no longer exempts Pi files that mention `pi-user-agents` from its raw-byte candidate gate. A squashed result shows its raw `content`, so the gate decides it like any other text.
 
 ---
 ## [2026-10-08] Classify Pi pi-simple-team delegation as agents

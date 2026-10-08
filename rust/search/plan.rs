@@ -50,18 +50,8 @@ pub fn screen(filter: &PoolFilter) -> impl FnMut(&Path) -> Gated + '_ {
 /// Returns **one decision per input path, positionally**. The engine asserts the
 /// length, because a mismatch would misalign every decision in the batch rather
 /// than failing loudly.
-///
-/// `pi_session` is per path: a Pi file carrying the joined-agent marker cannot be
-/// rejected here, because that record synthesises visible text absent from the
-/// raw bytes. Deferring is a correctness requirement, not a missed optimisation.
-pub fn probe<'a>(
-    needle: &'a [u8],
-    is_pi_session: impl Fn(&Path) -> bool + 'a,
-) -> impl FnMut(&[PathBuf]) -> Vec<bool> + 'a {
-    move |paths: &[PathBuf]| {
-        let pi_sessions = paths.iter().map(|path| is_pi_session(path)).collect();
-        files_contain_ascii_json_strings_impl(paths.to_vec(), needle, pi_sessions)
-    }
+pub fn probe(needle: &[u8]) -> impl FnMut(&[PathBuf]) -> Vec<bool> + '_ {
+    move |paths: &[PathBuf]| files_contain_ascii_json_strings_impl(paths.to_vec(), needle)
 }
 
 #[cfg(test)]

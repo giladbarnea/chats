@@ -137,11 +137,8 @@ impl CandidateMatcher {
     }
 }
 
-static SEARCH_EVIDENCE_MATCHERS: LazyLock<[CandidateMatcher; 2]> = LazyLock::new(|| {
-    [
-        CandidateMatcher::prepared(b"\\u", true).expect("ASCII evidence compiles"),
-        CandidateMatcher::prepared(b"\"pi-user-agents\"", true).expect("ASCII evidence compiles"),
-    ]
+static JSON_UNICODE_ESCAPE_MATCHER: LazyLock<CandidateMatcher> = LazyLock::new(|| {
+    CandidateMatcher::prepared(b"\\u", true).expect("ASCII evidence compiles")
 });
 
 const PYTHON_CASE_INSENSITIVE_ASCII_RISK_CHARACTERS: [char; 20] = [
@@ -450,39 +447,23 @@ pub fn file_contains_ascii_impl(
     )
 }
 
-fn prepared_search_evidence(pi_session: bool) -> Vec<Vec<CandidateMatcher>> {
-    let mut evidence = vec![vec![SEARCH_EVIDENCE_MATCHERS[0].clone()]];
-    if pi_session {
-        evidence.push(vec![SEARCH_EVIDENCE_MATCHERS[1].clone()]);
-    }
-    evidence
-}
-
 pub fn file_contains_prepared_ascii_impl(
     path: &Path,
     matcher: &CandidateMatcher,
-    pi_session: bool,
 ) -> std::io::Result<bool> {
     let mut file = std::fs::File::open(path)?;
-    reader_contains_ascii(
-        &mut file,
-        matcher,
-        &prepared_search_evidence(pi_session),
-        matcher.needle.len().max(b"\"pi-user-agents\"".len()) - 1,
-    )
+    reader_contains_prepared_ascii_impl(&mut file, matcher)
 }
 
-#[cfg(test)]
 fn reader_contains_prepared_ascii_impl(
     reader: &mut impl Read,
     matcher: &CandidateMatcher,
-    pi_session: bool,
 ) -> std::io::Result<bool> {
     reader_contains_ascii(
         reader,
         matcher,
-        &prepared_search_evidence(pi_session),
-        matcher.needle.len().max(b"\"pi-user-agents\"".len()) - 1,
+        &[vec![JSON_UNICODE_ESCAPE_MATCHER.clone()]],
+        matcher.needle.len().max(JSON_UNICODE_ESCAPE_MATCHER.needle.len()) - 1,
     )
 }
 
@@ -612,31 +593,16 @@ pub fn file_contains_ascii_json_strings_impl(
 ///
 /// Order is load-bearing: confirmation runs serially over these decisions and
 /// that is what preserves newest-first streaming.
-pub fn files_contain_ascii_json_strings_impl(
-    paths: Vec<PathBuf>,
-    needle: &[u8],
-    pi_sessions: Vec<bool>,
-) -> Vec<bool> {
+pub fn files_contain_ascii_json_strings_impl(paths: Vec<PathBuf>, needle: &[u8]) -> Vec<bool> {
     if needle.is_empty() {
         return vec![true; paths.len()];
     }
-    let matchers = [
-        LogicalJsonStringCandidateMatchers::new(needle, &[]),
-        LogicalJsonStringCandidateMatchers::new(
-            needle,
-            &[vec![b"\"pi-user-agents\"".to_vec()]],
-        ),
-    ];
+    let matcher = LogicalJsonStringCandidateMatchers::new(needle, &[]);
     paths
         .into_par_iter()
-        .zip(pi_sessions)
         .map_init(
             || vec![0; ASCII_CANDIDATE_SCAN_CHUNK_SIZE],
-            |block, (path, pi_session)| {
-                matchers[usize::from(pi_session)]
-                    .file_contains(&path, block)
-                    .unwrap_or(true)
-            },
+            |block, path| matcher.file_contains(&path, block).unwrap_or(true),
         )
         .collect()
 }
@@ -676,7 +642,7 @@ mod prepared_ascii_candidate_tests {
             delivered: false,
         };
         assert!(
-            reader_contains_prepared_ascii_impl(&mut raw_match, &matcher, false)
+            reader_contains_prepared_ascii_impl(&mut raw_match, &matcher)
                 .expect("raw match returns before the failure"),
         );
         for prefix in [
@@ -685,7 +651,7 @@ mod prepared_ascii_candidate_tests {
         ] {
             let mut reader = FailsAfterPrefix { prefix, delivered: false };
             assert_eq!(
-                reader_contains_prepared_ascii_impl(&mut reader, &matcher, false)
+                reader_contains_prepared_ascii_impl(&mut reader, &matcher)
                     .expect_err("a non-term result must keep reading")
                     .to_string(),
                 "late read failure",
@@ -700,23 +666,11 @@ mod prepared_ascii_candidate_tests {
         term.extend_from_slice(b"NEEDLE");
         let mut escape = vec![b'x'; ASCII_CANDIDATE_SCAN_CHUNK_SIZE - 1];
         escape.extend_from_slice(br"\u0061");
-        let mut pi = vec![b'x'; ASCII_CANDIDATE_SCAN_CHUNK_SIZE - 4];
-        pi.extend_from_slice(br#""pi-user-agents""#);
 
-        for (body, pi_session, expected) in [
-            (term, false, true),
-            (escape, false, true),
-            (pi.clone(), true, true),
-            (pi, false, false),
-        ] {
-            assert_eq!(
-                reader_contains_prepared_ascii_impl(
-                    &mut std::io::Cursor::new(body),
-                    &matcher,
-                    pi_session,
-                )
-                .expect("boundary scan succeeds"),
-                expected,
+        for body in [term, escape] {
+            assert!(
+                reader_contains_prepared_ascii_impl(&mut std::io::Cursor::new(body), &matcher)
+                    .expect("boundary scan succeeds"),
             );
         }
     }
@@ -733,8 +687,7 @@ mod prepared_ascii_candidate_tests {
                 reader_contains_prepared_ascii_impl(
                     &mut std::io::Cursor::new(candidate),
                     &matcher,
-                    false,
-                )
+                                    )
                 .expect("unsafe scan succeeds"),
                 "unsafe input must defer: {candidate:?}",
             );
@@ -743,8 +696,7 @@ mod prepared_ascii_candidate_tests {
             !reader_contains_prepared_ascii_impl(
                 &mut std::io::Cursor::new("unrelated café".as_bytes()),
                 &matcher,
-                false,
-            )
+                            )
             .expect("safe Unicode scan succeeds"),
         );
     }
@@ -758,7 +710,6 @@ mod prepared_ascii_candidate_tests {
                 reader_contains_prepared_ascii_impl(
                     &mut std::io::Cursor::new(body),
                     &matcher,
-                    false,
                 )
                 .expect("case-sensitive scan succeeds"),
                 expected,
@@ -778,7 +729,7 @@ mod prepared_ascii_candidate_tests {
     #[test]
     fn prepared_path_open_error_propagates() {
         let missing = std::path::Path::new("/definitely/missing/prepared-candidate.jsonl");
-        let error = file_contains_prepared_ascii_impl(missing, &matcher(b"needle"), false)
+        let error = file_contains_prepared_ascii_impl(missing, &matcher(b"needle"))
             .expect_err("missing path must fail");
         assert_eq!(error.kind(), std::io::ErrorKind::NotFound);
     }

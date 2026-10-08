@@ -986,8 +986,6 @@ impl HitSink for BufferingSink {
 /// the file's bytes, so no byte gate can decide the term.
 const RENDER_DEPENDENT_TOKENS: [&str; 5] = ["<", "=\"", "```", "old_string:", "new_string:"];
 
-/// Evidence that a Pi file synthesizes visible text absent from its raw bytes.
-const PI_USER_AGENT_EVIDENCE: &[u8] = b"\"pi-user-agents\"";
 /// Evidence that a file's JSON escapes could decode into the needle.
 const JSON_UNICODE_ESCAPE_EVIDENCE: &[u8] = b"\\u";
 
@@ -1007,24 +1005,18 @@ pub fn path_candidate_matches(
     path: &std::path::Path,
     query: &Query,
     flags: &ConversationFlags,
-    pi_session: bool,
 ) -> Result<bool, String> {
     if let Query::Term(term) = query
         && can_use_json_string_gate(term, flags)
         && let Some(candidate) = term.literal_candidate.as_deref()
     {
-        let evidence: Vec<Vec<Vec<u8>>> = if pi_session {
-            vec![vec![PI_USER_AGENT_EVIDENCE.to_vec()]]
-        } else {
-            Vec::new()
-        };
         // Python swallows `OSError` here and answers `true`. An unreadable file
         // then reaches confirmation, which fails to open it too and prints the
         // same `[Errno N]` line at the same scan position.
         return Ok(crate::scanner::file_contains_ascii_json_strings_impl(
             path,
             candidate.as_bytes(),
-            &evidence,
+            &[],
         )
         .unwrap_or(true));
     }
@@ -1037,7 +1029,7 @@ pub fn path_candidate_matches(
         if failure.is_some() {
             return false;
         }
-        term_path_candidate_matches(path, term, flags, pi_session, &mut failure)
+        term_path_candidate_matches(path, term, flags, &mut failure)
     });
     match failure {
         Some(message) => Err(format!(
@@ -1071,7 +1063,6 @@ fn term_path_candidate_matches(
     path: &std::path::Path,
     term: &SearchTerm,
     flags: &ConversationFlags,
-    pi_session: bool,
     failure: &mut Option<String>,
 ) -> bool {
     if term_can_match_generated_marker(term, flags) {
@@ -1118,18 +1109,14 @@ fn term_path_candidate_matches(
     // prints it, and the file is skipped rather than confirmed.
     let scan = match &term.prepared_candidate_matcher {
         Some(matcher) => {
-            crate::scanner::file_contains_prepared_ascii_impl(path, matcher, pi_session)
+            crate::scanner::file_contains_prepared_ascii_impl(path, matcher)
         },
         None => {
-            let mut evidence = vec![vec![JSON_UNICODE_ESCAPE_EVIDENCE.to_vec()]];
-            if pi_session {
-                evidence.push(vec![PI_USER_AGENT_EVIDENCE.to_vec()]);
-            }
             crate::scanner::file_contains_ascii_impl(
                 path,
                 &needle,
                 term.case_sensitive,
-                &evidence,
+                &[vec![JSON_UNICODE_ESCAPE_EVIDENCE.to_vec()]],
             )
         }
     };
@@ -1213,7 +1200,6 @@ mod path_candidate_result_tests {
             path,
             &query,
             &crate::visibility::ConversationFlags::default(),
-            false,
         );
 
         let message = result.expect_err("A missing path must return its gate failure.");

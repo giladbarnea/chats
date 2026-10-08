@@ -442,7 +442,7 @@ def files_possibly_containing_text(files: list[Path], text: str) -> list[Path]:
     if not text.isascii() or not _JSON_ESCAPED_ASCII_CHARACTERS.isdisjoint(text):
         return files
     decisions = files_contain_ascii_json_strings(
-        [os.fsencode(file) for file in files], text.encode("ascii"), [False] * len(files)
+        [os.fsencode(file) for file in files], text.encode("ascii")
     )
     return [file for file, decision in zip(files, decisions, strict=True) if decision]
 

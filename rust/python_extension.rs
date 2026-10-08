@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 
 #[cfg(unix)]
 use std::os::unix::ffi::OsStringExt;
-use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedBytes;
 use pyo3::types::PyBytes;
@@ -220,22 +219,12 @@ fn file_contains_ascii_json_strings(
 fn files_contain_ascii_json_strings(
     paths: Vec<PyBackedBytes>,
     needle: PyBackedBytes,
-    pi_sessions: Vec<bool>,
 ) -> PyResult<Vec<bool>> {
-    if paths.len() != pi_sessions.len() {
-        return Err(PyValueError::new_err(
-            "paths and pi_sessions must have equal lengths",
-        ));
-    }
     let paths = paths
         .into_iter()
         .map(|path| path_from_python_bytes(path.as_ref()))
         .collect::<Vec<_>>();
-    Ok(files_contain_ascii_json_strings_impl(
-        paths,
-        needle.as_ref(),
-        pi_sessions,
-    ))
+    Ok(files_contain_ascii_json_strings_impl(paths, needle.as_ref()))
 }
 
 #[pyfunction]

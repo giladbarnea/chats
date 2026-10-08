@@ -48,11 +48,9 @@ def _file_contains_ascii_json_strings(
     )
 
 
-def _files_contain_ascii_json_strings(
-    paths: list[Path], needle: bytes, *, pi_sessions: list[bool]
-) -> list[bool]:
+def _files_contain_ascii_json_strings(paths: list[Path], needle: bytes) -> list[bool]:
     return native.files_contain_ascii_json_strings(
-        [os.fsencode(path) for path in paths], needle, list(pi_sessions)
+        [os.fsencode(path) for path in paths], needle
     )
 
 
@@ -184,36 +182,11 @@ def test_logical_json_string_batch_returns_decisions_in_input_order(
     actual = _files_contain_ascii_json_strings(
         paths,
         b"client_id/card",
-        pi_sessions=[False, False, False, False],
     )
 
     assert actual == [True, False, True, True], (
         "Expected one native batch decision per input path in input order, with "
         f"encoding uncertainty preserved as a survivor. Got: {actual=!r}"
-    )
-
-
-def test_logical_json_string_batch_keeps_pi_evidence_exact_and_per_path(
-    tmp_path: Path,
-) -> None:
-    paths = [tmp_path / f"pi-evidence-{index}.jsonl" for index in range(3)]
-    contents = [
-        b'{"customType":"not-pi-user-agents"}\n',
-        b'{"customType":"pi-user-agents"}\n',
-        b'{"customType":"pi-user-agents"}\n',
-    ]
-    for path, content in zip(paths, contents, strict=True):
-        path.write_bytes(content)
-
-    actual = _files_contain_ascii_json_strings(
-        paths,
-        b"absent-query",
-        pi_sessions=[True, True, False],
-    )
-
-    assert actual == [False, True, False], (
-        "Expected the exact joined-Pi marker to defer only its aligned Pi path. "
-        f"Got: {actual=!r}"
     )
 
 
