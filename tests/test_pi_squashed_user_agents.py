@@ -121,3 +121,22 @@ def test_search_finds_squashed_content_by_default(tmp_path: Path):
             f"Expected default search to find {marker!r} in the squashed session. "
             f"stdout: {result.stdout!r}; stderr: {result.stderr!r}."
         )
+
+
+def test_dot_only_id_search_counts_a_session_whose_only_visible_text_is_squashed(tmp_path: Path):
+    """`search . -ll` takes a projection fast path; it must agree with full confirmation."""
+    home = tmp_path / "home"
+    session_path = home / ".pi" / "agent" / "sessions" / "--tmp-project--" / f"2026-10-07T11-00-00-000Z_{SESSION_ID}.jsonl"
+    session_path.parent.mkdir(parents=True)
+    squashed_only = [SESSION_ENTRIES[0], _squashed("s1", SQUASHED_SUCCESS_CONTENT, ok=True, display=False)]
+    session_path.write_text("\n".join(json.dumps(entry) for entry in squashed_only) + "\n", encoding="utf-8")
+
+    environment = {**os.environ, "HOME": str(home), "TZ": "Asia/Jerusalem"}
+    for arguments in (["search", ".", "-ll"], ["search", "back and forth", "-ll"]):
+        result = subprocess.run(
+            [str(CH_EXECUTABLE), *arguments], env=environment, capture_output=True, text=True, check=False
+        )
+        assert result.stdout.strip() == SESSION_ID, (
+            f"Expected `ch {' '.join(arguments)}` to select the squashed-only session. "
+            f"stdout: {result.stdout!r}; stderr: {result.stderr!r}."
+        )

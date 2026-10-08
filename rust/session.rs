@@ -1827,7 +1827,7 @@ fn is_hidden_pi_custom_entry(entry: &Map<String, Value>) -> bool {
 }
 
 /// Whether this is a pi-user-agents result squashed into the main context.
-fn is_squashed_pi_user_agent_message(entry: &Map<String, Value>) -> bool {
+pub fn is_squashed_pi_user_agent_message(entry: &Map<String, Value>) -> bool {
     entry_type(entry) == Some("custom_message")
         && entry.get("customType").and_then(Value::as_str) == Some("pi-user-agents")
         && entry

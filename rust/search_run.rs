@@ -18,7 +18,7 @@ use crate::search_output::{
 };
 use crate::search_query::{self, Query};
 use crate::session_pool::{CANDIDATE_WINDOW, SessionPool};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 const PER_FILE_WINDOW: usize = 6;
@@ -63,13 +63,6 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
     }
     let scan_order = plan::scan_order(&pool, arguments.pool_filter.provider);
 
-    let pi_files: HashSet<PathBuf> = pool
-        .by_provider
-        .iter()
-        .find(|(provider, _)| *provider == crate::inventory::Provider::Pi)
-        .map(|(_, paths)| paths.iter().cloned().collect())
-        .unwrap_or_default();
-
     let confirmation = Confirmation::new(
         &query,
         &arguments.flags,
@@ -109,7 +102,6 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                 needle.as_deref(),
                 &query,
                 &arguments.flags,
-                &pi_files,
                 &confirmation,
                 &mut undecidable,
             );
@@ -142,7 +134,7 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                     &scan_order,
                     &mut sink,
                     &mut screen,
-                    |path| prepare_file(path, &query, &arguments.flags, &pi_files, &confirmation),
+                    |path| prepare_file(path, &query, &arguments.flags, &confirmation),
                     &mut undecidable,
                 )
             } else {
@@ -153,7 +145,6 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                     needle.as_deref(),
                     &query,
                     &arguments.flags,
-                    &pi_files,
                     &confirmation,
                     &mut undecidable,
                 )
@@ -190,7 +181,6 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                 needle.as_deref(),
                 &query,
                 &arguments.flags,
-                &pi_files,
                 &confirmation,
                 &mut undecidable,
             )
@@ -210,7 +200,7 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                     &scan_order,
                     &mut sink,
                     &mut screen,
-                    |path| prepare_file(path, &query, &arguments.flags, &pi_files, &confirmation),
+                    |path| prepare_file(path, &query, &arguments.flags, &confirmation),
                     &mut undecidable,
                 )
             } else {
@@ -221,7 +211,6 @@ pub fn run(arguments: &SearchArguments, home: &Path, width: usize) -> i32 {
                     needle.as_deref(),
                     &query,
                     &arguments.flags,
-                    &pi_files,
                     &confirmation,
                     &mut undecidable,
                 )
@@ -253,11 +242,10 @@ fn prepare_file(
     path: &Path,
     query: &Query,
     flags: &crate::visibility::ConversationFlags,
-    pi_files: &HashSet<PathBuf>,
     confirmation: &Confirmation<'_>,
 ) -> PreparedFile {
     let mut undecidable = None;
-    let confirmed = match path_candidate_matches(path, query, flags, pi_files.contains(path)) {
+    let confirmed = match path_candidate_matches(path, query, flags) {
         Ok(true) => confirmed_from(path, confirmation.hit(path), &mut undecidable),
         Ok(false) => search_engine::Confirmed::Miss,
         Err(message) => search_engine::Confirmed::Failed(message),
@@ -275,12 +263,11 @@ fn stream_candidates<S: search_engine::HitSink>(
     needle: Option<&[u8]>,
     query: &Query,
     flags: &crate::visibility::ConversationFlags,
-    pi_files: &HashSet<PathBuf>,
     confirmation: &Confirmation<'_>,
     first_undecidable: &mut Option<String>,
 ) -> search_engine::Outcome {
     if let Some(needle) = needle {
-        let mut probe = plan::probe(needle, |path| pi_files.contains(path));
+        let mut probe = plan::probe(needle);
         let mut confirm = |path: &Path| {
             confirmed_from(path, confirmation.hit(path), first_undecidable)
         };
@@ -303,7 +290,7 @@ fn stream_candidates<S: search_engine::HitSink>(
         |paths| {
             paths
                 .par_iter()
-                .map(|path| prepare_file(path, query, flags, pi_files, confirmation))
+                .map(|path| prepare_file(path, query, flags, confirmation))
                 .collect()
         },
         first_undecidable,
@@ -920,6 +907,12 @@ fn pi_entry_has_default_visible_text(
     entry: &serde_json::Map<String, serde_json::Value>,
 ) -> bool {
     use serde_json::Value;
+    if crate::session::is_squashed_pi_user_agent_message(entry) {
+        return entry
+            .get("content")
+            .and_then(Value::as_str)
+            .is_some_and(|content| !content.is_empty());
+    }
     if entry.get("type").and_then(Value::as_str) != Some("message") {
         return false;
     }
