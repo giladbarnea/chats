@@ -936,6 +936,31 @@ def _is_joined_pi_user_agent_custom_message(entry: dict) -> bool:
     )
 
 
+_PI_TEAM_CUSTOM_TYPE = "pi-simple-team"
+_PI_TEAM_TOOL_PREFIX = "team_"
+
+
+def _is_pi_team_message(entry: dict) -> bool:
+    """Return whether a Pi entry is a pi-simple-team teammate message.
+
+    >>> _is_pi_team_message({"type": "custom_message", "customType": "pi-simple-team"})
+    True
+    """
+    return (
+        entry.get("type") == "custom_message"
+        and entry.get("customType") == _PI_TEAM_CUSTOM_TYPE
+    )
+
+
+def _is_pi_team_tool(native_name: object) -> bool:
+    """Return whether a Pi tool is pi-simple-team delegation, which is agent content.
+
+    >>> _is_pi_team_tool("team_send_message"), _is_pi_team_tool("zsh")
+    (True, False)
+    """
+    return isinstance(native_name, str) and native_name.startswith(_PI_TEAM_TOOL_PREFIX)
+
+
 def _is_hidden_pi_custom_entry(entry: dict) -> bool:
     """Return whether a Pi custom envelope is hidden duplicate plumbing.
 
@@ -944,7 +969,9 @@ def _is_hidden_pi_custom_entry(entry: dict) -> bool:
     >>> _is_hidden_pi_custom_entry({"type": "custom", "display": False})
     True
     """
-    return not _is_joined_pi_user_agent_custom_message(entry) and (
+    return not (
+        _is_joined_pi_user_agent_custom_message(entry) or _is_pi_team_message(entry)
+    ) and (
         entry.get("customType") == "subagent-notification"
         or entry.get("display") is False
         or entry.get("type") == "custom_message"
@@ -972,7 +999,7 @@ def _parse_pi_jsonl_entries(
         elif entry_type == "custom":
             parsed_messages = [_parse_pi_custom_entry(entry, index, flags)]
         elif entry_type == "custom_message":
-            parsed_messages = [_parse_pi_custom_message_entry(entry, index)]
+            parsed_messages = [_parse_pi_custom_message_entry(entry, index, flags)]
         else:
             parsed_messages = []
 
@@ -1215,11 +1242,32 @@ def _parse_pi_custom_entry(
 def _parse_pi_custom_message_entry(
     entry: dict,
     index: int,
+    flags: ConversationFlags,
 ) -> Message | None:
-    """Normalize a Pi user-agent response joined into the main context."""
-    if not _is_joined_pi_user_agent_custom_message(entry):
+    """Normalize a joined Pi user-agent response or, under --agents, a teammate message."""
+    if _is_joined_pi_user_agent_custom_message(entry):
+        return _parse_pi_user_agent_entry(entry, index)
+    if flags.show_agents:
+        return _parse_pi_team_message(entry)
+    return None
+
+
+def _parse_pi_team_message(entry: dict) -> Message | None:
+    """Represent one pi-simple-team teammate message as an agent named after its sender."""
+    details = entry.get("details")
+    if not isinstance(details, dict):
         return None
-    return _parse_pi_user_agent_entry(entry, index)
+    sender = details.get("from")
+    return Message(
+        role="agent",
+        agent_id=sender,
+        name=sender,
+        native_entry_id=_pi_native_entry_id(entry),
+        timestamp=entry.get("timestamp"),
+        text=details.get("message") or "",
+        wrapper_type=ContentBlockType.AGENT,
+        custom_type=_PI_TEAM_CUSTOM_TYPE,
+    )
 
 
 def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
@@ -2151,6 +2199,9 @@ def _parse_pi_message_entry(
 
     A user entry whose text starts with expanded inline-skill blocks splits
     into one synthetic Skill message per block plus the typed remainder.
+    `team_*` tool calls and results are agent content: an assistant entry's
+    team calls split into their own message, shown by --agents regardless of
+    tool filters, and never by --tools alone.
     """
     message_data = entry.get("message", {})
     role = message_data.get("role")
@@ -2172,7 +2223,8 @@ def _parse_pi_message_entry(
             model=message_data.get("model"),
         )
     elif role == "toolResult":
-        if not flags.show_tools:
+        is_team_tool = _is_pi_team_tool(message_data.get("toolName"))
+        if not (flags.show_agents if is_team_tool else flags.show_tools):
             return []
 
         native_tool_call_id = message_data.get("toolCallId")
@@ -2181,6 +2233,7 @@ def _parse_pi_message_entry(
             index=index,
             timestamp=entry.get("timestamp"),
             native_entry_id=native_entry_id,
+            tools_always_visible=is_team_tool,
         )
         tool_result = {
             "type": "tool_result",
@@ -2219,6 +2272,13 @@ def _parse_pi_message_entry(
     if text_blocks and flags.show_assistant_messages:
         msg.text = "\n\n".join(text_blocks)
 
+    team_message = Message(
+        role="assistant",
+        timestamp=entry.get("timestamp"),
+        native_entry_id=native_entry_id,
+        model=message_data.get("model"),
+        tools_always_visible=True,
+    )
     if role == "assistant" and isinstance(content_items, list):
         thinking_blocks: list[str] = []
 
@@ -2230,10 +2290,13 @@ def _parse_pi_message_entry(
             if item_type == "thinking" and flags.show_thinking:
                 if thinking := item.get("thinking", "").strip():
                     thinking_blocks.append(thinking)
-            elif item_type == "toolCall" and flags.show_tools:
+            elif item_type == "toolCall":
+                is_team_tool = _is_pi_team_tool(item.get("name"))
+                if not (flags.show_agents if is_team_tool else flags.show_tools):
+                    continue
                 native_tool_call_id = item.get("id")
                 tool_name = _normalize_pi_tool_name(item.get("name"))
-                msg.tools.append({
+                (team_message if is_team_tool else msg).tools.append({
                     "type": "tool_use",
                     "id": native_tool_call_id,
                     "native_tool_call_id": native_tool_call_id,
@@ -2247,7 +2310,7 @@ def _parse_pi_message_entry(
         if thinking_blocks:
             msg.thinking = "\n\n".join(thinking_blocks)
 
-    return [msg]
+    return [msg, team_message]
 
 
 def _extract_codex_text_blocks(content_data: object) -> list[str]:

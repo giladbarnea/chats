@@ -3,6 +3,13 @@
 All notable changes to the `conversations` skill.
 
 ---
+## [2026-10-08] Classify Pi pi-simple-team delegation as agents
+
+### Fixed
+
+- `--agents` showed nothing for sessions that delegate through the pi-simple-team extension. Teammate replies (`custom_message` with `customType: "pi-simple-team"`) now render as agents named after their sender, and `team_*` tool calls and results now show under `--agents` regardless of tool filters. `--tools` alone no longer shows `team_*` tools. Both the Python parse path and the native search path apply the same rule.
+
+---
 ## [2026-10-05] Gate title and summary resolution with the native byte scan
 
 ### Changed

@@ -1796,9 +1796,43 @@ fn pi_normalize_tool_name(name: Option<&str>) -> String {
     crate::model::normalize_tool_name("pi", name)
 }
 
+const PI_TEAM_CUSTOM_TYPE: &str = "pi-simple-team";
+const PI_TEAM_TOOL_PREFIX: &str = "team_";
+
+/// Whether a Pi entry is a pi-simple-team teammate message.
+fn is_pi_team_message(entry: &Map<String, Value>) -> bool {
+    entry_type(entry) == Some("custom_message")
+        && entry.get("customType").and_then(Value::as_str) == Some(PI_TEAM_CUSTOM_TYPE)
+}
+
+/// Whether a Pi tool is pi-simple-team delegation, which is agent content.
+fn is_pi_team_tool(native_name: Option<&Value>) -> bool {
+    native_name
+        .and_then(Value::as_str)
+        .is_some_and(|name| name.starts_with(PI_TEAM_TOOL_PREFIX))
+}
+
+/// Represent one pi-simple-team teammate message as an agent named after its sender.
+fn parse_pi_team_message(entry: &Map<String, Value>, index: usize) -> Option<Message> {
+    let details = entry.get("details")?.as_object()?;
+    let sender = details.get("from").and_then(Value::as_str).map(str::to_string);
+    let mut message = new_message(index, "agent", MessageType::Agent);
+    message.agent_id = sender.clone();
+    message.name = sender;
+    message.native_entry_id = pi_native_entry_id(entry);
+    message.timestamp = timestamp_of(entry);
+    message.text = details
+        .get("message")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    message.custom_type = Some(PI_TEAM_CUSTOM_TYPE.to_string());
+    Some(message)
+}
+
 /// Whether a Pi custom envelope is hidden duplicate plumbing.
 fn is_hidden_pi_custom_entry(entry: &Map<String, Value>) -> bool {
-    !is_joined_pi_user_agent_custom_message(entry)
+    !(is_joined_pi_user_agent_custom_message(entry) || is_pi_team_message(entry))
         && (entry.get("customType").and_then(Value::as_str) == Some("subagent-notification")
             || entry.get("display") == Some(&Value::Bool(false))
             || entry_type(entry) == Some("custom_message"))
@@ -2029,7 +2063,10 @@ fn parse_pi_custom_entry(
 /// Parse a Pi `type=message` entry into its visible messages.
 ///
 /// A user entry whose text starts with expanded inline-skill blocks splits into one
-/// synthetic `Skill` message per block plus the typed remainder.
+/// synthetic `Skill` message per block plus the typed remainder. `team_*` tool calls and
+/// results are agent content: an assistant entry's team calls split into their own
+/// message, shown by `--agents` regardless of tool filters, and never by `--tools` alone.
+/// Mirrors Python's `_parse_pi_message_entry`.
 fn parse_pi_message_entry(
     entry: &Map<String, Value>,
     index: usize,
@@ -2042,7 +2079,8 @@ fn parse_pi_message_entry(
     let native_entry_id = pi_native_entry_id(entry);
 
     if role == "toolResult" {
-        if !tools_requested(flags) {
+        let is_team_tool = is_pi_team_tool(message_data.get("toolName"));
+        if !(if is_team_tool { flags.show_agents } else { tools_requested(flags) }) {
             return Vec::new();
         }
         let native_tool_call_id = message_data
@@ -2052,6 +2090,7 @@ fn parse_pi_message_entry(
         let mut message = new_message(index, "user", MessageType::UserMessage);
         message.timestamp = timestamp_of(entry);
         message.native_entry_id = native_entry_id;
+        message.tools_always_visible = is_team_tool;
         let is_error = message_data.get("isError").and_then(Value::as_bool) == Some(true)
             || message_data
                 .get("details")
@@ -2118,6 +2157,11 @@ fn parse_pi_message_entry(
         message.text = text_blocks.join("\n\n");
     }
 
+    let mut team_message = new_message(index, "assistant", MessageType::AssistantResponse);
+    team_message.timestamp = message.timestamp.clone();
+    team_message.native_entry_id = message.native_entry_id.clone();
+    team_message.model = message.model.clone();
+    team_message.tools_always_visible = true;
     if let Some(items) = content_items.as_array() {
         let mut thinking_blocks: Vec<String> = Vec::new();
         for (native_content_index, item) in items.iter().enumerate() {
@@ -2130,12 +2174,17 @@ fn parse_pi_message_entry(
                         thinking_blocks.push(python_strip(thinking).to_string());
                     }
                 }
-                Some("toolCall") if tools_requested(flags) => {
+                Some("toolCall") => {
+                    let is_team_tool = is_pi_team_tool(item.get("name"));
+                    if !(if is_team_tool { flags.show_agents } else { tools_requested(flags) }) {
+                        continue;
+                    }
                     let native_tool_call_id =
                         item.get("id").and_then(Value::as_str).map(str::to_string);
                     let name = pi_normalize_tool_name(item.get("name").and_then(Value::as_str));
                     let arguments = item.get("arguments").cloned().unwrap_or(Value::Null);
-                    message.tools.push(Tool::Use(ToolUse {
+                    let owner = if is_team_tool { &mut team_message } else { &mut message };
+                    owner.tools.push(Tool::Use(ToolUse {
                         input: crate::model::normalize_tool_input_keys("pi", &name, &arguments),
                         name,
                         id: native_tool_call_id.clone(),
@@ -2151,7 +2200,7 @@ fn parse_pi_message_entry(
         }
     }
 
-    vec![message]
+    vec![message, team_message]
 }
 
 /// Decode Pi-shaped JSONL entries into the shared message model.
@@ -2178,6 +2227,8 @@ pub fn parse_pi(entries: &[Map<String, Value>], flags: &ConversationFlags) -> Ve
             Some("custom_message") => {
                 if is_joined_pi_user_agent_custom_message(entry) {
                     parse_pi_user_agent_entry(entry, index).into_iter().collect()
+                } else if flags.show_agents {
+                    parse_pi_team_message(entry, index).into_iter().collect()
                 } else {
                     Vec::new()
                 }

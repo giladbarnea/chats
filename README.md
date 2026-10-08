@@ -513,6 +513,8 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - `--all` renders arbitrary `type: "custom"` data as JSON without assuming its schema, including incomplete special records that cannot normalize
    - `--agents` renders successful and failed `pi-user-agents` `custom` records and `subagents:record` records through the shared agent view
    - Failed `pi-user-agents` records use Bash error presentation without requiring `--tools`
+   - `--agents` renders `pi-simple-team` `custom_message` records (teammate replies) as agents named after `details.from`, with `details.message` as the body
+   - `team_*` tool calls and results (the pi-simple-team delegation tools) are agent content: `--agents` shows them regardless of tool filters, and `--tools` alone never does. An assistant entry's `team_*` calls render as their own assistant message
    - Non-joined `custom_message`, `subagent-notification`, and other `display: false` records stay hidden, including with `--all`
 
 8. **Hook additional-context attachments** (`type: "attachment"`, Claude)
@@ -538,7 +540,7 @@ In `ch` output, messages on an abandoned **rewind** branch are hidden by default
 
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)
-- Four kinds are captured: agent-initiated sidechains, user-initiated `/fork` background agents, inline Pi `pi-user-agents` / `subagents:record` custom records, and Claude peer-session messages
+- Five kinds are captured: agent-initiated sidechains, user-initiated `/fork` background agents, inline Pi `pi-user-agents` / `subagents:record` custom records, Pi `pi-simple-team` teammate messages with their `team_*` tools, and Claude peer-session messages
 - A Claude peer-session message (a teammate or another session messaging this one via `SendMessage`) is stored as a plain `user` entry whose string content starts with `Another Claude session sent a message:` followed by one or more `<teammate-message teammate_id="...">` / `<cross-session-message from-name="...">` blocks and a fixed permission trailer. The human never typed it, so each block renders as its own `<agent>` headed `Agent '<sender>'` with `agent_id`/`name` set to the sender; the prefix, tags, and trailer are dropped. Search matches it only with `--agents`, like any agent text
 - Claude sidechains and `/fork` transcripts are stored separately under `{session_id}/subagents/`. Sidechains use `agent-{shortId}.jsonl`; a `/fork` uses `agent-{slug}-{taskId}.jsonl` with a sibling `.meta.json` carrying `agentType: "fork"`
 - These file-backed transcripts use the same structure as main conversations. Their entries include `agentId` and `isSidechain: true`
