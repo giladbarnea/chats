@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-22T15-10
+last_updated: 2026-10-22T15-40
 ---
 
 # Chats
@@ -138,13 +138,13 @@ ch <id> --short=p=128 -t:s       # Tools inherit the global policy
 
 Detached parsing keeps legacy message selectors after the input. `ch <id> -s 7` and `ch <id> -s 32:64` mean bare fixed-500 shortening plus that selector. Attached `--short=<value>` forms are strict.
 
-`--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ch --no-user --tools ...` still shows tool outputs from user turns, and `ch --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
+`--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ch --no-user --tools ...` shows tool outputs while hiding user text, and `ch --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
 
 Metadata frontmatter emits `forked_from:` only when the raw session exposes a fork parent id. Sessions without that data omit the field entirely.
 
 **Output Formats:**
 
-Tool inputs and outputs belong to Assistant, regardless of the provider's transport role. This applies to XML, JSON, raw, colored, and search output. Mixed records split into a User message for human text and an Assistant message for tools. Tools inside a subagent keep the Agent wrapper. Tool visibility and filters do not change.
+Tool inputs and outputs belong to Assistant, regardless of the provider's transport role. This applies to XML, JSON, raw, colored, and search output. Mixed records split into a User message for human text and an Assistant message for tools. Tools inside a subagent use the Agent wrapper. The visibility flags and tool filters control which tools appear.
 
 **XML Format (default):**
 

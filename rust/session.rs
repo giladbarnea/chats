@@ -1336,26 +1336,23 @@ fn tool_from_json(item: &Map<String, Value>, provider: &str) -> Option<Tool> {
 }
 
 /// Classify `isMeta` payload text linked to a tool call as that tool's output.
-fn append_meta_source_tool_result(
-    message: &mut Message,
+fn meta_source_tool_result(
+    is_meta: bool,
     source: Option<&str>,
     text_blocks: &[String],
     flags: &ConversationFlags,
-) -> bool {
-    if !(tools_requested(flags) && message.is_meta && source.is_some() && !text_blocks.is_empty()) {
-        return false;
+) -> Option<Tool> {
+    if !(tools_requested(flags) && is_meta && source.is_some() && !text_blocks.is_empty()) {
+        return None;
     }
-    message.role = "assistant".to_string();
-    message.message_type = MessageType::AssistantResponse;
-    message.tools.push(Tool::Result(ToolResult {
+    Some(Tool::Result(ToolResult {
         name: None,
         tool_use_id: source.map(str::to_string),
         native_tool_call_id: None,
         is_error: false,
         content: Some(Value::String(text_blocks.join("\n\n"))),
         has_content: true,
-    }));
-    true
+    }))
 }
 
 /// Separate human text, tool activity, and relayed agent messages in a user entry.
@@ -1398,15 +1395,16 @@ fn parse_user_entry(
         return vec![message];
     }
 
+    let mut tool_message = new_message(index, "assistant", MessageType::AssistantResponse);
+    tool_message.timestamp = message.timestamp.clone();
     let show_user_text = flags.show_user_messages() && (!is_meta || tools_requested(flags));
 
     match content {
         Value::String(text) => {
             let blocks = vec![text.clone()];
-            if append_meta_source_tool_result(&mut message, source, &blocks, flags) {
-                return vec![message];
-            }
-            if show_user_text && !is_hidden_user_command_text(text) {
+            if let Some(output) = meta_source_tool_result(is_meta, source, &blocks, flags) {
+                tool_message.tools.push(output);
+            } else if show_user_text && !is_hidden_user_command_text(text) {
                 message.text = text.clone();
             }
         }
@@ -1417,14 +1415,13 @@ fn parse_user_entry(
                     if item.get("type").and_then(Value::as_str) == Some("tool_result")
                         && let Some(tool) = tool_from_json(item, "claude")
                     {
-                        message.tools.push(tool);
+                        tool_message.tools.push(tool);
                     }
                 }
             }
-            if append_meta_source_tool_result(&mut message, source, &blocks, flags) {
-                return vec![message];
-            }
-            if !blocks.is_empty() && show_user_text {
+            if let Some(output) = meta_source_tool_result(is_meta, source, &blocks, flags) {
+                tool_message.tools.push(output);
+            } else if !blocks.is_empty() && show_user_text {
                 message.text = blocks.join("\n\n");
             }
         }
@@ -1435,12 +1432,6 @@ fn parse_user_entry(
     if entry.get("isCompactSummary").and_then(Value::as_bool) == Some(true) {
         message.message_type = MessageType::Compaction;
     }
-    if message.tools.is_empty() {
-        return vec![message];
-    }
-    let mut tool_message = new_message(index, "assistant", MessageType::AssistantResponse);
-    tool_message.timestamp = message.timestamp.clone();
-    tool_message.tools = std::mem::take(&mut message.tools);
     vec![message, tool_message]
 }
 

@@ -1718,22 +1718,24 @@ def resolve_session_identifier_via_adapters(
     return None, []
 
 
-def _append_meta_source_tool_result(
-    msg: Message,
+def _meta_source_tool_result(
+    is_meta: bool,
     source_tool_use_id: str | None,
     text_blocks: list[str],
     flags: ConversationFlags,
-) -> bool:
-    """Classify isMeta payload text linked to a tool call as that tool's output."""
-    if not (flags.show_tools and msg.is_meta and source_tool_use_id and text_blocks):
-        return False
-    msg.role = "assistant"
-    msg.tools.append({
+) -> dict[str, str] | None:
+    """Classify linked meta text as a tool output.
+
+    >>> _meta_source_tool_result(True, "call", ["body"], ConversationFlags(show_tools=True))
+    {'type': 'tool_result', 'tool_use_id': 'call', 'content': 'body'}
+    """
+    if not (flags.show_tools and is_meta and source_tool_use_id and text_blocks):
+        return None
+    return {
         "type": "tool_result",
         "tool_use_id": source_tool_use_id,
         "content": "\n\n".join(text_blocks),
-    })
-    return True
+    }
 
 
 def _parse_user_entry(
@@ -1770,12 +1772,13 @@ def _parse_user_entry(
     if isinstance(content_data, str) and _parse_task_notification_tool(content_data):
         return [msg]
 
+    tool_message = Message(role="assistant", timestamp=msg.timestamp)
     show_user_text = flags.show_user_messages and (not msg.is_meta or flags.show_tools)
 
     if isinstance(content_data, str):
-        if _append_meta_source_tool_result(msg, source_tool_use_id, [content_data], flags):
-            return [msg]
-        if show_user_text:
+        if output := _meta_source_tool_result(msg.is_meta, source_tool_use_id, [content_data], flags):
+            tool_message.tools.append(output)
+        elif show_user_text:
             msg.text, msg.wrapper_type = _parse_user_string_content(content_data)
     elif isinstance(content_data, list):
         text_blocks = _filter_hidden_user_text_blocks(_extract_text_blocks(content_data))
@@ -1785,11 +1788,11 @@ def _parse_user_entry(
                 and flags.show_tools
                 and item.get("type") == "tool_result"
             ):
-                msg.tools.append(item)
+                tool_message.tools.append(item)
 
-        if _append_meta_source_tool_result(msg, source_tool_use_id, text_blocks, flags):
-            return [msg]
-        if text_blocks and show_user_text:
+        if output := _meta_source_tool_result(msg.is_meta, source_tool_use_id, text_blocks, flags):
+            tool_message.tools.append(output)
+        elif text_blocks and show_user_text:
             msg.text = "\n\n".join(text_blocks)
 
     # A post-compaction summary is injected as a user turn but is its own block:
@@ -1797,10 +1800,6 @@ def _parse_user_entry(
     if entry.get("isCompactSummary") is True:
         msg.wrapper_type = ContentBlockType.COMPACTION
 
-    if not msg.tools:
-        return [msg]
-    tool_message = Message(role="assistant", timestamp=msg.timestamp, tools=msg.tools)
-    msg.tools = []
     return [msg, tool_message]
 
 

@@ -241,3 +241,20 @@ def test_subagent_task_survives_leading_tool_context(
         if isinstance(block, dict) and block.get("type") in {"tool-input", "tool-output"}
     ]
     assert tool_owners == ["agent", "agent"], f"Expected both tool directions inside the agent block, got {messages!r}"
+
+    for arguments in (["parse"], ["parse", "-f", "json"]):
+        converted = subprocess.run(
+            [str(checkout_built_ch), *arguments], input=output,
+            capture_output=True, text=True, check=False,
+        )
+        assert converted.returncode == 0, f"Expected successful conversion, got {converted.stderr!r}"
+        output = converted.stdout
+    recovered = json.loads(output)
+    recovered_owners = [
+        (message.get("type"), message.get("role"))
+        for message in recovered for block in message["content"]
+        if isinstance(block, dict) and block.get("type") in {"tool-input", "tool-output"}
+    ]
+    assert recovered_owners == [("agent", "assistant"), ("agent", "assistant")], (
+        f"Expected conversion to retain assistant ownership of agent tools, got {recovered!r}"
+    )

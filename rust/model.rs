@@ -166,13 +166,6 @@ impl Message {
         Some(model.strip_prefix("claude-").unwrap_or(model))
     }
 
-    pub fn contains_only_tool_outputs(&self) -> bool {
-        !self.tools.is_empty()
-            && self
-                .tools
-                .iter()
-                .all(|tool| matches!(tool, Tool::Result(_)))
-    }
 }
 
 #[derive(Clone, Debug)]

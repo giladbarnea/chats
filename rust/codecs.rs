@@ -1040,10 +1040,7 @@ fn parse_document_message(
     if message_type == MessageType::Agent {
         if message.subagent_task.is_some() || message.custom_type.is_some() {
             message.role = "agent".to_string();
-        } else if message.is_meta
-            || message.source_tool_user_id.is_some()
-            || message.contains_only_tool_outputs()
-        {
+        } else if message.is_meta || message.source_tool_user_id.is_some() {
             message.role = "user".to_string();
         }
     }

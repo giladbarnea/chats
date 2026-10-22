@@ -2321,18 +2321,6 @@ fn role_hue(message_type: MessageType) -> ColorTriplet {
     ColorTriplet::from_hex(hex)
 }
 
-/// Whether the visible user message consists only of `Bash` tool results.
-fn is_bash_result_message(message: &Message, parts: &[Part]) -> bool {
-    message.message_type == MessageType::UserMessage
-        && !parts.is_empty()
-        && parts.iter().all(|part| match part {
-            Part::Tool(ToolPart::Real(Tool::Result(result))) => {
-                result.name.as_deref() == Some("Bash")
-            }
-            _ => false,
-        })
-}
-
 /// The message date as the badge shows it: `August 20th, 11:01`.
 pub fn display_date(timestamp: Option<&str>) -> Option<String> {
     use chrono::Datelike;
@@ -2391,10 +2379,7 @@ fn meta_style() -> Style {
 }
 
 /// The role text in a coloured message badge.
-fn header_text(message: &Message, parts: &[Part]) -> String {
-    if is_bash_result_message(message, parts) {
-        return "Bash".to_string();
-    }
+fn header_text(message: &Message) -> String {
     let header = message.header();
     // `re.sub(r"^#+\s*", "", header)`.
     let trimmed = header.trim_start_matches('#');
@@ -2426,19 +2411,14 @@ fn title_case(value: &str) -> String {
 /// A message's role badge: the coloured chip plus its dim metadata suffix.
 pub fn header_badge(
     message: &Message,
-    parts: &[Part],
     conversation_tag: Option<&str>,
 ) -> RichText {
     let mut badge = RichText::new();
     if let Some(branch) = message.branch.as_deref().filter(|value| !value.is_empty()) {
         badge.append(&format!(" ⑂{branch} "), Some(BRANCH_CHIP));
     }
-    let hue = if is_bash_result_message(message, parts) {
-        ColorTriplet::from_hex("#5f7e86")
-    } else {
-        role_hue(message.message_type)
-    };
-    badge.append(&format!(" {} ", header_text(message, parts)), Some(chip_style(hue)));
+    let hue = role_hue(message.message_type);
+    badge.append(&format!(" {} ", header_text(message)), Some(chip_style(hue)));
 
     let mut meta: Vec<String> = Vec::new();
     if let Some(tag) = conversation_tag.filter(|value| !value.is_empty()) {
@@ -3020,15 +3000,10 @@ fn tool_body_renderable(
 }
 
 /// A tool part as renderables: a header, then a coloured rail around its body.
-///
-/// `result_label` is `_tool_result_label`'s answer for the message this part belongs
-/// to — `"output"` when the whole visible message is `Bash` results, and it replaces
-/// the tool's own name in the header rather than sitting beside it.
 fn tool_renderables(
     part: &ToolPart,
     home: &str,
     input_by_id: &HashMap<&str, &Value>,
-    result_label: Option<&str>,
 ) -> Vec<Renderable> {
     let facts = tool_facts(part);
 
@@ -3047,11 +3022,7 @@ fn tool_renderables(
     // `Text()` here, and clearing the end merges the two.
     let mut marker = RichText::new();
     marker.append(if facts.is_result { "⎿ " } else { "⏺ " }, Some(accent));
-    let label = match result_label {
-        Some(label) if facts.is_result && !label.is_empty() => label,
-        _ => &facts.name,
-    };
-    marker.append(label, Some(accent));
+    marker.append(&facts.name, Some(accent));
     if facts.is_error {
         marker.append("  ·  error", Some(TOOL_ERROR));
     }
@@ -3074,7 +3045,6 @@ pub fn message_content_renderables(
     parts: &[Part],
     home: &str,
     input_by_id: &HashMap<&str, &Value>,
-    result_label: Option<&str>,
 ) -> Vec<Renderable> {
     let mut out: Vec<Renderable> = Vec::new();
     for part in parts {
@@ -3103,7 +3073,7 @@ pub fn message_content_renderables(
                 });
             }
             Part::Tool(tool) => {
-                out.extend(tool_renderables(tool, home, input_by_id, result_label))
+                out.extend(tool_renderables(tool, home, input_by_id))
             }
         }
     }
@@ -3134,12 +3104,9 @@ pub fn messages_group<'a>(
             out.push(Renderable::Markdown { markup: "---".to_string(), highlight: false });
         }
         let _ = &messages;
-        out.push(Renderable::Text(header_badge(message, &parts, conversation_tag)));
+        out.push(Renderable::Text(header_badge(message, conversation_tag)));
         out.push(Renderable::Text(RichText::new()));
-        // `_tool_result_label`: a visible message that is only `Bash` results labels
-        // every one of them `output` rather than by name.
-        let result_label = is_bash_result_message(message, &parts).then_some("output");
-        out.extend(message_content_renderables(&parts, home, &input_by_id, result_label));
+        out.extend(message_content_renderables(&parts, home, &input_by_id));
     }
     out
 }

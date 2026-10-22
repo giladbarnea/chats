@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-22T15-10
+last_updated: 2026-10-22T15-40
 ---
 
 # Changelog
@@ -12,7 +12,8 @@ All notable changes to the `conversations` skill.
 ### Fixed
 
 - Claude and Pi tool inputs and outputs now belong to Assistant across parse and search output. Mixed Claude records keep human text in a separate User message. Linked skill payloads, hook context, Pi inline skills, and team tool results follow the same rule. Codex already used assistant ownership.
-- Tool filters, visibility, and subagent task extraction retain their behavior. Subagent tools keep their Agent wrapper.
+- Tool filters, visibility, and subagent task extraction retain their behavior. Subagent tools keep their Agent wrapper, including assistant ownership through XML/JSON conversion.
+- Removed the Bash-only colored-label workaround from 2026-07-12. All tool messages now use the same assistant attribution.
 
 ---
 ## [2026-10-08] Show squashed Pi user-agent results as user messages
