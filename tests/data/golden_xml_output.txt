@@ -26,12 +26,12 @@ I should reply hello
 
 ---
 
-<user-message i="4" date="2025-11-23 11:29">
-## User
+<assistant-response i="4" date="2025-11-23 11:29">
+## Assistant
 
 <tool-output name="test" id="1">
 ```
 result
 ```
 </tool-output>
-</user-message>
+</assistant-response>

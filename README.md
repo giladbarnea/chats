@@ -1,3 +1,7 @@
+---
+last_updated: 2026-10-22T15-10
+---
+
 # Chats
 
 > Verified true as of 26-06-19, working tree after d1992c0
@@ -139,6 +143,8 @@ Detached parsing keeps legacy message selectors after the input. `ch <id> -s 7` 
 Metadata frontmatter emits `forked_from:` only when the raw session exposes a fork parent id. Sessions without that data omit the field entirely.
 
 **Output Formats:**
+
+Tool inputs and outputs belong to Assistant, regardless of the provider's transport role. This applies to XML, JSON, raw, colored, and search output. Mixed records split into a User message for human text and an Assistant message for tools. Tools inside a subagent keep the Agent wrapper. Tool visibility and filters do not change.
 
 **XML Format (default):**
 

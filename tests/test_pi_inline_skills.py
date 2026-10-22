@@ -138,9 +138,9 @@ def test_skill_only_message_leaves_no_user_message(tmp_path: Path) -> None:
     ), (
         f"Expected `-t` to still show the Skill pair. stdout: {tools.stdout!r}."
     )
-    assert tools.stdout.count("<user-message") == 1, (
-        "Expected exactly one message: the Skill pair without an empty "
-        f"remainder message. stdout: {tools.stdout!r}."
+    assert tools.stdout.count("<assistant-response") == 1 and "<user-message" not in tools.stdout, (
+        "Expected one assistant Skill pair without a user remainder message. "
+        f"stdout: {tools.stdout!r}."
     )
 
 

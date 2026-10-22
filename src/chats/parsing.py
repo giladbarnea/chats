@@ -1727,6 +1727,7 @@ def _append_meta_source_tool_result(
     """Classify isMeta payload text linked to a tool call as that tool's output."""
     if not (flags.show_tools and msg.is_meta and source_tool_use_id and text_blocks):
         return False
+    msg.role = "assistant"
     msg.tools.append({
         "type": "tool_result",
         "tool_use_id": source_tool_use_id,
@@ -1738,11 +1739,7 @@ def _append_meta_source_tool_result(
 def _parse_user_entry(
     entry: dict, index: int, flags: ConversationFlags
 ) -> list[Message]:
-    """Parse a user-type JSONL entry.
-
-    A message relayed from another Claude session yields one agent message per
-    relayed block, visible only with --agents; every other entry yields one message.
-    """
+    """Separate human text, tool activity, and relayed agent messages in a user entry."""
     message_data = entry.get("message", {})
     if message_data.get("role") != "user":
         return []
@@ -1800,7 +1797,11 @@ def _parse_user_entry(
     if entry.get("isCompactSummary") is True:
         msg.wrapper_type = ContentBlockType.COMPACTION
 
-    return [msg]
+    if not msg.tools:
+        return [msg]
+    tool_message = Message(role="assistant", timestamp=msg.timestamp, tools=msg.tools)
+    msg.tools = []
+    return [msg, tool_message]
 
 
 def _parse_assistant_entry(
@@ -1912,7 +1913,7 @@ def _parse_hook_additional_context_entry(
     if not text:
         return None
 
-    msg = Message(role="user", index=index, timestamp=entry.get("timestamp"))
+    msg = Message(role="assistant", index=index, timestamp=entry.get("timestamp"))
     msg.tools.append({
         "type": "tool_use",
         "name": "AdditionalContext",
@@ -2002,7 +2003,7 @@ def _pi_inline_skill_message(
     seed = f"{_pi_native_entry_id(entry)}:{ordinal}"
     tool_use_id = hashlib.sha1(seed.encode()).hexdigest()[:12]
     message = Message(
-        role="user",
+        role="assistant",
         timestamp=entry.get("timestamp"),
         native_entry_id=_pi_native_entry_id(entry),
     )
@@ -2085,7 +2086,7 @@ def _parse_pi_message_entry(
 
         native_tool_call_id = message_data.get("toolCallId")
         msg = Message(
-            role="user",
+            role="assistant",
             index=index,
             timestamp=entry.get("timestamp"),
             native_entry_id=native_entry_id,

@@ -14,8 +14,8 @@
     ]
   },
   {
-    "type": "user-message",
-    "role": "user",
+    "type": "assistant-response",
+    "role": "assistant",
     "original_index": 2,
     "content": [
       {

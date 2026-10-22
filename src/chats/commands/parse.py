@@ -336,7 +336,16 @@ def _build_subagent_block(
     are dropped; and every message is stamped with the subagent's identity.
     """
     first_reply = next(
-        (index for index, message in enumerate(agent_messages) if message.role != "user"),
+        (
+            index for index, message in enumerate(agent_messages)
+            if message.role != "user" and (
+                message.text or message.thinking or message.plan
+                or any(
+                    tool.get("type") == "tool_use" and tool.get("name") != "AdditionalContext"
+                    for tool in message.tools
+                )
+            )
+        ),
         len(agent_messages),
     )
     leading, rest = agent_messages[:first_reply], agent_messages[first_reply:]

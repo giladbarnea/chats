@@ -255,8 +255,8 @@ def test_plain_parse_keeps_xml_tags(tmp_path, monkeypatch, capsys):
     )
 
 
-def test_plain_bash_result_keeps_user_transport_wrapper(tmp_path, monkeypatch, capsys):
-    """The colored relabeling does not change XML's provider transport semantics."""
+def test_plain_bash_result_belongs_to_assistant(tmp_path, monkeypatch, capsys):
+    """XML attributes tool results to the assistant, not the transport role."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
     sid = _write_claude_session(
@@ -277,8 +277,8 @@ def test_plain_bash_result_keeps_user_transport_wrapper(tmp_path, monkeypatch, c
     )
     out = capsys.readouterr().out
 
-    assert '<user-message i="2"' in out, (
-        f"Expected XML to preserve Claude's user-role result envelope. Got:\n{out}"
+    assert '<assistant-response i="2"' in out and "<user-message" not in out, (
+        f"Expected XML to attribute the Bash result to Assistant. Got:\n{out}"
     )
     assert '<tool-output name="Bash"' in out, (
         f"Expected XML to preserve the semantic Bash tool output. Got:\n{out}"
@@ -308,10 +308,9 @@ def test_tool_call_and_result_markers(tmp_path, monkeypatch):
     )
 
     assert "⏺ Bash" in out, f"Expected ⏺ call header. Got:\n{out}"
-    assert "⎿ output" in out, f"Expected the Bash result marker to read output. Got:\n{out}"
-    assert "⎿ Bash" not in out, f"The Bash result marker must not repeat Bash. Got:\n{out}"
-    assert out.count("Bash") == 2, (
-        f"Expected Bash on the result panel and call marker only. Got:\n{out}"
+    assert "⎿ Bash" in out, f"Expected the Bash result marker. Got:\n{out}"
+    assert out.count("Assistant") == 2, (
+        f"Expected both the call and result panels to belong to Assistant. Got:\n{out}"
     )
     assert "User" not in out, (
         f"A Bash-result-only panel must not be labeled as User. Got:\n{out}"
@@ -322,8 +321,8 @@ def test_tool_call_and_result_markers(tmp_path, monkeypatch):
     )
 
 
-def test_bash_result_with_user_text_keeps_user_panel(tmp_path, monkeypatch):
-    """A real user instruction keeps ownership of a mixed Bash-result message."""
+def test_bash_result_with_user_text_has_separate_panels(tmp_path, monkeypatch):
+    """A mixed record separates the user instruction from the assistant tool result."""
     home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: home)
     sid = _write_claude_session(
@@ -346,12 +345,14 @@ def test_bash_result_with_user_text_keeps_user_panel(tmp_path, monkeypatch):
         sid, None, None, output_format="xml", emit_metadata=False,
     )
 
-    assert "User" in out, f"Expected mixed user text and Bash output to stay User. Got:\n{out}"
+    assert out.count("User") == 1 and out.count("Assistant") == 2, (
+        f"Expected one user panel and separate assistant call/result panels. Got:\n{out}"
+    )
     assert "Run it again in ten minutes." in out, (
         f"Expected the real user instruction to remain visible. Got:\n{out}"
     )
     assert out.count("Bash") == 2, (
-        f"Expected Bash only on the call/result markers, not the mixed panel. Got:\n{out}"
+        f"Expected Bash only on the call/result markers. Got:\n{out}"
     )
 
 
@@ -549,8 +550,8 @@ def test_read_output_highlighted_with_preserved_line_numbers(tmp_path, monkeypat
         sid, None, None, output_format="xml", emit_metadata=False,
     )
 
-    assert "User" in out, (
-        f"Only Bash results should replace the User panel label. Got:\n{out}"
+    assert "User" not in out and out.count("Assistant") == 2, (
+        f"Expected both the Read call and result under Assistant. Got:\n{out}"
     )
     assert "def compute():" in out, f"Expected file content. Got:\n{out}"
     assert "42" in out, (

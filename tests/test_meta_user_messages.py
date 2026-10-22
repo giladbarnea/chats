@@ -40,8 +40,8 @@ def _build_tool_id_map(messages):
     return tool_id_map
 
 
-def test_meta_user_message_with_tools_includes_wrapper_attrs_and_tool_chain_link():
-    """A meta user message becomes visible with tools and keeps chain-link attrs."""
+def test_meta_tool_output_belongs_to_assistant_and_keeps_tool_chain_link():
+    """Linked meta text belongs to Assistant and retains the originating tool ID."""
     content = """{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_013cAqxRaJroBvWdutKHWm47","name":"Skill","input":{"prompt":"go"}}]}}
 {"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_013cAqxRaJroBvWdutKHWm47","content":"ok"}]}}
 {"type":"user","isMeta":true,"sourceToolUseID":"toolu_013cAqxRaJroBvWdutKHWm47","message":{"role":"user","content":[{"type":"text","text":"follow up meta note"}]}}"""
@@ -55,8 +55,11 @@ def test_meta_user_message_with_tools_includes_wrapper_attrs_and_tool_chain_link
     assert '<tool-output name="Skill" id="013c">' in output, (
         "Expected tool output to render with name='Skill' and short id='013c' for chain linkage."
     )
-    assert '<user-message i="3" isMeta="true" sourceToolUserId="013c">' in output, (
-        "Expected meta user wrapper attrs with short sourceToolUserId."
+    assert '<assistant-response i="3">' in output and "<user-message" not in output, (
+        f"Expected linked meta output under Assistant, got:\n{output}"
+    )
+    assert output.count('<tool-output name="Skill" id="013c">') == 2, (
+        f"Expected both results linked to the Skill call, got:\n{output}"
     )
 
 

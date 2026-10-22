@@ -1345,6 +1345,8 @@ fn append_meta_source_tool_result(
     if !(tools_requested(flags) && message.is_meta && source.is_some() && !text_blocks.is_empty()) {
         return false;
     }
+    message.role = "assistant".to_string();
+    message.message_type = MessageType::AssistantResponse;
     message.tools.push(Tool::Result(ToolResult {
         name: None,
         tool_use_id: source.map(str::to_string),
@@ -1356,10 +1358,7 @@ fn append_meta_source_tool_result(
     true
 }
 
-/// Decode a user entry.
-///
-/// A message relayed from another Claude session yields one agent message per relayed
-/// block, visible only with `--agents`; every other entry yields at most one message.
+/// Separate human text, tool activity, and relayed agent messages in a user entry.
 fn parse_user_entry(
     entry: &Map<String, Value>,
     index: usize,
@@ -1436,7 +1435,13 @@ fn parse_user_entry(
     if entry.get("isCompactSummary").and_then(Value::as_bool) == Some(true) {
         message.message_type = MessageType::Compaction;
     }
-    vec![message]
+    if message.tools.is_empty() {
+        return vec![message];
+    }
+    let mut tool_message = new_message(index, "assistant", MessageType::AssistantResponse);
+    tool_message.timestamp = message.timestamp.clone();
+    tool_message.tools = std::mem::take(&mut message.tools);
+    vec![message, tool_message]
 }
 
 fn parse_assistant_entry(
@@ -1568,7 +1573,7 @@ fn parse_hook_additional_context_entry(
     if text.is_empty() {
         return None;
     }
-    let mut message = new_message(index, "user", MessageType::UserMessage);
+    let mut message = new_message(index, "assistant", MessageType::AssistantResponse);
     message.timestamp = timestamp_of(entry);
     let hook_name = attachment
         .get("hookName")
@@ -1748,7 +1753,7 @@ fn pi_inline_skill_message(
     let digest = Sha1::digest(seed.as_bytes());
     let tool_use_id: String = format!("{digest:x}").chars().take(12).collect();
 
-    let mut message = new_message(0, "user", MessageType::UserMessage);
+    let mut message = new_message(0, "assistant", MessageType::AssistantResponse);
     message.timestamp = timestamp_of(entry);
     message.native_entry_id = native_id;
     message.tools = vec![
@@ -1952,7 +1957,7 @@ fn parse_pi_message_entry(
             .get("toolCallId")
             .and_then(Value::as_str)
             .map(str::to_string);
-        let mut message = new_message(index, "user", MessageType::UserMessage);
+        let mut message = new_message(index, "assistant", MessageType::AssistantResponse);
         message.timestamp = timestamp_of(entry);
         message.native_entry_id = native_entry_id;
         message.tools_always_visible = is_team_tool;
