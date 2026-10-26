@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-26T11-50
+last_updated: 2026-10-26T16-06
 ---
 
 # Chats
@@ -115,7 +115,7 @@ For JSONL, provider resolution checks the native file path first. External files
 -b, --branches       # Include abandoned (rewound) branch messages, tagged branch="N"
 -A, --all            # Include thinking, tools, agents, plans, and visible Pi custom records
 --plans              # Show plan content (ExitPlanMode)
--s, --short [SHORT_SPEC]  # Share a message budget across string values; fixed or progressive
+-s, --short [SHORT_SPEC]  # Share a message payload budget; fixed or progressive
 
 -o FILE          # Save output to file
 ```
@@ -126,7 +126,7 @@ See [SHORT_SPEC.md](SHORT_SPEC.md) for shortening values and [TOOL_SPEC.md](TOOL
 
 `--only-user` and `--only-assistant` take precedence over `--thinking`, `--tools`, `--agents`, `--plans`, and `--all`. When combined, the CLI emits a warning, disables the contradictory extras immediately, and continues with the normalized flags. `--only-user --only-assistant` is also warned about; it is allowed to fall through to an empty result naturally.
 
-`--short` shares one character budget across each message's payload string values, rather than giving each value its own limit. Equal policies share a budget; explicit local overrides keep separate budgets. Keys, numeric values, metadata, and output syntax remain outside it. See [SHORT_SPEC.md](SHORT_SPEC.md) for the counting rules.
+`--short` shares one character budget across each message's payload values. It preserves short values, shares room across longer values, and omits middle items when necessary. Inline omissions use `[…]`, or `…` in tight budgets. Equal policies share a budget; explicit local overrides keep separate budgets. Numbers, booleans, null, and markers count. Keys, metadata, escaping, and output syntax do not. See [SHORT_SPEC.md](SHORT_SPEC.md) for the counting and line-omission rules.
 
 `--short` accepts a fixed limit such as `128`, progressive mode with `p` or `progressive`, or progressive mode with a final limit such as `p=128` or `progressive=128`. Progressive mode gives early qualifying messages smaller limits and the final one the full limit. A bare `--short` remains fixed at 500. Tool-local `:s` and `:short` accept the same values; a bare local modifier inherits the global policy.
 
@@ -270,7 +270,7 @@ Once an uppercase operator is present, every multi-word or regex-shaped term mus
 - `-r`, `--raw`: Render search results as plain markdown (implies `--no-metadata`, `--color never`, and `--no-paging`)
 - `-s`, `--case-sensitive`: Match letter case exactly (default: false)
 - `-i`, `--case-insensitive`: Ignore letter case (default: true)
-- `--short [SHORT_SPEC]`: Share a message budget across string values before matching and display, with fixed or progressive limits
+- `--short [SHORT_SPEC]`: Share a message payload budget before matching and display, with fixed or progressive limits
 - `-p, --provider claude|pi|codex`: Restrict search to sessions from a specific provider
 - `-d DIRPATH`: Restrict search to specific directory
 - `-ma, --mafter DATE`: Only conversations modified after DATE

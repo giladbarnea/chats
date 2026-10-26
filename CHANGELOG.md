@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-26T11-50
+last_updated: 2026-10-26T16-06
 ---
 
 # Changelog
@@ -7,12 +7,13 @@ last_updated: 2026-10-26T11-50
 All notable changes to the `conversations` skill.
 
 ---
-## [2026-10-26] Share shortening budgets across message values
+## [2026-10-26] Budget structure-aware message previews
 
 ### Changed
 
-- `--short` and tool-local `:s` now share one budget across each message's string values with the same resolved policy. Many small fields no longer multiply the requested content limit. Different local policies keep separate budgets.
-- The preview keeps the joined head and tail with one middle marker. Removed values become empty while structure and metadata stay intact. Keys, non-string values, and output syntax remain outside the budget. Parse, search, and all output formats use the same rule. See [SHORT_SPEC.md](SHORT_SPEC.md).
+- `--short` and tool-local `:s` now share a strict payload budget per resolved policy within each message. Short values survive, longer values share the remaining room, and middle list items or dictionary fields are omitted when necessary. Numbers, booleans, null, and markers count toward the budget. Tool identity, keys, syntax, and escaping do not.
+- Inline omissions use `[…]`, falling back to `…` in tight budgets. Whole-line omissions use a standalone `…` between complete source lines. Single-line values never gain line breaks, and values that fit remain unchanged.
+- Global shortening also covers subagent tasks and the first user message. Parse, search, and every output format use the same preview. See [SHORT_SPEC.md](SHORT_SPEC.md).
 
 ---
 ## [2026-10-22] Attribute tool activity to the assistant

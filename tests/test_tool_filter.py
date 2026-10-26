@@ -13,7 +13,6 @@ import pytest
 from chats import ConversationFlags, Message
 from chats.parts import MessagePartKind
 from chats.tool_filter import ToolFilter, parse_tool_spec
-from chats.utils import truncate_middle
 
 # =============================================================================
 # Shared tool dicts
@@ -465,9 +464,7 @@ class TestPerToolShortening:
             f"Expected shortened content to be smaller than full content. "
             f"Got short={len(short_result)} full={len(full_result)}."
         )
-        assert "\n...\n" in short_result, (
-            "Expected shortened tool output to use the line-broken ellipsis placeholder."
-        )
+        assert "[…]" in short_result, short_result
         assert "READ_START-" in short_result[:260], (
             f"Expected the start of the rendered tool body to be preserved. Got: {short_result[:260]!r}"
         )
@@ -502,8 +499,8 @@ class TestPerToolShortening:
         assert result_content is not None, (
             "Expected Bash tool-output content to be present."
         )
-        assert len(_fenced_inner(input_content)) == 249, input_content
-        assert len(_fenced_inner(result_content)) == 247, result_content
+        assert len(_fenced_inner(input_content)) == 248, input_content
+        assert len(_fenced_inner(result_content)) == 248, result_content
         assert 4 + len(_fenced_inner(input_content)) + len(_fenced_inner(result_content)) == 500
         assert "BASH_START-" in input_content[:260], (
             f"Expected shortened tool-input content to preserve the start. Got: {input_content[:260]!r}"
@@ -532,8 +529,8 @@ class TestPerToolShortening:
         result_content = parts[1].data.content
         assert input_content is not None, "Expected shortened tool-input content."
         assert result_content is not None, "Expected shortened tool-output content."
-        assert len(_fenced_inner(input_content)) == 59, input_content
-        assert len(_fenced_inner(result_content)) == 57, result_content
+        assert len(_fenced_inner(input_content)) == 58, input_content
+        assert len(_fenced_inner(result_content)) == 58, result_content
         assert 4 + len(_fenced_inner(input_content)) + len(_fenced_inner(result_content)) == 120
         assert "BASH_START-" in input_content[:80], (
             f"Expected custom max-chars shortening to preserve the start. Got: {input_content[:80]!r}"
@@ -574,8 +571,8 @@ class TestPerToolShortening:
         assert bash_input is not None, "Expected Bash input content to be visible."
         assert bash_result is not None, "Expected Bash result content to be visible."
         assert read_result is not None, "Expected Read result content to be visible."
-        assert len(_fenced_inner(bash_input)) == 8, bash_input
-        assert len(_fenced_inner(bash_result)) == 2, bash_result
+        assert len(_fenced_inner(bash_input)) == 5, bash_input
+        assert len(_fenced_inner(bash_result)) == 5, bash_result
         assert len(_fenced_inner(read_result)) == 500, (
             "Expected bare `Read:o:s` to keep the default 500-char local short limit. "
             f"Got: {len(_fenced_inner(read_result))}"
@@ -613,10 +610,10 @@ class TestPerToolShortening:
 
         bash_input = tool_parts[0].data.content
         bash_result = tool_parts[1].data.content
-        assert bash_input is None, "The middle tool payload has no characters left in the shared budget."
-        assert bash_result is not None, "Expected the message tail in the Bash result."
-        assert text_parts[0].data == "TEX\n...\n", text_parts[0].data
-        assert _fenced_inner(bash_result) == "ND", bash_result
+        assert bash_input is not None and bash_result is not None, tool_parts
+        assert text_parts[0].data == "TE…D", text_parts[0].data
+        assert _fenced_inner(bash_input) == "e…D", bash_input
+        assert _fenced_inner(bash_result) == "B…D", bash_result
 
     def test_all_tools_short_value_overrides_global_default(self):
         """`--short -t:s=10` means regular text uses 500, but tools use 10."""
@@ -655,8 +652,8 @@ class TestPerToolShortening:
             "Expected bare `--short` to keep the default 500-char limit for text. "
             f"Got: {len(text_parts[0].data)}"
         )
-        assert len(_fenced_inner(bash_input)) == 8, bash_input
-        assert len(_fenced_inner(bash_result)) == 2, bash_result
+        assert len(_fenced_inner(bash_input)) == 5, bash_input
+        assert len(_fenced_inner(bash_result)) == 5, bash_result
 
     def test_specific_tool_short_value_overrides_broader_tool_short_and_global_default(self):
         """`--short=20 -t:s=10 -t:Bash:s=30` uses 20 globally, 10 for tools, 30 for Bash."""
@@ -706,58 +703,10 @@ class TestPerToolShortening:
             "Expected `--short=20` to shorten regular message text to 20 chars. "
             f"Got: {len(text_parts[0].data)}"
         )
-        assert len(_fenced_inner(bash_input)) == 18, bash_input
-        assert len(_fenced_inner(bash_result)) == 12, bash_result
-        assert dict(tool_parts[2].data.attrs)["file_path"] == "f.t\n...\n"
-        assert len(_fenced_inner(read_result)) == 2, read_result
-
-
-# =============================================================================
-# truncate_middle: unit tests
-# =============================================================================
-
-
-class TestTruncateMiddle:
-    """truncate_middle truncates exactly to max_chars, replacing the middle with a placeholder."""
-
-    def test_short_string_unchanged(self):
-        assert truncate_middle("hello", max_chars=100) == "hello"
-
-    def test_length_at_threshold_unchanged(self):
-        s = "a" * 115
-        assert truncate_middle(s, max_chars=120) == s
-
-    def test_length_above_threshold_truncates_to_exact_max_chars(self):
-        result = truncate_middle("a" * 116, max_chars=120)
-        assert len(result) == 120, f"Expected 120 chars exactly, got {len(result)}"
-        assert "\n...\n" in result, (
-            f"Expected the line-broken ellipsis placeholder in truncated output. Got: {result!r}"
-        )
-
-    def test_long_string_keeps_start_and_end(self):
-        s = "A" * 40 + "B" * 40 + "C" * 40 + "D" * 40  # 160 chars
-        result = truncate_middle(s, max_chars=100)
-        assert result.startswith("A" * 40), (
-            f"Should start with first quarter. Got: {result[:50]}"
-        )
-        assert result.endswith("D" * 40), (
-            f"Should end with last quarter. Got: {result[-50:]}"
-        )
-        assert "..." in result
-        assert len(result) == 100, f"Expected 100 chars exactly, got {len(result)}"
-
-    def test_default_500_char_behavior_uses_248_ellipsis_247_split(self):
-        source = ("S" * 248) + ("M" * 1000) + ("E" * 247)
-        result = truncate_middle(source)
-        assert result == ("S" * 248) + "\n...\n" + ("E" * 247), (
-            "Expected default truncation to keep 248 leading chars, then '\\n...\\n', "
-            "then 247 trailing chars."
-        )
-
-    def test_placeholder_is_ellipsis_not_bracket(self):
-        result = truncate_middle("x" * 200, max_chars=100)
-        assert "..." in result
-        assert "[...]" not in result
+        assert len(_fenced_inner(bash_input)) == 15, bash_input
+        assert len(_fenced_inner(bash_result)) == 15, bash_result
+        assert dict(tool_parts[2].data.attrs)["file_path"] == "f.txt"
+        assert len(_fenced_inner(read_result)) == 5, read_result
 
 
 # =============================================================================
@@ -788,7 +737,7 @@ class TestMessageMiddleTruncation:
         assert "END_MARKER" in shortened, (
             f"End should be preserved. Got: {shortened[-60:]}"
         )
-        assert "..." in shortened, "Should contain ellipsis placeholder"
+        assert "[…]" in shortened, "Should contain the inline omission marker"
 
     def test_thinking_preserves_start_and_end(self):
         start = "FIRST_THOUGHT "

@@ -7,11 +7,11 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import TOOL_SCHEMAS, ContentBlockType
-from .shortening import ShortPolicy, map_string_values, shorten_values
+from .shortening import ShortPolicy, shorten_payloads
 from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_to_json, tool_to_parts
 
@@ -198,27 +198,18 @@ class ConversationFlags:
 
 
 def _map_tool_payload(
-    tool: dict[str, object], transform: Callable[[str], str]
+    tool: dict[str, object], transform: Callable[[object, bool], object]
 ) -> dict[str, object]:
-    """Transform payload strings without changing tool or result-block metadata.
+    """Transform a payload without changing its tool identity.
 
-    >>> _map_tool_payload({"type": "tool_result", "content": [{"type": "text", "text": "hello"}]}, str.upper)
-    {'type': 'tool_result', 'content': [{'type': 'text', 'text': 'HELLO'}]}
+    >>> _map_tool_payload({"type": "tool_use", "name": "Bash", "input": {"command": "x"}}, lambda value, result: {})["name"]
+    'Bash'
     """
     if tool.get("type") == "tool_use" and "input" in tool:
-        return {**tool, "input": map_string_values(tool["input"], transform)}
-    if tool.get("type") != "tool_result" or "content" not in tool:
-        return tool
-    content = tool["content"]
-    if not isinstance(content, list):
-        return {**tool, "content": map_string_values(content, transform)}
-    blocks = [
-        {key: value if key == "type" else map_string_values(value, transform)
-         for key, value in block.items()}
-        if isinstance(block, dict) else map_string_values(block, transform)
-        for block in content
-    ]
-    return {**tool, "content": blocks}
+        return {**tool, "input": transform(tool["input"], False)}
+    if tool.get("type") == "tool_result" and "content" in tool:
+        return {**tool, "content": transform(tool["content"], True)}
+    return tool
 
 
 @dataclass
@@ -271,21 +262,21 @@ class Message:
         thinking_policy = global_policy or (
             ShortPolicy(flags.shorten_max_chars, False) if flags.shorten_thinking else None
         )
-        groups: dict[ShortPolicy, list[str]] = {}
+        groups: dict[ShortPolicy, list[tuple[object, bool]]] = {}
 
-        def collect(value: str, policy: ShortPolicy) -> str:
-            groups.setdefault(policy, []).append(value)
+        def collect(value: object, policy: ShortPolicy, result: bool) -> object:
+            groups.setdefault(policy, []).append((value, result))
             return value
 
-        def project(transform: Callable[[str, ShortPolicy], str]) -> Message:
+        def project(transform: Callable[[object, ShortPolicy, bool], object]) -> Message:
             def text(value: str | None, policy: ShortPolicy | None) -> str | None:
-                return transform(value, policy) if value and policy is not None else value
+                return cast(str, transform(value, policy, False)) if value and policy is not None else value
 
             subagent_task = text(self.subagent_task, global_policy)
             main_text = text(self.text, global_policy)
             thinking = text(self.thinking, thinking_policy) if flags.show_thinking else None
             tools = [
-                _map_tool_payload(tool, lambda value: transform(value, policy))
+                _map_tool_payload(tool, lambda value, result: transform(value, policy, result))
                 if (policy := local_policy or global_policy) is not None else tool
                 for tool, local_policy in tool_policies
             ]
@@ -297,10 +288,10 @@ class Message:
         if not groups:
             return visible
         replacements = {
-            policy: iter(shorten_values(values, self._effective_short_max_chars(policy)))
+            policy: iter(shorten_payloads(values, self._effective_short_max_chars(policy)))
             for policy, values in groups.items()
         }
-        return project(lambda value, policy: next(replacements[policy]))
+        return project(lambda value, policy, result: next(replacements[policy]))
 
     def iter_visible_parts(
         self, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None

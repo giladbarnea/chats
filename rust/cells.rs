@@ -270,7 +270,7 @@ impl CellMetrics {
     /// Fold the string into lines that each fit `width` cells, as Rich's `chop_cells`.
     ///
     /// **The fast path slices by code points, not cells** — a fourth counting unit in
-    /// this file, alongside `elide_to_width`'s code points, `truncate_middle`'s code
+    /// this file, alongside `elide_to_width`'s code points, message shortening's code
     /// points and Pi's UTF-16 units. It is Rich's, so it is reproduced rather than
     /// unified; it is only correct because the fast path is taken exactly when every
     /// character is one cell wide.

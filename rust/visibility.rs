@@ -317,7 +317,7 @@ mod tests {
 // ---------------------------------------------------------------- visible content
 
 use crate::model::{Message, Tool};
-use crate::shortening::{shorten_values, string_values_mut};
+use crate::shortening::shorten_payloads;
 use crate::tool_filter::{FilterableTool, ToolIdMap, resolve_tool_visibility};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -406,20 +406,13 @@ fn resolve_result_name(tool: Tool, id_map: &ToolIdMap) -> Tool {
     Tool::Result(result)
 }
 
-fn tool_payload_strings_mut(tool: &mut Tool) -> Vec<&mut String> {
-    match tool {
-        Tool::Use(call) => string_values_mut(&mut call.input),
-        Tool::Result(result) => match result.content.as_mut() {
-            Some(Value::Array(blocks)) => blocks.iter_mut().flat_map(|block| match block {
-                Value::Object(fields) => fields.iter_mut()
-                    .filter(|(key, _)| key.as_str() != "type")
-                    .flat_map(|(_, value)| string_values_mut(value)).collect(),
-                value => string_values_mut(value),
-            }).collect(),
-            Some(value) => string_values_mut(value),
-            None => Vec::new(),
-        },
-    }
+enum PayloadTarget {
+    SubagentTask,
+    Text,
+    Thinking,
+    ToolInput(usize),
+    ToolResult(usize),
+    Plan,
 }
 
 /// Which messages take a progressive short position, and how many there are.
@@ -556,31 +549,50 @@ pub fn visible_message(
         Vec::new()
     };
 
-    let mut groups: HashMap<ShortPolicy, Vec<&mut String>> = HashMap::new();
-    for (value, policy) in [
-        (visible.subagent_task.as_mut(), global_policy),
-        (Some(&mut visible.text), global_policy),
-        (visible.thinking.as_mut(), thinking_policy),
+    let mut groups: HashMap<ShortPolicy, Vec<(PayloadTarget, Value, bool)>> = HashMap::new();
+    for (target, value, policy) in [
+        (PayloadTarget::SubagentTask, visible.subagent_task.as_ref(), global_policy),
+        (PayloadTarget::Text, Some(&visible.text), global_policy),
+        (PayloadTarget::Thinking, visible.thinking.as_ref(), thinking_policy),
     ] {
-        if let (Some(value), Some(policy)) = (value, policy) {
-            groups.entry(policy).or_default().push(value);
+        if let (Some(value), Some(policy)) = (value, policy)
+            && !value.is_empty()
+        {
+            groups.entry(policy).or_default().push((target, Value::String(value.clone()), false));
         }
     }
-    for (tool, policy) in visible.tools.iter_mut().zip(tool_policies) {
-        if let Some(policy) = policy {
-            groups.entry(policy).or_default().extend(tool_payload_strings_mut(tool));
+    for (index, (tool, policy)) in visible.tools.iter().zip(tool_policies).enumerate() {
+        let Some(policy) = policy else { continue };
+        let payload = match tool {
+            Tool::Use(call) => Some((PayloadTarget::ToolInput(index), call.input.clone(), false)),
+            Tool::Result(result) => result.content.clone().map(|value| (PayloadTarget::ToolResult(index), value, true)),
+        };
+        if let Some(payload) = payload {
+            groups.entry(policy).or_default().push(payload);
         }
     }
-    if let (Some(plan), Some(policy)) = (visible.plan.as_mut(), global_policy) {
-        groups.entry(policy).or_default().push(plan);
+    if let (Some(plan), Some(policy)) = (visible.plan.as_ref(), global_policy) {
+        groups.entry(policy).or_default().push((PayloadTarget::Plan, Value::String(plan.clone()), false));
     }
-    for (policy, values) in groups {
-        let shortened = shorten_values(
-            &values.iter().map(|value| value.as_str()).collect::<Vec<_>>(),
-            policy.effective_max_chars(position, count),
-        );
-        for (value, replacement) in values.into_iter().zip(shortened) {
-            *value = replacement;
+    for (policy, payloads) in groups {
+        let (targets, values): (Vec<_>, Vec<_>) = payloads.into_iter()
+            .map(|(target, value, result)| (target, (value, result))).unzip();
+        let shortened = shorten_payloads(&values, policy.effective_max_chars(position, count));
+        for (target, value) in targets.into_iter().zip(shortened) {
+            match target {
+                PayloadTarget::SubagentTask => visible.subagent_task = Some(value.as_str().unwrap().to_string()),
+                PayloadTarget::Text => visible.text = value.as_str().unwrap().to_string(),
+                PayloadTarget::Thinking => visible.thinking = Some(value.as_str().unwrap().to_string()),
+                PayloadTarget::Plan => visible.plan = Some(value.as_str().unwrap().to_string()),
+                PayloadTarget::ToolInput(index) => {
+                    let Tool::Use(call) = &mut visible.tools[index] else { unreachable!() };
+                    call.input = value;
+                }
+                PayloadTarget::ToolResult(index) => {
+                    let Tool::Result(result) = &mut visible.tools[index] else { unreachable!() };
+                    result.content = Some(value);
+                }
+            }
         }
     }
     visible
@@ -632,36 +644,6 @@ mod tool_map_tests {
             map.insert(format!("tool-{index:04}"), "Read".to_string());
         }
         map
-    }
-
-    #[test]
-    fn visible_message_shares_one_budget_across_nested_tool_values() {
-        let mut message = Message::new(
-            MessageType::AssistantResponse, "assistant".to_string(), Number::from(1),
-        );
-        message.tools.push(Tool::Use(ToolUse {
-            name: "Custom".to_string(),
-            input: serde_json::json!({"first": "A".repeat(40), "nested": ["B".repeat(40), "C".repeat(40)]}),
-            id: None,
-            native_tool_call_id: None,
-            native_content_index: None,
-        }));
-        message.tools.push(Tool::Use(ToolUse {
-            name: "Custom".to_string(),
-            input: serde_json::json!({"last": "D".repeat(40)}),
-            id: None,
-            native_tool_call_id: None,
-            native_content_index: None,
-        }));
-        let flags = ConversationFlags {
-            show_tools: ToolVisibility::All(true), shorten: true, shorten_max_chars: 20,
-            ..ConversationFlags::default()
-        };
-        let visible = visible_message(&message, &flags, None, &ProgressiveAssignment::default(), 0);
-        let Tool::Use(first) = &visible.tools[0] else { panic!("expected first input") };
-        let Tool::Use(last) = &visible.tools[1] else { panic!("expected last input") };
-        assert_eq!(first.input, serde_json::json!({"first": "AAAAAAAA\n...\n", "nested": ["", ""]}));
-        assert_eq!(last.input, serde_json::json!({"last": "DDDDDDD"}));
     }
 
     #[test]
@@ -774,7 +756,7 @@ mod tool_map_tests {
         let visible = [1usize, 2].map(|index| {
             visible_message(&messages[index], &flags, Some(&map), &progressive, index)
         });
-        for (message, expected) in visible.iter().zip(["ab\n...\nz", "abcdef\n...\nvwxyz"]) {
+        for (message, expected) in visible.iter().zip(["abc[…]yz", "abcdefg[…]uvwxyz"]) {
             let Tool::Result(result) = &message.tools[0] else {
                 panic!("the visible tool must stay a result");
             };

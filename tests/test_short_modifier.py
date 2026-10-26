@@ -52,9 +52,7 @@ def _assert_shortened_tool_body(
         f"the budget covers the payload, not the fence scaffolding. Got {len(inner)}.\n"
         f"Inner:\n{inner}"
     )
-    assert inner.count("\n...\n") == 1, (
-        f"Expected exactly one line-broken ellipsis placeholder. Got inner:\n{inner}"
-    )
+    assert inner.count("[…]") == 1 and "\n" not in inner, inner
     assert start_marker in inner[:260], (
         f"Expected the preserved prefix to contain {start_marker!r}. Got:\n{inner[:260]}"
     )
@@ -71,9 +69,7 @@ def _assert_shortened_thinking_body(
     assert len(body) == 500, (
         f"Expected shortened thinking body to be exactly 500 chars. Got {len(body)}.\nBody:\n{body}"
     )
-    assert body.count("\n...\n") == 1, (
-        f"Expected exactly one line-broken ellipsis placeholder in thinking body. Got:\n{body}"
-    )
+    assert body.count("[…]") == 1 and "\n" not in body, body
     assert start_marker in body[:260], (
         f"Expected the preserved thinking prefix to contain {start_marker!r}. Got:\n{body[:260]}"
     )
@@ -252,7 +248,7 @@ def test_short_modifier_pi_session(tmp_path: Path, monkeypatch, capsys) -> None:
     )
     out = capsys.readouterr().out
     body = _extract_tool_input_body(out, "Bash")
-    _assert_shortened_tool_body(body, "PI_START-", "PI_END")
+    _assert_shortened_tool_body(body, "PI_START-", "PI_END", 497)
 
 
 def test_thinking_short_modifier_claude_session(

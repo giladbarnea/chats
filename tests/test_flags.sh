@@ -92,7 +92,7 @@ assert_message_count "$OUTPUT_A_RANGE" 2
 
 # -s: Shorten
 echo "Testing -s (Shorten)..."
-# Create a file with content that exceeds the 495-char shortening threshold.
+# Create a file with content that exceeds the 500-character budget.
 LONG_PREFIX=$(printf 'p%.0s' {1..240})
 LONG_REMOVED=$(printf 'm%.0s' {1..200})
 LONG_SUFFIX=$(printf 's%.0s' {1..240})
@@ -102,7 +102,7 @@ printf '{"type":"user","message":{"role":"user","content":"%s"},"timestamp":"202
 OUTPUT_S=$($CC_CMD -s "$CH_NATIVE_DATA_DIR/long_message.jsonl")
 assert_success
 # Should contain the middle-truncation ellipsis
-assert_contains "$OUTPUT_S" "..."
+assert_contains "$OUTPUT_S" "[…]"
 # Middle truncation preserves start and end, removes the middle
 assert_contains "$OUTPUT_S" "SHORT_START"
 assert_contains "$OUTPUT_S" "SHORT_END"

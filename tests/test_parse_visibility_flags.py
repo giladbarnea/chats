@@ -550,8 +550,8 @@ def test_thinking_short_modifier_truncates_only_thinking_blocks(
         "Expected thinking blocks to be shown when `--thinking=short` is enabled. "
         f"Got stdout:\n{stdout}"
     )
-    assert stdout.count("\n...\n") == 1, (
-        "Expected shortened thinking output to contain one line-broken ellipsis placeholder. "
+    assert stdout.count("[…]") == 1, (
+        "Expected shortened thinking output to contain one inline omission marker. "
         f"Got stdout:\n{stdout}"
     )
     assert "THINK_START-" in stdout and "THINK_END" in stdout, (

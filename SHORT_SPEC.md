@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-26T11-50
+last_updated: 2026-10-26T16-06
 ---
 
 # Short Spec Definition
@@ -51,21 +51,35 @@ Values with the same final limit and progression mode share that budget, includi
 values selected by different tool specs. Different policies keep separate budgets.
 A bare local `s` and its inherited global policy therefore share one budget.
 
-Count Unicode code points in payload string values, not bytes or terminal columns.
+Count actual Unicode code points in strings, not bytes, display columns, quotes,
+or JSON escapes. Count numbers, booleans, and null by their JSON spelling.
+Retained scalars keep their parsed value and type. An oversized scalar becomes an
+omission marker, never altered digits.
+
 The payloads are the subagent task, text, shown thinking, visible tool inputs and
-outputs, and shown plan, in rendering order. Traverse tool dictionaries and arrays
-in their stored order. Tool names, IDs, result-block types, object keys, numeric and
-boolean values, escaping, and renderer scaffolding are outside the budget.
+outputs, and shown plan. Global shortening includes every message, including the
+first user message. Tool names, IDs, result-block types, object keys, escaping, and
+renderer scaffolding are outside the budget. Session metadata never participates.
 
-Treat each policy's values as one joined string. Keep its head and tail, replacing
-the middle with one `\n...\n` marker that counts within the budget. Map the surviving
-pieces back to their original values. Fully removed string values become empty;
-container shape and scalar types stay intact. This is a preview, not runnable data.
-XML, structured JSON, raw, and Rich output use the same shortened values.
+Allocate recursively in source order. Preserve children that fit, then share spare
+characters across longer children. A useful string preview needs a source character
+and an omission marker, not a minimum of eight characters. If useful previews do
+not fit, omit consecutive middle list items or dictionary fields. A list uses one
+marker item. A dictionary keeps the first omitted field's key with a marker value
+and removes the rest of that middle run. If even the message's payload roots cannot
+fit, retain tool identities while marking omitted middle payloads as one run.
 
-The budget limits string payload content, not total serialized output. Wide objects
-can still exceed it through keys and syntax. Session metadata and frontmatter never
-participate and are never shortened.
+Inline omissions use `[…]` (three characters), or `…` when space is too tight.
+Single-line values never gain line breaks. Whole-line omissions use a standalone
+`…` on existing line boundaries, adjacent only to complete retained source lines.
+If no complete line fits, shorten every line inline when possible; otherwise show
+one omission marker. Every marker and retained newline counts toward the budget.
+Values that already fit stay unchanged. The payload character count never exceeds
+the resolved budget.
+
+This is a preview, not runnable data. XML, structured JSON, raw, Rich, and search
+use the same shortened values. Total serialized output can exceed the budget
+through keys, syntax, escaping, and metadata.
 
 ## Progressive sequence
 

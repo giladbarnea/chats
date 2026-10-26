@@ -5,25 +5,6 @@ from pathlib import Path
 from typing import Any
 
 
-def truncate_middle(s: str, max_chars: int = 500) -> str:
-    """Shorten a string by replacing its middle with an ellipsis block."""
-    placeholder = "\n...\n"
-    if max_chars < len(placeholder):
-        placeholder = "..."[:max_chars]
-
-    if len(s) <= max_chars - len(placeholder):
-        return s
-
-    if max_chars <= len(placeholder):
-        return placeholder[:max_chars]
-
-    remaining = max_chars - len(placeholder)
-    first_half = remaining // 2 + (remaining % 2)
-    second_half = remaining // 2
-
-    return s[:first_half] + placeholder + s[-second_half:]
-
-
 def extract_text_from_content(content: Any, strip: bool = False) -> list[str]:
     """
     Extract text strings from a content field.

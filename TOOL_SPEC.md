@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-26T11-50
+last_updated: 2026-10-26T16-06
 ---
 
 # Tool Spec Definition
@@ -60,7 +60,7 @@ And:
 
 A `NAME` cannot contain whitespace, `:`, `!`, or `=` and cannot be a bare decimal integer.
 Numbers require a short assignment. For example, `-t:i:200` fails with a suggestion to use `s=200`.
-Use `-t:i:s=200` to share 200 characters across a message's tool-input string values.
+Use `-t:i:s=200` to share 200 characters across a message's tool-input payload values.
 
 ## Name equivalence
 

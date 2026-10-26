@@ -702,10 +702,7 @@ def test_colored_edit_diff_is_shortened_with_tool_short(tmp_path, monkeypatch):
         sid, None, None, output_format="xml", emit_metadata=False,
     ))
 
-    assert "OLDHEAD" in out and "NEWTAIL" in out, (
-        f"Expected the joined payload's head and tail. Got:\n{out}"
-    )
-    assert "OLDTAIL" not in out and "NEWHEAD" not in out, out
+    assert all(marker in out for marker in ("OLDHEAD", "OLDTAIL", "NEWHEAD", "NEWTAIL")), out
     assert "OLDMIDDLE" not in out and "NEWMIDDLE" not in out, (
         "The colored Edit diff must be shortened (old/new middles cut) under -t:s. "
         f"Got:\n{out}"
