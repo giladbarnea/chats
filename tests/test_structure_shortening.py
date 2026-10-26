@@ -270,6 +270,47 @@ def test_more_tools_than_characters_keeps_identity_without_overflow(tmp_path: Pa
     assert any(tool.get("command") in ("…", "[…]") for tool in tools), message
 
 
+def test_json_previews_show_markers_without_decoding_literal_backslash_u(tmp_path: Path) -> None:
+    session = write_session(tmp_path, [{
+        "type": "toolCall", "name": "Custom", "id": "call-one",
+        "arguments": {"literal": r"\u2026", "unicode": "א😀", "body": "abcdefghijklmnopqrst" * 10},
+    }])
+    outputs = [
+        run_ch(tmp_path, str(session), "-t:i:s=32", "--color=never", "--no-metadata"),
+        run_ch(tmp_path, str(session), "-t:i:s=32", "-f", "raw"),
+        run_ch(tmp_path, "search", ".", "-t:i:s=32", "--color=never", "--no-metadata"),
+        run_ch(tmp_path, "search", ".", "-t:i:s=32", "--raw"),
+    ]
+    for output in outputs:
+        assert "[…]" in output, output
+        assert r'"literal": "\\u2026"' in output, output
+        assert r'"unicode": "\u05d0\ud83d\ude00"' in output, output
+        assert "א" not in output and "😀" not in output, output
+    structured = run_ch(tmp_path, str(session), "-t:i:s=32", "-f", "json")
+    assert run_ch(tmp_path, "parse", source=structured) == outputs[0]
+    canonical = run_ch(tmp_path, "parse", "-f", "json", source=outputs[0])
+    tool = json.loads(canonical)[0]["content"][0]
+    assert tool["literal"] == r"\u2026" and tool["unicode"] == "א😀", tool
+    assert run_ch(tmp_path, "parse", source=canonical) == outputs[0]
+
+
+@pytest.mark.parametrize("number", ["1e-7", "0.000001", "0.00001", "1e+20", "1.00e+20", "1.0", "-0.0", "2.5e-08", "1.25E+2"])
+def test_float_spelling_uses_the_same_budget_in_parse_and_search(tmp_path: Path, number: str) -> None:
+    session = write_session(tmp_path, [])
+    header = json.dumps({"type": "session", "version": 3, "id": "structure-budget", "cwd": "/tmp/structure-budget"})
+    session.write_text(header + '\n{"type":"message","message":{"role":"assistant","content":'
+                       '[{"type":"toolCall","name":"Custom","id":"call-one","arguments":'
+                       '{"number":' + number + ',"body":"abcdefghijklmnopqrst"}}]}}')
+    structured = run_ch(tmp_path, str(session), "-t:i:s=8", "-f", "json")
+    tool = json.loads(structured)[0]["content"][0]
+    assert tool.get("number") == json.loads(number) and isinstance(tool.get("number"), float), tool
+    assert value_characters({"number": tool["number"], "body": tool["body"]}) <= 8, tool
+    xml = run_ch(tmp_path, str(session), "-t:i:s=8", "--color=never", "--no-metadata")
+    searched = run_ch(tmp_path, "search", ".", "-t:i:s=8", "--color=never", "--no-metadata")
+    assert xml.strip() in searched, searched
+    assert run_ch(tmp_path, "parse", source=structured) == xml
+
+
 @pytest.mark.parametrize("budget", [8, 17, 64])
 def test_nested_payload_corpus_stays_within_budget_and_matches_native_search(tmp_path: Path, budget: int) -> None:
     payloads = [

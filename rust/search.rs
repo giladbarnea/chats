@@ -91,7 +91,7 @@ const OPTIONS: &[Action] = &[
     },
     Action {
         invocation: "--short [SHORT]",
-        help: "Shorten text before matching and display (see Shortening below)",
+        help: "Budget message payloads before matching and display (see Shortening below)",
     },
     Action {
         invocation: "--color {always,never,auto}",
@@ -185,27 +185,29 @@ Tool filters:
 
 Shortening:
   Shortening is a powerful means to understand what a session of potentially hundreds of messages is about while keeping the token cost of consuming it low. It is the recommended approach to start with when looking up content across and within sessions to pin down where, in that large search space, to zoom in without shortening (it's recall first, precision later). The shortening API is optimized to enable effective and efficient searches of vague purposes over a large data space without costing the searching agent its entire context window.
-  --short limits each message body, thinking block, plan, and tool text value to a default of 500 characters. A tool's command and output each get their own limit. This is not a total output budget.
-  Shortened text is truncated in the middle. This because the start and end of a message typically has the more important information.
-  --short=200 limits each to 200 characters.
-  Bare --short uses a fixed limit of 500. Numeric limits must be at least 8.
+  --short gives one shared payload budget per message to values with the same resolved policy. The default budget is 500 characters.
+  This covers message text, thinking, plans, subagent tasks, and visible tools. No message is exempt, including the first user message.
+  Numbers, booleans, null, and omission markers count. Strings count Unicode characters. Keys, syntax, escaping, and metadata do not count. Total output can therefore exceed the payload budget.
+  Keep short values and share remaining room across longer values. Omit middle list items or dictionary fields when necessary. Single-line values stay on one line. Whole-line omissions keep complete neighboring source lines.
+  --short=200 shares 200 characters across the selected payloads in each message. Different policies keep separate budgets.
+  Bare --short uses a fixed budget of 500. CLI limits must be at least 8; individual value previews can be smaller.
   --short=p=200 keeps more detail toward the end of each conversation. Among the messages you include using this mode, limits grow evenly from 8 for the first to 200 for the last. Three messages get 8, 104, and 200. A single message gets 200.
   Search assigns these limits before looking for matches. Text removed by shortening cannot match. Titles and summaries are never shortened.
   Accepted values: N, p, progressive, p=N, progressive=N. N is the character limit. p and progressive mean the same thing and default to a final limit of 500.
   Both --short VALUE and --short=VALUE work. Search reserves -s for case-sensitive matching.
 
 Shortening tools:
-  Use -t s to shorten tools alone to 500 characters. You can attach the value to the option as -t:s. A --short setting changes this default.
+  Use -t s to share 500 characters across each message's tool payloads. You can attach the value to the option as -t:s. A --short setting changes this default.
   Add s or short to any tool filter. Both accept the same values as --short:
-    -t Read:o:s=80       Limit each Read output text value to 80 characters
+    -t Read:o:s=80       Share 80 characters across each message's Read outputs
     -t Read:o:short=p=80 Grow Read output limits from 8 to 80
   Bare :s copies both the limit and mode from --short. :s=p copies only the limit and switches to progressive mode:
     --short=200 -t Read:o:s=p
       Grow Read output limits from 8 to 200. Other text stays fixed at 200.
   To give one tool more room than the rest:
     -t:s=80 -t Bash:s=200
-      Give Bash a limit of 200 and other tools 80. The Bash filter wins because it adds a tool-name condition.
-  Count one condition for a tool name, one for input/output, and one for error. s and short do not count. More conditions win. If counts tie, the last filter wins. Only the winning filter controls shortening. Limits are never added or combined.
+      Give Bash payloads a shared budget of 200 and other tool payloads 80 per message. The Bash filter wins because it adds a tool-name condition.
+  Count one condition for a tool name, one for input/output, and one for error. s and short do not count. More conditions win. If counts tie, the last filter wins. Only the winning filter chooses a tool's policy. Equal policies share one message budget.
 
 Search scope and output:
   A title is the session name set with ch name or the provider's naming command. A summary is a description saved in the session history.

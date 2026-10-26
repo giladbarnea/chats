@@ -577,7 +577,7 @@ pub fn visible_message(
     for (policy, payloads) in groups {
         let (targets, values): (Vec<_>, Vec<_>) = payloads.into_iter()
             .map(|(target, value, result)| (target, (value, result))).unzip();
-        let shortened = shorten_payloads(&values, policy.effective_max_chars(position, count));
+        let shortened = shorten_payloads(values, policy.effective_max_chars(position, count));
         for (target, value) in targets.into_iter().zip(shortened) {
             match target {
                 PayloadTarget::SubagentTask => visible.subagent_task = Some(value.as_str().unwrap().to_string()),

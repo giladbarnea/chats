@@ -5,6 +5,8 @@
 
 use serde_json::Value;
 
+use crate::model::canonicalize_json_numbers;
+
 pub const DEFAULT_SHORT_MAX_CHARS: i64 = 500;
 pub const MIN_SHORT_MAX_CHARS: i64 = 8;
 
@@ -318,9 +320,12 @@ fn shorten_payload(value: &Value, budget: usize, context: PayloadContext) -> Val
 /// use _native::shortening::shorten_payloads;
 /// use serde_json::json;
 /// let payload = json!({"left": true, "middle": false, "last": 123});
-/// assert_eq!(shorten_payloads(&[(payload, false)], 8), vec![json!({"left": true, "middle": "…", "last": 123})]);
+/// assert_eq!(shorten_payloads(vec![(payload, false)], 8), vec![json!({"left": true, "middle": "…", "last": 123})]);
 /// ```
-pub fn shorten_payloads(values: &[(Value, bool)], max_chars: i64) -> Vec<Value> {
+pub fn shorten_payloads(mut values: Vec<(Value, bool)>, max_chars: i64) -> Vec<Value> {
+    for (value, _) in &mut values {
+        canonicalize_json_numbers(value).expect("parsed payload numbers have valid JSON spellings");
+    }
     let children: Vec<(&Value, PayloadContext)> = values.iter().map(|(value, result)| (value,
         if *result { PayloadContext::Result } else { PayloadContext::Value }
     )).collect();

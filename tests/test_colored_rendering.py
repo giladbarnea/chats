@@ -841,6 +841,7 @@ def test_compaction_message_has_its_own_badge_and_hue(tmp_path, monkeypatch):
     "chats.model",
     "chats.utils",
     "chats.shortening",
+    "chats.tools",
     "chats.parsing",
     "chats.murmurs",
     "chats.commands.name",

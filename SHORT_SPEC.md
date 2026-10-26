@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-26T16-06
+last_updated: 2026-10-26T16-55
 ---
 
 # Short Spec Definition
@@ -52,7 +52,7 @@ values selected by different tool specs. Different policies keep separate budget
 A bare local `s` and its inherited global policy therefore share one budget.
 
 Count actual Unicode code points in strings, not bytes, display columns, quotes,
-or JSON escapes. Count numbers, booleans, and null by their JSON spelling.
+or JSON escapes. Count numbers, booleans, and null by their normalized JSON spelling, not the source token's spelling.
 Retained scalars keep their parsed value and type. An oversized scalar becomes an
 omission marker, never altered digits.
 
@@ -70,6 +70,7 @@ and removes the rest of that middle run. If even the message's payload roots can
 fit, retain tool identities while marking omitted middle payloads as one run.
 
 Inline omissions use `[…]` (three characters), or `…` when space is too tight.
+JSON preview bodies show these glyphs literally without changing other string escaping.
 Single-line values never gain line breaks. Whole-line omissions use a standalone
 `…` on existing line boundaries, adjacent only to complete retained source lines.
 If no complete line fits, shorten every line inline when possible; otherwise show
