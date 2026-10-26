@@ -1,10 +1,18 @@
 ---
-last_updated: 2026-10-22T15-40
+last_updated: 2026-10-26T11-50
 ---
 
 # Changelog
 
 All notable changes to the `conversations` skill.
+
+---
+## [2026-10-26] Share shortening budgets across message values
+
+### Changed
+
+- `--short` and tool-local `:s` now share one budget across each message's string values with the same resolved policy. Many small fields no longer multiply the requested content limit. Different local policies keep separate budgets.
+- The preview keeps the joined head and tail with one middle marker. Removed values become empty while structure and metadata stay intact. Keys, non-string values, and output syntax remain outside the budget. Parse, search, and all output formats use the same rule. See [SHORT_SPEC.md](SHORT_SPEC.md).
 
 ---
 ## [2026-10-22] Attribute tool activity to the assistant

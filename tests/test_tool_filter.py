@@ -426,7 +426,7 @@ def _fenced_inner(content: str) -> str:
 class TestPerToolShortening:
     """The :s modifier shortens only matching tools, not others."""
 
-    def test_short_flag_truncates_rendered_tool_output_to_500_chars(self):
+    def test_short_flag_shares_500_chars_between_read_input_and_output(self):
         long_content = "READ_START-" + ("A" * 1000) + "-READ_END"
         msg = make_message(
             {
@@ -457,8 +457,8 @@ class TestPerToolShortening:
         assert full_result is not None, (
             "Expected full tool output content to be present."
         )
-        assert len(_fenced_inner(short_result)) == 500, (
-            f"Expected :s to truncate the tool payload to 500 chars (fence excluded). "
+        assert len(_fenced_inner(short_result)) == 495, (
+            f"Expected the output to use 495 chars after the five-character input path. "
             f"Got {len(_fenced_inner(short_result))}."
         )
         assert len(full_result) > len(short_result), (
@@ -502,14 +502,9 @@ class TestPerToolShortening:
         assert result_content is not None, (
             "Expected Bash tool-output content to be present."
         )
-        assert len(_fenced_inner(input_content)) == 500, (
-            f"Expected global --short to truncate the tool-input payload to 500 chars "
-            f"(fence excluded). Got {len(_fenced_inner(input_content))}."
-        )
-        assert len(_fenced_inner(result_content)) == 500, (
-            f"Expected global --short to truncate the tool-output payload to 500 chars "
-            f"(fence excluded). Got {len(_fenced_inner(result_content))}."
-        )
+        assert len(_fenced_inner(input_content)) == 249, input_content
+        assert len(_fenced_inner(result_content)) == 247, result_content
+        assert 4 + len(_fenced_inner(input_content)) + len(_fenced_inner(result_content)) == 500
         assert "BASH_START-" in input_content[:260], (
             f"Expected shortened tool-input content to preserve the start. Got: {input_content[:260]!r}"
         )
@@ -537,14 +532,9 @@ class TestPerToolShortening:
         result_content = parts[1].data.content
         assert input_content is not None, "Expected shortened tool-input content."
         assert result_content is not None, "Expected shortened tool-output content."
-        assert len(_fenced_inner(input_content)) == 120, (
-            "Expected global shortening to honor max_chars=120 for the tool-input payload "
-            f"(fence excluded). Got: {len(_fenced_inner(input_content))}"
-        )
-        assert len(_fenced_inner(result_content)) == 120, (
-            "Expected global shortening to honor max_chars=120 for the tool-output payload "
-            f"(fence excluded). Got: {len(_fenced_inner(result_content))}"
-        )
+        assert len(_fenced_inner(input_content)) == 59, input_content
+        assert len(_fenced_inner(result_content)) == 57, result_content
+        assert 4 + len(_fenced_inner(input_content)) + len(_fenced_inner(result_content)) == 120
         assert "BASH_START-" in input_content[:80], (
             f"Expected custom max-chars shortening to preserve the start. Got: {input_content[:80]!r}"
         )
@@ -584,14 +574,8 @@ class TestPerToolShortening:
         assert bash_input is not None, "Expected Bash input content to be visible."
         assert bash_result is not None, "Expected Bash result content to be visible."
         assert read_result is not None, "Expected Read result content to be visible."
-        assert len(_fenced_inner(bash_input)) == 10, (
-            "Expected `Bash:s=10` to shorten only the Bash input payload to 10 chars. "
-            f"Got: {len(_fenced_inner(bash_input))}"
-        )
-        assert len(_fenced_inner(bash_result)) == 10, (
-            "Expected `Bash:s=10` to shorten only the Bash output payload to 10 chars. "
-            f"Got: {len(_fenced_inner(bash_result))}"
-        )
+        assert len(_fenced_inner(bash_input)) == 8, bash_input
+        assert len(_fenced_inner(bash_result)) == 2, bash_result
         assert len(_fenced_inner(read_result)) == 500, (
             "Expected bare `Read:o:s` to keep the default 500-char local short limit. "
             f"Got: {len(_fenced_inner(read_result))}"
@@ -629,20 +613,10 @@ class TestPerToolShortening:
 
         bash_input = tool_parts[0].data.content
         bash_result = tool_parts[1].data.content
-        assert bash_input is not None, "Expected Bash input content to be visible."
-        assert bash_result is not None, "Expected Bash result content to be visible."
-        assert len(text_parts[0].data) == 10, (
-            "Expected `--short=10` to shorten regular message text to 10 chars. "
-            f"Got: {len(text_parts[0].data)}"
-        )
-        assert len(_fenced_inner(bash_input)) == 10, (
-            "Expected bare `-t:s` to inherit the global --short=10 limit for Bash input. "
-            f"Got: {len(_fenced_inner(bash_input))}"
-        )
-        assert len(_fenced_inner(bash_result)) == 10, (
-            "Expected bare `-t:s` to inherit the global --short=10 limit for Bash output. "
-            f"Got: {len(_fenced_inner(bash_result))}"
-        )
+        assert bash_input is None, "The middle tool payload has no characters left in the shared budget."
+        assert bash_result is not None, "Expected the message tail in the Bash result."
+        assert text_parts[0].data == "TEX\n...\n", text_parts[0].data
+        assert _fenced_inner(bash_result) == "ND", bash_result
 
     def test_all_tools_short_value_overrides_global_default(self):
         """`--short -t:s=10` means regular text uses 500, but tools use 10."""
@@ -681,14 +655,8 @@ class TestPerToolShortening:
             "Expected bare `--short` to keep the default 500-char limit for text. "
             f"Got: {len(text_parts[0].data)}"
         )
-        assert len(_fenced_inner(bash_input)) == 10, (
-            "Expected `-t:s=10` to override the global default for Bash input. "
-            f"Got: {len(_fenced_inner(bash_input))}"
-        )
-        assert len(_fenced_inner(bash_result)) == 10, (
-            "Expected `-t:s=10` to override the global default for Bash output. "
-            f"Got: {len(_fenced_inner(bash_result))}"
-        )
+        assert len(_fenced_inner(bash_input)) == 8, bash_input
+        assert len(_fenced_inner(bash_result)) == 2, bash_result
 
     def test_specific_tool_short_value_overrides_broader_tool_short_and_global_default(self):
         """`--short=20 -t:s=10 -t:Bash:s=30` uses 20 globally, 10 for tools, 30 for Bash."""
@@ -738,18 +706,10 @@ class TestPerToolShortening:
             "Expected `--short=20` to shorten regular message text to 20 chars. "
             f"Got: {len(text_parts[0].data)}"
         )
-        assert len(_fenced_inner(bash_input)) == 30, (
-            "Expected more-specific `Bash:s=30` to override broad `s=10` for Bash input. "
-            f"Got: {len(_fenced_inner(bash_input))}"
-        )
-        assert len(_fenced_inner(bash_result)) == 30, (
-            "Expected more-specific `Bash:s=30` to override broad `s=10` for Bash output. "
-            f"Got: {len(_fenced_inner(bash_result))}"
-        )
-        assert len(_fenced_inner(read_result)) == 10, (
-            "Expected broad `s=10` to apply to non-Bash tools. "
-            f"Got: {len(_fenced_inner(read_result))}"
-        )
+        assert len(_fenced_inner(bash_input)) == 18, bash_input
+        assert len(_fenced_inner(bash_result)) == 12, bash_result
+        assert dict(tool_parts[2].data.attrs)["file_path"] == "f.t\n...\n"
+        assert len(_fenced_inner(read_result)) == 2, read_result
 
 
 # =============================================================================

@@ -39,14 +39,16 @@ def _extract_thinking_body(output: str) -> str:
     return match.group("body")
 
 
-def _assert_shortened_tool_body(body: str, start_marker: str, end_marker: str) -> None:
+def _assert_shortened_tool_body(
+    body: str, start_marker: str, end_marker: str, payload_length: int = 500,
+) -> None:
     lines = body.split("\n")
     assert lines[0].startswith("```") and lines[-1] == "```", (
         f"Expected the tool body to be a fenced code block. Got:\n{body}"
     )
     inner = "\n".join(lines[1:-1])
-    assert len(inner) == 500, (
-        f"Expected the shortened payload (inside the fence) to be exactly 500 chars; "
+    assert len(inner) == payload_length, (
+        f"Expected the shortened payload (inside the fence) to be {payload_length} chars; "
         f"the budget covers the payload, not the fence scaffolding. Got {len(inner)}.\n"
         f"Inner:\n{inner}"
     )
@@ -186,7 +188,7 @@ def test_short_modifier_codex_session(tmp_path: Path, monkeypatch, capsys) -> No
     )
     out = capsys.readouterr().out
     body = _extract_tool_input_body(out, "Bash")
-    _assert_shortened_tool_body(body, "CODEX_START-", "CODEX_END")
+    _assert_shortened_tool_body(body, "CODEX_START-", "CODEX_END", 496)
 
 
 def test_short_modifier_pi_session(tmp_path: Path, monkeypatch, capsys) -> None:

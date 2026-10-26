@@ -1,7 +1,7 @@
 //! Shortening policy and the truncation it applies.
 //!
-//! Ported from `src/chats/shortening.py` and `truncate_middle` / `shorten_data` in
-//! `src/chats/utils.py`, at oracle revision `8cb4c5f`.
+//! Policy and shared message-value allocation mirror `src/chats/shortening.py`.
+//! The standalone `truncate_middle` utility preserves the legacy Python contract.
 //!
 //! Two behaviours here look like defects and are reproduced deliberately. Python
 //! counts **code points**, never display columns, so a string of wide characters
@@ -23,7 +23,7 @@ pub fn is_progressive_component(candidate: &str) -> bool {
 }
 
 /// A complete shortening limit and progression mode.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ShortPolicy {
     pub max_chars: i64,
     pub progressive: bool,
@@ -225,23 +225,48 @@ pub fn truncate_middle(value: &str, max_chars: i64) -> String {
     result
 }
 
-/// Recursively shorten every string leaf, preserving object key order.
+/// Cut the middle of joined values, returning each surviving piece in place.
 ///
-/// The limit is per string leaf, applied as the structure is traversed; it does not
-/// bound the total size of the value.
-pub fn shorten_data(value: &Value, max_chars: i64) -> Value {
-    match value {
-        Value::Object(entries) => Value::Object(
-            entries
-                .iter()
-                .map(|(key, nested)| (key.clone(), shorten_data(nested, max_chars)))
-                .collect(),
-        ),
-        Value::Array(items) => {
-            Value::Array(items.iter().map(|item| shorten_data(item, max_chars)).collect())
+/// ```
+/// use _native::shortening::shorten_values;
+/// assert_eq!(shorten_values(&["abcdefghij", "klmnopqrst"], 12), vec!["abcd\n...\n", "rst"]);
+/// ```
+pub fn shorten_values(values: &[&str], max_chars: i64) -> Vec<String> {
+    let lengths: Vec<usize> = values.iter().map(|value| value.chars().count()).collect();
+    let total: usize = lengths.iter().sum();
+    if total as i64 <= max_chars - PLACEHOLDER.len() as i64 {
+        return values.iter().map(|value| value.to_string()).collect();
+    }
+    let remaining = (max_chars - PLACEHOLDER.len() as i64) as usize;
+    let head_end = remaining.div_ceil(2);
+    let tail_start = total - remaining / 2;
+    let mut offset = 0;
+    values.iter().zip(lengths).map(|(value, length)| {
+        let end = offset + length;
+        let mut shortened: String = value.chars().take(head_end.saturating_sub(offset)).collect();
+        if offset <= head_end && head_end < end {
+            shortened.push_str(PLACEHOLDER);
         }
-        Value::String(text) => Value::String(truncate_middle(text, max_chars)),
-        other => other.clone(),
+        shortened.extend(value.chars().skip(tail_start.saturating_sub(offset)));
+        offset = end;
+        shortened
+    }).collect()
+}
+
+/// Collect string leaves in container order without including object keys.
+///
+/// ```
+/// use _native::shortening::string_values_mut;
+/// let mut value = serde_json::json!({"key": ["hello", 3]});
+/// *string_values_mut(&mut value)[0] = "short".to_string();
+/// assert_eq!(value, serde_json::json!({"key": ["short", 3]}));
+/// ```
+pub fn string_values_mut(value: &mut Value) -> Vec<&mut String> {
+    match value {
+        Value::Object(entries) => entries.values_mut().flat_map(string_values_mut).collect(),
+        Value::Array(items) => items.iter_mut().flat_map(string_values_mut).collect(),
+        Value::String(text) => vec![text],
+        _ => Vec::new(),
     }
 }
 

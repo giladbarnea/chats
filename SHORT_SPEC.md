@@ -1,3 +1,7 @@
+---
+last_updated: 2026-10-26T11-50
+---
+
 # Short Spec Definition
 
 This document is the authoritative contract for global and tool-local shortening values.
@@ -40,6 +44,29 @@ Local `s=P` inherits only `N` from the global policy, or 500, and selects progre
 Local `s=N` selects fixed `N`. Local `s=P=N` supplies the complete local policy.
 [TOOL_SPEC.md](TOOL_SPEC.md) chooses the winning declaration before this inheritance is resolved.
 
+## Message budget
+
+Each visible message shares one character budget per resolved policy.
+Values with the same final limit and progression mode share that budget, including
+values selected by different tool specs. Different policies keep separate budgets.
+A bare local `s` and its inherited global policy therefore share one budget.
+
+Count Unicode code points in payload string values, not bytes or terminal columns.
+The payloads are the subagent task, text, shown thinking, visible tool inputs and
+outputs, and shown plan, in rendering order. Traverse tool dictionaries and arrays
+in their stored order. Tool names, IDs, result-block types, object keys, numeric and
+boolean values, escaping, and renderer scaffolding are outside the budget.
+
+Treat each policy's values as one joined string. Keep its head and tail, replacing
+the middle with one `\n...\n` marker that counts within the budget. Map the surviving
+pieces back to their original values. Fully removed string values become empty;
+container shape and scalar types stay intact. This is a preview, not runnable data.
+XML, structured JSON, raw, and Rich output use the same shortened values.
+
+The budget limits string payload content, not total serialized output. Wide objects
+can still exceed it through keys and syntax. Session metadata and frontmatter never
+participate and are never shortened.
+
 ## Progressive sequence
 
 Build one ordered union of visible messages that have at least one progressive payload.
@@ -47,7 +74,7 @@ A message qualifies once, even when several payloads or policies qualify inside 
 Short payloads still qualify when their source length does not require truncation.
 Hidden payloads and payloads governed only by fixed policies do not qualify.
 
-Qualifying payloads are message text, shown thinking, shown plans, and visible tool inputs or outputs.
+Qualifying payloads are subagent tasks, message text, shown thinking, shown plans, and visible tool inputs or outputs.
 Global and tool-local progressive policies share the same message position and qualifying count.
 Each policy applies its own `N` to that shared position.
 
@@ -64,7 +91,4 @@ Parse assigns positions after agent merging and message-slice selection.
 Search assigns positions across all visible session messages before query-match filtering.
 Matches-only and full search output preserve those same assigned positions.
 
-Every effective limit applies independently to each string leaf, not to the containing object.
-The middle marker counts within the leaf limit. Renderer scaffolding sits outside that limit.
-XML, structured JSON, raw, and Rich output use the same resolved limits.
-Session metadata and frontmatter never participate in the sequence and are never shortened.
+Each policy's effective limit becomes its shared message budget, as defined above.

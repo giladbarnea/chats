@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 DEFAULT_SHORT_MAX_CHARS = 500
@@ -48,6 +49,47 @@ class ShortSpec:
 
 
 DEFAULT_SHORT_POLICY = ShortPolicy(DEFAULT_SHORT_MAX_CHARS, False)
+
+
+def shorten_values(values: Sequence[str], max_chars: int) -> list[str]:
+    """Cut the middle of joined values, then return the surviving pieces in place.
+
+    >>> shorten_values(["abcdefghij", "klmnopqrst"], 12)
+    ['abcd\\n...\\n', 'rst']
+    """
+    total = sum(map(len, values))
+    placeholder = "\n...\n"
+    if total <= max_chars - len(placeholder):
+        return list(values)
+
+    remaining = max_chars - len(placeholder)
+    head_end = (remaining + 1) // 2
+    tail_start = total - remaining // 2
+    offset = 0
+    shortened: list[str] = []
+    for value in values:
+        end = offset + len(value)
+        head = value[:max(0, head_end - offset)]
+        marker = placeholder if offset <= head_end < end else ""
+        tail = value[max(0, tail_start - offset):]
+        shortened.append(head + marker + tail)
+        offset = end
+    return shortened
+
+
+def map_string_values(value: object, transform: Callable[[str], str]) -> object:
+    """Transform string leaves without changing container shape or scalar types.
+
+    >>> map_string_values({"a": ["hello", 3]}, str.upper)
+    {'a': ['HELLO', 3]}
+    """
+    if isinstance(value, dict):
+        return {key: map_string_values(nested, transform) for key, nested in value.items()}
+    if isinstance(value, list):
+        return [map_string_values(nested, transform) for nested in value]
+    if isinstance(value, str):
+        return transform(value)
+    return value
 
 
 def parse_short_spec(candidate: str) -> ShortSpec:

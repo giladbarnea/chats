@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import html
 import sys
-from collections.abc import Iterator
-from dataclasses import dataclass, field
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
@@ -11,10 +11,9 @@ from typing import Literal
 
 from .parts import MessagePart, MessagePartKind, ToolParts
 from .registry import TOOL_SCHEMAS, ContentBlockType
-from .shortening import ShortPolicy
+from .shortening import ShortPolicy, map_string_values, shorten_values
 from .tool_filter import ToolFilter, resolve_tool_visibility
 from .tools import tool_to_json, tool_to_parts
-from .utils import shorten_data, truncate_middle
 
 Provider = Literal["claude", "pi", "codex"]
 PROVIDERS: tuple[Provider, ...] = ("claude", "pi", "codex")
@@ -198,18 +197,28 @@ class ConversationFlags:
         )
 
 
-def _shorten_tool_payload(tool: dict, max_chars: int) -> dict:
-    """Shorten only user-authored tool payload fields, preserving tool metadata.
+def _map_tool_payload(
+    tool: dict[str, object], transform: Callable[[str], str]
+) -> dict[str, object]:
+    """Transform payload strings without changing tool or result-block metadata.
 
-    >>> _shorten_tool_payload({"type": "tool_use", "name": "Bash", "input": {"command": "abcdefghi"}}, 8)["type"]
-    'tool_use'
+    >>> _map_tool_payload({"type": "tool_result", "content": [{"type": "text", "text": "hello"}]}, str.upper)
+    {'type': 'tool_result', 'content': [{'type': 'text', 'text': 'HELLO'}]}
     """
-    shortened_tool = dict(tool)
-    if shortened_tool.get("type") == "tool_use" and "input" in shortened_tool:
-        shortened_tool["input"] = shorten_data(shortened_tool.get("input"), max_chars)
-    if shortened_tool.get("type") == "tool_result" and "content" in shortened_tool:
-        shortened_tool["content"] = shorten_data(shortened_tool.get("content"), max_chars)
-    return shortened_tool
+    if tool.get("type") == "tool_use" and "input" in tool:
+        return {**tool, "input": map_string_values(tool["input"], transform)}
+    if tool.get("type") != "tool_result" or "content" not in tool:
+        return tool
+    content = tool["content"]
+    if not isinstance(content, list):
+        return {**tool, "content": map_string_values(content, transform)}
+    blocks = [
+        {key: value if key == "type" else map_string_values(value, transform)
+         for key, value in block.items()}
+        if isinstance(block, dict) else map_string_values(block, transform)
+        for block in content
+    ]
+    return {**tool, "content": blocks}
 
 
 @dataclass
@@ -251,80 +260,76 @@ class Message:
             self.progressive_qualifying_count,
         )
 
-    def _global_short_max_chars(self, flags: ConversationFlags) -> int:
-        return self._effective_short_max_chars(
-            ShortPolicy(flags.shorten_max_chars, flags.shorten_progressive)
+    def _visible_payloads(
+        self, flags: ConversationFlags, tool_id_map: dict[str, str] | None
+    ) -> Message:
+        """Resolve visibility and shorten each policy's values together before rendering."""
+        filter_value = True if self.tools_always_visible else flags.show_tools
+        id_map = self._tool_name_id_map(filter_value, tool_id_map)
+        tool_policies = list(self._iter_visible_tool_policies(flags, id_map))
+        global_policy = flags.global_short_policy
+        thinking_policy = global_policy or (
+            ShortPolicy(flags.shorten_max_chars, False) if flags.shorten_thinking else None
         )
+        groups: dict[ShortPolicy, list[str]] = {}
+
+        def collect(value: str, policy: ShortPolicy) -> str:
+            groups.setdefault(policy, []).append(value)
+            return value
+
+        def project(transform: Callable[[str, ShortPolicy], str]) -> Message:
+            def text(value: str | None, policy: ShortPolicy | None) -> str | None:
+                return transform(value, policy) if value and policy is not None else value
+
+            subagent_task = text(self.subagent_task, global_policy)
+            main_text = text(self.text, global_policy)
+            thinking = text(self.thinking, thinking_policy) if flags.show_thinking else None
+            tools = [
+                _map_tool_payload(tool, lambda value: transform(value, policy))
+                if (policy := local_policy or global_policy) is not None else tool
+                for tool, local_policy in tool_policies
+            ]
+            plan = text(self.plan, global_policy) if flags.show_plans else None
+            return replace(self, subagent_task=subagent_task, text=main_text,
+                           thinking=thinking, tools=tools, plan=plan)
+
+        visible = project(collect)
+        if not groups:
+            return visible
+        replacements = {
+            policy: iter(shorten_values(values, self._effective_short_max_chars(policy)))
+            for policy, values in groups.items()
+        }
+        return project(lambda value, policy: next(replacements[policy]))
 
     def iter_visible_parts(
         self, flags: ConversationFlags, tool_id_map: dict[str, str] | None = None
     ) -> list[MessagePart]:
-        """Yield all visible content parts based on flags.
+        """Return visible parts using the shared message budget.
 
-        This is the single source of truth for:
-        - What content is visible (flag-based filtering)
-        - Content ordering (text, thinking, tools, plan)
-        - Shortening: every payload (text, thinking, plan, tool input/output) is
-          shortened at the source before rendering, so scaffolding stays out of the budget
-
-        Plans are represented as TOOL parts with name="ExitPlanMode".
+        Plans use tool-input parts named ExitPlanMode.
         """
+        visible = self._visible_payloads(flags, tool_id_map)
         parts: list[MessagePart] = []
-
-        # Subagent task prompt — always shown (it is what was handed to the agent).
-        if self.subagent_task:
-            parts.append(MessagePart(MessagePartKind.SUBAGENT_TASK, self.subagent_task))
-
-        # Text content
-        if self.text:
-            text = (
-                shorten_data(
-                    self.text,
-                    max_chars=self._global_short_max_chars(flags),
-                )
-                if flags.shorten
-                else self.text
-            )
-            parts.append(MessagePart(MessagePartKind.TEXT, text))
-
-        # Thinking block
-        if flags.show_thinking and self.thinking:
-            should_shorten_thinking = flags.shorten or flags.shorten_thinking
-            thinking = (
-                truncate_middle(
-                    self.thinking,
-                    max_chars=(
-                        self._global_short_max_chars(flags)
-                        if flags.shorten
-                        else flags.shorten_max_chars
-                    ),
-                )
-                if should_shorten_thinking
-                else self.thinking
-            )
-            parts.append(MessagePart(MessagePartKind.THINKING, thinking))
-
-        # Tools
-        if (flags.show_tools or self.tools_always_visible) and self.tools:
-            self._append_tool_parts(parts, flags, tool_id_map)
-
-        # Plan (as tool-like part with name="ExitPlanMode")
-        if flags.show_plans and self.plan:
-            plan_content = (
-                shorten_data(
-                    self.plan,
-                    max_chars=self._global_short_max_chars(flags),
-                )
-                if flags.shorten
-                else self.plan
-            )
-            plan_parts = ToolParts(
+        if visible.subagent_task:
+            parts.append(MessagePart(MessagePartKind.SUBAGENT_TASK, visible.subagent_task))
+        if visible.text:
+            parts.append(MessagePart(MessagePartKind.TEXT, visible.text))
+        if visible.thinking:
+            parts.append(MessagePart(MessagePartKind.THINKING, visible.thinking))
+        filter_value = True if self.tools_always_visible else flags.show_tools
+        id_map = self._tool_name_id_map(filter_value, tool_id_map)
+        parts.extend(
+            MessagePart(MessagePartKind.TOOL, tool_to_parts(tool, id_map))
+            for tool in visible.tools
+        )
+        if visible.plan:
+            parts.append(MessagePart(MessagePartKind.TOOL, ToolParts(
                 tag=ContentBlockType.TOOL_INPUT.value.xml_tag,
                 attrs=[("name", "ExitPlanMode")],
-                content=plan_content,
+                content=visible.plan,
                 is_empty=False,
-            )
-            parts.append(MessagePart(MessagePartKind.TOOL, plan_parts))
+            )))
 
         return parts
 
@@ -334,57 +339,25 @@ class Message:
         tool_id_map: dict[str, str] | None = None,
     ) -> list[str | dict[str, object]]:
         """Yield visible content in a JSON-friendly structured form."""
+        visible = self._visible_payloads(flags, tool_id_map)
         content: list[str | dict[str, object]] = []
-
-        if self.subagent_task:
-            content.append({"type": "subagent-task", "content": self.subagent_task})
-
-        if self.text:
-            text = (
-                shorten_data(
-                    self.text,
-                    max_chars=self._global_short_max_chars(flags),
-                )
-                if flags.shorten
-                else self.text
-            )
-            content.append(text)
-
-        if flags.show_thinking and self.thinking:
-            should_shorten_thinking = flags.shorten or flags.shorten_thinking
-            thinking = (
-                truncate_middle(
-                    self.thinking,
-                    max_chars=(
-                        self._global_short_max_chars(flags)
-                        if flags.shorten
-                        else flags.shorten_max_chars
-                    ),
-                )
-                if should_shorten_thinking
-                else self.thinking
-            )
+        if visible.subagent_task:
+            content.append({"type": "subagent-task", "content": visible.subagent_task})
+        if visible.text:
+            content.append(visible.text)
+        if visible.thinking:
             content.append({
                 "type": ContentBlockType.THINKING.value.xml_tag,
-                "content": thinking,
+                "content": visible.thinking,
             })
-
-        if (flags.show_tools or self.tools_always_visible) and self.tools:
-            content.extend(self._visible_tool_json_content(flags, tool_id_map))
-
-        if flags.show_plans and self.plan:
-            plan_content = (
-                shorten_data(
-                    self.plan,
-                    max_chars=self._global_short_max_chars(flags),
-                )
-                if flags.shorten
-                else self.plan
-            )
+        filter_value = True if self.tools_always_visible else flags.show_tools
+        id_map = self._tool_name_id_map(filter_value, tool_id_map)
+        content.extend(tool_to_json(tool, id_map) for tool in visible.tools)
+        if visible.plan:
             content.append({
                 "type": ContentBlockType.TOOL_INPUT.value.xml_tag,
                 "name": "ExitPlanMode",
-                "plan": plan_content,
+                "plan": visible.plan,
             })
 
         return content
@@ -442,31 +415,6 @@ class Message:
 
         return payload
 
-    def _iter_visible_tools(
-        self,
-        flags: ConversationFlags,
-        id_map: dict[str, str],
-    ) -> Iterator[dict]:
-        """Yield each visible tool dict, shortened at the source when asked.
-
-        Shortening once here — on the raw tool payload — is the single shortening
-        point for tools, mirroring how text, thinking and plans are shortened at
-        the source. tool_to_parts/tool_to_json then build their views (XML content,
-        the colored diff/highlight, JSON) from already-short data, so no
-        representation can be left untruncated.
-        """
-        for tool, local_short_policy in self._iter_visible_tool_policies(
-            flags,
-            id_map,
-        ):
-            short_policy = local_short_policy or flags.global_short_policy
-            if short_policy is not None:
-                tool = _shorten_tool_payload(
-                    tool,
-                    max_chars=self._effective_short_max_chars(short_policy),
-                )
-            yield tool
-
     def _iter_visible_tool_policies(
         self,
         flags: ConversationFlags,
@@ -495,7 +443,8 @@ class Message:
         """Return whether one visible payload uses a progressive short policy."""
         global_policy = flags.global_short_policy
         global_payload_visible = bool(
-            self.text
+            self.subagent_task
+            or self.text
             or flags.show_thinking and self.thinking
             or flags.show_plans and self.plan
         )
@@ -515,28 +464,6 @@ class Message:
             and policy.progressive
             for _, local_policy in self._iter_visible_tool_policies(flags, id_map)
         )
-
-    def _append_tool_parts(
-        self,
-        parts: list[MessagePart],
-        flags: ConversationFlags,
-        tool_id_map: dict[str, str] | None,
-    ) -> None:
-        """Append visible tool parts based on filters."""
-        filter_value = True if self.tools_always_visible else flags.show_tools
-        id_map = self._tool_name_id_map(filter_value, tool_id_map)
-        for tool in self._iter_visible_tools(flags, id_map):
-            parts.append(MessagePart(MessagePartKind.TOOL, tool_to_parts(tool, id_map)))
-
-    def _visible_tool_json_content(
-        self,
-        flags: ConversationFlags,
-        tool_id_map: dict[str, str] | None,
-    ) -> list[dict[str, object]]:
-        """Return visible tools in structured JSON form."""
-        filter_value = True if self.tools_always_visible else flags.show_tools
-        id_map = self._tool_name_id_map(filter_value, tool_id_map)
-        return [tool_to_json(tool, id_map) for tool in self._iter_visible_tools(flags, id_map)]
 
     def _tool_name_id_map(
         self,

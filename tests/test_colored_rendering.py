@@ -702,9 +702,10 @@ def test_colored_edit_diff_is_shortened_with_tool_short(tmp_path, monkeypatch):
         sid, None, None, output_format="xml", emit_metadata=False,
     ))
 
-    assert "OLDHEAD" in out and "NEWHEAD" in out, (
-        f"Expected the preserved diff prefixes. Got:\n{out}"
+    assert "OLDHEAD" in out and "NEWTAIL" in out, (
+        f"Expected the joined payload's head and tail. Got:\n{out}"
     )
+    assert "OLDTAIL" not in out and "NEWHEAD" not in out, out
     assert "OLDMIDDLE" not in out and "NEWMIDDLE" not in out, (
         "The colored Edit diff must be shortened (old/new middles cut) under -t:s. "
         f"Got:\n{out}"
@@ -842,6 +843,7 @@ def test_compaction_message_has_its_own_badge_and_hue(tmp_path, monkeypatch):
 @pytest.mark.parametrize("module_name", [
     "chats.model",
     "chats.utils",
+    "chats.shortening",
     "chats.parsing",
     "chats.murmurs",
     "chats.commands.name",

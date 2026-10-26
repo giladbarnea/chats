@@ -24,22 +24,6 @@ def truncate_middle(s: str, max_chars: int = 500) -> str:
     return s[:first_half] + placeholder + s[-second_half:]
 
 
-def shorten_data(data: Any, max_chars: int = 500) -> Any:
-    """Recursively shorten every string leaf in ``data`` to ``max_chars`` characters.
-
-    The limit is per string, applied to each leaf as the structure is traversed; it
-    does not bound the total size of the object (an object with many keys can still
-    exceed ``max_chars`` many times over).
-    """
-    if isinstance(data, dict):
-        return {k: shorten_data(v, max_chars) for k, v in data.items()}
-    if isinstance(data, list):
-        return [shorten_data(item, max_chars) for item in data]
-    if isinstance(data, str):
-        return truncate_middle(data, max_chars=max_chars)
-    return data
-
-
 def extract_text_from_content(content: Any, strip: bool = False) -> list[str]:
     """
     Extract text strings from a content field.
