@@ -317,9 +317,11 @@ mod tests {
 // ---------------------------------------------------------------- visible content
 
 use crate::model::{Message, Tool};
-use crate::shortening::{shorten_data, truncate_middle};
+use crate::shortening::shorten_payloads;
 use crate::tool_filter::{FilterableTool, ToolIdMap, resolve_tool_visibility};
 use std::borrow::Cow;
+use std::collections::HashMap;
+use serde_json::Value;
 
 /// Map every tool id to the canonical name of the call it belongs to.
 ///
@@ -404,22 +406,13 @@ fn resolve_result_name(tool: Tool, id_map: &ToolIdMap) -> Tool {
     Tool::Result(result)
 }
 
-fn shorten_tool_payload(tool: &Tool, max_chars: i64) -> Tool {
-    match tool {
-        Tool::Use(use_tool) => {
-            let mut shortened = use_tool.clone();
-            shortened.input = shorten_data(&use_tool.input, max_chars);
-            Tool::Use(shortened)
-        }
-        Tool::Result(result) => {
-            let mut shortened = result.clone();
-            shortened.content = result
-                .content
-                .as_ref()
-                .map(|content| shorten_data(content, max_chars));
-            Tool::Result(shortened)
-        }
-    }
+enum PayloadTarget {
+    SubagentTask,
+    Text,
+    Thinking,
+    ToolInput(usize),
+    ToolResult(usize),
+    Plan,
 }
 
 /// Which messages take a progressive short position, and how many there are.
@@ -484,7 +477,8 @@ pub fn has_progressive_payload(
     tool_id_map: Option<&ToolIdMap>,
 ) -> bool {
     let global = flags.global_short_policy();
-    let global_payload_visible = !message.text.is_empty()
+    let global_payload_visible = message.subagent_task.as_deref().is_some_and(|value| !value.is_empty())
+        || !message.text.is_empty()
         || (flags.show_thinking && message.thinking.as_deref().is_some_and(|v| !v.is_empty()))
         || (flags.show_plans && message.plan.as_deref().is_some_and(|v| !v.is_empty()));
     if global.is_some_and(|policy| policy.progressive) && global_payload_visible {
@@ -510,8 +504,8 @@ pub fn has_progressive_payload(
 /// Project a message down to what the flags make visible, shortened at the source.
 ///
 /// Returns a `Message` rather than a parts list so the proved renderer in `codecs`
-/// stays the only renderer. Shortening happens here, once per payload, exactly as
-/// Python shortens before building any view.
+/// stays the only renderer. Each policy shares one budget across the message's
+/// payload strings before any view is built, matching Python.
 pub fn visible_message(
     message: &Message,
     flags: &ConversationFlags,
@@ -521,35 +515,14 @@ pub fn visible_message(
 ) -> Message {
     let position = progressive.position(index);
     let count = progressive.qualifying_count();
-    let global_limit = ShortPolicy::new(flags.shorten_max_chars, flags.shorten_progressive)
-        .effective_max_chars(position, count);
-
+    let global_policy = flags.global_short_policy();
+    let thinking_policy = global_policy.or_else(|| flags.shorten_thinking.then_some(
+        ShortPolicy::new(flags.shorten_max_chars, false)
+    ));
     let mut visible = message.clone();
-
-    if !message.text.is_empty() && flags.shorten {
-        visible.text = truncate_middle(&message.text, global_limit);
-    }
-
-    visible.thinking = match message.thinking.as_deref().filter(|value| !value.is_empty()) {
-        Some(thinking) if flags.show_thinking => {
-            if flags.shorten || flags.shorten_thinking {
-                let limit = if flags.shorten { global_limit } else { flags.shorten_max_chars };
-                Some(truncate_middle(thinking, limit))
-            } else {
-                Some(thinking.to_string())
-            }
-        }
-        _ => None,
-    };
-
-    visible.plan = match message.plan.as_deref().filter(|value| !value.is_empty()) {
-        Some(plan) if flags.show_plans => Some(if flags.shorten {
-            truncate_middle(plan, global_limit)
-        } else {
-            plan.to_string()
-        }),
-        _ => None,
-    };
+    visible.thinking = message.thinking.clone().filter(|value| flags.show_thinking && !value.is_empty());
+    visible.plan = message.plan.clone().filter(|value| flags.show_plans && !value.is_empty());
+    let mut tool_policies = Vec::new();
 
     visible.tools = if tools_are_visible(message, flags) {
         let visibility = effective_visibility(message, flags);
@@ -568,19 +541,60 @@ pub fn visible_message(
                 if !show {
                     return None;
                 }
-                let shortened = match local.or_else(|| flags.global_short_policy()) {
-                    Some(policy) => {
-                        shorten_tool_payload(tool, policy.effective_max_chars(position, count))
-                    }
-                    None => tool.clone(),
-                };
-                Some(resolve_result_name(shortened, &id_map))
+                tool_policies.push(local.or(global_policy));
+                Some(resolve_result_name(tool.clone(), &id_map))
             })
             .collect()
     } else {
         Vec::new()
     };
 
+    let mut groups: HashMap<ShortPolicy, Vec<(PayloadTarget, Value, bool)>> = HashMap::new();
+    for (target, value, policy) in [
+        (PayloadTarget::SubagentTask, visible.subagent_task.as_ref(), global_policy),
+        (PayloadTarget::Text, Some(&visible.text), global_policy),
+        (PayloadTarget::Thinking, visible.thinking.as_ref(), thinking_policy),
+    ] {
+        if let (Some(value), Some(policy)) = (value, policy)
+            && !value.is_empty()
+        {
+            groups.entry(policy).or_default().push((target, Value::String(value.clone()), false));
+        }
+    }
+    for (index, (tool, policy)) in visible.tools.iter().zip(tool_policies).enumerate() {
+        let Some(policy) = policy else { continue };
+        let payload = match tool {
+            Tool::Use(call) => Some((PayloadTarget::ToolInput(index), call.input.clone(), false)),
+            Tool::Result(result) => result.content.clone().map(|value| (PayloadTarget::ToolResult(index), value, true)),
+        };
+        if let Some(payload) = payload {
+            groups.entry(policy).or_default().push(payload);
+        }
+    }
+    if let (Some(plan), Some(policy)) = (visible.plan.as_ref(), global_policy) {
+        groups.entry(policy).or_default().push((PayloadTarget::Plan, Value::String(plan.clone()), false));
+    }
+    for (policy, payloads) in groups {
+        let (targets, values): (Vec<_>, Vec<_>) = payloads.into_iter()
+            .map(|(target, value, result)| (target, (value, result))).unzip();
+        let shortened = shorten_payloads(values, policy.effective_max_chars(position, count));
+        for (target, value) in targets.into_iter().zip(shortened) {
+            match target {
+                PayloadTarget::SubagentTask => visible.subagent_task = Some(value.as_str().unwrap().to_string()),
+                PayloadTarget::Text => visible.text = value.as_str().unwrap().to_string(),
+                PayloadTarget::Thinking => visible.thinking = Some(value.as_str().unwrap().to_string()),
+                PayloadTarget::Plan => visible.plan = Some(value.as_str().unwrap().to_string()),
+                PayloadTarget::ToolInput(index) => {
+                    let Tool::Use(call) = &mut visible.tools[index] else { unreachable!() };
+                    call.input = value;
+                }
+                PayloadTarget::ToolResult(index) => {
+                    let Tool::Result(result) = &mut visible.tools[index] else { unreachable!() };
+                    result.content = Some(value);
+                }
+            }
+        }
+    }
     visible
 }
 
@@ -742,7 +756,7 @@ mod tool_map_tests {
         let visible = [1usize, 2].map(|index| {
             visible_message(&messages[index], &flags, Some(&map), &progressive, index)
         });
-        for (message, expected) in visible.iter().zip(["ab\n...\nz", "abcdef\n...\nvwxyz"]) {
+        for (message, expected) in visible.iter().zip(["abc[…]yz", "abcdefg[…]uvwxyz"]) {
             let Tool::Result(result) = &message.tools[0] else {
                 panic!("the visible tool must stay a result");
             };

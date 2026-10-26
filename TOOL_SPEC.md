@@ -1,3 +1,7 @@
+---
+last_updated: 2026-10-26T16-06
+---
+
 # Tool Spec Definition
 
 This document defines the tool-spec grammar enforced by parse and search.
@@ -56,7 +60,7 @@ And:
 
 A `NAME` cannot contain whitespace, `:`, `!`, or `=` and cannot be a bare decimal integer.
 Numbers require a short assignment. For example, `-t:i:200` fails with a suggestion to use `s=200`.
-Use `-t:i:s=200` to shorten tool inputs to 200 characters.
+Use `-t:i:s=200` to share 200 characters across a message's tool-input payload values.
 
 ## Name equivalence
 
@@ -194,7 +198,7 @@ Invalid next tokens:
 
 ## Short limits and precedence
 
-[SHORT_SPEC.md](SHORT_SPEC.md) owns the value grammar, defaults, local inheritance, progressive sequence, and effective limits. A bare `SHORT` inherits the complete active global short policy. An explicit `SHORT=SHORT_SPEC` resolves its local policy under that contract.
+[SHORT_SPEC.md](SHORT_SPEC.md) owns the value grammar, defaults, local inheritance, progressive sequence, and shared message budgets. A bare `SHORT` inherits the complete active global short policy. An explicit `SHORT=SHORT_SPEC` resolves its local policy under that contract.
 
 When several visible positive specs match the same tool and more than one declares `SHORT`, the short value is chosen by specificity:
 
@@ -204,9 +208,9 @@ When several visible positive specs match the same tool and more than one declar
 
 Examples:
 
-* `--short=10 -t:s` shortens regular messages and tools to 10
-* `--short -t:s=10` shortens regular messages to 500 and tools to 10
-* `--short=20 -t:s=10 -t:Bash:s=30` shortens regular messages to 20, non-Bash tools to 10, and Bash tools to 30
+* `--short=10 -t:s` shares 10 characters across regular text and tool values in each message
+* `--short -t:s=10` gives each message separate budgets of 500 for regular text and 10 for tool values
+* `--short=20 -t:s=10 -t:Bash:s=30` gives each message separate budgets of 20 for regular text, 10 for non-Bash tool values, and 30 for Bash tool values
 * `--short=p=128 -t:s` makes tools inherit the global progressive policy
 
 ## Practical scope

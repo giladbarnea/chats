@@ -452,7 +452,7 @@ pub fn tool_use_parts(tool: &ToolUse) -> Result<ToolParts, String> {
     } else if value_is_truthy(&tool.input) {
         content = Some(format!(
             "```json\n{}\n```",
-            json_pretty_ensure_ascii(&tool.input)?
+            json_pretty_with_visible_omissions(&tool.input)?
         ));
     }
     Ok(ToolParts { attributes, content, output_text: None })
@@ -1599,11 +1599,11 @@ fn tool_result_to_json(tool: &ToolResult) -> Value {
     Value::Object(payload)
 }
 
-fn json_pretty_ensure_ascii(value: &Value) -> Result<String, String> {
+fn json_pretty_with_visible_omissions(value: &Value) -> Result<String, String> {
     let serialized = serde_json::to_string_pretty(value).map_err(|error| error.to_string())?;
     let mut output = String::with_capacity(serialized.len());
     for character in serialized.chars() {
-        if character.is_ascii() {
+        if character.is_ascii() || character == '…' {
             output.push(character);
             continue;
         }

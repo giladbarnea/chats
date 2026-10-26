@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).parents[1]
 CH_EXECUTABLE = Path(sys.executable).with_name("ch")
 SESSION_ID = "11111111-1111-4111-8111-111111111111"
 SOURCE_LENGTH = 240
-PLACEHOLDER_LENGTH = len("\n...\n")
+PLACEHOLDER_LENGTH = len("[…]")
 PROGRESSIVE_VALUES = (
     ("p", 500),
     ("progressive", 500),
@@ -772,7 +772,7 @@ def test_local_progressive_sequence_excludes_plain_fixed_and_hidden_messages(
     assert "tiny" in result.stdout
 
 
-def test_multiple_progressive_tools_in_one_message_share_one_factor(tmp_path: Path) -> None:
+def test_multiple_progressive_tools_in_one_message_share_one_budget(tmp_path: Path) -> None:
     first_symbol = "¤"
     second_symbol = "§"
     fixed_symbol = "Ω"
@@ -802,14 +802,13 @@ def test_multiple_progressive_tools_in_one_message_share_one_factor(tmp_path: Pa
     )
 
     _assert_success(result)
-    _assert_symbol_lengths(
-        result.stdout,
-        [(first_symbol, 8), (second_symbol, 8), (final_symbol, 128)],
-    )
+    assert result.stdout.count(first_symbol) == 3, result.stdout
+    assert result.stdout.count(second_symbol) == 3, result.stdout
+    _assert_symbol_lengths(result.stdout, [(final_symbol, 128)])
     assert result.stdout.count(fixed_symbol) == SOURCE_LENGTH
 
 
-def test_progressive_tool_limit_applies_to_each_string_leaf(tmp_path: Path) -> None:
+def test_progressive_tool_limit_is_shared_by_string_leaves(tmp_path: Path) -> None:
     first_symbol = "Q"
     second_symbol = "Z"
     session = _write_claude_session(
@@ -842,7 +841,8 @@ def test_progressive_tool_limit_applies_to_each_string_leaf(tmp_path: Path) -> N
     )
 
     _assert_success(result)
-    _assert_symbol_lengths(result.stdout, [(first_symbol, 32), (second_symbol, 32)])
+    assert result.stdout.count(first_symbol) == 13, result.stdout
+    assert result.stdout.count(second_symbol) == 13, result.stdout
 
 
 def test_bare_local_short_inherits_the_complete_global_progressive_policy(

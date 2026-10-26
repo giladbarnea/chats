@@ -5,41 +5,6 @@ from pathlib import Path
 from typing import Any
 
 
-def truncate_middle(s: str, max_chars: int = 500) -> str:
-    """Shorten a string by replacing its middle with an ellipsis block."""
-    placeholder = "\n...\n"
-    if max_chars < len(placeholder):
-        placeholder = "..."[:max_chars]
-
-    if len(s) <= max_chars - len(placeholder):
-        return s
-
-    if max_chars <= len(placeholder):
-        return placeholder[:max_chars]
-
-    remaining = max_chars - len(placeholder)
-    first_half = remaining // 2 + (remaining % 2)
-    second_half = remaining // 2
-
-    return s[:first_half] + placeholder + s[-second_half:]
-
-
-def shorten_data(data: Any, max_chars: int = 500) -> Any:
-    """Recursively shorten every string leaf in ``data`` to ``max_chars`` characters.
-
-    The limit is per string, applied to each leaf as the structure is traversed; it
-    does not bound the total size of the object (an object with many keys can still
-    exceed ``max_chars`` many times over).
-    """
-    if isinstance(data, dict):
-        return {k: shorten_data(v, max_chars) for k, v in data.items()}
-    if isinstance(data, list):
-        return [shorten_data(item, max_chars) for item in data]
-    if isinstance(data, str):
-        return truncate_middle(data, max_chars=max_chars)
-    return data
-
-
 def extract_text_from_content(content: Any, strip: bool = False) -> list[str]:
     """
     Extract text strings from a content field.

@@ -8,6 +8,21 @@ from .utils import extract_text_from_content, shorten_tool_use_id
 from .xml_transport import render_inner_xml_block
 
 
+def _json_preview(value: object) -> str:
+    """Keep omission glyphs visible without changing other JSON string escaping.
+
+    >>> _json_preview("[…]")
+    '\"[…]\"'
+    """
+    serialized = json.dumps(value, indent=2, ensure_ascii=False)
+    escapes = {
+        ord(character): json.dumps(character)[1:-1]
+        for character in set(serialized)
+        if ord(character) > 0x7e and character != "…"
+    }
+    return serialized.translate(escapes)
+
+
 def _format_edit_content(input_data: dict) -> str:
     """Format Edit tool content with old_string/new_string blocks."""
     parts = []
@@ -64,7 +79,7 @@ def tool_to_parts(tool: dict, id_map: dict[str, str] | None = None) -> ToolParts
     return ToolParts(
         tag=input_tag,
         attrs=[("name", "Unknown")],
-        content=f"```json\n{json.dumps(tool, indent=2)}\n```",
+        content=f"```json\n{_json_preview(tool)}\n```",
         is_empty=False,
     )
 
@@ -114,7 +129,7 @@ def _tool_use_to_parts(tool: dict, tag: str) -> ToolParts:
             lang = schema.content_lang or ""
             content = f"```{lang}\n{val}\n```"
     elif input_data:
-        content = f"```json\n{json.dumps(input_data, indent=2)}\n```"
+        content = f"```json\n{_json_preview(input_data)}\n```"
 
     return ToolParts(
         tag=tag,
