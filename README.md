@@ -605,7 +605,8 @@ Every other tool comes as an input/output pair. A `TaskNotification` is the exce
 
 ## Development
 
-**scripts/dev/jsonl_scout.py:** Generic JSONL bloat analyzer — recursively traverses any JSONL with zero shape assumptions, reports string path heat, array cardinality hotspots, per-line outlier attribution, dedup candidates, and ranked surgical cut recommendations.
+- **scripts/dev/jsonl_scout.py:** Generic JSONL bloat analyzer — recursively traverses any JSONL with zero shape assumptions, reports string path heat, array cardinality hotspots, per-line outlier attribution, dedup candidates, and ranked surgical cut recommendations. There is also the more general `jsonl-toolkit` skill.
+- We aspire to slowly, lazily, migrate 100% of the project to Rust. So if find yourself in a situation where you could help advance that vector with relatively low added scope and complexity cost -- completing the task all the same -- surface it to the human to decide. I hope that over a few months, bit by bit, Python line count gets reduced and Rust line count increases to replace it.
 
 ---
 
