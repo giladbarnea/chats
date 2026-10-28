@@ -543,7 +543,7 @@ Session lookup and message selection:
   The -- separator ends option parsing. In ch -1 -- -5:, this makes -5: a message range instead of an option.
 
 Additional content:
-  Subagents are agents launched to help the main assistant. -a also includes messages from other sessions and agent work recorded by Pi. Claude /fork conversations, which continue from an existing conversation, are included too.
+  Subagents are agents launched to help the main assistant. -a recursively includes proved delegated descendants, delivered replies, and messages from other sessions. Native user forks are included. CLI forks require evidence that an agent launched them.
   Rewind branches are messages abandoned when you rewind and try a different prompt. Include them with -b.
   Pi custom records are extra entries written by Pi extensions. Include them with -A.
 

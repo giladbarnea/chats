@@ -76,7 +76,9 @@ class ConversationMetadata:
     ctime: datetime | None
     mtime: datetime | None
     provider: Provider
+    parent_session: str | None = None
     forked_from: str | None = None
+    forked_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -498,17 +500,17 @@ class Message:
         return ContentBlockType.ASSISTANT_RESPONSE
 
     def get_header(self) -> str | None:
-        """Return the wrapper header, enriched with the subagent nickname when present.
+        """Return the wrapper header, enriched with the subagent name when present.
 
-        A user-initiated `/fork` (subagent_type "fork") is labelled `Fork` to set it
-        apart from agent-initiated `Task` subagents, which stay `Agent`.
+        A fork (subagent_type "fork"), which inherits its parent's context, is
+        labelled `Fork` to set it apart from fresh-context subagents, which stay `Agent`.
         """
         wrapper = self.get_wrapper_type()
         header = wrapper.value.header
         if wrapper is not ContentBlockType.AGENT:
             return header
         if self.subagent_type == "fork":
-            return "## Fork"
+            header = "## Fork"
         if self.name:
             return f"{header} '{self.name}'"
         return header

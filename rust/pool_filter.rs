@@ -259,7 +259,7 @@ fn entry_timestamp(line: &str) -> Option<String> {
 /// to local time so they compare correctly against relative filters, which are
 /// measured from local now. Comparing a UTC stamp against a local threshold
 /// would shift every date filter by the machine's offset.
-fn parse_iso(value: &str) -> Option<NaiveDateTime> {
+pub(crate) fn parse_iso(value: &str) -> Option<NaiveDateTime> {
     if value.is_empty() {
         return None;
     }

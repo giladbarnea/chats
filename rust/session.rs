@@ -1187,10 +1187,8 @@ fn task_notification_regex() -> &'static Regex {
     })
 }
 
-/// Whether a user string is a background-task notification.
-///
-/// Python converts it into a synthetic `TaskNotification` tool so it classifies and
-/// filters as a tool; the message itself then renders nothing.
+/// Whether a user string is a background-task notification. It renders nothing.
+/// Mirrors `_is_task_notification`.
 fn is_task_notification(content: &str) -> bool {
     task_notification_regex().is_match(content)
 }
@@ -1213,13 +1211,22 @@ fn claude_peer_sender_attribute(tag: &str) -> &'static str {
     }
 }
 
+const CLAUDE_TEAM_LEAD: &str = "team-lead";
+
 /// Split a message relayed from another Claude session into (sender, body) pairs.
 ///
 /// Claude Code stores a teammate or cross-session message as a user string: a fixed
-/// prefix line, one block per relayed message, and a fixed trailer. Anything else
+/// prefix line, one block per relayed message, and a fixed trailer. Inside a
+/// teammate's own transcript the blocks arrive without the prefix. Anything else
 /// yields no blocks. Mirrors Python's `_split_claude_peer_blocks`.
-fn split_claude_peer_blocks(content: &str) -> Vec<(Option<String>, String)> {
-    if !python_strip_start(content).starts_with(CLAUDE_PEER_MESSAGE_PREFIX) {
+fn split_claude_peer_blocks(
+    content: &str,
+    in_agent_transcript: bool,
+) -> Vec<(Option<String>, String)> {
+    let stripped = python_strip_start(content);
+    let relayed = stripped.starts_with(CLAUDE_PEER_MESSAGE_PREFIX)
+        || (in_agent_transcript && stripped.starts_with("<teammate-message"));
+    if !relayed {
         return Vec::new();
     }
     let mut blocks = Vec::new();
@@ -1247,19 +1254,48 @@ fn split_claude_peer_blocks(content: &str) -> Vec<(Option<String>, String)> {
     blocks
 }
 
-/// Represent one relayed peer-session message as an agent block named after its sender.
-fn claude_peer_agent_message(
+/// Keep delivered reports inside idle envelopes, but omit bare status pings.
+fn claude_peer_text(body: String) -> String {
+    if !body.starts_with('{') { return body; }
+    let Ok(payload) = serde_json::from_str::<Value>(&body) else { return body };
+    if payload.get("type").and_then(Value::as_str) != Some("idle_notification") { return body; }
+    ["result", "summary", "failureReason"].iter()
+        .find_map(|key| payload.get(key).and_then(Value::as_str).filter(|text| !text.is_empty()))
+        .unwrap_or_default().to_string()
+}
+
+/// Represent one relayed message: the team lead plays the user, any other sender is an agent.
+///
+/// Idle envelopes keep their delivered result; empty status pings render nothing.
+fn claude_peer_message(
     entry: &Map<String, Value>,
     index: usize,
     sender: Option<String>,
     body: String,
-) -> Message {
+    flags: &ConversationFlags,
+) -> Option<Message> {
+    let body = claude_peer_text(body);
+    if body.is_empty() {
+        return None;
+    }
+    if sender.as_deref() == Some(CLAUDE_TEAM_LEAD) {
+        if !flags.show_user_messages() {
+            return None;
+        }
+        let mut message = new_message(index, "user", MessageType::UserMessage);
+        message.timestamp = timestamp_of(entry);
+        message.text = body;
+        return Some(message);
+    }
+    if !flags.show_agents {
+        return None;
+    }
     let mut message = new_message(index, "agent", MessageType::Agent);
     message.agent_id = sender.clone();
     message.name = sender;
     message.timestamp = timestamp_of(entry);
     message.text = body;
-    message
+    Some(message)
 }
 
 fn agent_id_of(entry: &Map<String, Value>) -> Option<&str> {
@@ -1356,10 +1392,49 @@ fn meta_source_tool_result(
 }
 
 /// Separate human text, tool activity, and relayed agent messages in a user entry.
+/// Drop the worker boilerplate Claude Code prepends to a fork's directive.
+/// Mirrors `_strip_claude_fork_boilerplate`.
+fn strip_claude_fork_boilerplate(text: &str) -> &str {
+    if !python_strip_start(text).starts_with("<fork-boilerplate>") {
+        return text;
+    }
+    match text.split_once("</fork-boilerplate>") {
+        Some((_, directive)) => python_strip(directive),
+        None => text,
+    }
+}
+
+/// Tools that talk to agents rather than act on the world: agent content, like Pi's `team_*`.
+const CLAUDE_AGENT_MESSAGING_TOOLS: [&str; 3] = ["Agent", "SendMessage", "ListAgents"];
+
+/// The ids of agent-messaging tool calls, so their results classify with them.
+fn claude_agent_tool_ids(entries: &[Map<String, Value>]) -> HashSet<String> {
+    entries
+        .iter()
+        .filter(|entry| entry_type(entry) == Some("assistant"))
+        .filter_map(|entry| entry.get("message")?.get("content")?.as_array())
+        .flatten()
+        .filter_map(Value::as_object)
+        .filter(|item| {
+            item.get("type").and_then(Value::as_str) == Some("tool_use")
+                && item
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .is_some_and(|name| CLAUDE_AGENT_MESSAGING_TOOLS.contains(&name))
+        })
+        .filter_map(|item| item.get("id")?.as_str().filter(|id| !id.is_empty()))
+        .map(str::to_string)
+        .collect()
+}
+
+/// Results of agent-messaging calls are agent content: shown by `--agents` regardless
+/// of tool filters, and never by `--tools` alone.
 fn parse_user_entry(
     entry: &Map<String, Value>,
     index: usize,
     flags: &ConversationFlags,
+    agent_tool_ids: &HashSet<String>,
+    origins: Option<&crate::claude_delegation::AgentOrigins>,
 ) -> Vec<Message> {
     let Some(message_data) = entry.get("message").and_then(Value::as_object) else {
         return Vec::new();
@@ -1367,15 +1442,15 @@ fn parse_user_entry(
     if message_data.get("role").and_then(Value::as_str) != Some("user") {
         return Vec::new();
     }
+    let in_agent_transcript = agent_id_of(entry).is_some_and(|value| !value.is_empty());
     let peer_blocks = match message_data.get("content") {
-        Some(Value::String(text)) => split_claude_peer_blocks(text),
+        Some(Value::String(text)) => split_claude_peer_blocks(text, in_agent_transcript),
         _ => Vec::new(),
     };
     if !peer_blocks.is_empty() {
         return peer_blocks
             .into_iter()
-            .filter(|_| flags.show_agents)
-            .map(|(sender, body)| claude_peer_agent_message(entry, index, sender, body))
+            .filter_map(|(sender, body)| claude_peer_message(entry, index, sender, body, flags))
             .collect();
     }
     let source = source_tool_use_id(entry);
@@ -1387,16 +1462,16 @@ fn parse_user_entry(
 
     let content = message_data.get("content").unwrap_or(&Value::Null);
 
-    // A background-task notification renders nothing; the merged agent block is its
-    // representation.
     if let Value::String(text) = content
         && is_task_notification(text)
     {
-        return vec![message];
+        return origins.map(|origins| crate::claude_delegation::notification_messages(entry, origins, index)).unwrap_or_default();
     }
 
     let mut tool_message = new_message(index, "assistant", MessageType::AssistantResponse);
     tool_message.timestamp = message.timestamp.clone();
+    let mut agent_tool_message = tool_message.clone();
+    agent_tool_message.tools_always_visible = true;
     let show_user_text = flags.show_user_messages() && (!is_meta || tools_requested(flags));
 
     match content {
@@ -1405,18 +1480,30 @@ fn parse_user_entry(
             if let Some(output) = meta_source_tool_result(is_meta, source, &blocks, flags) {
                 tool_message.tools.push(output);
             } else if show_user_text && !is_hidden_user_command_text(text) {
-                message.text = text.clone();
+                message.text = strip_claude_fork_boilerplate(text).to_string();
             }
         }
         Value::Array(items) => {
-            let blocks = filter_hidden_user_text_blocks(extract_text_blocks(content));
-            if tools_requested(flags) {
-                for item in items.iter().filter_map(Value::as_object) {
-                    if item.get("type").and_then(Value::as_str) == Some("tool_result")
-                        && let Some(tool) = tool_from_json(item, "claude")
-                    {
-                        tool_message.tools.push(tool);
-                    }
+            let blocks: Vec<String> = filter_hidden_user_text_blocks(extract_text_blocks(content))
+                .iter()
+                .map(|block| strip_claude_fork_boilerplate(block).to_string())
+                .filter(|block| !block.is_empty())
+                .collect();
+            for item in items.iter().filter_map(Value::as_object) {
+                if item.get("type").and_then(Value::as_str) != Some("tool_result") {
+                    continue;
+                }
+                let is_agent_tool = item
+                    .get("tool_use_id")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| agent_tool_ids.contains(id));
+                let (visible, target) = if is_agent_tool {
+                    (flags.show_agents, &mut agent_tool_message)
+                } else {
+                    (tools_requested(flags), &mut tool_message)
+                };
+                if visible && let Some(tool) = tool_from_json(item, "claude") {
+                    target.tools.push(tool);
                 }
             }
             if let Some(output) = meta_source_tool_result(is_meta, source, &blocks, flags) {
@@ -1432,28 +1519,32 @@ fn parse_user_entry(
     if entry.get("isCompactSummary").and_then(Value::as_bool) == Some(true) {
         message.message_type = MessageType::Compaction;
     }
-    vec![message, tool_message]
+    vec![message, tool_message, agent_tool_message]
 }
 
 fn parse_assistant_entry(
     entry: &Map<String, Value>,
     index: usize,
     flags: &ConversationFlags,
-) -> Option<Message> {
-    let message_data = entry.get("message")?.as_object()?;
+) -> Vec<Message> {
+    let Some(message_data) = entry.get("message").and_then(Value::as_object) else {
+        return Vec::new();
+    };
     if message_data.get("role").and_then(Value::as_str) != Some("assistant") {
-        return None;
+        return Vec::new();
     }
     let agent_id = agent_id_of(entry).filter(|value| !value.is_empty());
     if agent_id.is_some() && !flags.show_agents {
-        return None;
+        return Vec::new();
     }
     let show_message_text = if agent_id.is_some() {
         flags.show_agents
     } else {
         flags.show_assistant_messages()
     };
-    let items = message_data.get("content")?.as_array()?;
+    let Some(items) = message_data.get("content").and_then(Value::as_array) else {
+        return Vec::new();
+    };
 
     let mut message = new_message(
         index,
@@ -1466,6 +1557,8 @@ fn parse_assistant_entry(
         .get("model")
         .and_then(Value::as_str)
         .map(str::to_string);
+    let mut agent_tool_message = message.clone();
+    agent_tool_message.tools_always_visible = true;
 
     let mut text_blocks: Vec<String> = Vec::new();
     for item in items.iter().filter_map(Value::as_object) {
@@ -1498,6 +1591,12 @@ fn parse_assistant_entry(
                     {
                         message.plan = Some(plan.to_string());
                     }
+                } else if CLAUDE_AGENT_MESSAGING_TOOLS.contains(&name) {
+                    if flags.show_agents
+                        && let Some(tool) = tool_from_json(item, "claude")
+                    {
+                        agent_tool_message.tools.push(tool);
+                    }
                 } else if tools_requested(flags)
                     && let Some(tool) = tool_from_json(item, "claude")
                 {
@@ -1511,7 +1610,7 @@ fn parse_assistant_entry(
     if !text_blocks.is_empty() && show_message_text {
         message.text = text_blocks.join("\n\n");
     }
-    Some(message)
+    vec![message, agent_tool_message]
 }
 
 fn parse_system_entry(
@@ -1583,32 +1682,6 @@ fn parse_hook_additional_context_entry(
     Some(message)
 }
 
-/// Drop the Agent/Task dispatch `tool_use` and its paired `tool_result`.
-///
-/// The merged agent block and its `<subagent-task>` are their representation, so the
-/// raw dispatch pair is plumbing.
-fn suppress_agent_dispatch(messages: &mut [Message]) {
-    let dispatch_ids: HashSet<String> = messages
-        .iter()
-        .flat_map(|message| &message.tools)
-        .filter_map(|tool| match tool {
-            Tool::Use(use_tool) if matches!(use_tool.name.as_str(), "Agent" | "Task") => {
-                use_tool.id.clone()
-            }
-            _ => None,
-        })
-        .collect();
-    for message in messages {
-        message.tools.retain(|tool| match tool {
-            Tool::Use(use_tool) => !matches!(use_tool.name.as_str(), "Agent" | "Task"),
-            Tool::Result(result) => !result
-                .tool_use_id
-                .as_ref()
-                .is_some_and(|id| dispatch_ids.contains(id)),
-        });
-    }
-}
-
 fn has_content(message: &Message) -> bool {
     !message.text.is_empty()
         || message.thinking.as_deref().is_some_and(|v| !v.is_empty())
@@ -1617,9 +1690,81 @@ fn has_content(message: &Message) -> bool {
         || message.subagent_task.as_deref().is_some_and(|v| !v.is_empty())
 }
 
+/// Whether a record was copied from another session by a Claude fork.
+///
+/// Copied records keep the writer's snake_case `session_id`; camelCase `sessionId`
+/// names the session that holds the file.
+fn is_claude_foreign_record(entry: &Map<String, Value>) -> bool {
+    entry
+        .get("session_id")
+        .and_then(Value::as_str)
+        .is_some_and(|writer| {
+            !writer.is_empty() && Some(writer) != entry.get("sessionId").and_then(Value::as_str)
+        })
+}
+
+/// Remove copied context only when embedding a delegated fork in its parent.
+pub fn claude_own_entries(entries: &[Map<String, Value>]) -> &[Map<String, Value>] {
+    let Some(last) = entries.iter().rposition(is_claude_foreign_record) else {
+        return entries;
+    };
+    let trailing_system = entries[last + 1..].iter()
+        .take_while(|entry| entry_type(entry) == Some("system")).count();
+    &entries[last + 1 + trailing_system..]
+}
+
+/// The session a Claude transcript copied its context from.
+///
+/// A fork subagent's leading `fork-context-ref` names it through `parentSessionId`.
+/// A top-level fork names it as the writer of its last copied record.
+pub fn claude_forked_from(entries: &[Map<String, Value>]) -> Option<String> {
+    if let Some(parent) = claude_fork_context_parent(entries) {
+        return Some(parent);
+    }
+    entries
+        .iter()
+        .rfind(|entry| is_claude_foreign_record(entry))
+        .and_then(|entry| entry.get("session_id")?.as_str().map(str::to_string))
+}
+
+/// The time of a top-level fork's last copied record that has one.
+pub fn claude_forked_at(entries: &[Map<String, Value>]) -> Option<String> {
+    if claude_fork_context_parent(entries).is_some() {
+        return None;
+    }
+    entries
+        .iter()
+        .filter(|entry| is_claude_foreign_record(entry))
+        .filter_map(timestamp_of)
+        .last()
+}
+
+/// The session a Claude subagent transcript belongs to.
+///
+/// A fork names it in its leading `fork-context-ref`; any other subagent's records
+/// carry it as `sessionId`.
+pub fn claude_subagent_parent(entries: &[Map<String, Value>]) -> Option<String> {
+    if let Some(parent) = claude_fork_context_parent(entries) {
+        return Some(parent);
+    }
+    entries
+        .iter()
+        .find(|entry| entry.get("isSidechain").and_then(Value::as_bool) == Some(true))
+        .and_then(|entry| entry.get("sessionId")?.as_str().map(str::to_string))
+}
+
+fn claude_fork_context_parent(entries: &[Map<String, Value>]) -> Option<String> {
+    entries
+        .first()
+        .filter(|entry| entry_type(entry) == Some("fork-context-ref"))
+        .and_then(|entry| entry.get("parentSessionId")?.as_str().map(str::to_string))
+}
+
 /// Decode Claude-shaped JSONL entries into the shared message model.
 pub fn parse_claude(entries: &[Map<String, Value>], flags: &ConversationFlags) -> Vec<Message> {
     let branch_of = branch_map(entries);
+    let agent_tool_ids = claude_agent_tool_ids(entries);
+    let origins = flags.show_agents.then(|| crate::claude_delegation::agent_origins(entries));
     let mut messages = Vec::new();
     let mut index = 1usize;
 
@@ -1629,10 +1774,8 @@ pub fn parse_claude(entries: &[Map<String, Value>], flags: &ConversationFlags) -
             continue; // abandoned rewind branch, hidden unless --branches
         }
         let parsed: Vec<Message> = match entry_type(entry) {
-            Some("user") => parse_user_entry(entry, index, flags),
-            Some("assistant") => parse_assistant_entry(entry, index, flags)
-                .into_iter()
-                .collect(),
+            Some("user") => parse_user_entry(entry, index, flags, &agent_tool_ids, origins.as_ref()),
+            Some("assistant") => parse_assistant_entry(entry, index, flags),
             Some("system") => parse_system_entry(entry, index, flags).into_iter().collect(),
             Some("attachment") => parse_hook_additional_context_entry(entry, index, flags)
                 .into_iter()
@@ -1649,7 +1792,6 @@ pub fn parse_claude(entries: &[Map<String, Value>], flags: &ConversationFlags) -
         }
     }
 
-    suppress_agent_dispatch(&mut messages);
     messages
 }
 
@@ -1782,6 +1924,7 @@ fn pi_normalize_tool_name(name: Option<&str>) -> String {
 
 const PI_TEAM_CUSTOM_TYPE: &str = "pi-simple-team";
 const PI_TEAM_TOOL_PREFIX: &str = "team_";
+const PI_TEAM_UNPREFIXED_TOOLS: [&str; 2] = ["send_main_message", "get_context_window_usage"];
 
 /// Whether a Pi entry is a pi-simple-team teammate message.
 fn is_pi_team_message(entry: &Map<String, Value>) -> bool {
@@ -1789,11 +1932,49 @@ fn is_pi_team_message(entry: &Map<String, Value>) -> bool {
         && entry.get("customType").and_then(Value::as_str) == Some(PI_TEAM_CUSTOM_TYPE)
 }
 
+/// Whether a teammate message came from the recipient's team leader: the teammate's
+/// prompts. Mirrors Python's `_is_pi_team_leader_message`.
+pub fn is_pi_team_leader_message(entry: &Map<String, Value>) -> bool {
+    let details = entry.get("details").and_then(Value::as_object);
+    is_pi_team_message(entry)
+        && details.and_then(|details| details.get("from")).and_then(Value::as_str) == Some("main")
+        && details
+            .and_then(|details| details.get("to"))
+            .and_then(Value::as_str)
+            .is_some_and(|recipient| !recipient.is_empty())
+}
+
+/// The leader's message body, shown to the teammate as a user message.
+pub fn pi_team_leader_text(entry: &Map<String, Value>) -> &str {
+    entry
+        .get("details")
+        .and_then(Value::as_object)
+        .and_then(|details| details.get("message"))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+}
+
+/// Show a team leader's message to a teammate as the user message the teammate read.
+fn parse_pi_team_leader_message(
+    entry: &Map<String, Value>,
+    index: usize,
+    flags: &ConversationFlags,
+) -> Option<Message> {
+    if !flags.show_user_messages() {
+        return None;
+    }
+    let mut message = new_message(index, "user", MessageType::UserMessage);
+    message.text = pi_team_leader_text(entry).to_string();
+    message.native_entry_id = pi_native_entry_id(entry);
+    message.timestamp = timestamp_of(entry);
+    Some(message)
+}
+
 /// Whether a Pi tool is pi-simple-team delegation, which is agent content.
 fn is_pi_team_tool(native_name: Option<&Value>) -> bool {
     native_name
         .and_then(Value::as_str)
-        .is_some_and(|name| name.starts_with(PI_TEAM_TOOL_PREFIX))
+        .is_some_and(|name| name.starts_with(PI_TEAM_TOOL_PREFIX) || PI_TEAM_UNPREFIXED_TOOLS.contains(&name))
 }
 
 /// Represent one pi-simple-team teammate message as an agent named after its sender.
@@ -1817,8 +1998,7 @@ fn parse_pi_team_message(entry: &Map<String, Value>, index: usize) -> Option<Mes
 /// Whether a Pi custom envelope is hidden duplicate plumbing.
 fn is_hidden_pi_custom_entry(entry: &Map<String, Value>) -> bool {
     !(is_squashed_pi_user_agent_message(entry) || is_pi_team_message(entry))
-        && (entry.get("customType").and_then(Value::as_str) == Some("subagent-notification")
-            || entry.get("display") == Some(&Value::Bool(false))
+        && (entry.get("display") == Some(&Value::Bool(false))
             || entry_type(entry) == Some("custom_message"))
 }
 
@@ -1871,44 +2051,12 @@ fn parse_pi_squashed_user_agent_message(
     Some(message)
 }
 
-fn parse_pi_subagent_record(entry: &Map<String, Value>, index: usize) -> Option<Message> {
-    let data = entry.get("data")?.as_object()?;
-    let field = |key: &str| {
-        data.get(key)
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-    };
-    let (agent_id, subagent_type, description, status, result) = (
-        field("id")?,
-        field("type")?,
-        field("description")?,
-        field("status")?,
-        field("result")?,
-    );
-
-    let mut message = new_message(index, "agent", MessageType::Agent);
-    message.text = result.to_string();
-    message.agent_id = Some(agent_id.to_string());
-    message.native_entry_id = pi_native_entry_id(entry);
-    message.timestamp = timestamp_of(entry);
-    message.subagent_type = Some(subagent_type.to_string());
-    message.subagent_task = Some(description.to_string());
-    message.custom_type = Some("subagents:record".to_string());
-    message.status = Some(status.to_string());
-    Some(message)
-}
-
 fn parse_pi_custom_entry(
     entry: &Map<String, Value>,
     index: usize,
     flags: &ConversationFlags,
 ) -> Option<Message> {
     let custom_type = entry.get("customType")?.as_str()?;
-    if custom_type == "subagents:record" && flags.show_agents {
-        if let Some(message) = parse_pi_subagent_record(entry, index) {
-            return Some(message);
-        }
-    }
     if !flags.show_custom {
         return None;
     }
@@ -1919,6 +2067,47 @@ fn parse_pi_custom_entry(
     message.timestamp = timestamp_of(entry);
     message.custom_type = Some(custom_type.to_string());
     Some(message)
+}
+
+/// The team calls a codemode script ran, as agent tool inputs under `--agents`.
+///
+/// Pi's `nestedCalls` keeps each nested call's arguments, not its result. Mirrors
+/// Python's `_pi_nested_team_calls_message`.
+fn pi_nested_team_calls_message(
+    entry: &Map<String, Value>,
+    message_data: &Map<String, Value>,
+    index: usize,
+    flags: &ConversationFlags,
+) -> Message {
+    let mut message = new_message(index, "assistant", MessageType::AssistantResponse);
+    message.timestamp = timestamp_of(entry);
+    message.native_entry_id = pi_native_entry_id(entry);
+    message.tools_always_visible = true;
+    let calls = message_data
+        .get("nestedCalls")
+        .and_then(Value::as_object)
+        .and_then(|nested| nested.get("calls"))
+        .and_then(Value::as_array)
+        .filter(|_| flags.show_agents);
+    for call in calls.into_iter().flatten().filter_map(Value::as_object) {
+        if !is_pi_team_tool(call.get("name")) {
+            continue;
+        }
+        let name = pi_normalize_tool_name(call.get("name").and_then(Value::as_str));
+        let id = call.get("id").and_then(Value::as_str).map(str::to_string);
+        let arguments = match call.get("arguments") {
+            Some(value) if crate::model::value_is_truthy(value) => value.clone(),
+            _ => Value::Object(Map::new()),
+        };
+        message.tools.push(Tool::Use(ToolUse {
+            input: crate::model::normalize_tool_input_keys("pi", &name, &arguments),
+            name,
+            id: id.clone(),
+            native_tool_call_id: id,
+            native_content_index: None,
+        }));
+    }
+    message
 }
 
 /// Parse a Pi `type=message` entry into its visible messages.
@@ -1940,9 +2129,10 @@ fn parse_pi_message_entry(
     let native_entry_id = pi_native_entry_id(entry);
 
     if role == "toolResult" {
+        let nested_team_message = pi_nested_team_calls_message(entry, message_data, index, flags);
         let is_team_tool = is_pi_team_tool(message_data.get("toolName"));
         if !(if is_team_tool { flags.show_agents } else { tools_requested(flags) }) {
-            return Vec::new();
+            return vec![nested_team_message];
         }
         let native_tool_call_id = message_data
             .get("toolCallId")
@@ -1971,7 +2161,7 @@ fn parse_pi_message_entry(
             content: message_data.get("content").cloned(),
             has_content: message_data.contains_key("content"),
         }));
-        return vec![message];
+        return vec![message, nested_team_message];
     }
 
     if role != "user" && role != "assistant" {
@@ -2064,11 +2254,277 @@ fn parse_pi_message_entry(
     vec![message, team_message]
 }
 
+/// Epoch milliseconds of an ISO timestamp that carries an offset.
+///
+/// A lowercase `z` fails, as it does in Python's `datetime.fromisoformat`.
+fn iso_milliseconds(value: Option<&Value>) -> Option<i64> {
+    let value = value?.as_str()?;
+    if value.ends_with('z') {
+        return None;
+    }
+    chrono::DateTime::parse_from_rfc3339(value)
+        .ok()
+        .map(|moment| moment.timestamp_millis())
+}
+
+/// When a Pi entry's content was created: its message time, else its entry time.
+fn pi_entry_milliseconds(entry: &Map<String, Value>) -> Option<i64> {
+    entry
+        .get("message")
+        .and_then(Value::as_object)
+        .and_then(|message| message.get("timestamp"))
+        .and_then(Value::as_i64)
+        .or_else(|| iso_milliseconds(entry.get("timestamp")))
+}
+
+/// The index just past a forked Pi session's copied parent history, or 0.
+///
+/// Every Pi fork path writes the copy before the child's own work, and the copied
+/// content predates the child's header: native forks copy entries verbatim, and
+/// pi-user-agents keeps each copied message's original `message.timestamp`.
+/// Mirrors Python's `pi_inherited_prefix_end`.
+pub fn pi_inherited_prefix_end(entries: &[Map<String, Value>]) -> usize {
+    let Some(header) = entries.first() else { return 0 };
+    let has_parent = header
+        .get("parentSession")
+        .and_then(Value::as_str)
+        .is_some_and(|parent| !parent.is_empty());
+    if entry_type(header) != Some("session") || !has_parent {
+        return 0;
+    }
+    let Some(born) = iso_milliseconds(header.get("timestamp")) else { return 0 };
+    entries
+        .iter()
+        .enumerate()
+        .skip(1)
+        .filter(|(_, entry)| pi_entry_milliseconds(entry).is_some_and(|created| created < born))
+        .map(|(position, _)| position + 1)
+        .last()
+        .unwrap_or(0)
+}
+
+/// What a Pi session's own file proves about where it came from.
+#[derive(Debug, Default, PartialEq)]
+pub struct PiLineage {
+    pub parent_session: Option<String>,
+    pub forked_from: Option<String>,
+    pub forked_at: Option<chrono::NaiveDateTime>,
+}
+
+/// The id in a parent session file's header, or `None` when it cannot be read.
+fn pi_parent_session_id(parent_path: &str) -> Option<String> {
+    use std::io::BufRead;
+    let file = std::fs::File::open(parent_path).ok()?;
+    let mut line = String::new();
+    std::io::BufReader::new(file).read_line(&mut line).ok()?;
+    let header: Value = serde_json::from_str(&line).ok()?;
+    header.get("id")?.as_str().filter(|id| !id.is_empty()).map(str::to_string)
+}
+
+/// A Pi session's parent, fork source, and fork point, as its file proves them.
+///
+/// A pi-user-agents dispatch record or a team leader's briefing proves a spawner. A
+/// copied history proves a fork source; an isolated side chat copied none. Mirrors
+/// Python's `pi_lineage`.
+pub fn pi_lineage(entries: &[Map<String, Value>]) -> PiLineage {
+    let Some(header) = entries.first() else { return PiLineage::default() };
+    let parent_path = header.get("parentSession").and_then(Value::as_str).filter(|path| !path.is_empty());
+    let Some(parent_path) = parent_path.filter(|_| entry_type(header) == Some("session")) else {
+        return PiLineage::default();
+    };
+    let parent_id = pi_parent_session_id(parent_path);
+    let born = iso_milliseconds(header.get("timestamp"));
+    let dispatch = entries.get(1).filter(|entry| {
+        entry_type(entry) == Some("custom")
+            && entry.get("customType").and_then(Value::as_str) == Some("pi-user-agents-dispatch")
+            && born.zip(iso_milliseconds(entry.get("timestamp")))
+                .is_some_and(|(born, created)| created >= born)
+    });
+    let end = pi_inherited_prefix_end(entries);
+    let spawned = dispatch.is_some() || entries[end..].iter().any(is_pi_team_leader_message);
+    let isolated = dispatch
+        .and_then(|entry| entry.get("data"))
+        .and_then(Value::as_object)
+        .and_then(|data| data.get("isolate"))
+        == Some(&Value::Bool(true));
+    let forked_at = end
+        .checked_sub(1)
+        .and_then(|last| pi_entry_milliseconds(&entries[last]))
+        .and_then(chrono::DateTime::from_timestamp_millis)
+        .map(|moment| moment.with_timezone(&chrono::Local).naive_local());
+    PiLineage {
+        parent_session: parent_id.clone().filter(|_| spawned),
+        forked_from: parent_id.filter(|_| !isolated),
+        forked_at,
+    }
+}
+
+/// A Pi session's header and its own entries, without a fork's copied prefix.
+/// Mirrors Python's `pi_own_entries`.
+pub fn pi_own_entries(entries: &[Map<String, Value>]) -> Vec<Map<String, Value>> {
+    let start = pi_inherited_prefix_end(entries).max(1).min(entries.len());
+    entries.iter().take(1).chain(&entries[start..]).cloned().collect()
+}
+
+/// The session files of teammates these entries' team receipts created.
+///
+/// A direct team_spawn or team_add_teammates result lists them in `details`. A codemode
+/// script that ran one keeps only what it printed, so its text is read. Mirrors
+/// Python's `_pi_created_teammate_files`.
+fn pi_created_teammate_files(entries: &[Map<String, Value>]) -> Vec<String> {
+    static PRINTED: OnceLock<Regex> = OnceLock::new();
+    let printed = PRINTED.get_or_init(|| Regex::new(r"(?m)^[ \t]*(\{)").unwrap());
+    let creation_key = |name: Option<&str>| match name {
+        Some("team_spawn") => Some("teammates"),
+        Some("team_add_teammates") => Some("addedTeammates"),
+        _ => None,
+    };
+    let mut files = Vec::new();
+    for entry in entries {
+        let Some(message) = entry.get("message").and_then(Value::as_object) else { continue };
+        if message.get("role").and_then(Value::as_str) != Some("toolResult")
+            || message.get("isError").is_some_and(crate::model::value_is_truthy)
+        {
+            continue;
+        }
+        let tool_name = message.get("toolName").and_then(Value::as_str);
+        if let Some(key) = creation_key(tool_name) {
+            let members = message
+                .get("details")
+                .and_then(Value::as_object)
+                .and_then(|details| details.get(key))
+                .and_then(Value::as_array);
+            files.extend(
+                members
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|member| member.get("sessionFile")?.as_str().map(str::to_string)),
+            );
+        }
+        let spawned_teams: HashSet<&str> = message
+            .get("nestedCalls")
+            .and_then(|nested| nested.get("calls"))
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|call| {
+                call.get("name").and_then(Value::as_str) == Some("team_spawn")
+                    && call.get("status").and_then(Value::as_str) == Some("ok")
+            })
+            .filter_map(|call| call.get("arguments")?.get("teamName")?.as_str())
+            .collect();
+        if tool_name != Some("codemode") || spawned_teams.is_empty() {
+            continue;
+        }
+        let text = extract_text_blocks(message.get("content").unwrap_or(&Value::Null)).join("\n");
+        for opening in printed.captures_iter(&text) {
+            let Some(Ok(result)) = serde_json::Deserializer::from_str(&text[opening.get(1).unwrap().start()..])
+                .into_iter::<Value>().next() else { continue };
+            let correct_team = result.get("teamName").and_then(Value::as_str)
+                .is_some_and(|name| spawned_teams.contains(name));
+            if !correct_team || !result.get("teamId").is_some_and(crate::model::value_is_truthy) {
+                continue;
+            }
+            files.extend(result.get("teammates").and_then(Value::as_array).into_iter().flatten()
+                .filter_map(|member| member.get("sessionFile")?.as_str().map(str::to_string)));
+        }
+    }
+    files
+}
+
+type PiParentIndex = HashMap<std::path::PathBuf, Vec<std::path::PathBuf>>;
+
+/// Index immutable parent headers once per CLI invocation, without retaining transcript bodies.
+fn pi_children_by_parent(directory: &std::path::Path) -> PiParentIndex {
+    use std::io::BufRead;
+    let Ok(listing) = std::fs::read_dir(directory) else { return PiParentIndex::new() };
+    let mut siblings: Vec<std::path::PathBuf> = listing
+        .filter_map(|item| item.ok().map(|item| item.path()))
+        .filter(|path| path.extension().is_some_and(|extension| extension == "jsonl"))
+        .collect();
+    siblings.sort();
+    let mut children = PiParentIndex::new();
+    for sibling in siblings {
+        let Ok(file) = std::fs::File::open(&sibling) else { continue };
+        let mut line = String::new();
+        if std::io::BufReader::new(file).read_line(&mut line).is_err() {
+            continue;
+        }
+        let Ok(Value::Object(header)) = serde_json::from_str::<Value>(&line) else { continue };
+        let Some(parent) = header.get("parentSession").and_then(Value::as_str).filter(|path| !path.is_empty()) else { continue };
+        let Ok(parent) = std::fs::canonicalize(parent) else { continue };
+        let Ok(sibling) = sibling.canonicalize() else { continue };
+        children.entry(parent).or_default().push(sibling);
+    }
+    children
+}
+
+/// Linked children that prove delegation, rather than ordinary context forks.
+fn pi_spawned_children_in_directory(session_file: &std::path::Path) -> Vec<String> {
+    use std::sync::Mutex;
+    static INDEX: OnceLock<Mutex<HashMap<std::path::PathBuf, PiParentIndex>>> = OnceLock::new();
+    let Ok(session_file) = session_file.canonicalize() else { return Vec::new() };
+    let Some(directory) = session_file.parent() else { return Vec::new() };
+    let linked = {
+        let mut indexes = INDEX.get_or_init(Default::default).lock().expect("Pi parent index lock");
+        indexes.entry(directory.to_path_buf()).or_insert_with(|| pi_children_by_parent(directory))
+            .get(&session_file).cloned().unwrap_or_default()
+    };
+    linked.into_iter().filter(|child| child != &session_file).filter(|child| {
+        std::fs::read_to_string(child)
+            .is_ok_and(|content| pi_lineage(&decode_entries(&content)).parent_session.is_some())
+    }).map(|child| child.to_string_lossy().into_owned()).collect()
+}
+
+/// The sessions this Pi session delegated to, by its agent or its user. Copied receipts in
+/// a fork's inherited prefix belong to the parent. Mirrors Python's
+/// `find_pi_delegated_children`.
+pub fn pi_delegated_children(
+    session_file: &std::path::Path,
+    entries: &[Map<String, Value>],
+) -> Vec<std::path::PathBuf> {
+    let own = &entries[pi_inherited_prefix_end(entries).min(entries.len())..];
+    let mut seen = HashSet::new();
+    pi_created_teammate_files(own)
+        .into_iter()
+        .chain(pi_spawned_children_in_directory(session_file))
+        .filter(|child| seen.insert(child.clone()))
+        .map(std::path::PathBuf::from)
+        .filter(|child| child.is_file())
+        .collect()
+}
+
+/// A delegated Pi child's identity: a teammate's name, or a user side chat.
+/// Mirrors Python's `read_pi_subagent_metadata`.
+pub struct PiChildIdentity {
+    pub agent_id: Option<String>,
+    pub name: Option<String>,
+    pub subagent_type: &'static str,
+    pub model: Option<String>,
+}
+
+pub fn pi_child_identity(entries: &[Map<String, Value>]) -> PiChildIdentity {
+    let own = &entries[pi_inherited_prefix_end(entries).min(entries.len())..];
+    let briefing = own.iter().find(|entry| is_pi_team_leader_message(entry));
+    let model = own.iter().find_map(|entry| {
+        let message = entry.get("message")?.as_object()?;
+        (message.get("role")?.as_str()? == "assistant")
+            .then(|| message.get("model")?.as_str().map(str::to_string))
+            .flatten()
+    });
+    PiChildIdentity {
+        agent_id: entries.first().and_then(|header| header.get("id")?.as_str().map(str::to_string)),
+        name: briefing.and_then(|entry| entry.get("details")?.get("to")?.as_str().map(str::to_string)),
+        subagent_type: if briefing.is_some() { "teammate" } else { "user-agent" },
+        model,
+    }
+}
+
 /// Decode Pi-shaped JSONL entries into the shared message model.
 ///
 /// Covers every entry type Python's Pi adapter handles: `message` (user, assistant and
-/// toolResult, including inline-skill expansion), `compaction`, `custom` (including the
-/// user-agent and subagent-record specialisations) and `custom_message`. Anything else
+/// toolResult, including inline-skill expansion), `compaction`, `custom` and
+/// `custom_message` (squashed user-agent results and team messages). Anything else
 /// is ignored, exactly as Python ignores it.
 pub fn parse_pi(entries: &[Map<String, Value>], flags: &ConversationFlags) -> Vec<Message> {
     let mut messages: Vec<Message> = Vec::new();
@@ -2090,6 +2546,8 @@ pub fn parse_pi(entries: &[Map<String, Value>], flags: &ConversationFlags) -> Ve
                     parse_pi_squashed_user_agent_message(entry, index, flags)
                         .into_iter()
                         .collect()
+                } else if is_pi_team_leader_message(entry) {
+                    parse_pi_team_leader_message(entry, index, flags).into_iter().collect()
                 } else if flags.show_agents {
                     parse_pi_team_message(entry, index).into_iter().collect()
                 } else {

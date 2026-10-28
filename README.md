@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-26T16-06
+last_updated: 2026-10-28T15-55
 ---
 
 # Chats
@@ -142,7 +142,7 @@ Detached parsing keeps legacy message selectors after the input. `ch <id> -s 7` 
 
 `--no-user` and `--no-assistant` hide only the regular default text for that role. Explicit extras still work with them. For example, `ch --no-user --tools ...` shows tool outputs while hiding user text, and `ch --no-assistant --thinking --tools --agents ...` still shows assistant-side thinking, tools, and agent messages. Claude `isMeta=true` user messages are treated as tool-adjacent protocol noise and stay hidden unless `--tools` is enabled.
 
-Metadata frontmatter emits `forked_from:` only when the raw session exposes a fork parent id. Sessions without that data omit the field entirely.
+Metadata frontmatter carries lineage only when the session's own file proves it, and omits each absent field. `parent_session:` names the session that spawned this one. `forked_from:` names the session whose conversation this one copied. `forked_at:` gives an observed fork or snapshot timestamp, when available. Provider timestamps differ, so it is not an exact parent-message locator.
 
 **Output Formats:**
 
@@ -475,7 +475,7 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - `message.content`: string or array (can include tool results)
    - User-side local command protocol payloads stay hidden by default across adapters, including Claude `<command-*>...</command-*>` inputs and `<local-command-stdout>...</local-command-stdout>` outputs
    - Claude `isMeta=true` user messages also stay hidden by default. When an `isMeta` text payload carries `sourceToolUseID`, it is treated as another output for that source tool, so direction/name filters apply (`-t:i` hides it, `-t:o` and `-t Skill:o` show it). Other meta text remains visible only with `-t, --tools`.
-   - Claude background-task notifications (string content wrapped in `<task-notification>...</task-notification>`, emitted when a background `Agent` task finishes) classify as a synthetic `TaskNotification` tool: hidden by default, shown with `-t`, name-filterable (`-t TaskNotification`). The `tool_use_id` (linking back to the originating `Agent` dispatch), `status`, and `summary` render as `<tool-input>` attributes and the task result as the body; double quotes in attribute values are downgraded to single quotes
+   - Claude agent task notifications render delivered results under `--agents`, attributed to their task id. A native notification must join to an `Agent` dispatch, its returned child id, or a user-fork launch receipt. This preserves replies when the child file is missing. Background-shell notifications remain hidden
    - Claude post-compaction summaries (`isCompactSummary: true`, injected when a conversation is continued past its context limit) render as a visible `<compaction>` block — shown by default like `<recap>`, with its own hue and a "Compaction" badge in colored output, rather than as a regular user message
    - Common fields: `cwd`, `sessionId`, `version`, `gitBranch`, `uuid`, `parentUuid`, `timestamp`
 
@@ -519,9 +519,11 @@ Conversations are stored as JSONL files where each line is a JSON entry.
    - A squashed `pi-user-agents` result (`custom_message` with `details.mainContextState` exactly `squashed`) is the text the main agent read. It renders by default as a plain user message whose body is the record's `content` as it is, for both successes and failures, whatever its `display` value
    - Other custom records stay hidden by default
    - `--all` renders arbitrary `type: "custom"` data as JSON without assuming its schema, including incomplete special records that cannot normalize
-   - `--agents` renders `subagents:record` records through the shared agent view
-   - `--agents` renders `pi-simple-team` `custom_message` records (teammate replies) as agents named after `details.from`, with `details.message` as the body
-   - `team_*` tool calls and results (the pi-simple-team delegation tools) are agent content: `--agents` shows them regardless of tool filters, and `--tools` alone never does. An assistant entry's `team_*` calls render as their own assistant message
+   - A `pi-simple-team` `custom_message` from `main` addressed `to` a teammate is that teammate's briefing or follow-up. It renders by default as a user message whose body is `details.message`, like a Claude or Codex child's parent prompt
+   - `--agents` renders other `pi-simple-team` `custom_message` records (teammate replies and peer messages) as agents named after `details.from`, with `details.message` as the body
+   - pi-simple-team tools (`team_*`, `send_main_message`, `get_context_window_usage`) are agent content: `--agents` shows them regardless of tool filters, and `--tools` alone never does. An assistant entry's team calls render as their own assistant message. Team calls a `codemode` script ran come from its result's `nestedCalls` and show as inputs only, because Pi does not store their results
+   - Opening a Pi child directly shows its whole file, including copied history. `--agents` recursively merges proved teammates and user side chats into their parent, in parse and search. Only merged child blocks omit copied history, and each keeps its own identity. Native parent links plus a new dispatch record or leader briefing establish forked children. Direct spawn/add receipts and printed codemode spawn receipts establish fresh teammates
+   - Pi lineage metadata distinguishes the spawning `parent_session`, the context source `forked_from`, and the observed fork/snapshot time `forked_at`. Pi uses the last retained copied message's timestamp, displayed to the minute, not an exact message identifier. An isolated side chat has a parent but no context source. A missing parent file leaves its ID unresolved. Native `/fork`, `/clone`, and user-run CLI forks are not delegation. Agent-run CLI forks require launch-to-child evidence; arbitrary shell launch programs currently remain a coverage gap
    - Unsquashed `pi-user-agents` `custom_message`, `subagent-notification`, and other `display: false` records stay hidden, including with `--all`
 
 8. **Hook additional-context attachments** (`type: "attachment"`, Claude)
@@ -538,28 +540,38 @@ Conversations are stored as JSONL files where each line is a JSON entry.
 
 **Non-linear structure (Claude):**
 
-A Claude transcript is a tree, not a line — file order is not conversation order. Three mechanisms break linearity (others likely exist):
+A Claude transcript can contain branches, copied history, and separate delegated conversations:
 - **Rewind:** returning to an earlier point and re-prompting forks the tree — the rewind target gains an extra child, so one node has multiple children sharing the same non-null `parentUuid`. The surviving thread is the longest continuation; the shorter sibling subtrees are abandoned branches.
 - **Compaction** (`/compact`): does *not* fork, it cuts. Each compaction ends the current tree and starts a fresh `parentUuid: null` root — a `system/compact_boundary` node whose sole child is the `isCompactSummary` summary — so a compacted file is a *forest* of disjoint trees, one per context-window era. Cross-era continuity lives out-of-band in the boundary's `compactMetadata.preservedSegment`, not in `parentUuid`; file order keeps the eras in sequence.
-- **`/fork`** (user-initiated background agent): the parent session stores only the `/fork` command message and the returning `<task-notification>` — no `Task` tool_use, `agentId`, or `isSidechain` anchor in the main thread. The fork's transcript lives in a separate `subagents/agent-{slug}-{taskId}.jsonl` (plus a `.meta.json` with `isFork: true`) whose leading `fork-context-ref` links *back* to the parent (`parentLastUuid` = the forked-from node) while nothing links forward — unlike classic agent-initiated subagents, which anchor in-thread via a `Task` tool_use / `agentId`.
+- **Session fork** (`--fork-session`, `/branch`, and `/bg`): a new top-level session copies the parent transcript ahead of its own records. Copied records keep the writer's snake_case `session_id`, while camelCase `sessionId` names the new session. `ch` shows the whole file and reports the last writer as `forked_from` with `forked_at`. Older transcripts without `session_id` tags have no `forked_from`.
+- **User delegation:** `/subtask` and older `/btw` create fork subagents. `/fork` can create a fork subagent or, with agent view enabled, a top-level background session. Subagents name their context source in `fork-context-ref`. Background-session launch receipts name the child id prefix, which `ch` resolves and checks against the child's recorded context source.
 
 In `ch` output, messages on an abandoned **rewind** branch are hidden by default and included only with `-b, --branches`, each tagged `branch="N"` (and a `⑂N` chip in colored output). Resolution runs per era, so compaction seams and prior eras are never mistaken for abandoned branches; within each era the main thread is the path to the latest `last-prompt` `leafUuid`.
 
 **Agent/Subagent Conversations:**
 - Hidden by default (use `-a` or `--agents` to show)
-- Five kinds are captured: agent-initiated sidechains, user-initiated `/fork` background agents, inline Pi `subagents:record` custom records, Pi `pi-simple-team` teammate messages with their `team_*` tools, and Claude peer-session messages
+- Parse and search recursively merge proved delegated descendants. Each child appears once per parent view, with its own identity. Incoming peer messages retain their sender. Copied history is omitted only inside merged child blocks. Opening a child directly still shows its whole file
+- Search retains separate child hits, including orphaned Claude sidechains, while also matching parents through their delegated descendants. Directory filters still apply to the session that supplies each hit
+- Claude discovery covers `Agent` subagents, in-process teammates, user-created fork subagents, native `/fork` background sessions, and CLI forks proved by successful Herdr start/session receipts. A context-parent link alone does not prove delegation. User-run CLI forks stay out; unresolvable agent launches remain an evidence gap
 - A Claude peer-session message (a teammate or another session messaging this one via `SendMessage`) is stored as a plain `user` entry whose string content starts with `Another Claude session sent a message:` followed by one or more `<teammate-message teammate_id="...">` / `<cross-session-message from-name="...">` blocks and a fixed permission trailer. The human never typed it, so each block renders as its own `<agent>` headed `Agent '<sender>'` with `agent_id`/`name` set to the sender; the prefix, tags, and trailer are dropped. Search matches it only with `--agents`, like any agent text
-- Claude sidechains and `/fork` transcripts are stored separately under `{session_id}/subagents/`. Sidechains use `agent-{shortId}.jsonl`; a `/fork` uses `agent-{slug}-{taskId}.jsonl` with a sibling `.meta.json` carrying `agentType: "fork"`
-- These file-backed transcripts use the same structure as main conversations. Their entries include `agentId` and `isSidechain: true`
-- All three kinds render through the shared `<agent>` wrapper. File-backed Claude agents carry `agent_id` and `subagent_type`; inline Pi agents carry `custom_type`
-- A user-initiated `/fork` carries `subagent_type="fork"` and is headed `Fork` (a `Fork` badge in colored output). Agent-initiated `Task` subagents stay `Agent`
-- A classic subagent is anchored in-thread by its first line's `sessionId`; a `/fork` has no in-thread anchor and is matched instead by its leading `fork-context-ref.parentSessionId`
-- Inline Pi records stay in the main transcript and do not create sidechain files
-- Claude agent tool results include `agentId: xxx (for resuming...)` in content
+- A teammate's `idle_notification` envelope shows its delivered result, summary, or failure text without the JSON wrapper. A bare status ping renders nothing
+- Inside a teammate's own transcript the same blocks arrive without the prefix. Blocks from `team-lead` are the teammate's user turns: its briefing and follow-ups. Blocks from other teammates are agents named after them
+- Claude's `Agent`, `SendMessage`, and `ListAgents` calls and their results are agent content. `--agents` shows them regardless of tool filters; `--tools` alone does not. Delivered replies and private child work remain distinct records
+- Claude subagent, fork, and teammate transcripts are stored separately under `{session_id}/subagents/` as `agent-{agentId}.jsonl`, with a sibling `.meta.json` that carries `agentType`, `name`, and for forks `isFork: true`
+- These file-backed transcripts use the same structure as main conversations. Their entries include `agentId` and `isSidechain: true`. Their metadata names the parent as `parent_session`, and a fork's also as `forked_from`
+- All kinds render through the shared `<agent>` wrapper. File-backed Claude agents carry `agent_id`, `subagent_type`, and `name`; inline Pi agents carry `custom_type`
+- A fork, which inherits its parent's conversation, carries `subagent_type="fork"` and is headed `Fork '<name>'` (a `Fork` badge in colored output). Fresh-context subagents are headed `Agent '<name>'`. A fork's subagent task is its directive: Claude Code's `<fork-boilerplate>` worker rules are dropped from user text
+- A fresh-context subagent or teammate names its root session in `sessionId`; a fork names it in `fork-context-ref.parentSessionId`. Nested subagents use `.meta.json.parentAgentId` to identify their direct creator
+- Pi deliveries stay inline. Teammates and user side chats also have separate session files, which `--agents` can merge through verified creation links. Search retains these independently accessible sessions as separate hits too
 
-**Why `TaskNotification` is an unpaired tool:**
-
-Every other tool comes as an input/output pair. A `TaskNotification` is the exception: it's a standalone message Claude injects when a *background* `Agent` task finishes, long after the dispatch. It has no output of its own — instead its `tool_use_id` points back at the original `Agent` call (which keeps its own normal pair), so you can trace a finished task to where it started. That id is surfaced as a plain attribute rather than the tool's real id on purpose: reusing it would overwrite the `Agent` call's name in the id→name map and mislabel that call's output.
+**Codex delegation:**
+- Codex subagents remain independently searchable sessions. Their headers identify the spawner through `parent_thread_id` and the agent through `source.subagent.thread_spawn`.
+- `--agents` recursively merges proved delegated children into the parent's parse and search views. This includes fresh and inherited-context subagents, native `agent_forked_thread` forks, and agent-run CLI forks with verified launch receipts. Shared traversal deduplicates session identities and stops cyclic edges.
+- All `collaboration` calls and results are agent content, including spawn attempts, failures, waits, and messages. `--agents` shows them independently of tool filters. `--tools` alone does not. Encrypted argument values show as `[encrypted]`.
+- A child's leader messages render as user instructions. Other `agent_message` deliveries require `--agents` and keep their sender, even when the sender's transcript is missing. Readable payloads remain readable; encrypted deliveries retain their routing header. Instructions inside merged child blocks use `<subagent-task>`.
+- Opening a fork directly keeps its copied history. Only merged child blocks omit copied parent records, using `subagent_history_start_ordinal`. Lineage metadata distinguishes the spawner, copied-context source, and observed snapshot timestamp. The timestamp is not an exact parent-message locator.
+- User-run CLI forks are not delegation. A fork header alone cannot establish the initiator. For supported Herdr launches, `ch` joins a successful `agent_started` receipt to an exact terminal session identity and verifies the child's fork source. Unmatched launches remain unresolved, not assumed user-created. Codex `/side` leaves no saved rollout.
+- Compressed `.jsonl.zst` rollouts and `~/.codex/archived_sessions/` remain unsupported.
 
 ## Technical Reference
 

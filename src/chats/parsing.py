@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -10,6 +11,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import cache
 from pathlib import Path
 
 import orjson
@@ -22,6 +24,8 @@ from ._native import (
     scan_resolution_facets,
 )
 from .model import ConversationFlags, Message, Provider, SubagentMetadata
+from .codex_delegation import delegated_parent, verified_cli_forks
+from .claude_delegation import AgentOrigins, agent_origins, notification_messages
 from .registry import (
     ContentBlockType,
     normalize_tool_input_keys,
@@ -43,7 +47,10 @@ class JsonlSessionAdapter:
     find_session_matches: Callable[[str], list[tuple[Path, str]]] | None = None
     is_sidechain_path: Callable[[Path], bool] = lambda _path: False
     extract_session_id: Callable[[Path], str | None] = lambda path: path.stem
+    extract_parent_session: Callable[[Path], str | None] = lambda _path: None
     extract_forked_from: Callable[[Path], str | None] = lambda _path: None
+    extract_forked_at: Callable[[Path], str | None] = lambda _path: None
+    own_entries: Callable[[list[dict]], list[dict]] = lambda entries: entries
     matches_first_entry: FirstEntryMatcher | None = None
 
 
@@ -514,39 +521,20 @@ _TASK_NOTIFICATION_PATTERN = re.compile(
     r"\s*<task-notification>(?P<body>.*)</task-notification>\s*",
     re.DOTALL,
 )
-# Synthetic TaskNotification tool input keys mapped to their payload tags.
-# `result` is the tool body; the rest become <tool-input> attributes.
-_TASK_NOTIFICATION_FIELD_TAGS: dict[str, str] = {
-    "tool_use_id": "tool-use-id",
-    "status": "status",
-    "summary": "summary",
-    "result": "result",
-}
 
 
-def _parse_task_notification_tool(content: str) -> dict | None:
-    """Convert a Claude background-task notification payload into a synthetic
-    TaskNotification tool_use, so it classifies (and filters) as a tool."""
-    match = _TASK_NOTIFICATION_PATTERN.fullmatch(content)
-    if match is None:
-        return None
+def _is_task_notification(content: str) -> bool:
+    """Whether a Claude user string is a background-task notification.
 
-    body = match.group("body")
-    input_data: dict[str, str] = {}
-    for input_key, tag in _TASK_NOTIFICATION_FIELD_TAGS.items():
-        if field_match := re.search(rf"<{tag}>(.*?)</{tag}>", body, re.DOTALL):
-            value = field_match.group(1).strip()
-            # Attribute values render unescaped, so neutralize embedded double
-            # quotes by downgrading them to single quotes. The result body is
-            # markdown, not an attribute, so it keeps its quotes verbatim.
-            if input_key != "result":
-                value = value.replace('"', "'")
-            input_data[input_key] = value
+    Native agent deliveries require separate origin and dispatch checks before
+    they become agent messages; shell notifications remain hidden.
 
-    if "tool_use_id" in input_data:
-        input_data["tool_use_id"] = shorten_tool_use_id(input_data["tool_use_id"])
-
-    return {"type": "tool_use", "name": "TaskNotification", "input": input_data}
+    >>> _is_task_notification("<task-notification><status>completed</status></task-notification>")
+    True
+    >>> _is_task_notification("typed <task-notification> text")
+    False
+    """
+    return _TASK_NOTIFICATION_PATTERN.fullmatch(content) is not None
 
 
 _TAG_ATTRIBUTE_PATTERN = re.compile(r'([\w-]+)="([^"]*)"')
@@ -561,11 +549,17 @@ _CLAUDE_PEER_SENDER_ATTRIBUTES: dict[str, str] = {
 }
 
 
-def _split_claude_peer_blocks(content: str) -> list[tuple[str | None, str]]:
+_CLAUDE_TEAM_LEAD = "team-lead"
+
+
+def _split_claude_peer_blocks(
+    content: str, *, in_agent_transcript: bool = False
+) -> list[tuple[str | None, str]]:
     """Split a message relayed from another Claude session into (sender, body) pairs.
 
     Claude Code stores a teammate or cross-session message as a user string:
     a fixed prefix line, one block per relayed message, and a fixed trailer.
+    Inside a teammate's own transcript the blocks arrive without the prefix.
     Anything else yields no blocks.
 
     >>> _split_claude_peer_blocks(
@@ -577,8 +571,17 @@ def _split_claude_peer_blocks(content: str) -> list[tuple[str | None, str]]:
     [('scout', 'hello'), ('lead', 'hi')]
     >>> _split_claude_peer_blocks('typed text mentioning <teammate-message teammate_id="x">')
     []
+    >>> _split_claude_peer_blocks(
+    ...     '<teammate-message teammate_id="team-lead">\\ngo\\n</teammate-message>',
+    ...     in_agent_transcript=True,
+    ... )
+    [('team-lead', 'go')]
     """
-    if not content.lstrip().startswith(_CLAUDE_PEER_MESSAGE_PREFIX):
+    stripped = content.lstrip()
+    relayed = stripped.startswith(_CLAUDE_PEER_MESSAGE_PREFIX) or (
+        in_agent_transcript and stripped.startswith("<teammate-message")
+    )
+    if not relayed:
         return []
     blocks: list[tuple[str | None, str]] = []
     cursor = 0
@@ -594,8 +597,43 @@ def _split_claude_peer_blocks(content: str) -> list[tuple[str | None, str]]:
     return blocks
 
 
-def _claude_peer_agent_message(entry: dict, sender: str | None, body: str) -> Message:
-    """Represent one relayed peer-session message as an agent block named after its sender."""
+def _claude_peer_text(body: str) -> str:
+    """Keep delivered reports inside idle envelopes, but omit bare status pings.
+
+    >>> _claude_peer_text('{"type":"idle_notification","from":"x"}')
+    ''
+    >>> _claude_peer_text('{"type":"idle_notification","result":"done"}')
+    'done'
+    >>> _claude_peer_text("{not json")
+    '{not json'
+    """
+    if not body.startswith("{"):
+        return body
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        return body
+    if not isinstance(payload, dict) or payload.get("type") != "idle_notification":
+        return body
+    return payload.get("result") or payload.get("summary") or payload.get("failureReason") or ""
+
+
+def _claude_peer_message(
+    entry: dict, sender: str | None, body: str, flags: ConversationFlags
+) -> Message | None:
+    """Represent one relayed message: the team lead plays the user, any other sender is an agent.
+
+    Idle envelopes keep their delivered result; empty status pings render nothing.
+    """
+    body = _claude_peer_text(body)
+    if not body:
+        return None
+    if sender == _CLAUDE_TEAM_LEAD:
+        if not flags.show_user_messages:
+            return None
+        return Message(role="user", timestamp=entry.get("timestamp"), text=body)
+    if not flags.show_agents:
+        return None
     return Message(
         role="agent",
         agent_id=sender,
@@ -701,6 +739,23 @@ def _filter_hidden_user_text_blocks(text_blocks: list[str]) -> list[str]:
     return [text for text in text_blocks if not _is_hidden_user_command_text(text)]
 
 
+_CLAUDE_FORK_BOILERPLATE_CLOSE = "</fork-boilerplate>"
+
+
+def _strip_claude_fork_boilerplate(text: str) -> str:
+    """Drop the worker boilerplate Claude Code prepends to a fork's directive.
+
+    >>> _strip_claude_fork_boilerplate("<fork-boilerplate>\\nrules\\n</fork-boilerplate>\\n\\nYour directive: go")
+    'Your directive: go'
+    >>> _strip_claude_fork_boilerplate("typed <fork-boilerplate> text")
+    'typed <fork-boilerplate> text'
+    """
+    if not text.lstrip().startswith("<fork-boilerplate>"):
+        return text
+    _, closed, directive = text.partition(_CLAUDE_FORK_BOILERPLATE_CLOSE)
+    return directive.strip() if closed else text
+
+
 def _parse_user_string_content(
     content: str,
 ) -> tuple[str, ContentBlockType | None]:
@@ -711,14 +766,136 @@ def _parse_user_string_content(
     return content, None
 
 
+def _is_claude_foreign_record(entry: dict) -> bool:
+    """Whether a record was copied from another session by a Claude fork.
+
+    Copied records keep the writer's snake_case `session_id`; camelCase `sessionId`
+    names the session that holds the file.
+
+    >>> _is_claude_foreign_record({"session_id": "parent", "sessionId": "child"})
+    True
+    >>> _is_claude_foreign_record({"session_id": "child", "sessionId": "child"})
+    False
+    >>> _is_claude_foreign_record({"sessionId": "child"})
+    False
+    """
+    writer = entry.get("session_id")
+    return bool(writer) and writer != entry.get("sessionId")
+
+
+def _claude_own_entries(entries: list[dict]) -> list[dict]:
+    """Remove copied context only when embedding a delegated fork in its parent.
+
+    >>> _claude_own_entries([{"session_id": "p", "sessionId": "c"}, {"type": "user"}])
+    [{'type': 'user'}]
+    """
+    end = next((index + 1 for index in range(len(entries) - 1, -1, -1)
+                if _is_claude_foreign_record(entries[index])), 0)
+    while end and end < len(entries) and entries[end].get("type") == "system":
+        end += 1
+    return entries[end:]
+
+
+def _claude_successful_bash_calls(entries: list[dict]) -> list[tuple[str, str]]:
+    """Pair this session's executed Bash calls with successful results by exact tool id.
+
+    >>> _claude_successful_bash_calls([])
+    []
+    """
+    calls: dict[str, str] = {}
+    completed = []
+    for entry in _claude_own_entries(entries):
+        content = (entry.get("message") or {}).get("content")
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            if entry.get("type") == "assistant" and block.get("type") == "tool_use" and block.get("name") == "Bash":
+                calls[block["id"]] = block.get("input", {}).get("command", "")
+            if entry.get("type") == "user" and block.get("type") == "tool_result" and not block.get("is_error"):
+                command = calls.get(block.get("tool_use_id"))
+                if command:
+                    completed.append((command, "\n".join(_extract_text_blocks(block.get("content")))))
+    return completed
+
+
+def _claude_background_fork_prefixes(entries: list[dict]) -> list[str]:
+    """Read child identifiers from native user `/fork` launch receipts, not quoted text.
+
+    >>> _claude_background_fork_prefixes([])
+    []
+    """
+    children = []
+    pending = False
+    for entry in _claude_own_entries(entries):
+        if entry.get("type") != "system" or entry.get("subtype") != "local_command":
+            continue
+        content = entry.get("content", "")
+        if "<command-name>" in content:
+            pending = "<command-name>/fork</command-name>" in content
+            continue
+        match = re.fullmatch(r"<local-command-stdout>session running · .* · ([0-9a-f]{8})</local-command-stdout>", content)
+        if pending and match:
+            children.append(match.group(1))
+        pending = False
+    return children
+
+
+@dataclass(frozen=True)
+class ClaudeLineage:
+    """What a Claude transcript proves about where it came from."""
+
+    parent_session: str | None = None
+    forked_from: str | None = None
+    forked_at: str | None = None
+
+
+@functools.lru_cache(maxsize=8)
+def _read_claude_lineage(session_file: Path) -> ClaudeLineage:
+    """Read a Claude transcript's spawner and fork source from its own records.
+
+    A subagent transcript names its parent session: a fork's leading
+    `fork-context-ref` through `parentSessionId`, any other subagent through the
+    `sessionId` its records carry. Scan all provenance tags because a fork can insert
+    its own environment record before its copied history.
+    """
+    lineage = ClaudeLineage()
+    with session_file.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("type") == "fork-context-ref":
+                parent = entry.get("parentSessionId")
+                return ClaudeLineage(parent_session=parent, forked_from=parent)
+            if entry.get("isSidechain") is True:
+                return ClaudeLineage(parent_session=entry.get("sessionId"))
+            if not entry.get("session_id"):
+                continue
+            if not _is_claude_foreign_record(entry):
+                continue
+            lineage = ClaudeLineage(
+                forked_from=entry["session_id"],
+                forked_at=entry.get("timestamp") or lineage.forked_at,
+            )
+    return lineage
+
+
 def _parse_default_jsonl_entries(
     entries: list[dict], flags: ConversationFlags
 ) -> list[Message]:
     """Parse Claude-style JSONL entries into the shared Message model."""
     branch_of = _resolve_branch_map(entries)
+    agent_tool_ids = _claude_agent_tool_ids(entries)
+    origins = agent_origins(entries) if flags.show_agents else None
     messages = []
     index = 1
-
     for entry in entries:
         branch_id = branch_of.get(entry.get("uuid"))
         if branch_id is not None and not flags.show_branches:
@@ -726,9 +903,9 @@ def _parse_default_jsonl_entries(
 
         entry_type = entry.get("type")
         if entry_type == "user":
-            parsed_messages = _parse_user_entry(entry, index, flags)
+            parsed_messages = _parse_user_entry(entry, index, flags, agent_tool_ids, origins)
         elif entry_type == "assistant":
-            parsed_messages = [_parse_assistant_entry(entry, index, flags)]
+            parsed_messages = _parse_assistant_entry(entry, index, flags)
         elif entry_type == "system":
             parsed_messages = [_parse_system_entry(entry, index, flags)]
         elif entry_type == "attachment":
@@ -743,39 +920,33 @@ def _parse_default_jsonl_entries(
                 messages.append(msg)
                 index += 1
 
-    _suppress_claude_agent_dispatch(messages)
     return messages
 
 
-_CLAUDE_AGENT_DISPATCH_TOOLS = frozenset({"Agent", "Task"})
+# Tools that talk to agents rather than act on the world: agent content, like Pi's team_*.
+_CLAUDE_AGENT_MESSAGING_TOOLS = frozenset({"Agent", "SendMessage", "ListAgents"})
 
 
-def _suppress_claude_agent_dispatch(messages: list[Message]) -> None:
-    """Drop the Agent/Task dispatch tool_use and its tool_result in place.
+def _claude_agent_tool_ids(entries: list[dict]) -> frozenset[str]:
+    """Collect the ids of agent-messaging tool calls, so their results classify with them.
 
-    The merged agent block (and its <subagent-task>) is their representation, so
-    the raw dispatch pair is plumbing — abstracted away like Codex spawn/wait/close.
+    >>> sorted(_claude_agent_tool_ids([{"type": "assistant", "message": {"content": [
+    ...     {"type": "tool_use", "id": "a", "name": "SendMessage"},
+    ...     {"type": "tool_use", "id": "b", "name": "Bash"},
+    ... ]}}]))
+    ['a']
     """
-    dispatch_ids = {
-        tool.get("id")
-        for message in messages
-        for tool in message.tools
-        if tool.get("type") == "tool_use"
-        and tool.get("name") in _CLAUDE_AGENT_DISPATCH_TOOLS
-    }
-    for message in messages:
-        message.tools = [
-            tool
-            for tool in message.tools
-            if not (
-                tool.get("type") == "tool_use"
-                and tool.get("name") in _CLAUDE_AGENT_DISPATCH_TOOLS
-            )
-            and not (
-                tool.get("type") == "tool_result"
-                and tool.get("tool_use_id") in dispatch_ids
-            )
-        ]
+    return frozenset(
+        item["id"]
+        for entry in entries
+        if entry.get("type") == "assistant"
+        and isinstance(content := (entry.get("message") or {}).get("content"), list)
+        for item in content
+        if isinstance(item, dict)
+        and item.get("type") == "tool_use"
+        and item.get("name") in _CLAUDE_AGENT_MESSAGING_TOOLS
+        and item.get("id")
+    )
 
 
 def _collect_subtree(root: str, children: dict[str | None, list[str]]) -> set[str]:
@@ -938,6 +1109,7 @@ def _is_squashed_pi_user_agent_message(entry: dict) -> bool:
 
 _PI_TEAM_CUSTOM_TYPE = "pi-simple-team"
 _PI_TEAM_TOOL_PREFIX = "team_"
+_PI_TEAM_UNPREFIXED_TOOLS = frozenset({"send_main_message", "get_context_window_usage"})
 
 
 def _is_pi_team_message(entry: dict) -> bool:
@@ -952,29 +1124,296 @@ def _is_pi_team_message(entry: dict) -> bool:
     )
 
 
+def _is_pi_team_leader_message(entry: dict) -> bool:
+    """Return whether a teammate message came from the recipient's team leader.
+
+    The leader's briefing and follow-ups are the teammate's prompts.
+
+    >>> _is_pi_team_leader_message({"type": "custom_message", "customType": "pi-simple-team", "details": {"from": "main", "to": "scout"}})
+    True
+    >>> _is_pi_team_leader_message({"type": "custom_message", "customType": "pi-simple-team", "details": {"from": "scout"}})
+    False
+    """
+    details = entry.get("details")
+    return (
+        _is_pi_team_message(entry)
+        and isinstance(details, dict)
+        and details.get("from") == "main"
+        and isinstance(details.get("to"), str)
+        and bool(details["to"])
+    )
+
+
 def _is_pi_team_tool(native_name: object) -> bool:
     """Return whether a Pi tool is pi-simple-team delegation, which is agent content.
 
-    >>> _is_pi_team_tool("team_send_message"), _is_pi_team_tool("zsh")
-    (True, False)
+    >>> _is_pi_team_tool("team_send_message"), _is_pi_team_tool("send_main_message"), _is_pi_team_tool("zsh")
+    (True, True, False)
     """
-    return isinstance(native_name, str) and native_name.startswith(_PI_TEAM_TOOL_PREFIX)
+    return isinstance(native_name, str) and (
+        native_name.startswith(_PI_TEAM_TOOL_PREFIX) or native_name in _PI_TEAM_UNPREFIXED_TOOLS
+    )
 
 
 def _is_hidden_pi_custom_entry(entry: dict) -> bool:
     """Return whether a Pi custom envelope is hidden duplicate plumbing.
 
-    >>> _is_hidden_pi_custom_entry({"type": "custom", "customType": "subagent-notification"})
-    True
     >>> _is_hidden_pi_custom_entry({"type": "custom", "display": False})
     True
     """
     return not (
         _is_squashed_pi_user_agent_message(entry) or _is_pi_team_message(entry)
-    ) and (
-        entry.get("customType") == "subagent-notification"
-        or entry.get("display") is False
-        or entry.get("type") == "custom_message"
+    ) and (entry.get("display") is False or entry.get("type") == "custom_message")
+
+
+def _pi_entry_milliseconds(entry: dict) -> int | None:
+    """Return when a Pi entry's content was created: its message time, else its entry time.
+
+    >>> _pi_entry_milliseconds({"timestamp": "2026-10-08T09:00:00.000Z", "message": {"timestamp": 5}})
+    5
+    >>> _pi_entry_milliseconds({"timestamp": "1970-01-01T00:00:01.000Z"})
+    1000
+    """
+    message = entry.get("message")
+    if isinstance(message, dict) and isinstance(message.get("timestamp"), int):
+        return message["timestamp"]
+    return _iso_milliseconds(entry.get("timestamp"))
+
+
+def _iso_milliseconds(value: object) -> int | None:
+    """Return an ISO timestamp as epoch milliseconds, or None when it is not one.
+
+    >>> _iso_milliseconds("1970-01-01T00:00:01.500Z"), _iso_milliseconds(None)
+    (1500, None)
+    """
+    if not isinstance(value, str):
+        return None
+    try:
+        moment = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        return None
+    return int(moment.timestamp() * 1000)
+
+
+def pi_inherited_prefix_end(entries: list[dict]) -> int:
+    """Return the index just past a forked Pi session's copied parent history, or 0.
+
+    Every Pi fork path writes the copy before the child's own work, and the copied
+    content predates the child's header: native forks copy entries verbatim, and
+    pi-user-agents keeps each copied message's original `message.timestamp`.
+
+    >>> header = {"type": "session", "timestamp": "1970-01-01T00:00:10.000Z", "parentSession": "/p.jsonl"}
+    >>> pi_inherited_prefix_end([header, {"message": {"timestamp": 1}}, {"message": {"timestamp": 20000}}])
+    2
+    """
+    header = entries[0] if entries else {}
+    parent = header.get("parentSession")
+    if header.get("type") != "session" or not (isinstance(parent, str) and parent):
+        return 0
+    born = _iso_milliseconds(header.get("timestamp"))
+    if born is None:
+        return 0
+    end = 0
+    for position, entry in enumerate(entries[1:], 1):
+        created = _pi_entry_milliseconds(entry)
+        if created is not None and created < born:
+            end = position + 1
+    return end
+
+
+@dataclass(frozen=True)
+class PiLineage:
+    """What a Pi session's own file proves about where it came from."""
+
+    parent_session: str | None = None
+    forked_from: str | None = None
+    forked_at: str | None = None
+
+
+def _pi_parent_session_id(parent_path: str) -> str | None:
+    """Return the id in a parent session file's header, or None when it cannot be read."""
+    try:
+        with open(parent_path, encoding="utf-8") as parent_file:
+            header = orjson.loads(parent_file.readline())
+    except (OSError, orjson.JSONDecodeError, UnicodeDecodeError):
+        return None
+    parent_id = header.get("id") if isinstance(header, dict) else None
+    return parent_id if isinstance(parent_id, str) and parent_id else None
+
+
+def pi_lineage(entries: list[dict]) -> PiLineage:
+    """Return a Pi session's parent, fork source, and fork point, as its file proves them.
+
+    A pi-user-agents dispatch record or a team leader's briefing proves a spawner. A
+    copied history proves a fork source; an isolated side chat copied none.
+    """
+    header = entries[0] if entries else {}
+    parent_path = header.get("parentSession")
+    if header.get("type") != "session" or not (isinstance(parent_path, str) and parent_path):
+        return PiLineage()
+    parent_id = _pi_parent_session_id(parent_path)
+    born = _iso_milliseconds(header.get("timestamp"))
+    dispatch = next(
+        (
+            entry for entry in entries[1:2]
+            if entry.get("type") == "custom"
+            and entry.get("customType") == "pi-user-agents-dispatch"
+            and born is not None
+            and (created := _iso_milliseconds(entry.get("timestamp"))) is not None
+            and created >= born
+        ),
+        None,
+    )
+    end = pi_inherited_prefix_end(entries)
+    spawned = dispatch is not None or any(map(_is_pi_team_leader_message, entries[end:]))
+    isolated = dispatch is not None and (dispatch.get("data") or {}).get("isolate") is True
+    forked_at = _pi_entry_milliseconds(entries[end - 1]) if end else None
+    return PiLineage(
+        parent_session=parent_id if spawned else None,
+        forked_from=None if isolated else parent_id,
+        forked_at=None if forked_at is None else datetime.fromtimestamp(forked_at / 1000, UTC).isoformat(),
+    )
+
+
+def pi_own_entries(entries: list[dict]) -> list[dict]:
+    """Return a Pi session's header and its own entries, without a fork's copied prefix.
+
+    >>> header = {"type": "session", "timestamp": "1970-01-01T00:00:10.000Z", "parentSession": "/p.jsonl"}
+    >>> pi_own_entries([header, {"message": {"timestamp": 1}}, {"id": "own", "message": {"timestamp": 20000}}])[1]["id"]
+    'own'
+    """
+    return [*entries[:1], *entries[max(pi_inherited_prefix_end(entries), 1):]]
+
+
+@functools.lru_cache(maxsize=1)
+def _pi_lineage_of_file(session_file: Path) -> PiLineage:
+    return pi_lineage(_iter_jsonl_entries(session_file.read_text(encoding="utf-8")))
+
+
+_PI_TEAM_CREATION_RESULT_KEYS = {"team_spawn": "teammates", "team_add_teammates": "addedTeammates"}
+_PI_PRINTED_OBJECT_START = re.compile(r"(?m)^[ \t]*(\{)")
+
+
+def _pi_printed_spawn_members(text: str, team_names: set[str]) -> list[dict]:
+    """Read printed spawn receipts, not arbitrary session paths printed by the same script.
+
+    >>> _pi_printed_spawn_members('{"teamName":"crew","teamId":"parent-crew","teammates":[{"sessionFile":"/c.jsonl"}]}', {"crew"})
+    [{'sessionFile': '/c.jsonl'}]
+    """
+    members: list[dict] = []
+    decoder = json.JSONDecoder()
+    for opening in _PI_PRINTED_OBJECT_START.finditer(text):
+        try:
+            result, _ = decoder.raw_decode(text, opening.start(1))
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(result, dict) or result.get("teamName") not in team_names or not result.get("teamId"):
+            continue
+        teammates = result.get("teammates")
+        if isinstance(teammates, list):
+            members.extend(member for member in teammates if isinstance(member, dict))
+    return members
+
+
+def _pi_created_teammate_files(entries: list[dict]) -> list[str]:
+    """Return the session files of teammates these entries' team receipts created.
+
+    A direct team_spawn or team_add_teammates result lists them in `details`. A
+    codemode script that ran one keeps only what it printed, so its text is read.
+
+    >>> receipt = {"message": {"role": "toolResult", "toolName": "team_spawn", "details": {"teammates": [{"sessionFile": "/a.jsonl"}]}}}
+    >>> _pi_created_teammate_files([receipt])
+    ['/a.jsonl']
+    """
+    files: list[str] = []
+    for entry in entries:
+        message = entry.get("message")
+        if not isinstance(message, dict) or message.get("role") != "toolResult" or message.get("isError"):
+            continue
+        tool_name = message.get("toolName")
+        details = message.get("details")
+        if tool_name in _PI_TEAM_CREATION_RESULT_KEYS and isinstance(details, dict):
+            members = details.get(_PI_TEAM_CREATION_RESULT_KEYS[tool_name])
+            files += [
+                member["sessionFile"]
+                for member in (members if isinstance(members, list) else [])
+                if isinstance(member, dict) and isinstance(member.get("sessionFile"), str)
+            ]
+        nested = message.get("nestedCalls")
+        nested_calls = nested.get("calls") if isinstance(nested, dict) else None
+        spawned_teams = {
+            call["arguments"]["teamName"]
+            for call in (nested_calls if isinstance(nested_calls, list) else [])
+            if isinstance(call, dict) and call.get("name") == "team_spawn" and call.get("status") == "ok"
+            and isinstance(call.get("arguments"), dict) and isinstance(call["arguments"].get("teamName"), str)
+        }
+        if tool_name == "codemode" and spawned_teams:
+            text = "\n".join(_extract_text_blocks(message.get("content", [])))
+            files += [
+                member["sessionFile"] for member in _pi_printed_spawn_members(text, spawned_teams)
+                if isinstance(member.get("sessionFile"), str)
+            ]
+    return files
+
+
+@functools.cache
+def _pi_children_by_parent(directory: Path) -> dict[Path, list[Path]]:
+    """Index immutable parent headers once per CLI invocation, without retaining transcript bodies."""
+    children: dict[Path, list[Path]] = defaultdict(list)
+    for sibling in sorted(directory.glob("*.jsonl")):
+        with sibling.open("rb") as stream:
+            try:
+                header = orjson.loads(stream.readline())
+            except orjson.JSONDecodeError:
+                continue
+        parent = header.get("parentSession") if isinstance(header, dict) else None
+        if isinstance(parent, str) and parent:
+            children[Path(parent).resolve()].append(sibling.resolve())
+    return dict(children)
+
+
+def _pi_spawned_children_in_directory(session_file: Path) -> list[str]:
+    """Return linked children that prove delegation, rather than ordinary context forks."""
+    return [
+        str(child) for child in _pi_children_by_parent(session_file.parent).get(session_file, [])
+        if child != session_file and pi_lineage(_iter_jsonl_entries(child.read_text(encoding="utf-8"))).parent_session
+    ]
+
+
+def find_pi_delegated_children(session_file: Path, entries: list[dict] | None = None) -> list[Path]:
+    """Return the sessions this Pi session delegated to, by its agent or its user.
+
+    Copied receipts in a fork's inherited prefix belong to the parent, not to it.
+    """
+    session_file = session_file.resolve()
+    if entries is None:
+        entries = _iter_jsonl_entries(session_file.read_text(encoding="utf-8"))
+    own_entries = entries[pi_inherited_prefix_end(entries):]
+    candidates = [*_pi_created_teammate_files(own_entries), *_pi_spawned_children_in_directory(session_file)]
+    return [Path(child) for child in dict.fromkeys(candidates) if Path(child).is_file()]
+
+
+def read_pi_subagent_metadata(transcript: Path) -> SubagentMetadata:
+    """Read a delegated Pi child's identity: a teammate's name, or a user side chat."""
+    entries = _iter_jsonl_entries(transcript.read_text(encoding="utf-8"))
+    own_entries = entries[pi_inherited_prefix_end(entries):]
+    briefing = next(filter(_is_pi_team_leader_message, own_entries), None)
+    model = next(
+        (
+            entry["message"]["model"] for entry in own_entries
+            if isinstance(entry.get("message"), dict) and entry["message"].get("role") == "assistant"
+            and isinstance(entry["message"].get("model"), str)
+        ),
+        None,
+    )
+    header = entries[0] if entries else {}
+    return SubagentMetadata(
+        agent_id=header.get("id") if isinstance(header.get("id"), str) else None,
+        name=briefing["details"]["to"] if briefing else None,
+        subagent_type="teammate" if briefing else "user-agent",
+        model=model,
     )
 
 
@@ -1024,36 +1463,6 @@ def _pi_native_entry_id(entry: dict) -> str | None:
     return entry_id if isinstance(entry_id, str) and entry_id else None
 
 
-def _parse_pi_subagent_record(entry: dict, index: int) -> Message | None:
-    """Normalize a Pi subagent response record as one agent interaction."""
-    data = entry.get("data")
-    if not isinstance(data, dict):
-        return None
-
-    agent_id = data.get("id")
-    subagent_type = data.get("type")
-    description = data.get("description")
-    status = data.get("status")
-    result = data.get("result")
-    values = (agent_id, subagent_type, description, status, result)
-    if not all(isinstance(value, str) and value for value in values):
-        return None
-
-    return Message(
-        role="agent",
-        index=index,
-        text=result,
-        agent_id=agent_id,
-        native_entry_id=_pi_native_entry_id(entry),
-        timestamp=entry.get("timestamp"),
-        subagent_type=subagent_type,
-        subagent_task=description,
-        wrapper_type=ContentBlockType.AGENT,
-        custom_type="subagents:record",
-        status=status,
-    )
-
-
 def _parse_pi_custom_entry(
     entry: dict,
     index: int,
@@ -1063,9 +1472,6 @@ def _parse_pi_custom_entry(
     custom_type = entry.get("customType")
     if not isinstance(custom_type, str):
         return None
-    if custom_type == "subagents:record" and flags.show_agents:
-        if subagent_message := _parse_pi_subagent_record(entry, index):
-            return subagent_message
     if not flags.show_custom:
         return None
 
@@ -1086,9 +1492,11 @@ def _parse_pi_custom_message_entry(
     index: int,
     flags: ConversationFlags,
 ) -> Message | None:
-    """Normalize a squashed Pi user-agent result or, under --agents, a teammate message."""
+    """Normalize a squashed Pi user-agent result, a leader's instruction, or, under --agents, a teammate message."""
     if _is_squashed_pi_user_agent_message(entry):
         return _parse_pi_squashed_user_agent_message(entry, flags)
+    if _is_pi_team_leader_message(entry):
+        return _parse_pi_team_leader_message(entry, flags)
     if flags.show_agents:
         return _parse_pi_team_message(entry)
     return None
@@ -1103,6 +1511,18 @@ def _parse_pi_squashed_user_agent_message(
     return Message(
         role="user",
         text=entry.get("content") or "",
+        native_entry_id=_pi_native_entry_id(entry),
+        timestamp=entry.get("timestamp"),
+    )
+
+
+def _parse_pi_team_leader_message(entry: dict, flags: ConversationFlags) -> Message | None:
+    """Show a team leader's message to a teammate as the user message the teammate read."""
+    if not flags.show_user_messages:
+        return None
+    return Message(
+        role="user",
+        text=entry["details"].get("message") or "",
         native_entry_id=_pi_native_entry_id(entry),
         timestamp=entry.get("timestamp"),
     )
@@ -1131,19 +1551,94 @@ def _parse_pi_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
     return _parse_pi_jsonl_entries(_iter_jsonl_entries(content), flags)
 
 
-_CODEX_AGENT_LIFECYCLE_TOOLS = frozenset({"spawn_agent", "wait_agent", "close_agent"})
+_CODEX_AGENT_TOOL_NAMESPACE = "collaboration"
+_CODEX_ENCRYPTED_PREFIX = "gAAAAA"
+
+
+@dataclass(frozen=True)
+class _CodexThread:
+    """Where this rollout's own records start, and which agent leads it."""
+
+    first_own_ordinal: int
+    leader_path: str | None
+
+
+def _codex_thread(entries: list[dict]) -> _CodexThread:
+    """Read the thread's history boundary and leader from its first session_meta.
+
+    >>> _codex_thread([{"type": "session_meta", "payload": {"subagent_history_start_ordinal": 4, "agent_path": "/root/review"}}])
+    _CodexThread(first_own_ordinal=4, leader_path='/root')
+    >>> _codex_thread([{"type": "session_meta", "payload": {"id": "root"}}])
+    _CodexThread(first_own_ordinal=0, leader_path=None)
+    """
+    header = entries[0].get("payload", {}) if entries and entries[0].get("type") == "session_meta" else {}
+    agent_path = header.get("agent_path")
+    return _CodexThread(
+        first_own_ordinal=header.get("subagent_history_start_ordinal") or 0,
+        leader_path=agent_path.rpartition("/")[0] if isinstance(agent_path, str) else None,
+    )
+
+
+def _codex_agent_message_text(payload: dict) -> str:
+    """Render an inter-agent message: its plaintext payload, else its routing header.
+
+    The header is shown as written, so search can find exactly what parse shows.
+
+    >>> _codex_agent_message_text({"content": [{"type": "input_text", "text": "Message Type: NEW_TASK\\nSender: /root\\nPayload:\\n"}, {"type": "encrypted_content"}]})
+    'Message Type: NEW_TASK\\nSender: /root'
+    >>> _codex_agent_message_text({"content": [{"type": "input_text", "text": "Message Type: MESSAGE\\nPayload:\\nhello"}]})
+    'hello'
+    """
+    text = "".join(
+        block.get("text", "") for block in payload.get("content", []) if block.get("type") == "input_text"
+    )
+    header, _, plaintext = text.partition("Payload:\n")
+    return plaintext if plaintext.strip() else header.strip()
+
+
+def _codex_own_entries(entries: list[dict]) -> list[dict]:
+    """Drop the parent records a forked subagent copied, keeping its session header.
+
+    >>> [entry["ordinal"] for entry in _codex_own_entries([{"ordinal": 0, "type": "session_meta", "payload": {"subagent_history_start_ordinal": 2}}, {"ordinal": 1}, {"ordinal": 2}])]
+    [0, 2]
+    """
+    first_own_ordinal = _codex_thread(entries).first_own_ordinal
+    return entries[:1] + [entry for entry in entries[1:] if entry.get("ordinal", first_own_ordinal) >= first_own_ordinal]
+
+
+def _redact_codex_ciphertext(tool_input: dict[str, object]) -> dict[str, object]:
+    """Replace encrypted argument values, which carry no readable content.
+
+    >>> _redact_codex_ciphertext({"target": "/root", "message": "gAAAAABq"})
+    {'target': '/root', 'message': '[encrypted]'}
+    """
+    return {
+        key: "[encrypted]" if isinstance(value, str) and value.startswith(_CODEX_ENCRYPTED_PREFIX) else value
+        for key, value in tool_input.items()
+    }
 
 
 def _parse_codex_jsonl_entries(
     entries: list[dict], flags: ConversationFlags
 ) -> list[Message]:
-    """Parse Codex JSONL entries into the shared Message model."""
+    """Parse Codex JSONL entries into the shared Message model.
+
+    Messages from this thread's leader are user instructions. Other delivered
+    messages retain their sender under --agents, even without a child transcript.
+    Collaboration controls are agent content.
+    """
     messages = []
     index = 1
     current_assistant: Message | None = None
-    # Subagent dispatch is abstracted away by the merged agent block, so the
-    # spawn/wait/close calls (and their outputs, tracked by call_id) never render.
-    agent_lifecycle_call_ids: set[str] = set()
+    thread = _codex_thread(entries)
+    agent_control_call_ids: set[str] = set()
+
+    def append_message(message: Message) -> None:
+        nonlocal index
+        flush_assistant()
+        message.index = index
+        messages.append(message)
+        index += 1
 
     def flush_assistant() -> None:
         nonlocal current_assistant, index
@@ -1170,6 +1665,19 @@ def _parse_codex_jsonl_entries(
         payload = entry.get("payload", {})
         payload_type = payload.get("type")
         timestamp = entry.get("timestamp")
+
+        if payload_type == "agent_message":
+            sender = payload.get("author")
+            from_leader = sender is not None and sender == thread.leader_path
+            if from_leader and flags.show_user_messages:
+                append_message(Message(role="user", text=_codex_agent_message_text(payload), timestamp=timestamp))
+            if not from_leader and flags.show_agents:
+                append_message(Message(
+                    role="agent", agent_id=sender, name=sender,
+                    wrapper_type=ContentBlockType.AGENT,
+                    text=_codex_agent_message_text(payload), timestamp=timestamp,
+                ))
+            continue
 
         if payload_type == "message":
             role = payload.get("role")
@@ -1221,8 +1729,23 @@ def _parse_codex_jsonl_entries(
             continue
 
         if payload_type == "function_call":
-            if payload.get("name") in _CODEX_AGENT_LIFECYCLE_TOOLS:
-                agent_lifecycle_call_ids.add(payload.get("call_id"))
+            if payload.get("namespace") == _CODEX_AGENT_TOOL_NAMESPACE:
+                agent_control_call_ids.add(payload.get("call_id"))
+                if flags.show_agents:
+                    tool_name = _normalize_codex_tool_name(payload.get("name"))
+                    append_message(Message(
+                        role="assistant",
+                        timestamp=timestamp,
+                        tools_always_visible=True,
+                        tools=[{
+                            "type": "tool_use",
+                            "id": payload.get("call_id"),
+                            "name": tool_name,
+                            "input": _redact_codex_ciphertext(
+                                _normalize_codex_tool_input(tool_name, payload.get("arguments"))
+                            ),
+                        }],
+                    ))
                 continue
             if flags.show_tools:
                 assistant = ensure_assistant(timestamp)
@@ -1238,7 +1761,19 @@ def _parse_codex_jsonl_entries(
             continue
 
         if payload_type == "function_call_output":
-            if payload.get("call_id") in agent_lifecycle_call_ids:
+            if payload.get("call_id") in agent_control_call_ids:
+                if flags.show_agents:
+                    append_message(Message(
+                        role="assistant",
+                        timestamp=timestamp,
+                        tools_always_visible=True,
+                        tools=[{
+                            "type": "tool_result",
+                            "tool_use_id": payload.get("call_id"),
+                            "content": _parse_codex_tool_output(payload.get("output", "")),
+                            "is_error": False,
+                        }],
+                    ))
                 continue
             if flags.show_tools:
                 assistant = ensure_assistant(timestamp)
@@ -1334,10 +1869,8 @@ def _extract_pi_session_id(session_file: Path) -> str | None:
     return None
 
 
-def _extract_codex_session_meta_field(
-    session_file: Path, field_name: str
-) -> str | None:
-    """Extract a string field from the Codex session_meta payload."""
+def _read_codex_session_meta(session_file: Path) -> dict:
+    """Return the payload of the file's first entry when it is a Codex session_meta."""
     try:
         with open(session_file, "r", encoding="utf-8") as handle:
             for line in handle:
@@ -1348,19 +1881,27 @@ def _extract_codex_session_meta_field(
                     entry = json.loads(stripped)
                 except json.JSONDecodeError:
                     continue
-
                 if entry.get("type") != "session_meta":
-                    break
-
-                payload = entry.get("payload", {})
-                value = payload.get(field_name)
-                if isinstance(value, str) and value:
-                    return value
-                break
+                    return {}
+                return entry.get("payload", {})
     except OSError:
         pass
+    return {}
 
-    return None
+
+def _extract_codex_session_meta_field(
+    session_file: Path, field_name: str
+) -> str | None:
+    """Extract a string field from the Codex session_meta payload."""
+    value = _read_codex_session_meta(session_file).get(field_name)
+    return value if isinstance(value, str) and value else None
+
+
+def _codex_thread_spawn(session_meta: dict) -> dict:
+    """Return a subagent's spawn record, the one place every current subagent header names its role."""
+    source = session_meta.get("source")
+    subagent = source.get("subagent") if isinstance(source, dict) else None
+    return subagent.get("thread_spawn", {}) if isinstance(subagent, dict) else {}
 
 
 def _extract_codex_session_id(session_file: Path) -> str | None:
@@ -1371,6 +1912,28 @@ def _extract_codex_session_id(session_file: Path) -> str | None:
 def _extract_codex_forked_from_id(session_file: Path) -> str | None:
     """Extract the Codex fork parent id from the file's session_meta entry."""
     return _extract_codex_session_meta_field(session_file, "forked_from_id")
+
+
+def _extract_codex_parent_thread_id(session_file: Path) -> str | None:
+    """Extract the spawner proved by this Codex child's header."""
+    return delegated_parent(_read_codex_session_meta(session_file))
+
+
+def _extract_codex_forked_at(session_file: Path) -> str | None:
+    """Return the timestamp of the last record a forked subagent copied from its parent."""
+    first_own_ordinal = _read_codex_session_meta(session_file).get("subagent_history_start_ordinal")
+    if not first_own_ordinal:
+        return None
+    forked_at = None
+    with open(session_file, "r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            entry = json.loads(line)
+            if entry.get("ordinal", first_own_ordinal) >= first_own_ordinal:
+                break
+            forked_at = entry.get("timestamp") or forked_at
+    return forked_at
 
 
 # NOTE: This centralizes a cross-adapter metadata/display concern that should probably be adapter-owned metadata semantics, not command-owned special casing.
@@ -1423,25 +1986,42 @@ def _find_codex_session_matches(identifier: str) -> list[tuple[Path, str]]:
     return matches
 
 
-def _find_codex_session_files() -> list[Path]:
-    """List Codex session JSONL files."""
-    sessions_dir = Path.home() / ".codex" / "sessions"
-    if not sessions_dir.exists():
-        return []
-    return sorted(sessions_dir.rglob("*.jsonl"))
+@dataclass
+class _CodexDelegationIndex:
+    children: dict[str, list[Path]]
+    sessions: dict[str, tuple[Path, str | None]]
 
 
-def find_codex_subagent_transcripts(session_file: Path, session_id: str) -> list[Path]:
-    """Find Codex subagent rollout files spawned by this session.
+@cache
+def _codex_delegation_index(home: Path) -> _CodexDelegationIndex:
+    """Read the Codex header graph once for this CLI process; retain no message bodies."""
+    children: defaultdict[str, list[Path]] = defaultdict(list)
+    sessions: dict[str, tuple[Path, str | None]] = {}
+    for path in sorted((home / ".codex" / "sessions").rglob("*.jsonl")):
+        session_meta = _read_codex_session_meta(path)
+        child_id = session_meta.get("id")
+        if not child_id:
+            continue
+        sessions[child_id] = (path, session_meta.get("forked_from_id"))
+        parent = delegated_parent(session_meta)
+        if parent:
+            children[parent].append(path)
+    return _CodexDelegationIndex(dict(children), sessions)
 
-    Subagent rollouts are ordinary Codex sessions whose session_meta carries a
-    `parent_thread_id` pointing back at the spawning session's id.
-    """
-    return [
-        path
-        for path in _find_codex_session_files()
-        if _extract_codex_session_meta_field(path, "parent_thread_id") == session_id
-    ]
+
+def find_codex_subagent_transcripts(
+    session_file: Path, session_id: str, entries: list[dict] | None = None,
+) -> list[Path]:
+    """Find direct delegated children using header edges and verified CLI receipts."""
+    index = _codex_delegation_index(Path.home())
+    if entries is None:
+        entries = _codex_own_entries(decode_jsonl_entries(session_file.read_text(encoding="utf-8")))
+    proven = list(index.children.get(session_id, []))
+    for child_id, source in verified_cli_forks(entries, session_id):
+        candidate = index.sessions.get(child_id)
+        if candidate and candidate[1] == source:
+            proven.append(candidate[0])
+    return proven
 
 
 def _extract_codex_turn_context_model(session_file: Path) -> str | None:
@@ -1468,10 +2048,12 @@ def _extract_codex_turn_context_model(session_file: Path) -> str | None:
 
 def extract_codex_subagent_metadata(transcript: Path) -> SubagentMetadata:
     """Read a Codex subagent's identity from its rollout's session_meta + turn_context."""
+    session_meta = _read_codex_session_meta(transcript)
+    thread_spawn = _codex_thread_spawn(session_meta)
     return SubagentMetadata(
-        agent_id=_extract_codex_session_meta_field(transcript, "id"),
-        name=_extract_codex_session_meta_field(transcript, "agent_nickname"),
-        subagent_type=_extract_codex_session_meta_field(transcript, "agent_role"),
+        agent_id=session_meta.get("id"),
+        name=thread_spawn.get("agent_nickname"),
+        subagent_type=thread_spawn.get("agent_role"),
         model=_extract_codex_turn_context_model(transcript),
     )
 
@@ -1592,15 +2174,22 @@ JSONL_SESSION_ADAPTERS = [
         build_name_entries=_build_codex_name_entries,
         find_session_matches=_find_codex_session_matches,
         extract_session_id=_extract_codex_session_id,
+        extract_parent_session=_extract_codex_parent_thread_id,
         extract_forked_from=_extract_codex_forked_from_id,
+        extract_forked_at=_extract_codex_forked_at,
+        own_entries=_codex_own_entries,
         matches_first_entry=_is_codex_session_header,
     ),
     JsonlSessionAdapter(
         name="pi",
         parse_messages=_parse_pi_jsonl,
+        own_entries=pi_own_entries,
         build_name_entries=_build_pi_name_entries,
         find_session_matches=_find_pi_session_matches,
         extract_session_id=_extract_pi_session_id,
+        extract_parent_session=lambda path: _pi_lineage_of_file(path).parent_session,
+        extract_forked_from=lambda path: _pi_lineage_of_file(path).forked_from,
+        extract_forked_at=lambda path: _pi_lineage_of_file(path).forked_at,
         matches_first_entry=_is_pi_session_header,
     ),
     JsonlSessionAdapter(
@@ -1609,6 +2198,10 @@ JSONL_SESSION_ADAPTERS = [
         build_name_entries=_build_claude_name_entries,
         is_sidechain_path=lambda path: path.name.startswith("agent-"),
         extract_session_id=lambda path: path.stem,
+        extract_parent_session=lambda path: _read_claude_lineage(path).parent_session,
+        extract_forked_from=lambda path: _read_claude_lineage(path).forked_from,
+        extract_forked_at=lambda path: _read_claude_lineage(path).forked_at,
+        own_entries=_claude_own_entries,
     ),
 ]
 
@@ -1739,20 +2332,29 @@ def _meta_source_tool_result(
 
 
 def _parse_user_entry(
-    entry: dict, index: int, flags: ConversationFlags
+    entry: dict, index: int, flags: ConversationFlags, agent_tool_ids: frozenset[str] = frozenset(),
+    origins: AgentOrigins | None = None,
 ) -> list[Message]:
-    """Separate human text, tool activity, and relayed agent messages in a user entry."""
+    """Separate human text, tool activity, and relayed agent messages in a user entry.
+
+    Results of agent-messaging calls are agent content: shown by --agents regardless
+    of tool filters, and never by --tools alone.
+    """
     message_data = entry.get("message", {})
     if message_data.get("role") != "user":
         return []
 
     content_data = message_data.get("content")
-    peer_blocks = _split_claude_peer_blocks(content_data) if isinstance(content_data, str) else []
+    peer_blocks = (
+        _split_claude_peer_blocks(content_data, in_agent_transcript=bool(entry.get("agentId")))
+        if isinstance(content_data, str)
+        else []
+    )
     if peer_blocks:
         return [
-            _claude_peer_agent_message(entry, sender, body)
+            message
             for sender, body in peer_blocks
-            if flags.show_agents
+            if (message := _claude_peer_message(entry, sender, body, flags))
         ]
     source_tool_use_id = (
         entry.get("sourceToolUseID")
@@ -1767,27 +2369,35 @@ def _parse_user_entry(
         source_tool_user_id=shorten_tool_use_id(source_tool_use_id),
     )
 
-    # Background-task notifications are dispatch plumbing — abstracted away by the
-    # merged agent block (and its <subagent-task>), so they never render.
-    if isinstance(content_data, str) and _parse_task_notification_tool(content_data):
-        return [msg]
+    if isinstance(content_data, str) and _is_task_notification(content_data):
+        return notification_messages(entry, origins) if origins is not None else []
 
     tool_message = Message(role="assistant", timestamp=msg.timestamp)
+    agent_tool_message = Message(
+        role="assistant", timestamp=msg.timestamp, tools_always_visible=True
+    )
     show_user_text = flags.show_user_messages and (not msg.is_meta or flags.show_tools)
 
     if isinstance(content_data, str):
         if output := _meta_source_tool_result(msg.is_meta, source_tool_use_id, [content_data], flags):
             tool_message.tools.append(output)
         elif show_user_text:
-            msg.text, msg.wrapper_type = _parse_user_string_content(content_data)
+            msg.text, msg.wrapper_type = _parse_user_string_content(
+                _strip_claude_fork_boilerplate(content_data)
+            )
     elif isinstance(content_data, list):
-        text_blocks = _filter_hidden_user_text_blocks(_extract_text_blocks(content_data))
+        text_blocks = [
+            text
+            for block in _filter_hidden_user_text_blocks(_extract_text_blocks(content_data))
+            if (text := _strip_claude_fork_boilerplate(block))
+        ]
         for item in content_data:
-            if (
-                isinstance(item, dict)
-                and flags.show_tools
-                and item.get("type") == "tool_result"
-            ):
+            if not (isinstance(item, dict) and item.get("type") == "tool_result"):
+                continue
+            if item.get("tool_use_id") in agent_tool_ids:
+                if flags.show_agents:
+                    agent_tool_message.tools.append(item)
+            elif flags.show_tools:
                 tool_message.tools.append(item)
 
         if output := _meta_source_tool_result(msg.is_meta, source_tool_use_id, text_blocks, flags):
@@ -1800,26 +2410,30 @@ def _parse_user_entry(
     if entry.get("isCompactSummary") is True:
         msg.wrapper_type = ContentBlockType.COMPACTION
 
-    return [msg, tool_message]
+    return [msg, tool_message, agent_tool_message]
 
 
 def _parse_assistant_entry(
     entry: dict, index: int, flags: ConversationFlags
-) -> Message | None:
-    """Parse an assistant-type JSONL entry."""
+) -> list[Message]:
+    """Parse an assistant-type JSONL entry.
+
+    Agent-messaging calls split into their own message, shown by --agents regardless
+    of tool filters, and never by --tools alone.
+    """
     message_data = entry.get("message", {})
     if message_data.get("role") != "assistant":
-        return None
+        return []
 
     agent_id = entry.get("agentId")
     if agent_id and not flags.show_agents:
-        return None
+        return []
 
     show_message_text = flags.show_agents if agent_id else flags.show_assistant_messages
 
     content_data = message_data.get("content", [])
     if not isinstance(content_data, list):
-        return None
+        return []
 
     msg = Message(
         role="assistant",
@@ -1827,6 +2441,13 @@ def _parse_assistant_entry(
         agent_id=agent_id,
         timestamp=entry.get("timestamp"),
         model=message_data.get("model"),
+    )
+    agent_tool_message = Message(
+        role="assistant",
+        agent_id=agent_id,
+        timestamp=msg.timestamp,
+        model=msg.model,
+        tools_always_visible=True,
     )
     text_blocks = []
 
@@ -1848,6 +2469,9 @@ def _parse_assistant_entry(
                     plan_content := item.get("input", {}).get("plan", "")
                 ):
                     msg.plan = plan_content
+            elif tool_name in _CLAUDE_AGENT_MESSAGING_TOOLS:
+                if flags.show_agents:
+                    agent_tool_message.tools.append(item)
             elif flags.show_tools:
                 msg.tools.append({
                     **item,
@@ -1859,7 +2483,7 @@ def _parse_assistant_entry(
     if text_blocks and show_message_text:
         msg.text = "\n\n".join(text_blocks)
 
-    return msg
+    return [msg, agent_tool_message]
 
 
 def _parse_system_entry(
@@ -2046,6 +2670,33 @@ def _normalize_codex_tool_name(name: str | None) -> str:
     return normalize_tool_name("codex", name)
 
 
+def _pi_nested_team_calls_message(entry: dict, flags: ConversationFlags) -> Message:
+    """Return the team calls a codemode script ran, as agent tool inputs under --agents.
+
+    Pi's `nestedCalls` keeps each nested call's arguments, not its result.
+    """
+    message = Message(
+        role="assistant",
+        timestamp=entry.get("timestamp"),
+        native_entry_id=_pi_native_entry_id(entry),
+        tools_always_visible=True,
+    )
+    nested = entry["message"].get("nestedCalls")
+    calls = nested.get("calls") if flags.show_agents and isinstance(nested, dict) else None
+    for call in calls if isinstance(calls, list) else []:
+        if not (isinstance(call, dict) and _is_pi_team_tool(call.get("name"))):
+            continue
+        tool_name = _normalize_pi_tool_name(call["name"])
+        message.tools.append({
+            "type": "tool_use",
+            "id": call.get("id"),
+            "native_tool_call_id": call.get("id"),
+            "name": tool_name,
+            "input": normalize_tool_input_keys("pi", tool_name, call.get("arguments") or {}),
+        })
+    return message
+
+
 def _parse_pi_message_entry(
     entry: dict,
     index: int,
@@ -2079,9 +2730,10 @@ def _parse_pi_message_entry(
             model=message_data.get("model"),
         )
     elif role == "toolResult":
+        nested_team_message = _pi_nested_team_calls_message(entry, flags)
         is_team_tool = _is_pi_team_tool(message_data.get("toolName"))
         if not (flags.show_agents if is_team_tool else flags.show_tools):
-            return []
+            return [nested_team_message]
 
         native_tool_call_id = message_data.get("toolCallId")
         msg = Message(
@@ -2103,7 +2755,7 @@ def _parse_pi_message_entry(
         if isinstance(native_tool_name, str) and native_tool_name:
             tool_result["name"] = _normalize_pi_tool_name(native_tool_name)
         msg.tools.append(tool_result)
-        return [msg]
+        return [msg, nested_team_message]
     else:
         return []
 
@@ -2506,7 +3158,7 @@ def _is_codex_preamble_text(text: str) -> bool:
         return True
     if stripped.startswith("<environment_context>"):
         return True
-    if stripped.startswith("<subagent_notification>"):
+    if stripped.startswith("<recommended_plugins>"):
         return True
     return bool(stripped.startswith("<skill>"))
 

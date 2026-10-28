@@ -149,12 +149,10 @@ impl Message {
         if self.message_type != MessageType::Agent {
             return self.message_type.header().to_string();
         }
-        if self.subagent_type.as_deref() == Some("fork") {
-            return "## Fork".to_string();
-        }
+        let label = if self.subagent_type.as_deref() == Some("fork") { "Fork" } else { "Agent" };
         match &self.name {
-            Some(name) => format!("## Agent '{name}'"),
-            None => "## Agent".to_string(),
+            Some(name) => format!("## {label} '{name}'"),
+            None => format!("## {label}"),
         }
     }
 

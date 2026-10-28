@@ -248,8 +248,14 @@ pub fn metadata_block(
     }
     lines.push(format!("session_id: {session_id}"));
     lines.push(format!("provider: {}", hit.metadata.provider.as_str()));
+    if let Some(parent) = hit.metadata.parent_session.as_deref().filter(|v| !v.is_empty()) {
+        lines.push(format!("parent_session: {parent}"));
+    }
     if let Some(forked) = hit.metadata.forked_from.as_deref().filter(|v| !v.is_empty()) {
         lines.push(format!("forked_from: {forked}"));
+    }
+    if let Some(forked_at) = hit.metadata.forked_at {
+        lines.push(format!("forked_at: \"{}\"", forked_at.format("%Y-%m-%d %H:%M")));
     }
     if let Some(cwd) = hit.cwd.as_deref().filter(|value| !value.is_empty()) {
         lines.push(format!(

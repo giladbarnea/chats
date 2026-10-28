@@ -65,9 +65,12 @@ pub struct SessionMetadata {
     /// The provider's own session id, when the file carries one. Claude has none —
     /// its display id is the filename stem.
     pub native_id: Option<String>,
-    /// Codex's fork parent. Every other adapter's extractor is `lambda _: None`,
-    /// so this is `None` for Claude and Pi by construction rather than by omission.
+    /// The session that spawned this one, when this file proves it.
+    pub parent_session: Option<String>,
+    /// The session whose context this one copied, when this file proves it.
     pub forked_from: Option<String>,
+    /// Observed fork/snapshot timestamp; not an exact parent-message locator.
+    pub forked_at: Option<NaiveDateTime>,
 }
 
 /// One matched conversation, ready for ordered display.
@@ -146,7 +149,9 @@ impl SearchHit {
                 ctime: None,
                 mtime: None,
                 native_id: None,
+                parent_session: None,
                 forked_from: None,
+                forked_at: None,
             },
             messages: Vec::new(),
             match_indices: Vec::new(),
@@ -323,7 +328,9 @@ impl Confirmation<'_> {
                 ctime: pool_filter::first_timestamp(path),
                 mtime: pool_filter::last_timestamp(path),
                 native_id: scan.native_id,
+                parent_session: scan.parent_session,
                 forked_from: scan.forked_from,
+                forked_at: scan.forked_at,
             },
             messages: scan.messages,
             match_indices,
@@ -360,16 +367,19 @@ pub fn scan_session(
     // product excludes.
     let provider = session::select_provider(path_provider, entries.first())?;
 
-    let messages = match provider {
-        session::Provider::Claude => session::parse_claude(&entries, flags),
-        session::Provider::Pi => session::parse_pi(&entries, flags),
-        session::Provider::Codex => crate::codex::parse_codex(&entries, flags),
+    let messages = crate::agent_merge::parse(provider, &entries, flags);
+    let messages = if flags.show_agents {
+        crate::agent_merge::merge(provider, path, &entries, messages, flags, home)?
+    } else {
+        messages
     };
 
     Ok(Scanned {
         provider,
         native_id: native_session_id(provider, entries.first(), path),
-        forked_from: codex_meta_field(provider, entries.first(), "forked_from_id"),
+        parent_session: parent_session(provider, &entries),
+        forked_from: forked_from(provider, &entries),
+        forked_at: forked_at(provider, &entries),
         cwd: session::cwd(&entries),
         summaries: session::summaries(&entries),
         custom_title: session::latest_custom_title(&entries),
@@ -430,6 +440,75 @@ fn codex_meta_field(
         .map(str::to_string)
 }
 
+/// The parent session a fork names, per provider.
+fn forked_from(
+    provider: session::Provider,
+    entries: &[serde_json::Map<String, serde_json::Value>],
+) -> Option<String> {
+    match provider {
+        session::Provider::Claude => session::claude_forked_from(entries),
+        session::Provider::Pi => session::pi_lineage(entries).forked_from,
+        _ => codex_meta_field(provider, entries.first(), "forked_from_id"),
+    }
+}
+
+/// The session that spawned this one, per provider.
+fn parent_session(
+    provider: session::Provider,
+    entries: &[serde_json::Map<String, serde_json::Value>],
+) -> Option<String> {
+    match provider {
+        session::Provider::Claude => session::claude_subagent_parent(entries),
+        session::Provider::Pi => session::pi_lineage(entries).parent_session,
+        session::Provider::Codex => entries.first()
+            .and_then(|entry| entry.get("payload"))
+            .and_then(serde_json::Value::as_object)
+            .and_then(crate::codex_delegation::delegated_parent)
+            .map(str::to_string),
+        _ => None,
+    }
+}
+
+/// Observed fork/snapshot timestamp, with provider-specific precision and limits.
+fn forked_at(
+    provider: session::Provider,
+    entries: &[serde_json::Map<String, serde_json::Value>],
+) -> Option<NaiveDateTime> {
+    match provider {
+        session::Provider::Claude => {
+            session::claude_forked_at(entries).and_then(|timestamp| pool_filter::parse_iso(&timestamp))
+        }
+        session::Provider::Pi => session::pi_lineage(entries).forked_at,
+        session::Provider::Codex => codex_forked_at(entries),
+        _ => None,
+    }
+}
+
+/// The timestamp of the last record a forked Codex subagent copied from its parent.
+///
+/// Mirrors Python's `_extract_codex_forked_at`: records before the header's
+/// `subagent_history_start_ordinal` are the copied ones. A standalone fork copies
+/// nothing, so it has no such point here.
+fn codex_forked_at(entries: &[serde_json::Map<String, serde_json::Value>]) -> Option<NaiveDateTime> {
+    let first_own_ordinal = entries
+        .first()
+        .filter(|entry| entry.get("type").and_then(serde_json::Value::as_str) == Some("session_meta"))?
+        .get("payload")?
+        .get("subagent_history_start_ordinal")?
+        .as_i64()
+        .filter(|ordinal| *ordinal != 0)?;
+    entries
+        .iter()
+        .take_while(|entry| {
+            entry.get("ordinal").and_then(serde_json::Value::as_i64).unwrap_or(first_own_ordinal)
+                < first_own_ordinal
+        })
+        .filter_map(|entry| entry.get("timestamp").and_then(serde_json::Value::as_str))
+        .filter(|timestamp| !timestamp.is_empty())
+        .last()
+        .and_then(crate::pool_filter::parse_iso)
+}
+
 /// The exact strings search matches a session against.
 ///
 /// Decode order is load-bearing and lives here, once: the tool-id map, then
@@ -468,7 +547,9 @@ pub struct Scanned {
     pub provider: session::Provider,
     /// From the first entry, which is the only place Python looks for either.
     pub native_id: Option<String>,
+    pub parent_session: Option<String>,
     pub forked_from: Option<String>,
+    pub forked_at: Option<NaiveDateTime>,
     pub cwd: Option<String>,
     pub summaries: Vec<String>,
     pub custom_title: Option<String>,

@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-"""Claude agent plumbing is abstracted away by the merged agent block.
+"""Claude agent dispatch and delivered results require --agents, not --tools.
 
-The dispatch (`Agent`/`Task` tool_use + its tool_result) and the background-task
-`<task-notification>` no longer render: their content lives in the agent block
-(and its `<subagent-task>`). They stay hidden even with `--tools`, mirroring how
-Codex's spawn/wait/close + subagent_notification are suppressed.
+Delivered replies remain available even when the separate child file is missing.
 """
 
 import json
@@ -24,8 +21,8 @@ def parse_jsonl(content: str, flags: ConversationFlags) -> list[Message]:
 
 TASK_NOTIFICATION_BODY = (
     "<task-notification>\n"
-    "<task-id>afffad81cb99d3ae1</task-id>\n"
-    "<tool-use-id>toolu_015Rn3jxAaywYknHrxdKHfmZ</tool-use-id>\n"
+    "<task-id>a0000000000000001</task-id>\n"
+    "<tool-use-id>toolu_dispatch</tool-use-id>\n"
     "<status>completed</status>\n"
     '<summary>Agent "Analyze question 1" completed</summary>\n'
     "<result>NOTIFICATION_RESULT_MARKER</result>\n"
@@ -89,13 +86,68 @@ def _conversation_with_agent_plumbing() -> str:
                 ],
             },
         },
-        {"type": "user", "message": {"role": "user", "content": TASK_NOTIFICATION_BODY}},
+        {"type": "user", "origin": {"kind": "task-notification"}, "message": {"role": "user", "content": TASK_NOTIFICATION_BODY}},
     ]
     return "\n".join(json.dumps(entry) for entry in entries)
 
 
+def test_agents_keep_dispatch_and_delivered_results_without_a_child_file():
+    flags = ConversationFlags(show_agents=True, color="never")
+    output = format_to_xml(parse_jsonl(_conversation_with_agent_plumbing(), flags), flags)
+    for marker in ('name="Agent"', "DISPATCH_RESULT_MARKER", "NOTIFICATION_RESULT_MARKER"):
+        assert marker in output, f"Missing {marker} under --agents: {output}"
+    assert 'agent_id="a0000000000000001"' in output, output
+    assert "<task-notification>" not in output, output
+
+
+def test_native_search_finds_delivered_agent_reply_without_child_file(tmp_path: Path):
+    import os
+    import subprocess
+    import sys
+
+    home = tmp_path / "home"
+    path = home / ".claude/projects/project/delivered.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(_conversation_with_agent_plumbing() + "\n", encoding="utf-8")
+    for marker in ("DISPATCH_RESULT_MARKER", "NOTIFICATION_RESULT_MARKER"):
+        result = subprocess.run([str(Path(sys.executable).with_name("ch")), "search", marker, "--agents", "--only-id"],
+                                env={**os.environ, "HOME": str(home)}, capture_output=True, text=True)
+        assert result.stdout.strip() == "delivered", result
+
+
+def test_batched_notifications_keep_only_proven_agent_results():
+    records = [json.loads(line) for line in _conversation_with_agent_plumbing().splitlines()]
+    records[-1]["message"]["content"] = TASK_NOTIFICATION_BODY + "\n" + TASK_NOTIFICATION_BODY.replace(
+        "toolu_dispatch", "toolu_bash").replace("NOTIFICATION_RESULT_MARKER", "SHELL_RESULT_MARKER")
+    flags = ConversationFlags(show_agents=True, color="never")
+    output = format_to_xml(parse_jsonl("\n".join(map(json.dumps, records)), flags), flags)
+    assert "NOTIFICATION_RESULT_MARKER" in output, output
+    assert "SHELL_RESULT_MARKER" not in output, output
+
+
+def test_pasted_notification_is_not_agent_delivery():
+    records = [json.loads(line) for line in _conversation_with_agent_plumbing().splitlines()]
+    records[-1].pop("origin")
+    flags = ConversationFlags(show_agents=True, color="never")
+    messages = parse_jsonl("\n".join(map(json.dumps, records)), flags)
+    assert not any(message.agent_id == "a0000000000000001" for message in messages), messages
+
+
+def test_user_fork_delivery_survives_missing_child_and_no_agent_tool():
+    task = "aresearch-0123456789ab1234"
+    records = [
+        {"type": "system", "subtype": "local_command", "content": "<command-name>/subtask</command-name>"},
+        {"type": "system", "subtype": "local_command", "content": "<local-command-stdout>⑂ forked research (1234)</local-command-stdout>"},
+        {"type": "user", "origin": {"kind": "task-notification"}, "message": {"role": "user", "content":
+         f"<task-notification><task-id>{task}</task-id><result>USER_FORK_DELIVERED</result></task-notification>"}},
+    ]
+    flags = ConversationFlags(show_agents=True, color="never")
+    output = format_to_xml(parse_jsonl("\n".join(map(json.dumps, records)), flags), flags)
+    assert "USER_FORK_DELIVERED" in output and f'agent_id="{task}"' in output, output
+
+
 def test_agent_dispatch_suppressed_even_with_tools():
-    """The Agent/Task dispatch tool_use and its tool_result never render."""
+    """Tools alone do not expose agent dispatch or its result."""
     flags = ConversationFlags(show_tools=True, color="never")
     output = format_to_xml(parse_jsonl(_conversation_with_agent_plumbing(), flags), flags)
 
@@ -108,7 +160,7 @@ def test_agent_dispatch_suppressed_even_with_tools():
 
 
 def test_task_notification_suppressed_even_with_tools():
-    """The background-task notification never renders."""
+    """Tools alone do not expose delivered agent reports."""
     flags = ConversationFlags(show_tools=True, color="never")
     output = format_to_xml(parse_jsonl(_conversation_with_agent_plumbing(), flags), flags)
 

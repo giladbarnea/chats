@@ -16,9 +16,9 @@ def _merge_codex(parent: Path, flags: ConversationFlags):
         messages = _merge_agent_messages(messages, parent, flags)
     return messages
 
-PARENT_ID = "019eca84-83bd-7900-a142-04833f5ae1c6"
-PLANCK_ID = "019ecaa3-3e57-7150-bb03-2c582bede7ba"
-LEIBNIZ_ID = "019ecaa9-37d5-7822-9338-bbf5dbfcf5a1"
+PARENT_ID = "50000000-0000-4000-8000-000000000001"
+PLANCK_ID = "50000000-0000-4000-8000-000000000002"
+LEIBNIZ_ID = "50000000-0000-4000-8000-000000000003"
 
 
 def _write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -27,6 +27,27 @@ def _write_jsonl(path: Path, entries: list[dict]) -> None:
         "".join(json.dumps(e) + "\n" for e in entries),
         encoding="utf-8",
     )
+
+
+def _subagent_meta(session_id: str, nickname: str, parent: str = PARENT_ID) -> dict:
+    """A current subagent header: identity lives in source.subagent.thread_spawn."""
+    return {
+        "type": "session_meta",
+        "payload": {
+            "id": session_id,
+            "thread_source": "subagent",
+            "parent_thread_id": parent,
+            "agent_nickname": nickname,
+            "agent_role": "default",
+            "source": {"subagent": {"thread_spawn": {
+                "parent_thread_id": parent,
+                "depth": 1,
+                "agent_path": f"/root/{nickname.lower()}",
+                "agent_nickname": nickname,
+                "agent_role": "default",
+            }}},
+        },
+    }
 
 
 def _codex_sessions_dir(home: Path) -> Path:
@@ -50,16 +71,7 @@ def _write_subagent(home: Path, session_id: str, nickname: str, parent: str = PA
     path = _rollout(home, session_id)
     _write_jsonl(
         path,
-        [{
-            "type": "session_meta",
-            "payload": {
-                "id": session_id,
-                "thread_source": "subagent",
-                "parent_thread_id": parent,
-                "agent_nickname": nickname,
-                "agent_role": "default",
-            },
-        }],
+        [_subagent_meta(session_id, nickname, parent)],
     )
     return path
 
@@ -102,20 +114,11 @@ def test_codex_session_without_subagents_returns_empty(tmp_path, monkeypatch):
 
 
 def test_extracts_codex_subagent_metadata(tmp_path, monkeypatch):
-    """Name, role, id come from session_meta; model from the turn_context entry."""
+    """Name and role come from the spawn record, id from session_meta, model from turn_context."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     path = _rollout(tmp_path, LEIBNIZ_ID)
     _write_jsonl(path, [
-        {
-            "type": "session_meta",
-            "payload": {
-                "id": LEIBNIZ_ID,
-                "thread_source": "subagent",
-                "parent_thread_id": PARENT_ID,
-                "agent_nickname": "Leibniz",
-                "agent_role": "default",
-            },
-        },
+        _subagent_meta(LEIBNIZ_ID, "Leibniz"),
         {"type": "turn_context", "payload": {"model": "gpt-5.4-mini"}},
         {
             "type": "response_item",
@@ -165,16 +168,7 @@ def _codex_parent_rollout() -> list[dict]:
 
 def _codex_subagent_rollout(session_id: str, nickname: str, prompt: str, reply: str) -> list[dict]:
     return [
-        {
-            "type": "session_meta",
-            "payload": {
-                "id": session_id,
-                "thread_source": "subagent",
-                "parent_thread_id": PARENT_ID,
-                "agent_nickname": nickname,
-                "agent_role": "default",
-            },
-        },
+        _subagent_meta(session_id, nickname, PARENT_ID),
         {"type": "turn_context", "payload": {"model": "gpt-5.4-mini"}},
         {
             "type": "response_item",
@@ -301,7 +295,7 @@ def test_codex_agent_block_named_and_indented(tmp_path, monkeypatch):
 
 
 def _codex_parent_rollout_with_plumbing() -> list[dict]:
-    """A parent that spawns/waits/closes an agent and receives a notification."""
+    """A parent that spawns and waits on an agent, then receives its final answer."""
     return [
         {"type": "session_meta", "payload": {"id": PARENT_ID, "thread_source": "user"}},
         {
@@ -319,18 +313,15 @@ def _codex_parent_rollout_with_plumbing() -> list[dict]:
             "payload": {
                 "type": "function_call",
                 "name": "spawn_agent",
+                "namespace": "collaboration",
                 "call_id": "call_spawn",
-                "arguments": '{"model":"gpt-5.4-mini","message":"do the thing"}',
+                "arguments": '{"task_name":"leibniz","fork_turns":"none","message":"gAAAAABcipher"}',
             },
         },
         {
             "type": "response_item",
             "timestamp": "2026-06-15T12:00:06Z",
-            "payload": {
-                "type": "function_call_output",
-                "call_id": "call_spawn",
-                "output": '{"agent_id":"019ecaa9","nickname":"Leibniz"}',
-            },
+            "payload": {"type": "function_call_output", "call_id": "call_spawn", "output": '{"task_name":"/root/leibniz"}'},
         },
         {
             "type": "response_item",
@@ -338,51 +329,31 @@ def _codex_parent_rollout_with_plumbing() -> list[dict]:
             "payload": {
                 "type": "function_call",
                 "name": "wait_agent",
+                "namespace": "collaboration",
                 "call_id": "call_wait",
-                "arguments": '{"targets":["019ecaa9"]}',
+                "arguments": '{"timeout_ms":1000}',
             },
         },
         {
             "type": "response_item",
             "timestamp": "2026-06-15T12:00:08Z",
-            "payload": {
-                "type": "function_call_output",
-                "call_id": "call_wait",
-                "output": '{"status":{"019ecaa9":{"completed":"did the thing"}}}',
-            },
+            "payload": {"type": "function_call_output", "call_id": "call_wait", "output": '{"message":"Wait completed.","timed_out":false}'},
         },
         {
             "type": "response_item",
             "timestamp": "2026-06-15T12:00:09Z",
             "payload": {
-                "type": "message",
-                "role": "user",
-                "content": [{
-                    "type": "input_text",
-                    "text": '<subagent_notification>\n{"agent_path":"019ecaa9","status":{"completed":"did the thing"}}\n</subagent_notification>',
-                }],
+                "type": "agent_message",
+                "author": "/root/leibniz",
+                "recipient": "/root",
+                "content": [{"type": "input_text", "text": "Message Type: FINAL_ANSWER\nTask name: /root\nSender: /root/leibniz\nPayload:\nFINAL_ANSWER_MARKER"}],
             },
-        },
-        {
-            "type": "response_item",
-            "timestamp": "2026-06-15T12:00:10Z",
-            "payload": {
-                "type": "function_call",
-                "name": "close_agent",
-                "call_id": "call_close",
-                "arguments": '{"target":"019ecaa9"}',
-            },
-        },
-        {
-            "type": "response_item",
-            "timestamp": "2026-06-15T12:00:11Z",
-            "payload": {"type": "function_call_output", "call_id": "call_close", "output": "{}"},
         },
     ]
 
 
-def test_codex_agent_plumbing_suppressed(tmp_path, monkeypatch):
-    """spawn/wait/close calls and the subagent_notification never render, even with --tools."""
+def test_codex_agent_controls_and_delivered_reports_are_visible(tmp_path, monkeypatch):
+    """The parent retains delivered reports independently of the merged child transcript."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     parent = _rollout(tmp_path, PARENT_ID)
     _write_jsonl(parent, _codex_parent_rollout_with_plumbing())
@@ -395,10 +366,10 @@ def test_codex_agent_plumbing_suppressed(tmp_path, monkeypatch):
     flags = ConversationFlags(show_agents=True, show_tools=True, color="never")
     output = format_to_xml(_merge_codex(parent, flags), flags)
 
-    for plumbing in ("spawn_agent", "wait_agent", "close_agent", "subagent_notification"):
-        assert plumbing not in output, (
-            f"Expected '{plumbing}' to be abstracted away by the agent block. Got:\n{output}"
-        )
+    assert output.count("did the thing") == 1, f"Expected the child's reply once, in its block. Got:\n{output}"
+    assert "FINAL_ANSWER_MARKER" in output, "A delivered report must survive independently of child merging."
+    for control in ("spawn_agent", "wait_agent"):
+        assert control in output, f"Expected '{control}' with --agents. Got:\n{output}"
 
 
 # =============================================================================
@@ -408,16 +379,7 @@ def test_codex_agent_plumbing_suppressed(tmp_path, monkeypatch):
 
 def _codex_subagent_rollout_with_tool(session_id: str, nickname: str, prompt: str) -> list[dict]:
     return [
-        {
-            "type": "session_meta",
-            "payload": {
-                "id": session_id,
-                "thread_source": "subagent",
-                "parent_thread_id": PARENT_ID,
-                "agent_nickname": nickname,
-                "agent_role": "default",
-            },
-        },
+        _subagent_meta(session_id, nickname, PARENT_ID),
         {"type": "turn_context", "payload": {"model": "gpt-5.4-mini"}},
         {
             "type": "response_item",

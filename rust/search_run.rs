@@ -867,6 +867,7 @@ fn project_default_dot_match(
     let Ok(content) = std::fs::read_to_string(path) else {
         return Projection::Unknown;
     };
+    let mut codex_thread: Option<crate::codex::Thread> = None;
     for line in content.split('\n') {
         let stripped = crate::session::python_strip(line);
         if stripped.is_empty() || !stripped.starts_with('{') {
@@ -875,7 +876,8 @@ fn project_default_dot_match(
         let Ok(serde_json::Value::Object(entry)) = serde_json::from_str(stripped) else {
             continue;
         };
-        if entry_has_default_visible_search_facet(&entry, provider) {
+        let thread = codex_thread.get_or_insert_with(|| crate::codex::Thread::from_header(Some(&entry)));
+        if entry_has_default_visible_search_facet(&entry, provider, thread) {
             return Projection::Match;
         }
     }
@@ -885,6 +887,7 @@ fn project_default_dot_match(
 fn entry_has_default_visible_search_facet(
     entry: &serde_json::Map<String, serde_json::Value>,
     provider: crate::session::Provider,
+    codex_thread: &crate::codex::Thread,
 ) -> bool {
     use serde_json::Value;
     if entry.get("type").and_then(Value::as_str) == Some("summary") {
@@ -898,7 +901,7 @@ fn entry_has_default_visible_search_facet(
     }
     match provider {
         crate::session::Provider::Pi => pi_entry_has_default_visible_text(entry),
-        crate::session::Provider::Codex => codex_entry_has_default_visible_text(entry),
+        crate::session::Provider::Codex => codex_entry_has_default_visible_text(entry, codex_thread),
         crate::session::Provider::Claude => false,
     }
 }
@@ -912,6 +915,9 @@ fn pi_entry_has_default_visible_text(
             .get("content")
             .and_then(Value::as_str)
             .is_some_and(|content| !content.is_empty());
+    }
+    if crate::session::is_pi_team_leader_message(entry) {
+        return !crate::session::pi_team_leader_text(entry).is_empty();
     }
     if entry.get("type").and_then(Value::as_str) != Some("message") {
         return false;
@@ -938,6 +944,7 @@ fn pi_entry_has_default_visible_text(
 
 fn codex_entry_has_default_visible_text(
     entry: &serde_json::Map<String, serde_json::Value>,
+    thread: &crate::codex::Thread,
 ) -> bool {
     use serde_json::Value;
     if entry.get("type").and_then(Value::as_str) != Some("response_item") {
@@ -946,6 +953,9 @@ fn codex_entry_has_default_visible_text(
     let Some(payload) = entry.get("payload").and_then(Value::as_object) else {
         return false;
     };
+    if payload.get("type").and_then(Value::as_str) == Some("agent_message") {
+        return thread.is_from_leader(payload);
+    }
     if payload.get("type").and_then(Value::as_str) != Some("message") {
         return false;
     }

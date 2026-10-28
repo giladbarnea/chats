@@ -1,11 +1,16 @@
+pub mod agent_merge;
 pub mod clock;
 pub mod color;
 pub mod difflib;
 pub mod cell_tables;
 pub mod cells;
+pub mod claude_agents;
+pub mod claude_delegation;
 pub mod codecs;
 pub mod codex;
+pub mod codex_delegation;
 pub mod inventory;
+pub mod herdr_launches;
 pub mod scanner;
 pub mod model;
 pub mod pager;

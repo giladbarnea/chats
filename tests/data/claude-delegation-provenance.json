@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "description": "A parent and five children share untagged history; shared records alone cannot prove creation edges.",
+  "untagged_fork_family": {
+    "parent_session_id": "10000000-0000-4000-8000-000000000000",
+    "child_session_ids": [
+      "20000000-0000-4000-8000-000000000001",
+      "20000000-0000-4000-8000-000000000002",
+      "20000000-0000-4000-8000-000000000003",
+      "20000000-0000-4000-8000-000000000004",
+      "20000000-0000-4000-8000-000000000005"
+    ],
+    "created_date": "2026-01-01",
+    "creation_version": "2.1.284"
+  }
+}

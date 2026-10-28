@@ -258,135 +258,64 @@ def test_pi_agent_metadata_round_trips_xml_attribute_characters(
     tmp_path: Path,
 ) -> None:
     metadata_value = 'metadata "quoted" & <angled>'
-    xml_attribute = "subagent_type"
 
     def select(entry: dict[str, object]) -> bool:
-        return (
-            entry.get("type") == "custom"
-            and entry.get("customType") == "subagents:record"
-        )
+        return entry.get("customType") == "pi-simple-team"
 
     def mutate(entry: dict[str, object]) -> None:
-        data = entry.get("data")
-        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
-        data["type"] = metadata_value
+        details = entry.get("details")
+        assert isinstance(details, dict), f"Expected team details. Got: {details!r}."
+        details["from"] = metadata_value
 
     home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
-    native_xml = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
+    native_xml = _run_ch(home, str(session_path), "--agents", "--color=never", "--no-metadata")
 
     assert native_xml.returncode == 0, native_xml.stderr
     escaped_value = "metadata &quot;quoted&quot; &amp; &lt;angled&gt;"
-    assert f'{xml_attribute}="{escaped_value}"' in native_xml.stdout, (
-        f"Expected XML-safe {xml_attribute} metadata. stdout: {native_xml.stdout!r}."
+    assert f'name="{escaped_value}"' in native_xml.stdout, (
+        f"Expected an XML-safe agent name. stdout: {native_xml.stdout!r}."
     )
 
-    canonical_json = _run_ch(
-        home,
-        "parse",
-        "--format=json",
-        input_text=native_xml.stdout,
-    )
+    canonical_json = _run_ch(home, "parse", "--format=json", input_text=native_xml.stdout)
     assert canonical_json.returncode == 0, canonical_json.stderr
     messages = json.loads(canonical_json.stdout)
     assert len(messages) == 1, f"Expected one agent message. Got: {messages!r}."
-    assert messages[0].get(xml_attribute) == metadata_value, (
-        f"Expected XML parsing to restore {xml_attribute}. Got: {messages!r}."
+    assert messages[0].get("name") == metadata_value, (
+        f"Expected XML parsing to restore the agent name. Got: {messages!r}."
     )
 
     rebuilt_xml = _run_ch(home, "parse", input_text=canonical_json.stdout)
     assert rebuilt_xml.returncode == 0, rebuilt_xml.stderr
-    assert rebuilt_xml.stdout == native_xml.stdout, (
-        f"Expected escaped {xml_attribute} metadata to stabilize."
-    )
+    assert rebuilt_xml.stdout == native_xml.stdout, "Expected the escaped agent name to stabilize."
 
 
-def test_agents_render_subagent_records_once_and_hide_notifications(
+def test_retired_subagent_extension_records_are_generic_custom_data(
     tmp_path: Path,
 ) -> None:
+    """Retired extension records remain generic custom data, not current agent deliveries."""
     home, session_path = _copy_pi_fixture(tmp_path)
-    hidden_notification_sentinel = "CUSTOM_ENVELOPE_NOTIFICATION_SENTINEL"
     hidden_display_sentinel = "CUSTOM_ENVELOPE_DISPLAY_FALSE_SENTINEL"
-    hidden_records = [
-        {
-            "type": "custom",
-            "customType": "subagent-notification",
-            "data": {"resultPreview": hidden_notification_sentinel},
-        },
-        {
+    with session_path.open("a", encoding="utf-8") as target:
+        target.write(json.dumps({
             "type": "custom",
             "customType": "duplicate-record",
             "display": False,
             "data": {"sentinel": hidden_display_sentinel},
-        },
-    ]
-    with session_path.open("a", encoding="utf-8") as target:
-        target.writelines(json.dumps(record) + "\n" for record in hidden_records)
+        }) + "\n")
 
-    agents = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--color=never",
-        "--no-metadata",
-    )
-    show_all = _run_ch(
-        home,
-        str(session_path),
-        "--all",
-        "--color=never",
-        "--no-metadata",
-    )
+    agents = _run_ch(home, str(session_path), "--agents", "--color=never", "--no-metadata")
+    show_all = _run_ch(home, str(session_path), "--all", "--color=never", "--no-metadata")
 
-    record_id = "2ceaec18-6ba7-4c9"
-    description = "Verify GIL-10 live"
-    result_heading = "# The live cloud confirms GIL-10"
-    for mode, completed in (("--agents", agents), ("--all", show_all)):
-        assert completed.returncode == 0, (
-            f"Expected {mode} to parse Pi subagent records. stderr: {completed.stderr!r}."
-        )
-        assert f'agent_id="{record_id}"' in completed.stdout, (
-            f"Expected {mode} to preserve the subagent record id. "
-            f"stdout: {completed.stdout!r}."
-        )
-        assert 'subagent_type="general-purpose"' in completed.stdout, (
-            f"Expected {mode} to preserve the subagent type. "
-            f"stdout: {completed.stdout!r}."
-        )
-        assert 'status="completed"' in completed.stdout, (
-            f"Expected {mode} to preserve the subagent status. "
-            f"stdout: {completed.stdout!r}."
-        )
-        assert description in completed.stdout and result_heading in completed.stdout, (
-            f"Expected {mode} to render the subagent input and result. "
-            f"stdout: {completed.stdout!r}."
-        )
-        assert 'custom_type="subagent-notification"' not in completed.stdout, (
-            f"Expected {mode} to hide the duplicate subagent notification. "
-            f"stdout: {completed.stdout!r}."
-        )
-        assert "resultPreview" not in completed.stdout, (
-            f"Expected {mode} not to render notification-only data. "
-            f"stdout: {completed.stdout!r}."
-        )
-        assert hidden_notification_sentinel not in completed.stdout, (
-            f"Expected {mode} to hide notifications in the custom envelope. "
-            f"stdout: {completed.stdout!r}."
-        )
-        assert hidden_display_sentinel not in completed.stdout, (
-            f"Expected {mode} to hide display=false custom duplicates. "
-            f"stdout: {completed.stdout!r}."
-        )
-
-    assert agents.stdout.count(result_heading) == 1, (
-        "Expected `--agents` to show the subagent result only through its record. "
-        f"stdout: {agents.stdout!r}."
+    assert agents.returncode == show_all.returncode == 0, agents.stderr + show_all.stderr
+    assert 'custom_type="subagents:record"' not in agents.stdout, (
+        f"Expected no subagents:record agent under --agents. stdout: {agents.stdout!r}."
     )
+    assert '<custom i=' in show_all.stdout and 'custom_type="subagents:record"' in show_all.stdout, (
+        f"Expected --all to show the record as generic custom data. stdout: {show_all.stdout!r}."
+    )
+    for completed in (agents, show_all):
+        assert 'custom_type="subagent-notification"' not in completed.stdout, completed.stdout
+        assert hidden_display_sentinel not in completed.stdout, completed.stdout
 
 
 def test_agents_emit_structured_pi_custom_messages_as_agent_data(
@@ -394,50 +323,30 @@ def test_agents_emit_structured_pi_custom_messages_as_agent_data(
 ) -> None:
     home, session_path = _copy_pi_fixture(tmp_path)
 
-    completed = _run_ch(
-        home,
-        str(session_path),
-        "--agents",
-        "--format=json",
-        "--no-metadata",
-    )
+    completed = _run_ch(home, str(session_path), "--agents", "--format=json", "--no-metadata")
 
-    assert completed.returncode == 0, (
-        f"Expected structured Pi agent output to succeed. stderr: {completed.stderr!r}."
-    )
+    assert completed.returncode == 0, completed.stderr
     messages = json.loads(completed.stdout)
-    record = next(
-        message
-        for message in messages
-        if message.get("agent_id") == "2ceaec18-6ba7-4c9"
+    record = next(message for message in messages if message.get("agent_id") == "scout")
+    assert record.get("custom_type") == "pi-simple-team", f"Got: {record!r}."
+    assert record.get("native_entry_id") == "a0000006", (
+        f"Expected the source Pi entry id. Got: {record!r}."
     )
-    assert record.get("subagent_type") == "general-purpose", (
-        f"Expected the structured subagent type. Got: {record!r}."
-    )
-    assert record.get("status") == "completed", (
-        f"Expected the structured subagent status. Got: {record!r}."
-    )
-    assert record.get("native_entry_id") == "baf2397b", (
-        f"Expected the source Pi subagent-record entry id. Got: {record!r}."
-    )
-    assert not any(
-        message.get("custom_type") == "subagent-notification" for message in messages
-    ), f"Expected notification duplicates to stay absent. Got: {messages!r}."
 
 
 def test_pi_agent_text_inner_blocks_round_trip_as_text(
     tmp_path: Path,
 ) -> None:
     literal_text = "<thinking>\nLITERAL_AGENT_TEXT\n</thinking>"
-    custom_type = "subagents:record"
+    custom_type = "pi-simple-team"
 
     def select(entry: dict[str, object]) -> bool:
-        return entry.get("type") == "custom" and entry.get("customType") == custom_type
+        return entry.get("customType") == custom_type
 
     def mutate(entry: dict[str, object]) -> None:
-        data = entry.get("data")
-        assert isinstance(data, dict), f"Expected custom data. Got: {data!r}."
-        data["result"] = literal_text
+        details = entry.get("details")
+        assert isinstance(details, dict), f"Expected team details. Got: {details!r}."
+        details["message"] = literal_text
 
     home, session_path = _derive_pi_fixture(tmp_path, select, mutate)
     native_xml = _run_ch(
@@ -624,11 +533,8 @@ def test_raw_output_preserves_normalized_pi_agent_interactions(
     assert "## Agent" in completed.stdout, (
         f"Expected raw output to identify agent messages. stdout: {completed.stdout!r}."
     )
-    assert "<subagent-task>" in completed.stdout, (
-        f"Expected raw output to retain agent inputs. stdout: {completed.stdout!r}."
-    )
-    assert "# The live cloud confirms GIL-10" in completed.stdout, (
-        f"Expected raw output to retain subagent results. stdout: {completed.stdout!r}."
+    assert "# Synthetic teammate report" in completed.stdout, (
+        f"Expected raw output to retain teammate messages. stdout: {completed.stdout!r}."
     )
     assert "## Custom" in completed.stdout, (
         f"Expected `--all` raw output to identify generic custom records. stdout: {completed.stdout!r}."
@@ -663,11 +569,9 @@ def test_colored_output_uses_agent_panels(
     assert "\x1b[" in completed.stdout, (
         f"Expected `--color=always` to emit ANSI styles. stdout: {completed.stdout!r}."
     )
-    assert "Agent" in plain and "✻ subagent task" in plain, (
-        f"Expected shared agent panels and input markers. stdout: {plain!r}."
-    )
-    assert "The live cloud confirms GIL-10" in plain, (
-        f"Expected colored output to retain subagent results. stdout: {plain!r}."
+    assert "Agent" in plain, f"Expected shared agent panels. stdout: {plain!r}."
+    assert "Synthetic teammate report" in plain, (
+        f"Expected colored output to retain teammate messages. stdout: {plain!r}."
     )
     assert "Custom" in plain and "stale_queued_tool_results_dropped" in plain, (
         f"Expected `--all` color output to render generic custom records. stdout: {plain!r}."
@@ -681,7 +585,7 @@ def test_search_uses_pi_custom_message_visibility_flags(
     tmp_path: Path,
 ) -> None:
     home, _session_path = _copy_pi_custom_fixture(tmp_path)
-    agent_needle = "The live cloud confirms GIL-10"
+    agent_needle = "Synthetic teammate report"
     custom_needle = "stale_queued_tool_results_dropped"
 
     hidden_agent = _run_ch(
@@ -720,10 +624,10 @@ def test_search_uses_pi_custom_message_visibility_flags(
         f"stdout: {hidden_agent.stdout!r}; stderr: {hidden_agent.stderr!r}."
     )
     assert shown_agent.returncode == 0, (
-        "Expected `--agents` search to find Pi subagent results. "
+        "Expected `--agents` search to find Pi teammate messages. "
         f"stderr: {shown_agent.stderr!r}."
     )
-    assert shown_agent.stdout.strip() == "019fb81a-3222-7aec-930e-c3c91e44db09", (
+    assert shown_agent.stdout.strip() == "00000000-0000-4000-8000-000000000001", (
         f"Expected the source fixture session id. stdout: {shown_agent.stdout!r}."
     )
     assert hidden_custom.returncode == 1 and not hidden_custom.stdout, (
@@ -734,7 +638,7 @@ def test_search_uses_pi_custom_message_visibility_flags(
         "Expected `--all` search to find arbitrary Pi custom data. "
         f"stderr: {shown_custom.stderr!r}."
     )
-    assert shown_custom.stdout.strip() == "019fb81a-3222-7aec-930e-c3c91e44db09", (
+    assert shown_custom.stdout.strip() == "00000000-0000-4000-8000-000000000001", (
         f"Expected the source fixture session id. stdout: {shown_custom.stdout!r}."
     )
 
@@ -753,7 +657,7 @@ def test_search_confirms_text_generated_by_pi_custom_normalization(
         "--case-sensitive",
     )
 
-    expected_session_id = "019fb81a-3222-7aec-930e-c3c91e44db09"
+    expected_session_id = "00000000-0000-4000-8000-000000000001"
     assert pretty_json.returncode == 0, (
         "Expected search to inspect pretty-printed Pi custom JSON after raw gates. "
         f"stderr: {pretty_json.stderr!r}."

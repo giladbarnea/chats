@@ -79,10 +79,10 @@ Examples:
     Print IDs of sessions with searchable content in the current working directory.
 
 Additional content:
-  Subagents are agents launched to help the main assistant. -a also includes messages from
-  other sessions and agent work recorded by Pi. Search checks separate Claude subagent
-  transcripts, including /fork conversations that continue from an existing conversation, when
-  -a is enabled.
+  Subagents are agents launched to help the main assistant. -a includes proved delegated
+  descendants, their delivered replies, and messages from other sessions. Search matches
+  parents through their delegated work and keeps separate child hits, including orphan Claude
+  subagent files.
   Rewind branches are messages abandoned when you rewind and try a different prompt. Include
   them with -b.
   Pi custom records are extra entries written by Pi extensions. Include them with -A.

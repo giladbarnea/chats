@@ -23,10 +23,13 @@ from ..model import (
     assign_progressive_shortening,
 )
 from ..parsing import (
+    decode_jsonl_entries,
     extract_cwd_from_jsonl,
     extract_latest_custom_title_from_content,
     get_display_session_id,
+    get_jsonl_session_adapter,
     parse_jsonl,
+    parse_jsonl_entries,
     validate_jsonl,
 )
 from ..pool_filter import PoolFilter
@@ -205,7 +208,9 @@ def cmd_parse(
             cwd,
             len(messages),
             provider=metadata.provider if metadata else None,
+            parent_session=metadata.parent_session if metadata else None,
             forked_from=metadata.forked_from if metadata else None,
+            forked_at=metadata.forked_at if metadata else None,
             last_custom_title=current_custom_title,
             created_at=metadata.ctime if metadata else None,
             modified_at=metadata.mtime if metadata else None,
@@ -235,7 +240,9 @@ def cmd_parse(
                 cwd,
                 len(messages),
                 provider=metadata.provider,
+                parent_session=metadata.parent_session,
                 forked_from=metadata.forked_from,
+                forked_at=metadata.forked_at,
                 last_custom_title=current_custom_title,
                 created_at=metadata.ctime,
                 modified_at=metadata.mtime,
@@ -276,23 +283,39 @@ def _merge_agent_messages(
 ) -> list[Message]:
     """Merge subagent transcripts into the main timeline.
 
-    Provider-agnostic: discovery and identity are resolved per adapter. Each
+    Provider-agnostic: discovery, identity, and the records a forked child copied
+    from its parent are resolved per adapter; the copied records are already in
+    the parent's own timeline. Each
     subagent's messages are stamped with its agent_id, nickname, type, and model,
     and its block is placed at its own dispatch time so late or concurrent agents
     land where they ran instead of clustering at the earliest agent's timestamp.
     """
+    adapter = get_jsonl_session_adapter(input_file_path)
     session_id = get_display_session_id(input_file_path)
-    transcripts = resolve.find_subagent_transcripts(input_file_path, session_id)
-
+    entries = adapter.own_entries(decode_jsonl_entries(input_file_path.read_text(encoding="utf-8")))
+    pending = list(reversed(resolve.find_subagent_transcripts(input_file_path, session_id, entries)))
+    visited = {(adapter.name, session_id)}
+    visited_paths = {input_file_path.resolve()}
     agent_blocks: list[list[Message]] = []
-    for transcript in transcripts:
-        agent_content = transcript.read_text(encoding="utf-8")
-        agent_messages = parse_jsonl(agent_content, flags, source_path=transcript)
+    while pending:
+        transcript = pending.pop()
+        canonical_path = transcript.resolve()
+        if canonical_path in visited_paths:
+            continue
+        visited_paths.add(canonical_path)
+        adapter = get_jsonl_session_adapter(transcript)
+        child_id = get_display_session_id(transcript)
+        identity = (adapter.name, child_id)
+        if identity in visited:
+            continue
+        visited.add(identity)
+        entries = decode_jsonl_entries(transcript.read_text(encoding="utf-8"))
+        own_entries = adapter.own_entries(entries)
+        pending.extend(reversed(resolve.find_subagent_transcripts(transcript, child_id, own_entries)))
+        agent_messages = parse_jsonl_entries(own_entries, flags, source_path=transcript)
         if not agent_messages or not agent_messages[0].timestamp:
             continue
-
-        meta = resolve.read_subagent_metadata(transcript)
-        block = _build_subagent_block(agent_messages, meta)
+        block = _build_subagent_block(agent_messages, resolve.read_subagent_metadata(transcript))
         if block:
             agent_blocks.append(block)
 
@@ -333,7 +356,9 @@ def _build_subagent_block(
 
     The initiating prompt (the last user-text message before the agent's first
     reply) becomes a `<subagent-task>` head; the leading prompt/context messages
-    are dropped; and every message is stamped with the subagent's identity.
+    are dropped; every later user message, an instruction given to the subagent,
+    becomes a `<subagent-task>` too; and every message is stamped with the
+    subagent's identity.
     """
     first_reply = next(
         (
@@ -356,7 +381,12 @@ def _build_subagent_block(
         block.append(
             Message(role="agent", timestamp=leading[0].timestamp, subagent_task=task_text)
         )
-    block.extend(rest)
+    block.extend(
+        Message(role="agent", timestamp=message.timestamp, subagent_task=message.text)
+        if message.role == "user" and message.text
+        else message
+        for message in rest
+    )
 
     # Claude carries identity on each message; Codex carries it in metadata. Resolve
     # both so the synthetic task message is stamped consistently with the rest.
@@ -367,6 +397,8 @@ def _build_subagent_block(
         (message.model for message in agent_messages if message.model), None
     )
     for message in block:
+        if message.role == "agent" and message.agent_id and message.agent_id != agent_id:
+            continue
         message.agent_id = agent_id
         message.name = meta.name
         message.subagent_type = meta.subagent_type

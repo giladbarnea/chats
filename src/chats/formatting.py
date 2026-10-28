@@ -570,7 +570,9 @@ def build_metadata_text(
     matching_summaries: list[str] | None = None,
     *,
     provider: Provider | None = None,
+    parent_session: str | None = None,
     forked_from: str | None = None,
+    forked_at: datetime | None = None,
     last_custom_title: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
@@ -582,8 +584,14 @@ def build_metadata_text(
     if provider is not None:
         yaml_lines.append(f"provider: {provider}")
 
+    if parent_session:
+        yaml_lines.append(f"parent_session: {parent_session}")
+
     if forked_from:
         yaml_lines.append(f"forked_from: {forked_from}")
+
+    if forked_at:
+        yaml_lines.append(f'forked_at: "{forked_at.strftime("%Y-%m-%d %H:%M")}"')
 
     if cwd:
         yaml_lines.append(f"directory: {collapse_home(cwd)}")
@@ -642,7 +650,9 @@ def print_metadata(
     matching_summaries: list[str] | None = None,
     *,
     provider: Provider | None = None,
+    parent_session: str | None = None,
     forked_from: str | None = None,
+    forked_at: datetime | None = None,
     last_custom_title: str | None = None,
     created_at: datetime | None = None,
     modified_at: datetime | None = None,
@@ -659,7 +669,9 @@ def print_metadata(
         matched_messages,
         matching_summaries,
         provider=provider,
+        parent_session=parent_session,
         forked_from=forked_from,
+        forked_at=forked_at,
         last_custom_title=last_custom_title,
         created_at=created_at,
         modified_at=modified_at,

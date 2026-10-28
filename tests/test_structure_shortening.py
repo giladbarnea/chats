@@ -155,21 +155,26 @@ def test_scalar_heavy_data_never_exceeds_the_payload_budget(tmp_path: Path, scal
 
 def test_global_shortening_includes_first_user_and_subagent_task(tmp_path: Path) -> None:
     session = write_session(tmp_path, [{"type": "text", "text": "U" * 100}], role="user")
-    with session.open("a") as stream:
-        stream.write("\n" + json.dumps({
-            "type": "custom", "customType": "subagents:record",
-            "data": {"id": "agent-1", "type": "research", "description": "TASK" * 100,
-                     "status": "completed", "result": "ANSWER" * 100},
-        }))
+    side_chat = session.with_name("structure-side-chat.jsonl")
+    side_chat.write_text("\n".join(json.dumps(entry) for entry in [
+        {"type": "session", "version": 3, "id": "structure-side-chat", "timestamp": "2026-10-08T08:00:00.000Z",
+         "cwd": "/tmp/structure-budget", "parentSession": str(session)},
+        {"type": "custom", "customType": "pi-user-agents-dispatch", "timestamp": "2026-10-08T08:00:00.001Z",
+         "data": {"forwardedArgs": [], "task": "TASK", "isolate": True}},
+        {"type": "message", "timestamp": "2026-10-08T08:00:01.000Z",
+         "message": {"role": "user", "content": [{"type": "text", "text": "TASK" * 100}]}},
+        {"type": "message", "timestamp": "2026-10-08T08:00:02.000Z",
+         "message": {"role": "assistant", "content": [{"type": "text", "text": "ANSWER" * 100}]}},
+    ]))
     messages = json.loads(run_ch(tmp_path, str(session), "--short=20", "--agents", "-f", "json"))
-    assert len(messages) == 2, messages
+    assert len(messages) == 3, messages
     assert len(messages[0]["content"][0]) <= 20, messages[0]
-    agent = messages[1]
-    task = next((block["content"] for block in agent["content"] if isinstance(block, dict) and block.get("type") == "subagent-task"), None)
-    answer = next((block for block in agent["content"] if isinstance(block, str)), None)
-    assert task and answer and len(task) + len(answer) <= 20, agent
+    task = next((block["content"] for block in messages[1]["content"] if isinstance(block, dict) and block.get("type") == "subagent-task"), None)
+    answer = next((block for block in messages[2]["content"] if isinstance(block, str)), None)
+    assert task and len(task) <= 20, messages[1]
+    assert answer and len(answer) <= 20, messages[2]
     parsed = run_ch(tmp_path, str(session), "--short=20", "--agents", "--color=never", "--no-metadata")
-    searched = run_ch(tmp_path, "search", ".", "--short=20", "--agents", "--color=never", "--no-metadata")
+    searched = run_ch(tmp_path, "search", "U", "--full", "--short=20", "--agents", "--color=never", "--no-metadata")
     assert parsed.strip() in searched, searched
 
 

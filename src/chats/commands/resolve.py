@@ -9,9 +9,17 @@ from pathlib import Path
 
 from ..console import get_console, print_error
 from ..model import ConversationMetadata, SubagentMetadata
+from ..herdr_launches import verified_herdr_forks
 from ..ordering import is_single_negative_index
 from ..parsing import (
+    _parse_iso_timestamp,
+    _claude_background_fork_prefixes,
+    _claude_successful_bash_calls,
+    _read_claude_lineage,
+    decode_jsonl_entries,
     extract_codex_subagent_metadata,
+    find_pi_delegated_children,
+    read_pi_subagent_metadata,
     extract_resolution_facets_from_jsonl,
     files_possibly_containing_text,
     find_codex_subagent_transcripts,
@@ -64,9 +72,10 @@ def find_agent_files_for_session(conv_file: Path, session_id: str) -> list[Path]
 def _agent_first_entry_matches_session(entry: dict, session_id: str) -> bool:
     """Whether a subagent transcript's first entry anchors it to `session_id`.
 
-    Classic agent-initiated subagents carry the parent `sessionId` on every message.
-    A user-initiated `/fork` instead leads with a `fork-context-ref` header that links
-    back to the parent via `parentSessionId`, with no first-line `sessionId`.
+    Fresh-context subagents and teammates carry the parent `sessionId` on every
+    message. A fork, whether the Agent tool or the user's `/subtask`, `/btw` or `/fork`
+    started it, leads with a `fork-context-ref` header that links back to the parent
+    via `parentSessionId`, with no first-line `sessionId`.
 
     >>> _agent_first_entry_matches_session({"sessionId": "s"}, "s")
     True
@@ -85,27 +94,69 @@ def _agent_first_entry_matches_session(entry: dict, session_id: str) -> bool:
     )
 
 
-def read_agent_type(agent_file: Path) -> str | None:
-    """Read `agentType` from an agent file's sibling `.meta.json` sidecar.
+def read_claude_subagent_metadata(agent_file: Path) -> SubagentMetadata:
+    """Read a Claude agent's type and name from its sibling `.meta.json` sidecar.
 
-    >>> read_agent_type(Path("/does/not/exist/agent-x.jsonl")) is None
-    True
+    >>> read_claude_subagent_metadata(Path("/does/not/exist/agent-x.jsonl"))
+    SubagentMetadata(agent_id='x', name=None, subagent_type=None, model=None)
     """
+    if not agent_file.name.startswith("agent-"):
+        return SubagentMetadata(agent_id=agent_file.stem, subagent_type="fork")
+    agent_id = agent_file.stem.removeprefix("agent-")
     meta_path = agent_file.with_suffix(".meta.json")
     try:
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        return None
-    return meta.get("agentType")
+        return SubagentMetadata(agent_id=agent_id)
+    return SubagentMetadata(agent_id=agent_id, subagent_type=meta.get("agentType"), name=meta.get("name"))
 
 
-def find_subagent_transcripts(session_file: Path, session_id: str) -> list[Path]:
-    """Find a session's subagent transcript files, dispatching by provider."""
+def _claude_direct_sidechains(session_file: Path, session_id: str) -> list[Path]:
+    """Join nested Claude sidechains by meta.parentAgentId, not their shared root directory."""
+    parent_agent = session_file.stem.removeprefix("agent-") if session_file.name.startswith("agent-") else None
+    root_id = session_file.parent.parent.name if parent_agent else session_id
+    root_file = session_file.parent.parent.parent / f"{root_id}.jsonl" if parent_agent else session_file
+    children = []
+    for child in find_agent_files_for_session(root_file, root_id):
+        try:
+            metadata = json.loads(child.with_suffix(".meta.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            metadata = {}
+        if metadata.get("parentAgentId") == parent_agent:
+            children.append(child)
+    return children
+
+
+def find_subagent_transcripts(
+    session_file: Path, session_id: str, entries: list[dict] | None = None,
+) -> list[Path]:
+    """Find direct delegated children; entries, when supplied, contain only the parent's own records."""
     adapter = get_jsonl_session_adapter(session_file)
     if adapter.name == "codex":
-        return find_codex_subagent_transcripts(session_file, session_id)
+        return find_codex_subagent_transcripts(session_file, session_id, entries)
     if adapter.name == "claude":
-        return find_agent_files_for_session(session_file, session_id)
+        children = _claude_direct_sidechains(session_file, session_id)
+        if entries is None:
+            entries = decode_jsonl_entries(session_file.read_text(encoding="utf-8"))
+        for prefix in _claude_background_fork_prefixes(entries):
+            candidates = list(session_file.parent.glob(f"{prefix}*.jsonl"))
+            if len(candidates) != 1:
+                continue
+            child = candidates[0]
+            if child != session_file and _read_claude_lineage(child).forked_from == session_id:
+                children.append(child)
+        for child_id, context_source in verified_herdr_forks(_claude_successful_bash_calls(entries), "claude"):
+            if not _is_canonical_uuid_identifier(child_id):
+                continue
+            candidates = list((Path.home() / ".claude" / "projects").glob(f"*/{child_id}.jsonl"))
+            if len(candidates) != 1:
+                continue
+            child = candidates[0]
+            if child != session_file and _read_claude_lineage(child).forked_from == context_source:
+                children.append(child)
+        return sorted(set(children))
+    if adapter.name == "pi":
+        return find_pi_delegated_children(session_file, entries)
     return []
 
 
@@ -114,7 +165,9 @@ def read_subagent_metadata(transcript: Path) -> SubagentMetadata:
     adapter = get_jsonl_session_adapter(transcript)
     if adapter.name == "codex":
         return extract_codex_subagent_metadata(transcript)
-    return SubagentMetadata(subagent_type=read_agent_type(transcript))
+    if adapter.name == "pi":
+        return read_pi_subagent_metadata(transcript)
+    return read_claude_subagent_metadata(transcript)
 
 
 def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
@@ -125,7 +178,9 @@ def _load_conversation_metadata(conv_file: Path) -> ConversationMetadata:
         get_jsonl_first_timestamp(conv_file),
         get_jsonl_last_timestamp(conv_file),
         provider=adapter.name,
+        parent_session=adapter.extract_parent_session(conv_file),
         forked_from=adapter.extract_forked_from(conv_file),
+        forked_at=_parse_iso_timestamp(forked_at) if (forked_at := adapter.extract_forked_at(conv_file)) else None,
     )
 
 

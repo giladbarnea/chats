@@ -14,9 +14,8 @@
 //! tool_search_call 30   tool_search_output 30   image_generation_call 2
 //! ```
 //!
-//! The last six have **no arm in Python's loop** and are skipped. That is
-//! behaviour, not an omission: a port that grew an arm for `agent_message` would
-//! surface 2,155 blocks the product hides.
+//! `agent_message` renders leader instructions by default and other senders
+//! under --agents. The other five payload types have no decoder arm.
 //!
 //! **The generated `exec` script is hot, not exotic.** 16,990 of the 19,246
 //! `custom_tool_call` payloads are `exec` with a string body, so
@@ -50,9 +49,53 @@ use crate::session;
 use crate::visibility::ConversationFlags;
 use serde_json::{Map, Number, Value};
 
-/// Subagent dispatch is shown as a merged agent block, so the lifecycle calls and
-/// their outputs never render.
-const AGENT_LIFECYCLE_TOOLS: [&str; 3] = ["spawn_agent", "wait_agent", "close_agent"];
+/// The namespace of the controls a parent uses to steer its subagents. Mirrors
+/// Python's `_CODEX_AGENT_TOOL_NAMESPACE`: its calls are agent content.
+const AGENT_TOOL_NAMESPACE: &str = "collaboration";
+
+/// Every Fernet token starts with this, which is how an encrypted argument value
+/// is told apart from a readable one.
+const ENCRYPTED_PREFIX: &str = "gAAAAA";
+
+/// Where a rollout's own records start, and which agent leads it.
+///
+/// Mirrors Python's `_CodexThread`, read from the first `session_meta`.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Thread {
+    /// Records before this ordinal were copied from the parent's history.
+    pub first_own_ordinal: i64,
+    /// The agent path of the thread that leads this one, when it is a subagent.
+    pub leader_path: Option<String>,
+}
+
+impl Thread {
+    pub fn from_header(first: Option<&Map<String, Value>>) -> Thread {
+        let header = first
+            .filter(|entry| string_of(entry, "type") == Some("session_meta"))
+            .and_then(|entry| entry.get("payload"))
+            .and_then(Value::as_object);
+        Thread {
+            first_own_ordinal: header
+                .and_then(|payload| payload.get("subagent_history_start_ordinal"))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            leader_path: header
+                .and_then(|payload| string_of(payload, "agent_path"))
+                .map(|path| path.rsplit_once('/').map_or("", |(leader, _)| leader).to_string()),
+        }
+    }
+
+    /// Whether this entry was copied from the parent's history.
+    pub fn is_inherited(&self, entry: &Map<String, Value>) -> bool {
+        entry.get("ordinal").and_then(Value::as_i64).unwrap_or(self.first_own_ordinal)
+            < self.first_own_ordinal
+    }
+
+    /// Whether this `agent_message` payload is an instruction from this thread's leader.
+    pub fn is_from_leader(&self, payload: &Map<String, Value>) -> bool {
+        string_of(payload, "author").is_some_and(|author| Some(author) == self.leader_path.as_deref())
+    }
+}
 
 /// Decode Codex JSONL entries into the shared message model.
 pub fn parse_codex(entries: &[Map<String, Value>], flags: &ConversationFlags) -> Vec<Message> {
@@ -64,9 +107,9 @@ struct Decoder<'a> {
     messages: Vec<Message>,
     index: i64,
     current_assistant: Option<Message>,
-    /// Call ids whose output must also be suppressed, tracked because the output
-    /// arrives as a separate entry that carries no tool name.
-    agent_lifecycle_call_ids: Vec<String>,
+    /// Call ids of collaboration controls, whose outputs are agent content too.
+    agent_control_call_ids: Vec<String>,
+    thread: Thread,
 }
 
 impl<'a> Decoder<'a> {
@@ -76,11 +119,13 @@ impl<'a> Decoder<'a> {
             messages: Vec::new(),
             index: 1,
             current_assistant: None,
-            agent_lifecycle_call_ids: Vec::new(),
+            agent_control_call_ids: Vec::new(),
+            thread: Thread::default(),
         }
     }
 
     fn run(mut self, entries: &[Map<String, Value>]) -> Vec<Message> {
+        self.thread = Thread::from_header(entries.first());
         for entry in entries {
             if string_of(entry, "type") != Some("response_item") {
                 continue;
@@ -97,6 +142,7 @@ impl<'a> Decoder<'a> {
 
     fn entry(&mut self, payload: &Map<String, Value>, timestamp: Option<String>) {
         match string_of(payload, "type") {
+            Some("agent_message") => self.agent_message(payload, timestamp),
             Some("message") => self.message(payload, timestamp),
             Some("reasoning") if self.flags.show_thinking => self.reasoning(payload, timestamp),
             Some("function_call") => self.function_call(payload, timestamp),
@@ -111,9 +157,9 @@ impl<'a> Decoder<'a> {
                     .tools
                     .push(tool_result(call_id, output));
             }
-            // Every other payload type — web_search_call, agent_message,
-            // ghost_snapshot, tool_search_call, image_generation_call — has no arm
-            // in Python and contributes nothing.
+            // Every other payload type — web_search_call, ghost_snapshot,
+            // tool_search_call, image_generation_call — has no arm in Python and
+            // contributes nothing.
             _ => {}
         }
     }
@@ -166,6 +212,48 @@ impl<'a> Decoder<'a> {
         }
     }
 
+    /// Leader messages are user instructions; other deliveries retain their sender
+    /// under --agents, independently of whether the sender's transcript exists.
+    fn agent_message(&mut self, payload: &Map<String, Value>, timestamp: Option<String>) {
+        let from_leader = self.thread.is_from_leader(payload);
+        let visible = if from_leader { self.flags.show_user_messages() } else { self.flags.show_agents };
+        if !visible {
+            return;
+        }
+        let mut message = if from_leader {
+            Message::new(MessageType::UserMessage, "user".to_string(), Number::from(0))
+        } else {
+            let mut message = Message::new(MessageType::Agent, "agent".to_string(), Number::from(0));
+            message.agent_id = string_of(payload, "author").map(str::to_string);
+            message.name = message.agent_id.clone();
+            message
+        };
+        message.text = agent_message_text(payload);
+        message.timestamp = timestamp;
+        self.push_message(message);
+    }
+
+    /// Close the open assistant message, then append a standalone one.
+    fn push_message(&mut self, mut message: Message) {
+        self.flush_assistant();
+        message.original_index = Number::from(self.index);
+        self.messages.push(message);
+        self.index += 1;
+    }
+
+    /// A collaboration control as its own agent-content message, under `--agents`.
+    fn agent_control(&mut self, tool: Tool, timestamp: Option<String>) {
+        if !self.flags.show_agents {
+            return;
+        }
+        let mut message =
+            Message::new(MessageType::AssistantResponse, "assistant".to_string(), Number::from(0));
+        message.timestamp = timestamp;
+        message.tools_always_visible = true;
+        message.tools.push(tool);
+        self.push_message(message);
+    }
+
     fn reasoning(&mut self, payload: &Map<String, Value>, timestamp: Option<String>) {
         let thinking = reasoning_text(payload);
         if thinking.is_empty() {
@@ -177,10 +265,14 @@ impl<'a> Decoder<'a> {
 
     fn function_call(&mut self, payload: &Map<String, Value>, timestamp: Option<String>) {
         let native_name = string_of(payload, "name");
-        if native_name.is_some_and(|name| AGENT_LIFECYCLE_TOOLS.contains(&name)) {
-            if let Some(call_id) = string_of(payload, "call_id") {
-                self.agent_lifecycle_call_ids.push(call_id.to_string());
+        if string_of(payload, "namespace") == Some(AGENT_TOOL_NAMESPACE) {
+            let call_id = string_of(payload, "call_id").map(str::to_string);
+            if let Some(id) = &call_id {
+                self.agent_control_call_ids.push(id.clone());
             }
+            let name = crate::model::normalize_tool_name("codex", native_name);
+            let input = redact_ciphertext(normalize_tool_input(&name, payload.get("arguments")));
+            self.agent_control(tool_use(name, input, call_id), timestamp);
             return;
         }
         if !tools_requested(self.flags) {
@@ -196,12 +288,12 @@ impl<'a> Decoder<'a> {
 
     fn function_call_output(&mut self, payload: &Map<String, Value>, timestamp: Option<String>) {
         let call_id = string_of(payload, "call_id").map(str::to_string);
-        // Suppressed by call id: the output entry carries no tool name, so the
-        // only link back to a lifecycle call is the id recorded when it was seen.
         if call_id
             .as_deref()
-            .is_some_and(|id| self.agent_lifecycle_call_ids.iter().any(|seen| seen == id))
+            .is_some_and(|id| self.agent_control_call_ids.iter().any(|seen| seen == id))
         {
+            let output = parse_tool_output(payload.get("output"));
+            self.agent_control(tool_result(call_id, output), timestamp);
             return;
         }
         if !tools_requested(self.flags) {
@@ -365,8 +457,59 @@ pub fn is_preamble_text(text: &str) -> bool {
     stripped.is_empty()
         || stripped.starts_with("# AGENTS.md instructions for ")
         || stripped.starts_with("<environment_context>")
-        || stripped.starts_with("<subagent_notification>")
+        || stripped.starts_with("<recommended_plugins>")
         || stripped.starts_with("<skill>")
+}
+
+/// An inter-agent message's plaintext payload, else its routing header as written.
+///
+/// Mirrors Python's `_codex_agent_message_text`. Only text present in the file is
+/// shown, so the raw candidate gate never rejects what confirmation would match.
+///
+/// ```
+/// use _native::codex::agent_message_text;
+/// let encrypted = serde_json::json!({"content": [
+///     {"type": "input_text", "text": "Message Type: NEW_TASK\nSender: /root\nPayload:\n"},
+///     {"type": "encrypted_content"}]});
+/// assert_eq!(agent_message_text(encrypted.as_object().unwrap()), "Message Type: NEW_TASK\nSender: /root");
+/// let plain = serde_json::json!({"content": [
+///     {"type": "input_text", "text": "Message Type: MESSAGE\nPayload:\nhello"}]});
+/// assert_eq!(agent_message_text(plain.as_object().unwrap()), "hello");
+/// ```
+pub fn agent_message_text(payload: &Map<String, Value>) -> String {
+    let text: String = payload
+        .get("content")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_object)
+        .filter(|block| string_of(block, "type") == Some("input_text"))
+        .map(|block| string_of(block, "text").unwrap_or_default())
+        .collect();
+    let (header, plaintext) = text.split_once("Payload:\n").unwrap_or((&text, ""));
+    if session::python_strip(plaintext).is_empty() {
+        session::python_strip(header).to_string()
+    } else {
+        plaintext.to_string()
+    }
+}
+
+/// Replace encrypted argument values, which carry no readable content.
+fn redact_ciphertext(input: Value) -> Value {
+    let Value::Object(object) = input else {
+        return input;
+    };
+    Value::Object(
+        object
+            .into_iter()
+            .map(|(key, value)| match value.as_str() {
+                Some(text) if text.starts_with(ENCRYPTED_PREFIX) => {
+                    (key, Value::String("[encrypted]".to_string()))
+                }
+                _ => (key, value),
+            })
+            .collect(),
+    )
 }
 
 /// The visible summary text of a reasoning payload.

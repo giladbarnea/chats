@@ -1,10 +1,48 @@
 ---
-last_updated: 2026-10-26T16-06
+last_updated: 2026-10-28T15-55
 ---
 
 # Changelog
 
 All notable changes to the `conversations` skill.
+
+---
+## [2026-10-28] Show Pi delegation as each session saw it
+
+### Changed
+
+- Pi `--agents` recursively merges proved teammate and user-side-chat descendants in parse and search. Merged blocks omit inherited copies and retain child/sender identity. Opening a child directly still shows its whole file. Metadata gains `parent_session`, `forked_from`, and `forked_at` when supported by evidence.
+- Creation checks exclude inherited dispatch/spawn records and resumption-only receipts. A header-only invocation index avoids repeated sibling scans. Retired `subagents:record` parsing is removed; `--all` still shows its generic custom data.
+- A Pi teammate's briefing and follow-ups from `main` render by default as user messages. Peer messages stay agent content under `--agents`.
+- `send_main_message`, `get_context_window_usage`, and team calls made inside `codemode` are agent content under `--agents`, like `team_*`.
+
+---
+## [2026-10-28] Read Claude delegation as it is recorded now
+
+### Fixed
+
+- Claude teammate `idle_notification` envelopes show delivered result text instead of raw JSON. Bare status pings stay hidden.
+- Agent task-notification results remain visible under `--agents` even when the child file is missing. Native origin and dispatch evidence distinguish agent reports from shell-task notices and pasted examples.
+- Inside a teammate transcript, the lead's briefing and follow-ups read as user turns, other teammates read as named agents, and the `<teammate-message>` tags are gone from text and search.
+- A fork's subagent task is its directive, without Claude Code's `<fork-boilerplate>`. Search no longer matches that boilerplate in every fork.
+
+### Changed
+
+- Claude `Agent`, `SendMessage`, and `ListAgents` calls and results are agent content under `--agents`, like Pi `team_*` tools.
+- Parent search now includes recursively merged Claude delegation, including native user background forks and CLI forks with verified Herdr launch receipts. Child sessions remain separately searchable, including orphan sidechains. Opening a fork directly retains its whole history.
+- Claude subagent headers carry the `.meta.json` name: `Agent '<name>'`, `Fork '<name>'`. Subagent transcripts report `parent_session`.
+- A forked Claude session (`--fork-session`, `/branch`, `/bg`) names its context source as `forked_from`, with `forked_at` when a copied record supplies a timestamp.
+
+---
+## [2026-10-28] Show current Codex delegation
+
+### Changed
+
+- All Codex `collaboration` calls and results require `--agents`, including spawn failures. Encrypted arguments show as `[encrypted]`. Delivered agent replies retain their sender independently of saved child transcripts.
+- Shared parse/search traversal merges delegated descendants recursively, deduplicates identities, and stops cyclic edges. Codex includes native agent-created forks and CLI forks proved by successful Herdr launch receipts and matching child headers.
+- A Codex child shows leader instructions by default. Opening a fork directly keeps its whole history. Only merged child blocks omit copied parent history.
+- Codex lineage metadata includes `parent_session`, `forked_from`, and recorded `forked_at`. Unknown CLI-launch provenance is not classified as user-created.
+- `<recommended_plugins>` injections no longer appear as user messages. Later instructions in merged blocks use `<subagent-task>`. Obsolete special cases for `close_agent` and `<subagent_notification>` were removed.
 
 ---
 ## [2026-10-26] Budget structure-aware message previews

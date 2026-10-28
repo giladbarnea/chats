@@ -1529,7 +1529,7 @@
       "expected_stderr": "expected/facet-empty-session-absent.stderr"
     },
     {
-      "id": "pi-agent-record-needs-agents",
+      "id": "pi-retired-agent-record-miss",
       "arguments": [
         "piagentsubagent",
         "-a",
@@ -1537,9 +1537,9 @@
       ],
       "columns": 96,
       "color": false,
-      "exit_status": 0,
-      "expected_stdout": "expected/pi-agent-record-needs-agents.stdout",
-      "expected_stderr": "expected/pi-agent-record-needs-agents.stderr"
+      "exit_status": 1,
+      "expected_stdout": "expected/pi-agent-record-default-miss.stdout",
+      "expected_stderr": "expected/pi-agent-record-default-miss.stderr"
     },
     {
       "id": "pi-agent-record-default-miss",

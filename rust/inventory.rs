@@ -289,7 +289,7 @@ fn read_claude_jsonl_paths(root: &Path) -> Vec<PathBuf> {
     paths
 }
 
-fn read_recursive_provider_paths(root: &Path) -> Vec<PathBuf> {
+pub(crate) fn read_recursive_provider_paths(root: &Path) -> Vec<PathBuf> {
     let mut paths = Vec::new();
     read_recursive_jsonl_paths(root, &mut paths);
     paths.sort_by_cached_key(|path| python_filesystem_path_key(path));
