@@ -21,7 +21,6 @@
         "phrase": "Acknowledged main; reading handoff and current tree"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -49,7 +48,6 @@
         "id": "Q9bP"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -104,7 +102,6 @@
         "command": "fd 'SKILL.md' /Users/giladbarnea/.pi/agent/skills /Users/giladbarnea/.pi/agent -a | rg '/(tdd|write-tests)/SKILL\\.md$'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -246,7 +243,6 @@
         "id": "Letk"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -413,7 +409,6 @@
         "command": "rg -l '^name: (tdd|write-tests)$' /Users/giladbarnea/.pi /Users/giladbarnea 2>/dev/null | head -20"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -565,7 +560,6 @@
         "phrase": "Acknowledged main; loading required TDD skills"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -598,7 +592,6 @@
         "id": "GrZ5"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -642,7 +635,6 @@
         "phrase": "Reconstructed code; running full extension suite for intended provider RED"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -671,7 +663,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -704,7 +695,6 @@
         "message": "Reconstruction complete. Full `bun test agent/extensions/pi-user-agents/tests` confirms the intended current RED exactly: 71 pass, 1 fail, 93 expect calls. Only `--provider chains into the unique providers from the live model catalog` times out because provider-domain suggestions/chaining are not implemented. I’m applying the minimal GREEN now, then I’ll announce the stable checkpoint before the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -734,7 +724,6 @@
         "message": "Reconstruction complete. Full `bun test agent/extensions/pi-user-agents/tests` confirms the intended current RED exactly: 71 pass, 1 fail, 93 expect calls. Only `--provider chains into the unique providers from the live model catalog` times out because provider-domain suggestions/chaining are not implemented. I’m applying the minimal GREEN now, then I’ll announce the stable checkpoint before the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -764,7 +753,6 @@
         "phrase": "Provider chaining RED confirmed 71/1; applying minimal GREEN"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -792,7 +780,6 @@
         "id": "cHlb"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -831,7 +818,6 @@
         "phrase": "Acknowledged reviewer; provider branches applied, running GREEN"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -863,7 +849,6 @@
         "message": "Agreed. I applied both branches plus provider candidate validation in `applyCompletion`; running the full suite now. I’ll announce the stable GREEN for independent verification before introducing the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -892,7 +877,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -922,7 +906,6 @@
         "command": "nl -ba agent/extensions/pi-user-agents/tests/autocomplete.test.ts | sed -n '55,72p'; nl -ba agent/extensions/pi-user-agents/autocomplete.ts | sed -n '35,90p;135,175p'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -954,7 +937,6 @@
         "message": "The first GREEN run stayed 71/1, but the timeout is actually at line 64 before provider chaining. The test types `--pro` while both `--provider` and `--prompt-template` truthfully share that prefix, then incorrectly requires prompt-template absent. I’m correcting the behavioral test to the unambiguous `--prov`; production already has provider suggestions, validation, and chaining. This preserves the plan’s starts-with prefix rule."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -993,7 +975,6 @@
         "phrase": "Acknowledged verifier; RED exposed invalid shared prefix assertion"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -1025,7 +1006,6 @@
         "message": "Not stable yet: the first attempt remained 71/1 because the intended provider RED typed `--pro` but incorrectly required `--prompt-template` absent even though it shares that prefix. I’m correcting it to `--prov`, then rerunning the full command. I’ll send the exact GREEN result and explicit stable signal."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -1054,7 +1034,6 @@
         "message": "Provider implementation is in, but the first rerun exposed that the inherited RED failed one step earlier than intended: it typed `--pro` and required `--prompt-template` absent, although both `--provider` and `--prompt-template` truthfully share that prefix. I’m correcting the test to `--prov` so it exercises provider chaining rather than contradicting prefix semantics, then rerunning the full suite."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -1082,7 +1061,6 @@
         "id": "LK0O"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1111,7 +1089,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1141,7 +1118,6 @@
         "phrase": "Provider chaining stable: 72 pass, 0 fail, 93 expects"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1188,7 +1164,6 @@
         "message": "STABLE GREEN checkpoint: `bun test agent/extensions/pi-user-agents/tests` is 72 pass, 0 fail, 93 expect calls. Provider completion and chaining are implemented; the test now uses truthful unambiguous prefix `--prov`. Tree is stable for review/independent verification before the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1246,7 +1221,6 @@
         "phrase": "Holding 72/72 tree for verifier; auditing next negative slice read-only"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1302,7 +1276,6 @@
         "command": "gsd --stat && printf '\\nAUTOCOMPLETE DIFF\\n' && gsd -- agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/tests/autocomplete.test.ts | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1387,7 +1360,6 @@
         "command": "rg -n 'session_start' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist -g '*.js' | head -50"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1444,7 +1416,6 @@
         "command": "sed -n '100,125p' agent/extensions/inline-commands/index.ts; sed -n '200,220p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts; sed -n '370,395p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1472,7 +1443,6 @@
         "id": "F1Wm"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1501,7 +1471,6 @@
         "command": "rg -n 'setEditorComponent|editorComponentFactory|customEditor' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core -g '*.js' | head -100"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1530,7 +1499,6 @@
         "command": "sed -n '1800,1880p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js; rg -n 'reloadExtensions|handleReload|/reload|reload' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js | head -50"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1559,7 +1527,6 @@
         "command": "sed -n '4360,4460p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1588,7 +1555,6 @@
         "command": "rg -n 'resetExtensionUI\\(' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js | head -10 && sed -n '1690,1745p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1617,7 +1583,6 @@
         "command": "sed -n '1470,1525p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:19:00"
   },
   {
@@ -1646,7 +1611,6 @@
         "command": "bun -e 'import {createEditorHarness} from \"./agent/extensions/pi-user-agents/tests/editor-harness.ts\"; const h=await createEditorHarness(); h.type(\"/agent --no-too\"); await h.waitForRender(r=>r.includes(\"--no-tools\")); console.log(h.render()); h.press(\"\\t\"); console.log(JSON.stringify(h.editor.getText()),h.editor.getCursor(),h.editor.isShowingAutocomplete(),\"\\n\",h.render());'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:19:00"
   },
   {
@@ -1685,7 +1649,6 @@
         "phrase": "Acknowledged main; next slice is provider-scoped model catalog"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:20:00"
   },
   {
@@ -1724,7 +1687,6 @@
         "phrase": "Acknowledged release; adding provider-scoped model RED"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:20:00"
   },
   {
@@ -1752,7 +1714,6 @@
         "id": "B3Nv"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:20:00"
   },
   {
@@ -1781,7 +1742,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'provider scopes'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:20:00"
   },
   {
@@ -1812,7 +1772,6 @@
         "phrase": "Provider scope RED confirmed; threading parsed provider through cursor state"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1840,7 +1799,6 @@
         "id": "BXNT"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1879,7 +1837,6 @@
         "phrase": "Acknowledged reviewer; shared scanner carries prior provider, no reparse"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1911,7 +1868,6 @@
         "message": "Aligned. I’m threading a single prior provider value out of `analyzeArgumentCursor` into `ValueCursorExpectation` and filtering `getModelItems`; no autocomplete-side reparse."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1939,7 +1895,6 @@
         "id": "bBt5"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1967,7 +1922,6 @@
         "id": "xUgb"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1996,7 +1950,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'provider scopes' && bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -2026,7 +1979,6 @@
         "phrase": "Provider-scoped models stable: 73 pass, 0 fail"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -2073,7 +2025,6 @@
         "message": "STABLE GREEN checkpoint: shared cursor scan now carries `parsedProvider`; model candidates and acceptance both filter by it. Full suite: 73 pass, 0 fail, 93 expect calls. Holding before next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -2131,7 +2082,6 @@
         "phrase": "Holding 73/73 for verifier; probing next behavior read-only"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -2160,7 +2110,6 @@
         "command": "cat > /tmp/probe-autocomplete.ts <<'EOF'\nimport { createEditorHarness } from \"/Users/giladbarnea/.pi/agent/extensions/pi-user-agents/tests/editor-harness.ts\";\n\nconst duplicate = await createEditorHarness(process.cwd(), [{provider:\"p\",id:\"m\"}]);\ndup\n...\nr=>r.includes(\"--thinking <level>\")); enter.press(\"\\r\"); await enter.waitForRender(r=>r.includes(\"high\")); console.log(\"ENTER\",JSON.stringify(enter.editor.getText()),enter.render());\nEOF\nbun /tmp/probe-autocomplete.ts\nrm /tmp/probe-autocomplete.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -2189,7 +2138,6 @@
         "command": "rg -n 'setCursor|getCursor\\(' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui/dist -g '*.d.ts' | head -50"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2228,7 +2176,6 @@
         "phrase": "Acknowledged 73/73 gate; next slice is mid-line provider scope"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2285,7 +2232,6 @@
         "phrase": "Acknowledged main; starting alias semantic-suppression editor slice"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2313,7 +2259,6 @@
         "id": "cMFP"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2352,7 +2297,6 @@
         "phrase": "Acknowledged reviewer static fix; first proving alias slice"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2384,7 +2328,6 @@
         "message": "Acknowledged. I’ll remove that useless escape at the next GREEN/static cleanup point; first I’m running the current alias behavior test so the slice stays isolated."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2413,7 +2356,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'using either model alias'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2442,7 +2384,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2472,7 +2413,6 @@
         "phrase": "Alias suppression characterized GREEN: 74 pass, 0 fail"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2519,7 +2459,6 @@
         "message": "Alias semantic-suppression editor coverage landed and was already GREEN under the shared semantic IDs. Full suite 74/74. No production change; holding stable before `/agent-isolated`."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2577,7 +2516,6 @@
         "phrase": "Holding 74/74 for verification before isolated slice"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2620,7 +2558,6 @@
         "command": "rg -n 'pi-user-agents|tsc --noEmit|biome check' agent/extensions/pi-user-agents agent -g 'package.json' -g '*.md' | head -100"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2687,7 +2624,6 @@
         "phrase": "Acknowledged 74/74 gate; adding isolated-command suppression"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2715,7 +2651,6 @@
         "id": "sdiN"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2744,7 +2679,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'agent-isolated' && bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2774,7 +2708,6 @@
         "phrase": "Isolated suppression characterized GREEN: 75 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2821,7 +2754,6 @@
         "message": "`/agent-isolated` editor suppression coverage is GREEN; 75/75 full suite, no production change. Stable before prose cutoff."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2879,7 +2811,6 @@
         "phrase": "Holding 75/75 before prose cutoff RED"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2918,7 +2849,6 @@
         "phrase": "Acknowledged batched verification; adding prose/escape cutoff coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2957,7 +2887,6 @@
         "phrase": "Acknowledged verifier batch; building prose cutoff coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2989,7 +2918,6 @@
         "message": "Acknowledged. I’ll send one explicit stable batch with the exact final count after prose cutoff, blocked-option absence, mid-line suffix preservation, and rapid-typing stress are all covered."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -3017,7 +2945,6 @@
         "id": "URzz"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3045,7 +2972,6 @@
         "id": "oatr"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3074,7 +3000,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'task prose'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3103,7 +3028,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3133,7 +3057,6 @@
         "phrase": "Prose/quote/escape cutoff GREEN: 76 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3162,7 +3085,6 @@
         "message": "STABLE coverage checkpoint: real-editor prose cutoff now observes `/agent explain -`, quoted dash, and escaped dash for a bounded interval and proves autocomplete never appears. Already GREEN; full suite 76 pass, 0 fail, 93 expect calls. Proceeding directly to blocked-option absence under the approved batched-verification instruction."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3192,7 +3114,6 @@
         "phrase": "Adding blocked-option absence editor coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3231,7 +3152,6 @@
         "phrase": "Acknowledged 76/76; blocked-option absence slice in progress"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3259,7 +3179,6 @@
         "id": "RQse"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -3288,7 +3207,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'blocked options' && bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -3318,7 +3236,6 @@
         "phrase": "Blocked-option absence GREEN: 77 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -3347,7 +3264,6 @@
         "message": "STABLE coverage checkpoint: prefix `--ex` visibly offers effective `--exclude-tools` while blocked `--export` remains absent. Already GREEN; full suite 77 pass, 0 fail, 93 expect calls. Proceeding directly to mid-line suffix preservation."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -3377,7 +3293,6 @@
         "phrase": "Adding real-editor mid-line suffix preservation"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -3416,7 +3331,6 @@
         "phrase": "Acknowledged 77/77; mid-line suffix test in progress"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -3444,7 +3358,6 @@
         "id": "3qBM"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -3472,7 +3385,6 @@
         "id": "KYHF"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3501,7 +3413,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'mid-line completion'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3531,7 +3442,6 @@
         "command": "nl -ba agent/extensions/pi-user-agents/tests/autocomplete.test.ts | sed -n '48,70p'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3560,7 +3470,6 @@
         "command": "bun -e 'import {createEditorHarness} from \"./agent/extensions/pi-user-agents/tests/editor-harness.ts\"; const h=await createEditorHarness(); const s=\" explain it\"; h.type(`/agent --thi${s}`); console.log(\"typed\",JSON.stringify(h.editor.getText()),h.\n...\nrsorLeft(s.length); console.log(\"moved\",h.editor.getCursor(),h.editor.isShowingAutocomplete(),h.render()); h.press(\"\\t\"); await new Promise(r=>setTimeout(r,30)); console.log(\"tab\",h.editor.getCursor(),h.editor.isShowingAutocomplete(),h.render());'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3588,7 +3497,6 @@
         "id": "2PRl"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3636,7 +3544,6 @@
         "phrase": "Acknowledged reviewer/main correction; continuing mid-line chaining fix"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3668,7 +3575,6 @@
         "message": "Acknowledged. Main corrected the freeze: mid-line test exposed a real eager-chain gap when Tab applies a unique hidden completion. I’m continuing to GREEN, then will announce the final negative-coverage batch."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3697,7 +3603,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'mid-line completion'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3726,7 +3631,6 @@
         "id": "Turu"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3755,7 +3659,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'mid-line completion'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3785,7 +3688,6 @@
         "command": "rg -n 'handleInput\\(|tryTriggerAutocomplete|applySelected|explicitTab|handleTab|tui.input.tab' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui/dist/components/editor.js | head -100"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3814,7 +3716,6 @@
         "command": "sed -n '470,590p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui/dist/components/editor.js; sed -n '1770,1955p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui/dist/components/editor.js"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3842,7 +3743,6 @@
         "id": "acs5"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -3881,7 +3781,6 @@
         "phrase": "Acknowledged reviewer; async unique-Tab observer implemented"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -3913,7 +3812,6 @@
         "message": "Agreed on the root cause. Pi’s explicit Tab asynchronously auto-applies a unique forced completion, so the synchronous wrapper cannot observe the edit. I added a bounded observer only for a single value-domain option candidate; it triggers the second menu after the editor installs the edit, and stops if Pi instead opens a picker."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -3942,7 +3840,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'mid-line completion'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -3971,7 +3868,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -4001,7 +3897,6 @@
         "phrase": "Mid-line async chaining GREEN: 78 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -4039,7 +3934,6 @@
         "message": "Mid-line RED is GREEN at 78/78. Fix: bounded observation only for explicit completion with exactly one value-domain candidate; it stops on a visible picker and triggers the second menu once Pi’s async auto-edit is observable. Exact suffix/cursor test passes. Rapid stress is next; final batch follows."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -4083,7 +3977,6 @@
         "phrase": "Adding repeated rapid dash-trigger stress coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -4111,7 +4004,6 @@
         "id": "1QW4"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -4140,7 +4032,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'rapid repeated' && bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -4170,7 +4061,6 @@
         "phrase": "Negative coverage batch complete: 79 pass, 0 fail"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -4217,7 +4107,6 @@
         "message": "FINAL NEGATIVE-COVERAGE BATCH STABLE at 79/79. New scope since 73: alias and isolated suppression, prose/quote/escape negatives, blocked absence, mid-line suffix/cursor with bounded async unique-Tab chaining, and repeated rapid dash stress. Tree held for final adversarial review and independent verification."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -4275,7 +4164,6 @@
         "phrase": "Holding 79/79 for batched verification and review"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -4314,7 +4202,6 @@
         "phrase": "Acknowledged main; holding 79/79, no refactor churn"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -4343,7 +4230,6 @@
         "command": "git --no-pager status --short agent/extensions/pi-user-agents agent/settings.json"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -4371,7 +4257,6 @@
         "id": "4HNk"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -4400,7 +4285,6 @@
         "command": "command -v pi || true; command -v tmux || true; command -v expect || true; command -v script || true"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -4429,7 +4313,6 @@
         "command": "sleep 1"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -4468,7 +4351,6 @@
         "phrase": "Acknowledged reviewer; 79/79 async fix has no blockers"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -4500,7 +4382,6 @@
         "message": "Thanks. I’ll make only the accepted useless-escape cleanup when main releases the static/docs gate; no other refactor churn."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -4528,7 +4409,6 @@
         "id": "RkXe"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -4557,7 +4437,6 @@
         "command": "sleep 1"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4586,7 +4465,6 @@
         "message": "Reviewer reports no issues and verifier status says final acceptance evidence sent. I remain on the 79/79 hold pending your release into docs/static/TUI gates."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4615,7 +4493,6 @@
         "command": "sleep 1"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4644,7 +4521,6 @@
         "command": "sleep 2"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4683,7 +4559,6 @@
         "phrase": "Acknowledged 79/79 gate; running live Pi /reload acceptance"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4712,7 +4587,6 @@
         "command": "set -e\nTMUX_SOCKET=pi-autocomplete-acceptance\nSESSION=acceptance\ntmux -L \"$TMUX_SOCKET\" kill-server 2>/dev/null || true\ntmux -L \"$TMUX_SOCKET\" new-session -d -s \"$SESSION\" -x 140 -y 45 'cd /Users/giladbarnea/.pi && TERM=xterm-256color pi --no-session'\nsleep 3\ntmux -L \"$TMUX_SOCKET\" capture-pane -p -e -t \"$SESSION\":0.0 -S -120 | tail -80 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4741,7 +4615,6 @@
         "command": "tmux -L pi-autocomplete-acceptance list-sessions 2>&1 | cat; tmux -L pi-autocomplete-acceptance list-windows -a 2>&1 | cat; tmux -L pi-autocomplete-acceptance capture-pane -p -e -t acceptance -S -120 2>&1 | tail -80 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4770,7 +4643,6 @@
         "command": "tmux -L pi-autocomplete-acceptance send-keys -t acceptance:1.0 -l '/agent -'; sleep 0.3; tmux -L pi-autocomplete-acceptance capture-pane -p -t acceptance:1.0 -S -30 | tail -30 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4799,7 +4671,6 @@
         "command": "tmux -L pi-autocomplete-acceptance list-panes -a -F '#S:#I.#P #{pane_id} #{pane_current_command}' | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4828,7 +4699,6 @@
         "command": "tmux -L pi-autocomplete-acceptance send-keys -t acceptance:1.1 -l '/agent -'; sleep 0.3; tmux -L pi-autocomplete-acceptance capture-pane -p -t acceptance:1.1 -S -30 | tail -30 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4857,7 +4727,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent --thi'\nsleep 0.2\nprintf '\\nPREFIX\\n'; $S capture-pane -p -t acceptance:1.1 -S -14 | tail -14\n$S send-keys -t acceptance:1.1 T\n...\n2\nprintf '\\nCHAIN\\n'; $S capture-pane -p -t acceptance:1.1 -S -14 | tail -14\n$S send-keys -t acceptance:1.1 -l 'high'\nsleep 0.1\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.2\nprintf '\\nVALUE\\n'; $S capture-pane -p -t acceptance:1.1 -S -10 | tail -10"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4886,7 +4755,6 @@
         "command": "tmux -L pi-autocomplete-acceptance capture-pane -p -t acceptance:1.1 -S -20 | tail -20 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4915,7 +4783,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent -m'\nsleep 0.15\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.3\n$S capture-pane -p -t acceptance:1.1 -S -18 | tail -18 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4944,7 +4811,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent --provider claude-bridge -m'\nsleep 0.2\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.3\n$S capture-pane -p -t acceptance:1.1 -S -18 | tail -18 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4973,7 +4839,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent --sys'\nsleep 0.2\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.2\nprintf 'GUARD\\n'; $S capture-pane -p -t acceptance:1.1 -S -14 | tail -14\n$S send-keys -t acceptance:1.1 -l 'be terse'\nsleep 0.1\nprintf 'TYPED\\n'; $S capture-pane -p -t acceptance:1.1 -S -14 | tail -14"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -5002,7 +4867,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent --ski'\nsleep 0.2\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.3\n$S capture-pane -p -t acceptance:1.1 -S -20 | tail -20 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -5031,7 +4895,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.3\n$S capture-pane -p -t acceptance:1.1 -S -20 | tail -20 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -5060,7 +4923,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.3\nprintf 'NEXT\\n'; $S capture-pane -p -t acceptance:1.1 -S -20 | tail -20\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.2\nprintf 'FILE\\n'; $S capture-pane -p -t acceptance:1.1 -S -14 | tail -14"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -5089,7 +4951,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent --no-too'\nsleep 0.15\n$S send-keys -t acceptance:1.1 Tab\nsleep 0.2\n$S send-keys -t acceptance:1.1 -l '-'\nsleep 0.2\n$S capture-pane -p -t acceptance:1.1 -S -20 | tail -20 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -5118,7 +4979,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent-isolated -'\nsleep 0.2\nprintf 'ISOLATED\\n'; $S capture-pane -p -t acceptance:1.1 -S -18 | tail -18\n$S send-keys -t acceptance:1.1 C-c\n$S send-keys -t acceptance:1.1 -l '/agent explain -'\nsleep 0.3\nprintf 'PROSE\\n'; $S capture-pane -p -t acceptance:1.1 -S -14 | tail -14"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -5147,7 +5007,6 @@
         "command": "set -e\nSOCKET=pi-autocomplete-acceptance\nSESSION=acceptance\ntmux -L \"$SOCKET\" kill-server 2>/dev/null || true\ntmux -L \"$SOCKET\" new-session -d -s \"$SESSION\" -x 140 -y 45 'cd /Users/giladbarnea/.pi && TERM=xterm-256color pi --no-session'\nsleep 3\nTAR\n...\n:#I.#P' | head -1)\necho \"$TARGET\"\ntmux -L \"$SOCKET\" send-keys -t \"$TARGET\" -l '/reload'\nsleep 0.2\ntmux -L \"$SOCKET\" send-keys -t \"$TARGET\" Enter\nsleep 5\nprintf 'AFTER RELOAD\\n'\ntmux -L \"$SOCKET\" capture-pane -p -t \"$TARGET\" -S -35 | tail -35 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -5176,7 +5035,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'\nTARGET=$($S list-panes -a -F '#S:#I.#P' | head -1)\n$S send-keys -t \"$TARGET\" -l '/agent -'\nsleep 0.3\n$S capture-pane -p -t \"$TARGET\" -S -24 | tail -24 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:39:00"
   },
   {
@@ -5205,7 +5063,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'; TARGET=$($S list-panes -a -F '#S:#I.#P' | head -1)\n$S send-keys -t \"$TARGET\" Escape\nsleep 0.1\n$S send-keys -t \"$TARGET\" C-c\nsleep 0.2\n$S send-keys -t \"$TARGET\" -l '/agent --thi'\nsleep 0.2\n$S send-keys -t \"$TARGET\" Tab\nsleep 0.3\n$S capture-pane -p -t \"$TARGET\" -S -18 | tail -18 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:39:00"
   },
   {
@@ -5234,7 +5091,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'; TARGET=$($S list-panes -a -F '#S:#I.#P' | head -1)\n$S send-keys -t \"$TARGET\" Escape\n$S send-keys -t \"$TARGET\" C-c\nsleep 0.15\n$S send-keys -t \"$TARGET\" -l '/agent --thi explain it'\nfor _ in $(seq 1 11);\n...\n -t \"$TARGET\" Left; done\n$S send-keys -t \"$TARGET\" Tab\nsleep 0.4\nprintf 'MID CHAIN\\n'; $S capture-pane -p -t \"$TARGET\" -S -18 | tail -18\n$S send-keys -t \"$TARGET\" Tab\nsleep 0.2\nprintf 'MID DONE\\n'; $S capture-pane -p -t \"$TARGET\" -S -14 | tail -14"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:39:00"
   },
   {
@@ -5263,7 +5119,6 @@
         "command": "set -e\nS='tmux -L pi-autocomplete-acceptance'; TARGET=$($S list-panes -a -F '#S:#I.#P' | head -1)\n$S send-keys -t \"$TARGET\" C-c\nsleep 0.1\n$S send-keys -t \"$TARGET\" -l '/agent explain -'\nsleep 0.4\n$S capture-pane -p -t \"$TARGET\" -S -14 | tail -14 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:39:00"
   },
   {
@@ -5292,7 +5147,6 @@
         "command": "set +e\nS='tmux -L pi-autocomplete-acceptance'; TARGET=$($S list-panes -a -F '#S:#I.#P' | head -1)\n$S send-keys -t \"$TARGET\" C-c\nsleep 0.1\n$S send-keys -t \"$TARGET\" C-d\nsleep 1\n$S kill-server 2>/dev/null || true\nprintf 'live TUI session closed\\n'"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:39:00"
   },
   {
@@ -5321,7 +5175,6 @@
         "message": "Observed live Pi TUI acceptance is GREEN in a real `pi --no-session` tmux terminal with the full loaded editor stack (`inline-commands`, `simple-editor-stash`, `taller-input`, and `pi-user-agents`). Verified eager `/agent -`, filtered thinking and \n...\n chaining with suffix preservation. Ran real `/reload`; Pi reported reload success, `/agent -` showed one 32-item bridge/menu, and thinking plus mid-line chaining still worked exactly once. TUI session is cleanly closed. Proceeding to docs/static."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:39:00"
   },
   {
@@ -5351,7 +5204,6 @@
         "phrase": "Live /reload acceptance GREEN; updating spec, README, ledger, handoff"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:40:00"
   },
   {
@@ -5379,7 +5231,6 @@
         "id": "qKhy"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:40:00"
   },
   {
@@ -5407,7 +5258,6 @@
         "id": "CKuD"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:41:00"
   },
   {
@@ -5435,7 +5285,6 @@
         "id": "rPMg"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:41:00"
   },
   {
@@ -5463,7 +5312,6 @@
         "id": "6dTV"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:41:00"
   },
   {
@@ -5491,7 +5339,6 @@
         "id": "4HPe"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:41:00"
   },
   {
@@ -5521,7 +5368,6 @@
         "phrase": "Docs updated; running focused Biome and strict TypeScript"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:41:00"
   },
   {
@@ -5550,7 +5396,6 @@
         "command": "npx -y @biomejs/biome check agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts agent/extensions/pi-user-agents/tests/autocomplete.test.ts agent/extensions/pi-user-agents/tests/editor-harness.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:42:00"
   },
   {
@@ -5580,7 +5425,6 @@
         "command": "cd agent && npx -y @biomejs/biome check extensions/pi-user-agents/autocomplete.ts extensions/pi-user-agents/command-line.ts extensions/pi-user-agents/tests/autocomplete.test.ts extensions/pi-user-agents/tests/editor-harness.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:42:00"
   },
   {
@@ -5610,7 +5454,6 @@
         "command": "cd agent && npx -y @biomejs/biome check --write extensions/pi-user-agents/autocomplete.ts extensions/pi-user-agents/command-line.ts extensions/pi-user-agents/tests/autocomplete.test.ts extensions/pi-user-agents/tests/editor-harness.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:42:00"
   },
   {
@@ -5639,7 +5482,6 @@
         "command": "cd agent && npx -y @biomejs/biome check extensions/pi-user-agents/autocomplete.ts extensions/pi-user-agents/command-line.ts extensions/pi-user-agents/tests/autocomplete.test.ts extensions/pi-user-agents/tests/editor-harness.ts && npx -y @biomejs/biome check extensions/pi-user-agents/index.ts extensions/pi-user-agents/runner.ts extensions/pi-user-agents/shared.ts extensions/pi-user-agents/tests/runner.test.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:43:00"
   },
   {
@@ -5669,7 +5511,6 @@
         "command": "cd agent && npx -y @biomejs/biome check --write extensions/pi-user-agents/index.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:43:00"
   },
   {
@@ -5701,7 +5542,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:43:00"
   },
   {
@@ -5729,7 +5569,6 @@
         "id": "7VQM"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:43:00"
   },
   {
@@ -5757,7 +5596,6 @@
         "id": "GDtm"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:43:00"
   },
   {
@@ -5785,7 +5623,6 @@
         "id": "VqiV"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:44:00"
   },
   {
@@ -5814,7 +5651,6 @@
         "command": "cd agent && npx -y @biomejs/biome check extensions/pi-user-agents/index.ts extensions/pi-user-agents/autocomplete.ts extensions/pi-user-agents/command-line.ts extensions/pi-user-agents/tests/autocomplete.test.ts extensions/pi-user-agents/tests/editor-harness.ts && npx -y @biomejs/biome lint --only=assist/source/organizeImports --only=lint/style/useImportType extensions/pi-user-agents/runner.ts extensions/pi-user-agents/shared.ts extensions/pi-user-agents/tests/runner.test.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:44:00"
   },
   {
@@ -5843,7 +5679,6 @@
         "command": "npx -y -p typescript tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --allowImportingTsExtensions agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts agent/extensions/pi-user-agents/index.ts agent/extensions/pi-user-agents/runner.ts agent/extensions/pi-user-agents/shared.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:44:00"
   },
   {
@@ -5874,7 +5709,6 @@
         "phrase": "Focused lint clean; strict TS only seven known widget errors; running final suite/diff"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:44:00"
   },
   {
@@ -5903,7 +5737,6 @@
         "command": "bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:44:00"
   },
   {
@@ -5941,7 +5774,6 @@
         "id": "BrWm"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:45:00"
   },
   {
@@ -6001,7 +5833,6 @@
         "context": 2
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:45:00"
   },
   {
@@ -6029,7 +5860,6 @@
         "id": "nagY"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:45:00"
   },
   {
@@ -6058,7 +5888,6 @@
         "command": "cd agent && npx -y @biomejs/biome check --write extensions/pi-user-agents/tests/autocomplete.test.ts && cd .. && bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts --test-name-pattern 'Enter accepts' && bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:45:00"
   },
   {
@@ -6086,7 +5915,6 @@
         "id": "v1Kh"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:46:00"
   },
   {
@@ -6115,7 +5943,6 @@
         "content": "# `/agent` eager autocomplete handoff — 2026-07-16\n\n## Task overview\n\nDeliver the eager `/agent` and `/agent-isolated` argument autocomplete defined by [`AUTOCOMPLETE_PLAN.md`](AUTOCOMPLETE_PLAN.md), without modifying Pi core, committing, or distur\n...\nnd `handoff` skills; the full extension and tests; `AUTOCOMPLETE_PLAN.md`; `PARSER_SPEC.md`; `README.md`; Pi extension/TUI/editor/autocomplete runtime sources; `inline-commands`; and `agent/models.json` behavior were all used as baseline context.\n"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:46:00"
   },
   {
@@ -6144,7 +5971,6 @@
         "command": "printf '%s\\n' 'STATUS'; git --no-pager status --short\nprintf '%s\\n' '\\nSTRUCTURED STAT'; gsd --stat | cat\nprintf '%s\\n' '\\nWHITESPACE'; git --no-pager diff --check 2>&1 | cat; test ${PIPESTATUS[0]} -eq 0 || true\nprintf '%s\\n' '\\nDUPLICATION / REMOV\n...\ns --glob '!README.md' --glob '!PARSER_SPEC.md' --glob '!autocomplete/plan/**' || true\nprintf '%s\\n' '\\nOPTION MAP OWNERS'; rg -n 'OPTION_BY_NAME|AGENT_OPTIONS' agent/extensions/pi-user-agents --glob '!tests/**' --glob '!autocomplete/plan/**' | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:47:00"
   },
   {
@@ -6173,7 +5999,6 @@
         "command": "gsd --help | head -80 | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:47:00"
   },
   {
@@ -6202,7 +6027,6 @@
         "command": "gsd > /tmp/pi-user-agents-gsd.txt; printf 'bytes='; wc -c < /tmp/pi-user-agents-gsd.txt; printf 'files:\\n'; rg '^<[^/].*(added|modified|deleted)=' /tmp/pi-user-agents-gsd.txt | cat; printf 'settings markers:\\n'; rg -n '<agent/settings.json|</agent/settings.json' /tmp/pi-user-agents-gsd.txt | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:47:00"
   },
   {
@@ -6231,7 +6055,6 @@
         "command": "rg -n '^<agent/extensions/pi-user-agents/(PARSER_SPEC|README|autocomplete/plan/26|autocomplete/plan/AUTO|index|runner|shared|tests/runner)' /tmp/pi-user-agents-gsd.txt | cat"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:47:00"
   },
   {
@@ -6274,7 +6097,6 @@
         "id": "9ngW"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:47:00"
   },
   {
@@ -6345,7 +6167,6 @@
         "command": "rm -f /tmp/pi-user-agents-gsd.txt"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:47:00"
   },
   {
@@ -6374,7 +6195,6 @@
         "command": "cat > /tmp/verify-pi-user-agents-types.sh <<'EOF'\n#!/usr/bin/env bash\nset -u\nOUTPUT=$(npx -y -p typescript tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --allowImportingTsExtensions agent/extensi\n...\n ]]; then\n  printf 'Unexpected focused TypeScript output:\\n%s\\n' \"$UNEXPECTED\" >&2\n  exit 1\nfi\nEOF\nchmod +x /tmp/verify-pi-user-agents-types.sh\ncd /Users/giladbarnea/.pi\n/tmp/verify-pi-user-agents-types.sh\nrm -f /tmp/verify-pi-user-agents-types.sh"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:48:00"
   },
   {
@@ -6403,7 +6223,6 @@
         "command": "cd agent && npx -y @biomejs/biome check extensions/pi-user-agents/index.ts extensions/pi-user-agents/autocomplete.ts extensions/pi-user-agents/command-line.ts extensions/pi-user-agents/tests/autocomplete.test.ts extensions/pi-user-agents/tests/editor-harness.ts && npx -y @biomejs/biome lint --only=assist/source/organizeImports --only=lint/style/useImportType extensions/pi-user-agents/runner.ts extensions/pi-user-agents/shared.ts extensions/pi-user-agents/tests/runner.test.ts"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:48:00"
   },
   {
@@ -6432,7 +6251,6 @@
         "command": "printf 'TASK WHITESPACE EXCLUDING PRESERVED PLAN LINES\\n'; git --no-pager diff --check -- . ':(exclude)agent/extensions/pi-user-agents/autocomplete/plan/AUTOCOMPLETE_PLAN.md' | cat\nprintf '\\nPRESERVED PLAN WHITESPACE\\n'; git --no-pager diff --check\n...\nce|resolveRequestedModel|optionConsumesValue|extensionFlagValues' agent/extensions/pi-user-agents --glob '*.ts' --glob '!tests/**' || true\nprintf '\\nFINAL STATUS\\n'; git --no-pager status --short agent/extensions/pi-user-agents agent/settings.json"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:48:00"
   },
   {
@@ -6462,7 +6280,6 @@
         "phrase": "Final RC stable: 80/80, live /reload, docs/static green"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:48:00"
   },
   {
@@ -6509,7 +6326,6 @@
         "message": "FINAL STABLE RELEASE CANDIDATE ready for independent acceptance. Exact suite: `bun test agent/extensions/pi-user-agents/tests` => 80 pass, 0 fail, 93 expect calls. Focused Biome clean; focused strict TS only seven known widget errors; docs current; live Pi TUI plus real `/reload` observed green with one bridge/menu. Tree held stable for your read-only checks."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:48:00"
   },
   {
@@ -6567,7 +6383,6 @@
         "phrase": "Holding final 80/80 RC for reviewer and verifier"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -6596,7 +6411,6 @@
         "command": "sleep 2"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -6624,7 +6438,6 @@
         "id": "aXfz"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -6653,7 +6466,6 @@
         "command": "sleep 2"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -6681,7 +6493,6 @@
         "id": "kcO1"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -6710,7 +6521,6 @@
         "command": "sleep 3"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -6739,7 +6549,6 @@
         "command": "sleep 3"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:50:00"
   },
   {
@@ -6778,7 +6587,6 @@
         "phrase": "Acknowledged verifier blocker; fixing command-line test import only"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:50:00"
   },
   {
@@ -6807,7 +6615,6 @@
         "command": "cd agent && npx -y @biomejs/biome check --write extensions/pi-user-agents/tests/command-line.test.ts && npx -y @biomejs/biome check extensions/pi-user-agents/tests/command-line.test.ts && cd .. && bun test agent/extensions/pi-user-agents/tests"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:50:00"
   },
   {
@@ -6837,7 +6644,6 @@
         "phrase": "Biome blocker fixed; focused clean and 80/80 restored"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:50:00"
   },
   {
@@ -6884,7 +6690,6 @@
         "message": "Final RC restored after only the verifier-requested import-order fix in `tests/command-line.test.ts`. Focused Biome clean; full suite 80/80."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:50:00"
   },
   {
@@ -6941,7 +6746,6 @@
         "command": "sleep 2"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:50:00"
   },
   {
@@ -6969,7 +6773,6 @@
         "id": "TE28"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:51:00"
   },
   {
@@ -6998,7 +6801,6 @@
         "command": "sleep 3"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:51:00"
   },
   {
@@ -7026,7 +6828,6 @@
         "id": "2XGl"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:51:00"
   },
   {
@@ -7055,7 +6856,6 @@
         "command": "sleep 2"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:51:00"
   },
   {
@@ -7083,7 +6883,6 @@
         "id": "1IGv"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:51:00"
   },
   {
@@ -7112,7 +6911,6 @@
         "message": "Verifier status is now `complete`: final RC independently approved to ship. Implementer work is done; tree remains uncommitted and stable at 80/80 with the documented known unrelated diagnostics only."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:51:00"
   },
   {
@@ -7142,7 +6940,6 @@
         "phrase": "Final RC independently approved; uncommitted tree stable"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:52:00"
   },
   {
@@ -7166,7 +6963,6 @@
     "content": [
       "Implementation complete and independently approved. Final evidence:\n\n- 80 tests passed, 0 failed\n- Focused Biome checks clean\n- No task-local TypeScript errors\n- Live Pi TUI and real `/reload` acceptance passed\n- Documentation and handoff updated\n- Unrelated `agent/settings.json` preserved\n- No commit created"
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T16:52:00"
   }
 ]

@@ -113,7 +113,7 @@ def test_colored_parse_panel_title_includes_message_date(tmp_path, monkeypatch):
 
     assert "Assistant" in out, f"Expected the assistant title. Got:\n{out}"
     assert "#1" in out, f"Expected the message index in the title. Got:\n{out}"
-    assert "opus-4-8" in out, f"Expected the model in the title. Got:\n{out}"
+    assert "opus-4-8" not in out, f"Expected no model id in the title. Got:\n{out}"
     assert "June 21st" in out, f"Expected the human message date in the title. Got:\n{out}"
 
 

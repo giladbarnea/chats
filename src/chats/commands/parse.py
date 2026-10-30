@@ -286,7 +286,7 @@ def _merge_agent_messages(
     Provider-agnostic: discovery, identity, and the records a forked child copied
     from its parent are resolved per adapter; the copied records are already in
     the parent's own timeline. Each
-    subagent's messages are stamped with its agent_id, nickname, type, and model,
+    subagent's messages are stamped with its agent_id, nickname, and type,
     and its block is placed at its own dispatch time so late or concurrent agents
     land where they ran instead of clustering at the earliest agent's timestamp.
     """
@@ -393,14 +393,10 @@ def _build_subagent_block(
     agent_id = meta.agent_id or next(
         (message.agent_id for message in agent_messages if message.agent_id), None
     )
-    model = meta.model or next(
-        (message.model for message in agent_messages if message.model), None
-    )
     for message in block:
         if message.role == "agent" and message.agent_id and message.agent_id != agent_id:
             continue
         message.agent_id = agent_id
         message.name = meta.name
         message.subagent_type = meta.subagent_type
-        message.model = model
     return block

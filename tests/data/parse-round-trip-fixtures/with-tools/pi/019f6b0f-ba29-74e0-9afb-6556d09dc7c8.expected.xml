@@ -31,7 +31,7 @@ Current team status:
 
 ---
 
-<assistant-response i="2" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="2" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teamstatus" id="aCnu">
@@ -82,7 +82,7 @@ Current team status:
 
 ---
 
-<assistant-response i="4" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="4" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="Read" id="96dh"></tool-input>
@@ -172,7 +172,7 @@ Classic use cases — *generalize* the principles, this isn't a comprehensive li
 
 ---
 
-<assistant-response i="6" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="6" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="read_many_files" id="Tnqe">
@@ -278,7 +278,7 @@ Classic use cases — *generalize* the principles, this isn't a comprehensive li
 
 ---
 
-<assistant-response i="8" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="8" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="Bash" id="EHgd">
@@ -306,7 +306,7 @@ agent/extensions/pi-user-agents/autocomplete/plan/AUTOCOMPLETE_PLAN.md
 
 ---
 
-<assistant-response i="10" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="10" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="read_many_files" id="qXfF">
@@ -2375,7 +2375,7 @@ agent/extensions/pi-user-agents/autocomplete/plan/AUTOCOMPLETE_PLAN.md
 
 ---
 
-<assistant-response i="12" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="12" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teamsend" id="QVe0">
@@ -2404,7 +2404,7 @@ team runtime rejected teamsend: 500 {"error":"Unknown teammate(s) in agent-autoc
 
 ---
 
-<assistant-response i="14" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="14" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teammain" id="BS3h">
@@ -2435,7 +2435,7 @@ team runtime rejected teamsend: 500 {"error":"Unknown teammate(s) in agent-autoc
 
 ---
 
-<assistant-response i="16" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="16" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teamstatus" id="8j7r">
@@ -2486,7 +2486,7 @@ team runtime rejected teamsend: 500 {"error":"Unknown teammate(s) in agent-autoc
 
 ---
 
-<assistant-response i="18" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="18" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="Bash" id="qCEn">
@@ -2529,7 +2529,7 @@ git --no-pager status --short && git --no-pager diff --stat | cat
 
 ---
 
-<assistant-response i="20" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="20" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teamstatus" id="JWp6">
@@ -2580,7 +2580,7 @@ git --no-pager status --short && git --no-pager diff --stat | cat
 
 ---
 
-<assistant-response i="22" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="22" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teamsend" id="1aFY">
@@ -2617,7 +2617,7 @@ git --no-pager status --short && git --no-pager diff --stat | cat
 
 ---
 
-<assistant-response i="24" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="24" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="Bash" id="E6ii">
@@ -2641,7 +2641,7 @@ sleep 2; cat /dev/null
 
 ---
 
-<assistant-response i="26" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="26" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teamstatus" id="LwUF">
@@ -2692,7 +2692,7 @@ sleep 2; cat /dev/null
 
 ---
 
-<assistant-response i="28" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="28" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="Bash" id="soHR">
@@ -2735,7 +2735,7 @@ cat agent/extensions/pi-user-agents/package.json 2>/dev/null || true; cat agent/
 
 ---
 
-<assistant-response i="30" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="30" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="Bash" id="9T3d">
@@ -2759,7 +2759,7 @@ sleep 3; true
 
 ---
 
-<assistant-response i="32" model="gpt-5.6-luna" date="2026-07-16 16:14">
+<assistant-response i="32" date="2026-07-16 16:14">
 ## Assistant
 
 <tool-input name="teamstatus" id="BJwg">
@@ -2810,7 +2810,7 @@ sleep 3; true
 
 ---
 
-<assistant-response i="34" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="34" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="teammain" id="jwFk">
@@ -2841,7 +2841,7 @@ sleep 3; true
 
 ---
 
-<assistant-response i="36" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="36" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="Bash" id="on4l">
@@ -2865,7 +2865,7 @@ sleep 5; true
 
 ---
 
-<assistant-response i="38" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="38" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="teamstatus" id="8VfN">
@@ -2916,7 +2916,7 @@ sleep 5; true
 
 ---
 
-<assistant-response i="40" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="40" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="Bash" id="7Tmq">
@@ -2940,7 +2940,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="42" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="42" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="teamstatus" id="USyQ">
@@ -2991,7 +2991,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="44" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="44" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="Bash" id="ykCp">
@@ -3015,7 +3015,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="46" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="46" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="teamstatus" id="uKss">
@@ -3066,7 +3066,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="48" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="48" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="Bash" id="3HDX">
@@ -3090,7 +3090,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="50" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="50" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="teamstatus" id="Hn6v">
@@ -3141,7 +3141,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="52" model="gpt-5.6-luna" date="2026-07-16 16:15">
+<assistant-response i="52" date="2026-07-16 16:15">
 ## Assistant
 
 <tool-input name="Bash" id="lbtz">
@@ -3165,7 +3165,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="54" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="54" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="teamstatus" id="qj9J">
@@ -3216,7 +3216,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="56" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="56" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="Bash" id="u1uV">
@@ -3240,7 +3240,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="58" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="58" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="teamstatus" id="wl4U">
@@ -3291,7 +3291,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="60" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="60" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="teamsend" id="EY5A">
@@ -3328,7 +3328,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="62" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="62" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="Bash" id="JPsX">
@@ -3352,7 +3352,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="64" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="64" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="teamstatus" id="L95v">
@@ -3436,7 +3436,7 @@ Current team status:
 
 ---
 
-<assistant-response i="67" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="67" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="teamstatus" id="R9zc">
@@ -3487,7 +3487,7 @@ Current team status:
 
 ---
 
-<assistant-response i="69" model="gpt-5.6-luna" date="2026-07-16 16:16">
+<assistant-response i="69" date="2026-07-16 16:16">
 ## Assistant
 
 <tool-input name="Bash" id="UfAX">
@@ -3511,7 +3511,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="71" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="71" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="teamstatus" id="dyrK">
@@ -3562,7 +3562,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="73" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="73" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="Bash" id="nIYY">
@@ -3586,7 +3586,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="75" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="75" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="teamstatus" id="qwYG">
@@ -3637,7 +3637,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="77" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="77" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="teammain" id="Zrov">
@@ -3701,7 +3701,7 @@ Current team status:
 
 ---
 
-<assistant-response i="80" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="80" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="teamstatus" id="mpX4">
@@ -3752,7 +3752,7 @@ Current team status:
 
 ---
 
-<assistant-response i="82" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="82" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="Bash" id="o2zv">
@@ -3895,7 +3895,7 @@ Current team status:
 
 ---
 
-<assistant-response i="85" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="85" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="teamstatus" id="pLWH">
@@ -3946,7 +3946,7 @@ Current team status:
 
 ---
 
-<assistant-response i="87" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="87" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="Bash" id="adyy">
@@ -3972,7 +3972,7 @@ agent/package.json
 
 ---
 
-<assistant-response i="89" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="89" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="Bash" id="7xq7">
@@ -4053,7 +4053,7 @@ ls node_modules/.bin/tsc agent/node_modules/.bin/tsc 2>/dev/null || true; comman
 
 ---
 
-<assistant-response i="91" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="91" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="Bash" id="OJBg">
@@ -4096,7 +4096,7 @@ agent/extensions/pi-user-agents/autocomplete/plan/26-07-16-019f6975-handoff.md:5
 
 ---
 
-<assistant-response i="93" model="gpt-5.6-luna" date="2026-07-16 16:17">
+<assistant-response i="93" date="2026-07-16 16:17">
 ## Assistant
 
 <tool-input name="Bash" id="5hLA">
@@ -4144,7 +4144,7 @@ Command exited with code 2
 
 ---
 
-<assistant-response i="95" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="95" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Bash" id="HCSd">
@@ -4186,7 +4186,7 @@ Command exited with code 1
 
 ---
 
-<assistant-response i="97" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="97" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Bash" id="FDYg">
@@ -5067,7 +5067,7 @@ Command exited with code 1
 
 ---
 
-<assistant-response i="99" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="99" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Bash" id="MxmB">
@@ -5869,7 +5869,7 @@ Command exited with code 1
 
 ---
 
-<assistant-response i="101" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="101" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Bash" id="vaHL">
@@ -5905,7 +5905,7 @@ Command exited with code 1
 
 ---
 
-<assistant-response i="103" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="103" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Bash" id="Os7I">
@@ -5940,7 +5940,7 @@ git --no-pager status --short | cat
 
 ---
 
-<assistant-response i="105" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="105" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Bash" id="EAO5">
@@ -6061,7 +6061,7 @@ agent/extensions/pi-user-agents/tests/autocomplete.test.ts:99:			await harness.w
 
 ---
 
-<assistant-response i="107" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="107" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="teammain" id="CzYD">
@@ -6092,7 +6092,7 @@ agent/extensions/pi-user-agents/tests/autocomplete.test.ts:99:			await harness.w
 
 ---
 
-<assistant-response i="109" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="109" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="ffgrep" id="aPev">
@@ -6150,7 +6150,7 @@ agent/extensions/per-model-prompt/index.ts
 
 ---
 
-<assistant-response i="111" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="111" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Read" id="LLHE"></tool-input>
@@ -6258,7 +6258,7 @@ export default function (pi: ExtensionAPI) {
 
 ---
 
-<assistant-response i="113" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="113" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="teammain" id="nnNq">
@@ -6289,7 +6289,7 @@ export default function (pi: ExtensionAPI) {
 
 ---
 
-<assistant-response i="115" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="115" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="teamsend" id="zoM6">
@@ -6326,7 +6326,7 @@ export default function (pi: ExtensionAPI) {
 
 ---
 
-<assistant-response i="117" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="117" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="teamstatus" id="YT1D">
@@ -6377,7 +6377,7 @@ export default function (pi: ExtensionAPI) {
 
 ---
 
-<assistant-response i="119" model="gpt-5.6-luna" date="2026-07-16 16:18">
+<assistant-response i="119" date="2026-07-16 16:18">
 ## Assistant
 
 <tool-input name="Bash" id="xAFZ">
@@ -6412,7 +6412,7 @@ git --no-pager status --short | cat
 
 ---
 
-<assistant-response i="121" model="gpt-5.6-luna" date="2026-07-16 16:19">
+<assistant-response i="121" date="2026-07-16 16:19">
 ## Assistant
 
 <tool-input name="Bash" id="PNZq">
@@ -6436,7 +6436,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="123" model="gpt-5.6-luna" date="2026-07-16 16:19">
+<assistant-response i="123" date="2026-07-16 16:19">
 ## Assistant
 
 <tool-input name="teamstatus" id="38hD">
@@ -6487,7 +6487,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="125" model="gpt-5.6-luna" date="2026-07-16 16:19">
+<assistant-response i="125" date="2026-07-16 16:19">
 ## Assistant
 
 <tool-input name="Bash" id="aom1">
@@ -6511,7 +6511,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="127" model="gpt-5.6-luna" date="2026-07-16 16:19">
+<assistant-response i="127" date="2026-07-16 16:19">
 ## Assistant
 
 <tool-input name="teammain" id="fJay">
@@ -6542,7 +6542,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="129" model="gpt-5.6-luna" date="2026-07-16 16:19">
+<assistant-response i="129" date="2026-07-16 16:19">
 ## Assistant
 
 <tool-input name="teamstatus" id="QhmB">
@@ -6593,7 +6593,7 @@ sleep 8; true
 
 ---
 
-<assistant-response i="131" model="gpt-5.6-luna" date="2026-07-16 16:19">
+<assistant-response i="131" date="2026-07-16 16:19">
 ## Assistant
 
 Independent verification complete:
@@ -6640,7 +6640,7 @@ Current team status:
 
 ---
 
-<assistant-response i="133" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="133" date="2026-07-16 16:22">
 ## Assistant
 
 <tool-input name="teamstatus" id="O8HM">
@@ -6691,7 +6691,7 @@ Current team status:
 
 ---
 
-<assistant-response i="135" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="135" date="2026-07-16 16:22">
 ## Assistant
 
 <tool-input name="Bash" id="PbV1">
@@ -6835,7 +6835,7 @@ Current team status:
 
 ---
 
-<assistant-response i="138" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="138" date="2026-07-16 16:22">
 ## Assistant
 
 <tool-input name="teamstatus" id="lt4V">
@@ -6886,7 +6886,7 @@ Current team status:
 
 ---
 
-<assistant-response i="140" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="140" date="2026-07-16 16:22">
 ## Assistant
 
 <tool-input name="Bash" id="kcva">
@@ -6922,7 +6922,7 @@ Command exited with code 1
 
 ---
 
-<assistant-response i="142" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="142" date="2026-07-16 16:22">
 ## Assistant
 
 <tool-input name="Bash" id="yNxz">
@@ -6963,7 +6963,7 @@ Ran 8 tests across 2 files. [459.00ms]
 
 ---
 
-<assistant-response i="144" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="144" date="2026-07-16 16:22">
 ## Assistant
 
 <tool-input name="teammain" id="hyhu">
@@ -6994,7 +6994,7 @@ Ran 8 tests across 2 files. [459.00ms]
 
 ---
 
-<assistant-response i="146" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="146" date="2026-07-16 16:22">
 ## Assistant
 
 <tool-input name="teamstatus" id="Bqgt">
@@ -7045,7 +7045,7 @@ Ran 8 tests across 2 files. [459.00ms]
 
 ---
 
-<assistant-response i="148" model="gpt-5.6-luna" date="2026-07-16 16:22">
+<assistant-response i="148" date="2026-07-16 16:22">
 ## Assistant
 
 Independent verification complete:
@@ -7104,7 +7104,7 @@ Current team status:
 
 ---
 
-<assistant-response i="150" model="gpt-5.6-luna" date="2026-07-16 16:24">
+<assistant-response i="150" date="2026-07-16 16:24">
 ## Assistant
 
 <tool-input name="teamstatus" id="Y12o">
@@ -7155,7 +7155,7 @@ Current team status:
 
 ---
 
-<assistant-response i="152" model="gpt-5.6-luna" date="2026-07-16 16:24">
+<assistant-response i="152" date="2026-07-16 16:24">
 ## Assistant
 
 <tool-input name="teamsend" id="BvQs">
@@ -7192,7 +7192,7 @@ Current team status:
 
 ---
 
-<assistant-response i="154" model="gpt-5.6-luna" date="2026-07-16 16:24">
+<assistant-response i="154" date="2026-07-16 16:24">
 ## Assistant
 
 <tool-input name="teamstatus" id="OA3U">
@@ -7243,7 +7243,7 @@ Current team status:
 
 ---
 
-<assistant-response i="156" model="gpt-5.6-luna" date="2026-07-16 16:24">
+<assistant-response i="156" date="2026-07-16 16:24">
 ## Assistant
 
 Reviewer checkpoint independently confirmed:
@@ -7289,7 +7289,7 @@ Current team status:
 
 ---
 
-<assistant-response i="158" model="gpt-5.6-luna" date="2026-07-16 16:25">
+<assistant-response i="158" date="2026-07-16 16:25">
 ## Assistant
 
 <tool-input name="teamstatus" id="ctyz">
@@ -7340,7 +7340,7 @@ Current team status:
 
 ---
 
-<assistant-response i="160" model="gpt-5.6-luna" date="2026-07-16 16:25">
+<assistant-response i="160" date="2026-07-16 16:25">
 ## Assistant
 
 <tool-input name="teammain" id="vBHb">
@@ -7371,7 +7371,7 @@ Current team status:
 
 ---
 
-<assistant-response i="162" model="gpt-5.6-luna" date="2026-07-16 16:25">
+<assistant-response i="162" date="2026-07-16 16:25">
 ## Assistant
 
 <tool-input name="teamstatus" id="kQXz">
@@ -7422,7 +7422,7 @@ Current team status:
 
 ---
 
-<assistant-response i="164" model="gpt-5.6-luna" date="2026-07-16 16:25">
+<assistant-response i="164" date="2026-07-16 16:25">
 ## Assistant
 
 Stable 73-test GREEN checkpoint acknowledged and independently verified earlier. Main has the full suite, focused suite, and TypeScript evidence.
@@ -7463,7 +7463,7 @@ Current team status:
 
 ---
 
-<assistant-response i="166" model="gpt-5.6-luna" date="2026-07-16 16:26">
+<assistant-response i="166" date="2026-07-16 16:26">
 ## Assistant
 
 <tool-input name="teamstatus" id="kuOc">
@@ -7547,7 +7547,7 @@ Current team status:
 
 ---
 
-<assistant-response i="169" model="gpt-5.6-luna" date="2026-07-16 16:26">
+<assistant-response i="169" date="2026-07-16 16:26">
 ## Assistant
 
 <tool-input name="teamstatus" id="DHmM">
@@ -7598,7 +7598,7 @@ Current team status:
 
 ---
 
-<assistant-response i="171" model="gpt-5.6-luna" date="2026-07-16 16:26">
+<assistant-response i="171" date="2026-07-16 16:26">
 ## Assistant
 
 <tool-input name="Bash" id="UQIg">
@@ -7725,7 +7725,7 @@ Ran 74 tests across 4 files. [516.00ms]
 
 ---
 
-<assistant-response i="173" model="gpt-5.6-luna" date="2026-07-16 16:26">
+<assistant-response i="173" date="2026-07-16 16:26">
 ## Assistant
 
 <tool-input name="teammain" id="lfxi">
@@ -7756,7 +7756,7 @@ Ran 74 tests across 4 files. [516.00ms]
 
 ---
 
-<assistant-response i="175" model="gpt-5.6-luna" date="2026-07-16 16:26">
+<assistant-response i="175" date="2026-07-16 16:26">
 ## Assistant
 
 <tool-input name="teamstatus" id="HG2I">
@@ -7807,7 +7807,7 @@ Ran 74 tests across 4 files. [516.00ms]
 
 ---
 
-<assistant-response i="177" model="gpt-5.6-luna" date="2026-07-16 16:26">
+<assistant-response i="177" date="2026-07-16 16:26">
 ## Assistant
 
 Alias suppression checkpoint independently verified:
@@ -7852,7 +7852,7 @@ Current team status:
 
 ---
 
-<assistant-response i="179" model="gpt-5.6-luna" date="2026-07-16 16:27">
+<assistant-response i="179" date="2026-07-16 16:27">
 ## Assistant
 
 <tool-input name="teamstatus" id="PEED">
@@ -7936,7 +7936,7 @@ Current team status:
 
 ---
 
-<assistant-response i="182" model="gpt-5.6-luna" date="2026-07-16 16:27">
+<assistant-response i="182" date="2026-07-16 16:27">
 ## Assistant
 
 <tool-input name="teamstatus" id="5DgR">
@@ -7987,7 +7987,7 @@ Current team status:
 
 ---
 
-<assistant-response i="184" model="gpt-5.6-luna" date="2026-07-16 16:27">
+<assistant-response i="184" date="2026-07-16 16:27">
 ## Assistant
 
 <tool-input name="teamsend" id="kyEC">
@@ -8024,7 +8024,7 @@ Current team status:
 
 ---
 
-<assistant-response i="186" model="gpt-5.6-luna" date="2026-07-16 16:27">
+<assistant-response i="186" date="2026-07-16 16:27">
 ## Assistant
 
 <tool-input name="teamstatus" id="kOJF">
@@ -8075,7 +8075,7 @@ Current team status:
 
 ---
 
-<assistant-response i="188" model="gpt-5.6-luna" date="2026-07-16 16:27">
+<assistant-response i="188" date="2026-07-16 16:27">
 ## Assistant
 
 Acknowledged. I’ll batch independent verification after the remaining coverage-only negative slices reach a stable checkpoint, as requested.
@@ -8116,7 +8116,7 @@ Current team status:
 
 ---
 
-<assistant-response i="190" model="gpt-5.6-luna" date="2026-07-16 16:27">
+<assistant-response i="190" date="2026-07-16 16:27">
 ## Assistant
 
 <tool-input name="teamstatus" id="iceV">
@@ -8167,7 +8167,7 @@ Current team status:
 
 ---
 
-<assistant-response i="192" model="gpt-5.6-luna" date="2026-07-16 16:28">
+<assistant-response i="192" date="2026-07-16 16:28">
 ## Assistant
 
 <tool-input name="Bash" id="ycBw">
@@ -8191,7 +8191,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="194" model="gpt-5.6-luna" date="2026-07-16 16:28">
+<assistant-response i="194" date="2026-07-16 16:28">
 ## Assistant
 
 <tool-input name="teamstatus" id="3KGc">
@@ -8242,7 +8242,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="196" model="gpt-5.6-luna" date="2026-07-16 16:28">
+<assistant-response i="196" date="2026-07-16 16:28">
 ## Assistant
 
 <tool-input name="Bash" id="yh3r">
@@ -8266,7 +8266,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="198" model="gpt-5.6-luna" date="2026-07-16 16:28">
+<assistant-response i="198" date="2026-07-16 16:28">
 ## Assistant
 
 <tool-input name="teamstatus" id="oehv">
@@ -8317,7 +8317,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="200" model="gpt-5.6-luna" date="2026-07-16 16:28">
+<assistant-response i="200" date="2026-07-16 16:28">
 ## Assistant
 
 <tool-input name="Bash" id="Vrdd">
@@ -8341,7 +8341,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="202" model="gpt-5.6-luna" date="2026-07-16 16:28">
+<assistant-response i="202" date="2026-07-16 16:28">
 ## Assistant
 
 <tool-input name="teamstatus" id="jaHG">
@@ -8392,7 +8392,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="204" model="gpt-5.6-luna" date="2026-07-16 16:28">
+<assistant-response i="204" date="2026-07-16 16:28">
 ## Assistant
 
 <tool-input name="Bash" id="EDbs">
@@ -8416,7 +8416,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="206" model="gpt-5.6-luna" date="2026-07-16 16:29">
+<assistant-response i="206" date="2026-07-16 16:29">
 ## Assistant
 
 <tool-input name="teamstatus" id="nSRm">
@@ -8467,7 +8467,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="208" model="gpt-5.6-luna" date="2026-07-16 16:29">
+<assistant-response i="208" date="2026-07-16 16:29">
 ## Assistant
 
 <tool-input name="Bash" id="vr0h">
@@ -8491,7 +8491,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="210" model="gpt-5.6-luna" date="2026-07-16 16:29">
+<assistant-response i="210" date="2026-07-16 16:29">
 ## Assistant
 
 <tool-input name="teamstatus" id="pEXN">
@@ -8542,7 +8542,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="212" model="gpt-5.6-luna" date="2026-07-16 16:29">
+<assistant-response i="212" date="2026-07-16 16:29">
 ## Assistant
 
 <tool-input name="Bash" id="hwVW">
@@ -8566,7 +8566,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="214" model="gpt-5.6-luna" date="2026-07-16 16:29">
+<assistant-response i="214" date="2026-07-16 16:29">
 ## Assistant
 
 <tool-input name="teamstatus" id="UFhC">
@@ -8617,7 +8617,7 @@ sleep 12; true
 
 ---
 
-<assistant-response i="216" model="gpt-5.6-luna" date="2026-07-16 16:29">
+<assistant-response i="216" date="2026-07-16 16:29">
 ## Assistant
 
 <tool-input name="Bash" id="wCTy">
@@ -8641,7 +8641,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="218" model="gpt-5.6-luna" date="2026-07-16 16:29">
+<assistant-response i="218" date="2026-07-16 16:29">
 ## Assistant
 
 <tool-input name="teamstatus" id="i5z4">
@@ -8692,7 +8692,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="220" model="gpt-5.6-luna" date="2026-07-16 16:30">
+<assistant-response i="220" date="2026-07-16 16:30">
 ## Assistant
 
 <tool-input name="Bash" id="56cG">
@@ -8776,7 +8776,7 @@ Current team status:
 
 ---
 
-<assistant-response i="223" model="gpt-5.6-luna" date="2026-07-16 16:30">
+<assistant-response i="223" date="2026-07-16 16:30">
 ## Assistant
 
 <tool-input name="teamstatus" id="zuKK">
@@ -8827,7 +8827,7 @@ Current team status:
 
 ---
 
-<assistant-response i="225" model="gpt-5.6-luna" date="2026-07-16 16:30">
+<assistant-response i="225" date="2026-07-16 16:30">
 ## Assistant
 
 <tool-input name="Bash" id="dqCJ">
@@ -8922,7 +8922,7 @@ Current team status:
 
 ---
 
-<assistant-response i="228" model="gpt-5.6-luna" date="2026-07-16 16:30">
+<assistant-response i="228" date="2026-07-16 16:30">
 ## Assistant
 
 <tool-input name="teamstatus" id="duPV">
@@ -8973,7 +8973,7 @@ Current team status:
 
 ---
 
-<assistant-response i="230" model="gpt-5.6-luna" date="2026-07-16 16:30">
+<assistant-response i="230" date="2026-07-16 16:30">
 ## Assistant
 
 <tool-input name="teammain" id="KtLp">
@@ -9004,7 +9004,7 @@ Current team status:
 
 ---
 
-<assistant-response i="232" model="gpt-5.6-luna" date="2026-07-16 16:30">
+<assistant-response i="232" date="2026-07-16 16:30">
 ## Assistant
 
 <tool-input name="teamstatus" id="DE3N">
@@ -9055,7 +9055,7 @@ Current team status:
 
 ---
 
-<assistant-response i="234" model="gpt-5.6-luna" date="2026-07-16 16:30">
+<assistant-response i="234" date="2026-07-16 16:30">
 ## Assistant
 
 <tool-input name="Bash" id="A4bh">
@@ -9079,7 +9079,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="236" model="gpt-5.6-luna" date="2026-07-16 16:31">
+<assistant-response i="236" date="2026-07-16 16:31">
 ## Assistant
 
 <tool-input name="teamstatus" id="4LXd">
@@ -9130,7 +9130,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="238" model="gpt-5.6-luna" date="2026-07-16 16:31">
+<assistant-response i="238" date="2026-07-16 16:31">
 ## Assistant
 
 <tool-input name="Bash" id="NA8s">
@@ -9154,7 +9154,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="240" model="gpt-5.6-luna" date="2026-07-16 16:31">
+<assistant-response i="240" date="2026-07-16 16:31">
 ## Assistant
 
 <tool-input name="teamstatus" id="9J8G">
@@ -9205,7 +9205,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="242" model="gpt-5.6-luna" date="2026-07-16 16:31">
+<assistant-response i="242" date="2026-07-16 16:31">
 ## Assistant
 
 <tool-input name="Bash" id="oLSe">
@@ -9229,7 +9229,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="244" model="gpt-5.6-luna" date="2026-07-16 16:31">
+<assistant-response i="244" date="2026-07-16 16:31">
 ## Assistant
 
 <tool-input name="teamstatus" id="jRxA">
@@ -9280,7 +9280,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="246" model="gpt-5.6-luna" date="2026-07-16 16:31">
+<assistant-response i="246" date="2026-07-16 16:31">
 ## Assistant
 
 <tool-input name="Bash" id="bjZK">
@@ -9304,7 +9304,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="248" model="gpt-5.6-luna" date="2026-07-16 16:31">
+<assistant-response i="248" date="2026-07-16 16:31">
 ## Assistant
 
 <tool-input name="teamstatus" id="3zhA">
@@ -9355,7 +9355,7 @@ sleep 10; true
 
 ---
 
-<assistant-response i="250" model="gpt-5.6-luna" date="2026-07-16 16:32">
+<assistant-response i="250" date="2026-07-16 16:32">
 ## Assistant
 
 Automated checks are paused as requested. The 77-test checkpoint is intentionally RED due to the mid-line suffix test; I’m awaiting the explicit stable GREEN batch before rerunning acceptance checks.
@@ -9396,7 +9396,7 @@ Current team status:
 
 ---
 
-<assistant-response i="252" model="gpt-5.6-luna" date="2026-07-16 16:34">
+<assistant-response i="252" date="2026-07-16 16:34">
 ## Assistant
 
 <tool-input name="teamstatus" id="YA5d">
@@ -9447,7 +9447,7 @@ Current team status:
 
 ---
 
-<assistant-response i="254" model="gpt-5.6-luna" date="2026-07-16 16:34">
+<assistant-response i="254" date="2026-07-16 16:34">
 ## Assistant
 
 <tool-input name="Bash" id="Kq5d">
@@ -9544,7 +9544,7 @@ Current team status:
 
 ---
 
-<assistant-response i="257" model="gpt-5.6-luna" date="2026-07-16 16:34">
+<assistant-response i="257" date="2026-07-16 16:34">
 ## Assistant
 
 <tool-input name="teamstatus" id="ZBC7">
@@ -9595,7 +9595,7 @@ Current team status:
 
 ---
 
-<assistant-response i="259" model="gpt-5.6-luna" date="2026-07-16 16:34">
+<assistant-response i="259" date="2026-07-16 16:34">
 ## Assistant
 
 <tool-input name="Bash" id="Mejy">
@@ -9639,7 +9639,7 @@ Ran 13 tests across 1 file. [683.00ms]
 
 ---
 
-<assistant-response i="261" model="gpt-5.6-luna" date="2026-07-16 16:34">
+<assistant-response i="261" date="2026-07-16 16:34">
 ## Assistant
 
 <tool-input name="ffgrep" id="RmYH">
@@ -9800,7 +9800,7 @@ agent/extensions/pi-user-agents/autocomplete.ts  [untracked in git]
 
 ---
 
-<assistant-response i="263" model="gpt-5.6-luna" date="2026-07-16 16:34">
+<assistant-response i="263" date="2026-07-16 16:34">
 ## Assistant
 
 <tool-input name="Read" id="NJKU"></tool-input>
@@ -9903,7 +9903,7 @@ function triggerValueAutocomplete(editor: EditorComponent, runtimeEditor: Autoco
 
 ---
 
-<assistant-response i="265" model="gpt-5.6-luna" date="2026-07-16 16:35">
+<assistant-response i="265" date="2026-07-16 16:35">
 ## Assistant
 
 <tool-input name="Bash" id="zZag">
@@ -9928,7 +9928,7 @@ exit=1
 
 ---
 
-<assistant-response i="267" model="gpt-5.6-luna" date="2026-07-16 16:35">
+<assistant-response i="267" date="2026-07-16 16:35">
 ## Assistant
 
 <tool-input name="teammain" id="k3L9">
@@ -9959,7 +9959,7 @@ exit=1
 
 ---
 
-<assistant-response i="269" model="gpt-5.6-luna" date="2026-07-16 16:35">
+<assistant-response i="269" date="2026-07-16 16:35">
 ## Assistant
 
 <tool-input name="teamstatus" id="BSdV">
@@ -10010,7 +10010,7 @@ exit=1
 
 ---
 
-<assistant-response i="271" model="gpt-5.6-luna" date="2026-07-16 16:35">
+<assistant-response i="271" date="2026-07-16 16:35">
 ## Assistant
 
 <tool-input name="teammain" id="83LC">
@@ -10041,7 +10041,7 @@ exit=1
 
 ---
 
-<assistant-response i="273" model="gpt-5.6-luna" date="2026-07-16 16:35">
+<assistant-response i="273" date="2026-07-16 16:35">
 ## Assistant
 
 Final negative-coverage batch independently verified:
@@ -10099,7 +10099,7 @@ Current team status:
 
 ---
 
-<assistant-response i="275" model="gpt-5.6-luna" date="2026-07-16 16:36">
+<assistant-response i="275" date="2026-07-16 16:36">
 ## Assistant
 
 <tool-input name="teamstatus" id="jsSq">
@@ -10150,7 +10150,7 @@ Current team status:
 
 ---
 
-<assistant-response i="277" model="gpt-5.6-luna" date="2026-07-16 16:36">
+<assistant-response i="277" date="2026-07-16 16:36">
 ## Assistant
 
 <tool-input name="teamsend" id="DkHo">
@@ -10187,7 +10187,7 @@ Current team status:
 
 ---
 
-<assistant-response i="279" model="gpt-5.6-luna" date="2026-07-16 16:37">
+<assistant-response i="279" date="2026-07-16 16:37">
 ## Assistant
 
 <tool-input name="teamstatus" id="z7nJ">
@@ -10238,7 +10238,7 @@ Current team status:
 
 ---
 
-<assistant-response i="281" model="gpt-5.6-luna" date="2026-07-16 16:37">
+<assistant-response i="281" date="2026-07-16 16:37">
 ## Assistant
 
 Final 79-test checkpoint independently verified:
@@ -10285,7 +10285,7 @@ Current team status:
 
 ---
 
-<assistant-response i="283" model="gpt-5.6-luna" date="2026-07-16 16:49">
+<assistant-response i="283" date="2026-07-16 16:49">
 ## Assistant
 
 <tool-input name="teamstatus" id="el3Q">
@@ -10369,7 +10369,7 @@ Current team status:
 
 ---
 
-<assistant-response i="286" model="gpt-5.6-luna" date="2026-07-16 16:49">
+<assistant-response i="286" date="2026-07-16 16:49">
 ## Assistant
 
 <tool-input name="teamstatus" id="In4C">
@@ -10420,7 +10420,7 @@ Current team status:
 
 ---
 
-<assistant-response i="288" model="gpt-5.6-luna" date="2026-07-16 16:49">
+<assistant-response i="288" date="2026-07-16 16:49">
 ## Assistant
 
 <tool-input name="Bash" id="sZVq">
@@ -10522,7 +10522,7 @@ SUMMARY suite=0 biome=1 ts=0 dup=1 sem=0 diffcheck=2
 
 ---
 
-<assistant-response i="290" model="gpt-5.6-luna" date="2026-07-16 16:49">
+<assistant-response i="290" date="2026-07-16 16:49">
 ## Assistant
 
 <tool-input name="teammain" id="R68s">
@@ -10553,7 +10553,7 @@ SUMMARY suite=0 biome=1 ts=0 dup=1 sem=0 diffcheck=2
 
 ---
 
-<assistant-response i="292" model="gpt-5.6-luna" date="2026-07-16 16:49">
+<assistant-response i="292" date="2026-07-16 16:49">
 ## Assistant
 
 <tool-input name="Read" id="kxHc"></tool-input>
@@ -10582,7 +10582,7 @@ describe("model option aliases", () => {
 
 ---
 
-<assistant-response i="294" model="gpt-5.6-luna" date="2026-07-16 16:49">
+<assistant-response i="294" date="2026-07-16 16:49">
 ## Assistant
 
 <tool-input name="teammain" id="E5jk">
@@ -10613,7 +10613,7 @@ describe("model option aliases", () => {
 
 ---
 
-<assistant-response i="296" model="gpt-5.6-luna" date="2026-07-16 16:50">
+<assistant-response i="296" date="2026-07-16 16:50">
 ## Assistant
 
 <tool-input name="teamstatus" id="8TJK">
@@ -10664,7 +10664,7 @@ describe("model option aliases", () => {
 
 ---
 
-<assistant-response i="298" model="gpt-5.6-luna" date="2026-07-16 16:50">
+<assistant-response i="298" date="2026-07-16 16:50">
 ## Assistant
 
 Final RC verification:
@@ -10714,7 +10714,7 @@ Current team status:
 
 ---
 
-<assistant-response i="300" model="gpt-5.6-luna" date="2026-07-16 16:50">
+<assistant-response i="300" date="2026-07-16 16:50">
 ## Assistant
 
 <tool-input name="teamstatus" id="Rft3">
@@ -10765,7 +10765,7 @@ Current team status:
 
 ---
 
-<assistant-response i="302" model="gpt-5.6-luna" date="2026-07-16 16:51">
+<assistant-response i="302" date="2026-07-16 16:51">
 ## Assistant
 
 <tool-input name="Bash" id="StAa">
@@ -10839,7 +10839,7 @@ Current team status:
 
 ---
 
-<assistant-response i="305" model="gpt-5.6-luna" date="2026-07-16 16:51">
+<assistant-response i="305" date="2026-07-16 16:51">
 ## Assistant
 
 <tool-input name="teamstatus" id="4SIb">
@@ -10890,7 +10890,7 @@ Current team status:
 
 ---
 
-<assistant-response i="307" model="gpt-5.6-luna" date="2026-07-16 16:51">
+<assistant-response i="307" date="2026-07-16 16:51">
 ## Assistant
 
 <tool-input name="teammain" id="lIx4">
@@ -10921,7 +10921,7 @@ Current team status:
 
 ---
 
-<assistant-response i="309" model="gpt-5.6-luna" date="2026-07-16 16:51">
+<assistant-response i="309" date="2026-07-16 16:51">
 ## Assistant
 
 <tool-input name="teamstatus" id="SZVy">
@@ -10972,7 +10972,7 @@ Current team status:
 
 ---
 
-<assistant-response i="311" model="gpt-5.6-luna" date="2026-07-16 16:51">
+<assistant-response i="311" date="2026-07-16 16:51">
 ## Assistant
 
 **SHIP.**

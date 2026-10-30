@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-28T15-55
+last_updated: 2026-10-30T23-50
 ---
 
 # Chats
@@ -164,7 +164,7 @@ Plain XML sends optional metadata frontmatter to stderr and the conversation bod
 </assistant-response>
 ```
 
-In a terminal, colored output drops the XML tags and renders each message as its own rounded panel titled with a colored role badge (role hue, index, and model): the body is markdown with syntax highlighting, thinking appears under a `✻ thinking` marker, and tools render as tag-free `⏺` call / `⎿` result headers over a colored left rail (an Edit shows a unified diff; a Read result is syntax-highlighted by file extension). The XML tags are kept only in plain output (`--color=never`, `-f raw`) — the form meant for piping into tools or LLMs.
+In a terminal, colored output drops the XML tags and renders each message as its own rounded panel titled with a colored role badge (role hue, index, and date): the body is markdown with syntax highlighting, thinking appears under a `✻ thinking` marker, and tools render as tag-free `⏺` call / `⎿` result headers over a colored left rail (an Edit shows a unified diff; a Read result is syntax-highlighted by file extension). The XML tags are kept only in plain output (`--color=never`, `-f raw`) — the form meant for piping into tools or LLMs.
 
 **JSON Format:**
 
@@ -185,7 +185,6 @@ JSON array to stdout (no metadata; always valid JSON):
     "type": "assistant-response",
     "role": "assistant",
     "original_index": 2,
-    "model": "sonnet-4-6",
     "content": [
       "Assistant response text",
       {
@@ -204,7 +203,7 @@ JSON array to stdout (no metadata; always valid JSON):
 JSON format:
 - Always outputs plain JSON (no Rich formatting)
 - Mirrors the structured message model instead of embedding XML wrappers into strings
-- Each message carries its wrapper tag as `type` plus any XML-attribute metadata such as `original_index`, `model`, `agent_id`, or `sourceToolUserId`
+- Each message carries its wrapper tag as `type` plus any XML-attribute metadata such as `original_index`, `agent_id`, or `sourceToolUserId`
 - Messages carry their raw ISO `timestamp` when present; custom and agent messages preserve `custom_type`, `inherited_context`, `status`, and optional agent identity metadata across a round trip
 - `content` is an ordered array of raw strings and typed blocks like `thinking`, `tool-input`, and `tool-output`
 - Tool blocks expose structured fields instead of XML tags / fenced pseudo-content

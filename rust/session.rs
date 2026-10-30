@@ -1553,10 +1553,6 @@ fn parse_assistant_entry(
     );
     message.agent_id = agent_id.map(str::to_string);
     message.timestamp = timestamp_of(entry);
-    message.model = message_data
-        .get("model")
-        .and_then(Value::as_str)
-        .map(str::to_string);
     let mut agent_tool_message = message.clone();
     agent_tool_message.tools_always_visible = true;
 
@@ -2175,12 +2171,6 @@ fn parse_pi_message_entry(
     );
     message.timestamp = timestamp_of(entry);
     message.native_entry_id = native_entry_id;
-    if role == "assistant" {
-        message.model = message_data
-            .get("model")
-            .and_then(Value::as_str)
-            .map(str::to_string);
-    }
 
     let content_items = message_data.get("content").cloned().unwrap_or(Value::Null);
     let text_blocks = extract_text_blocks(&content_items);
@@ -2211,7 +2201,6 @@ fn parse_pi_message_entry(
     let mut team_message = new_message(index, "assistant", MessageType::AssistantResponse);
     team_message.timestamp = message.timestamp.clone();
     team_message.native_entry_id = message.native_entry_id.clone();
-    team_message.model = message.model.clone();
     team_message.tools_always_visible = true;
     if let Some(items) = content_items.as_array() {
         let mut thinking_blocks: Vec<String> = Vec::new();
@@ -2500,23 +2489,15 @@ pub struct PiChildIdentity {
     pub agent_id: Option<String>,
     pub name: Option<String>,
     pub subagent_type: &'static str,
-    pub model: Option<String>,
 }
 
 pub fn pi_child_identity(entries: &[Map<String, Value>]) -> PiChildIdentity {
     let own = &entries[pi_inherited_prefix_end(entries).min(entries.len())..];
     let briefing = own.iter().find(|entry| is_pi_team_leader_message(entry));
-    let model = own.iter().find_map(|entry| {
-        let message = entry.get("message")?.as_object()?;
-        (message.get("role")?.as_str()? == "assistant")
-            .then(|| message.get("model")?.as_str().map(str::to_string))
-            .flatten()
-    });
     PiChildIdentity {
         agent_id: entries.first().and_then(|header| header.get("id")?.as_str().map(str::to_string)),
         name: briefing.and_then(|entry| entry.get("details")?.get("to")?.as_str().map(str::to_string)),
         subagent_type: if briefing.is_some() { "teammate" } else { "user-agent" },
-        model,
     }
 }
 

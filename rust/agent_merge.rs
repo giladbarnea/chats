@@ -26,7 +26,6 @@ pub struct SubagentMetadata {
     pub agent_id: Option<String>,
     pub name: Option<String>,
     pub subagent_type: Option<String>,
-    pub model: Option<String>,
 }
 
 /// The parent's timeline with every delegated child's block placed at its start.
@@ -133,7 +132,6 @@ fn subagent_metadata(provider: Provider, transcript: &Path, entries: &Entries) -
                 agent_id: identity.agent_id,
                 name: identity.name,
                 subagent_type: Some(identity.subagent_type.to_string()),
-                model: identity.model,
             }
         }
         Provider::Codex => codex_metadata(entries),
@@ -239,7 +237,7 @@ fn codex_header(entries: &Entries) -> Option<&Map<String, Value>> {
         .as_object()
 }
 
-/// Identity from the spawn record, the model from the first `turn_context`.
+/// Identity from the spawn record.
 /// Mirrors Python's `extract_codex_subagent_metadata`.
 fn codex_metadata(entries: &Entries) -> SubagentMetadata {
     let header = codex_header(entries);
@@ -257,10 +255,6 @@ fn codex_metadata(entries: &Entries) -> SubagentMetadata {
         agent_id: header.and_then(|header| header.get("id")).and_then(Value::as_str).map(str::to_string),
         name: text(spawn, "agent_nickname"),
         subagent_type: text(spawn, "agent_role"),
-        model: entries
-            .iter()
-            .filter(|entry| entry.get("type").and_then(Value::as_str) == Some("turn_context"))
-            .find_map(|entry| text(entry.get("payload").and_then(Value::as_object), "model")),
     }
 }
 
@@ -277,9 +271,6 @@ fn build_block(messages: Vec<Message>, metadata: SubagentMetadata) -> Vec<Messag
     let agent_id = metadata
         .agent_id
         .or_else(|| messages.iter().find_map(|message| message.agent_id.clone()));
-    let model = metadata
-        .model
-        .or_else(|| messages.iter().find_map(|message| message.model.clone()));
     let mut messages = messages;
     let rest = messages.split_off(first_reply);
     let leading = messages;
@@ -303,7 +294,6 @@ fn build_block(messages: Vec<Message>, metadata: SubagentMetadata) -> Vec<Messag
         message.agent_id = agent_id.clone();
         message.name = metadata.name.clone();
         message.subagent_type = metadata.subagent_type.clone();
-        message.model = model.clone();
         // Python derives the wrapper from `agent_id` unless one was set explicitly,
         // which only the user and assistant defaults were not.
         if agent_id.as_deref().is_some_and(|id| !id.is_empty())

@@ -114,7 +114,7 @@ def test_codex_session_without_subagents_returns_empty(tmp_path, monkeypatch):
 
 
 def test_extracts_codex_subagent_metadata(tmp_path, monkeypatch):
-    """Name and role come from the spawn record, id from session_meta, model from turn_context."""
+    """Name and role come from the spawn record, id from session_meta."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     path = _rollout(tmp_path, LEIBNIZ_ID)
     _write_jsonl(path, [
@@ -134,7 +134,6 @@ def test_extracts_codex_subagent_metadata(tmp_path, monkeypatch):
     assert meta.agent_id == LEIBNIZ_ID, f"Expected agent_id from session_meta.id. Got: {meta.agent_id}"
     assert meta.name == "Leibniz", f"Expected nickname 'Leibniz'. Got: {meta.name}"
     assert meta.subagent_type == "default", f"Expected agent_role as subagent_type. Got: {meta.subagent_type}"
-    assert meta.model == "gpt-5.4-mini", f"Expected model from turn_context. Got: {meta.model}"
 
 
 # =============================================================================
@@ -217,8 +216,9 @@ def test_codex_subagent_merge_tags_agent_messages(tmp_path, monkeypatch):
     assert all(m.name == "Leibniz" for m in agent_messages), (
         f"Expected name='Leibniz'. Got: {[m.name for m in agent_messages]}"
     )
-    assert all(m.model == "gpt-5.4-mini" for m in agent_messages), (
-        f"Expected model='gpt-5.4-mini'. Got: {[m.model for m in agent_messages]}"
+    rendered = format_to_xml(merged, flags)
+    assert "gpt-5.4-mini" not in rendered, (
+        f"Expected the merged agent to carry no model id from turn_context. Got:\n{rendered}"
     )
     assert any("did the thing" in (m.text or "") for m in agent_messages), (
         "Expected the agent's reply text to survive the merge."

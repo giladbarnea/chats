@@ -294,11 +294,10 @@ def _tool_input_by_id(messages: list[Message]) -> dict[str, dict]:
 
 
 def _compact_header_meta(msg: Message, conversation_tag: str | None) -> str:
-    """Dim suffix after a compact role badge: conversation id · #index · model · date."""
+    """Dim suffix after a compact role badge: conversation id · #index · date."""
     parts = (
         conversation_tag,
         f"#{msg.index}",
-        msg.get_display_model(),
         msg.get_display_date(),
     )
     return "  ·  ".join(part for part in parts if part)
@@ -365,7 +364,7 @@ def _message_header_badge(
     *,
     conversation_tag: str | None = None,
 ) -> Text:
-    """A message's role badge: colored role chip + dim id/index/model suffix.
+    """A message's role badge: colored role chip + dim id/index/date suffix.
 
     Shared by both colored views — the parse per-message Panel title and the
     search Panel's inline per-message headers (the latter passing the
@@ -736,7 +735,7 @@ def build_message_panels(
 
     The message wrapper tags are dropped; their job is taken over by the box
     (per-message orientation that survives scrolling a large message) and the
-    colorful title chip, which carries the role plus index and model. Border and
+    colorful title chip, which carries the role plus index and date. Border and
     chip keep each message type's existing hue.
     """
     input_by_id = _tool_input_by_id(messages)

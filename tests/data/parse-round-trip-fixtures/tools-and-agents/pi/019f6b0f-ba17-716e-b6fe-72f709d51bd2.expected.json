@@ -22,7 +22,6 @@
         "phrase": "Reading handoff and plan"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -54,7 +53,6 @@
         ]
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -90,7 +88,6 @@
         ]
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -118,7 +115,6 @@
         "id": "01LW"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -147,7 +143,6 @@
         "id": "01UZ"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -175,7 +170,6 @@
         "id": "017F"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -203,7 +197,6 @@
         "id": "01Qg"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -232,7 +225,6 @@
         "id": "018M"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -269,7 +261,6 @@
         "id": "01Hd"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -302,7 +293,6 @@
         ]
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -330,7 +320,6 @@
         "id": "01A1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:14:00"
   },
   {
@@ -358,7 +347,6 @@
         "id": "01So"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -388,7 +376,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -30"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -418,7 +405,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -449,7 +435,6 @@
         "phrase": "Found --provider test failure; analyzing root cause"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -479,7 +464,6 @@
         "action": "list"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -513,7 +497,6 @@
         "message": "**Review of current state: 71 pass, 1 fail**\n\nThe `--provider chains into the unique providers from the live model catalog` test is RED at `autocomplete.test.ts:64`. Root cause is two missing pieces in `autocomplete.ts`:\n\n1. **`getSuggestions` has no `\"provider\"` domain handler** (lines 46–53). There are branches for `completionDomain === \"thinking\"` and `completionDomain === \"model\"`, but when the cursor expectation is `kind: \"value\"` with `option.completionDomain === \"provider\"`, it falls through to `current.getSuggestions(...)` — native Pi completion, which returns nothing relevant.\n\n2. **The editor decorator's chaining condition excludes `\"provider\"`** (`autocomplete.ts:143–147`). The `acceptedChainedOption` guard checks for `completionDomain === \"thinking\" || \"model\" || \"path\"` but not `\"provider\"`, so even if the provider added results, the editor wouldn't chain into a value menu after accepting `--provider`.\n\n**Fix:** Add a `\"provider\"` branch in `getSuggestions` that extracts unique `model.provider` strings from the live catalog (filtered by the current fragment), and add `\"provider\"` to the chaining condition in the editor decorator.\n\nThe test itself is well-written — it expects `openai-codex` and `anthropic` as distinct completable providers, types `openai` to filter, then accepts. The expected outcome `/agent --provider openai-codex ` with cursor at end is consistent with the enumerable-value contract."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -543,7 +526,6 @@
         "message": "**Review of current state: 71 pass, 1 fail**\n\nThe `--provider chains into the unique providers from the live model catalog` test is RED at `autocomplete.test.ts:64`. Root cause is two missing pieces in `autocomplete.ts`:\n\n1. **`getSuggestions` has no `\"provider\"` domain handler** (lines 46–53). There are branches for `completionDomain === \"thinking\"` and `completionDomain === \"model\"`, but when the cursor expectation is `kind: \"value\"` with `option.completionDomain === \"provider\"`, it falls through to `current.getSuggestions(...)` — native Pi completion, which returns nothing relevant.\n\n2. **The editor decorator's chaining condition excludes `\"provider\"`** (`autocomplete.ts:143–147`). The `acceptedChainedOption` guard checks for `completionDomain === \"thinking\" || \"model\" || \"path\"` but not `\"provider\"`, so even if the provider added results, the editor wouldn't chain into a value menu after accepting `--provider`.\n\n**Fix:** Add a `\"provider\"` branch in `getSuggestions` that extracts unique `model.provider` strings from the live catalog (filtered by the current fragment), and add `\"provider\"` to the chaining condition in the editor decorator."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:15:00"
   },
   {
@@ -575,7 +557,6 @@
         "message": "**Review of current state: 71 pass, 1 fail**\n\nThe `--provider chains into the unique providers from the live model catalog` test is RED at `autocomplete.test.ts:64`. Root cause is two missing pieces in `autocomplete.ts`:\n\n1. **`getSuggestions` has no `\"provider\"` domain handler** (lines 46–53). There are branches for `completionDomain === \"thinking\"` and `completionDomain === \"model\"`, but when the cursor expectation is `kind: \"value\"` with `option.completionDomain === \"provider\"`, it falls through to `current.getSuggestions(...)` — native Pi completion, which returns nothing relevant.\n\n2. **The editor decorator's chaining condition excludes `\"provider\"`** (`autocomplete.ts:143–147`). The `acceptedChainedOption` guard checks for `completionDomain === \"thinking\" || \"model\" || \"path\"` but not `\"provider\"`, so even if the provider added results, the editor wouldn't chain into a value menu after accepting `--provider`.\n\n**Fix needed:**\n- Add a `\"provider\"` branch in `getSuggestions` that extracts unique `model.provider` strings from the live catalog (filtered by the current fragment)\n- Add `\"provider\"` to the `acceptedChainedOption` condition in the editor decorator (line ~146)"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -606,7 +587,6 @@
         "phrase": "Adversarial review of autocomplete.ts and command-line.ts"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -638,7 +618,6 @@
         "status": "in_progress"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -679,7 +658,6 @@
         "status": "in_progress"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -711,7 +689,6 @@
         "status": "in_progress"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -741,7 +718,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'OPTION|option.*Map|VALUE_OPTIONS|BOOLEAN_OPTIONS|names.*\\[|arity|forwardName' agent/extensions/pi-user-agents/runner.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -772,7 +748,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'parseAgentCommand|AGENT_OPTIONS|OPTION_BY_NAME' agent/extensions/pi-user-agents/ --include='*.ts' 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -802,7 +777,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'parseAgentCommand|AGENT_OPTIONS|OPTION_BY_NAME' agent/extensions/pi-user-agents/ -g '*.ts' 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -845,7 +819,6 @@
         }
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:16:00"
   },
   {
@@ -877,7 +850,6 @@
         "description": "autocomplete.ts:69 uses AGENT_OPTIONS.find() to re-find the option after getOptionItems already validated it. Not a bug but redundant work."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -907,7 +879,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'setEditorComponent|getEditorComponent' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/ -g '*.js' --no-heading 2>&1 | head -20"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -936,7 +907,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'setCustomEditorComponent|editorComponentFactory' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js 2>&1 | head -10"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -965,7 +935,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '1505,1520p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -995,7 +964,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '96,120p' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1034,7 +1002,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'reload|emit.*session_start|extension.*load' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js 2>&1 | head -20"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1063,7 +1030,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '4364,4420p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1092,7 +1058,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '4420,4480p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:17:00"
   },
   {
@@ -1122,7 +1087,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'class.*ExtensionRunner|on\\(event|removeAllListeners|reload' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/runner.js 2>&1 | head -20"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1151,7 +1115,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '120,200p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/runner.js 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1180,7 +1143,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'async.*load\\b|loadExtensions|loadAll' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/runner.js 2>&1 | head -10"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1209,7 +1171,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'reload' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/session.js 2>&1 | head -15"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1238,7 +1199,6 @@
         "command": "cd /Users/giladbarnea/.pi && fd 'session' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/ -e js -d 2 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1267,7 +1227,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'async reload|extensionRunner.*reload|bindExtensions' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/agent-session.js 2>&1 | head -10"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1296,7 +1255,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '2023,2060p' /opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/agent-session.js 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1326,7 +1284,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '135,190p' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1364,7 +1321,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '190,230p' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:18:00"
   },
   {
@@ -1399,7 +1355,6 @@
         }
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:19:00"
   },
   {
@@ -1433,7 +1388,6 @@
         }
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:19:00"
   },
   {
@@ -1463,7 +1417,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '320,420p' agent/extensions/pi-user-agents/command-line.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:19:00"
   },
   {
@@ -1498,7 +1451,6 @@
         }
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:20:00"
   },
   {
@@ -1528,7 +1480,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -15"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:20:00"
   },
   {
@@ -1558,7 +1509,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:20:00"
   },
   {
@@ -1589,7 +1539,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '75,110p' agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1622,7 +1571,6 @@
         "message": "**Review of the provider-scoped model RED test (72 pass, 1 fail)**\n\nThe test is well-designed. The fix requires `getModelItems` to know the already-accepted `--provider` value so it can filter. \n\nCleanest approach per the plan's single-scanner principle: have `analyzeArgumentCursor` capture the provider value during its scan (it already processes `--provider <value>` tokens and adds \"provider\" to `usedSemanticIds`). Extend the cursor expectation to carry `parsedProviderValue: string | undefined`, then thread it through `getSuggestions` to `getModelItems`.\n\nAlternative (less clean): re-parse the whole line in `getSuggestions` to extract the provider. This violates the plan's \"no candidate-specific reparsing\" constraint.\n\nOne design note: the `ValueCursorExpectation` type could carry a `parsedValues: Map<string, string>` (or just `parsedProviderValue`) from the scan. Since the scanner already reads option values, this is a minimal extension — just stash the provider value when `option.semanticId === \"provider\"` during the scan."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1652,7 +1600,6 @@
         "phrase": "Awaiting implementer GREEN on provider-scoped model test"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1682,7 +1629,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'test\\(' agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1712,7 +1658,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'test\\(' agent/extensions/pi-user-agents/tests/command-line.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:21:00"
   },
   {
@@ -1751,7 +1696,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx tsc --noEmit --strict --target esnext --module nodenext --moduleResolution nodenext agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts agent/extensions/pi-user-agents/runner.ts agent/extensions/pi-user-agents/index.ts 2>&1 | head -20"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1780,7 +1724,6 @@
         "command": "cd /Users/giladbarnea/.pi && FORCE_OMZ=1 /usr/bin/env zsh -ic 'npx -y typescript@latest -- tsc --noEmit --strict --target esnext --module nodenext --moduleResolution nodenext agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts 2>&1' | head -20"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1809,7 +1752,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx -y typescript tsc --noEmit --strict --target esnext --module nodenext --moduleResolution nodenext agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts 2>&1 | head -20"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1838,7 +1780,6 @@
         "command": "which tsc 2>&1 || FORCE_OMZ=1 /usr/bin/env zsh -ic 'which tsc' 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1877,7 +1818,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx -p typescript tsc --noEmit --strict --target esnext --module nodenext --moduleResolution nodenext agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts 2>&1 | head -30"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1907,7 +1847,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx -p typescript tsc --noEmit --strict --target esnext --module nodenext --moduleResolution nodenext agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts 2>&1 | grep 'pi-user-agents/' | head -20"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1937,7 +1876,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -10"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:22:00"
   },
   {
@@ -1967,7 +1905,6 @@
         "command": "cd /Users/giladbarnea/.pi && gsd HEAD -- agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -1996,7 +1933,6 @@
         "command": "cd /Users/giladbarnea/.pi && git --no-pager diff HEAD -- agent/extensions/pi-user-agents/autocomplete.ts agent/extensions/pi-user-agents/command-line.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2026,7 +1962,6 @@
         "command": "cd /Users/giladbarnea/.pi && git --no-pager diff HEAD -- agent/extensions/pi-user-agents/ 2>&1 | head -80"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2056,7 +1991,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'parsedProviderValue|parsedProvider|providerValue' agent/extensions/pi-user-agents/ -g '*.ts' 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2086,7 +2020,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '25,40p' agent/extensions/pi-user-agents/command-line.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2115,7 +2048,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'parsedProvider' agent/extensions/pi-user-agents/command-line.ts -A2 -B2 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2145,7 +2077,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '350,430p' agent/extensions/pi-user-agents/command-line.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2175,7 +2106,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '137,157p' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2205,7 +2135,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '44,100p' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2236,7 +2165,6 @@
         "phrase": "73/0 GREEN confirmed; implementation review complete"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:23:00"
   },
   {
@@ -2265,7 +2193,6 @@
         "message": "**Reviewer checkpoint: 73 pass, 0 fail — adversarial review complete**\n\nThe implementation is sound. Here's a summary of what I verified:\n\n**No blocking issues found.** The code is clean, correctly structured, and follows the plan's requirements.\n\n**Verified:**\n1. **No competing option tables** — `runner.ts` has zero option declarations, imports only from `command-line.ts`\n2. **`/reload` lifecycle** — Pi resets `editorComponentFactory` and `autocompleteProviderWrappers` on reload, then re-runs extension exports. Our factory closure is scoped correctly; the `DECORATED_EDITOR` symbol prevents double-decoration of editor instances. No handler accumulation.\n3. **Race conditions / rapid typing** — `handleInput` is synchronous, `analyzeAgentEditorInput` runs against current text each time, provider suggestions are serialized by the editor runtime. No race.\n4. **Enter vs Tab** — both checked via `isCompletionAcceptance` callback, handled identically. Correct per plan.\n5. **Provider delegation** — non-agent contexts, non-line-0 cursors, and prose all fall through to `current.getSuggestions`/`current.applyCompletion`. Correct.\n6. **Scanner state machine** — traced edge cases: prose cutoff (\"explain -\"), value expectation at trailing space, `/agent-isolated` isolate suppression. All correct.\n7. **Provider-scoped model filtering** — `parsedProvider` threaded through cursor analysis cleanly; `getModelItems` filters by exact provider match. Clean implementation.\n8. **TypeScript strict check** — zero errors in our files (only upstream dependency noise).\n\n**Minor observation (not blocking):** `applyCompletion` at line 69 does `AGENT_OPTIONS.find()` to re-look up an option after `getOptionItems` already validated membership. Redundant but harmless for the ~25-element array.\n\n**Remaining test coverage gaps** (for later TDD slices, per plan):\n- Alias semantic suppression (editor-level test)\n- `/agent-isolated` isolation suppression (editor-level test)  \n- Prose cutoff negative test (editor-level)\n- Blocked options never appear (editor-level)\n- Mid-line completion preservation\n- Rapid typing stress test"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:24:00"
   },
   {
@@ -2298,7 +2225,6 @@
         "message": "**Stable checkpoint ready for verification: 73 pass, 0 fail, 93 expect calls**\n\nThe implementer landed the provider completion domain (both value chaining and provider-scoped model filtering). I've completed an adversarial review — no blocking issues found.\n\nKey changes since the handoff baseline (70 tests):\n1. `getSuggestions` now handles `completionDomain === \"provider\"` — extracts unique provider strings from the live model catalog\n2. `getSuggestions` for `completionDomain === \"model\"` now passes `expectation.parsedProvider` to `getModelItems`, which filters by exact provider match when present\n3. `applyCompletion` handles provider values via `applyCompletionEdit`\n4. Editor decorator chaining condition includes `\"provider\"` alongside `\"thinking\"`, `\"model\"`, and `\"path\"`\n5. `ValueCursorExpectation` type carries `parsedProvider?: string`, populated by the scanner when it processes a completed `--provider <value>` token\n6. Three new editor-level tests: provider value chaining, provider-scoped model filtering (for both `-m` and `--model`), and model catalog chaining\n\nPlease run the full suite and your independent verification checks."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:24:00"
   },
   {
@@ -2328,7 +2254,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -10"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:24:00"
   },
   {
@@ -2370,7 +2295,6 @@
         "message": "**Reviewer-confirmed stable GREEN: 73 pass, 0 fail, 93 expect calls.** Tree is ready for your independent verification."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2400,7 +2324,6 @@
         "phrase": "73/0 GREEN independently confirmed; ready for next slice"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2430,7 +2353,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '165,172p' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2463,7 +2385,6 @@
         "message": "**Minor static finding — worth fixing:** `autocomplete.ts:169` has `\\\"\\\"` inside a template literal, which Biome flags as `noUselessEscape`. The fix is just removing the backslashes: change `` `${optionName} \\\"\\\" ` `` to `` `${optionName} \"\" ` ``. The escapes are harmless but unnecessary inside backtick strings."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2487,7 +2408,6 @@
     "content": [
       "Good — triple-confirmed at 73/0. Ready for the next slice when the implementer proceeds."
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2513,7 +2433,6 @@
         "phrase": "Awaiting alias slice RED/GREEN for review"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:25:00"
   },
   {
@@ -2557,7 +2476,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx vitest run agent/extensions/pi-user-agents/tests/ --reporter=verbose 2>&1 | tail -40"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2607,7 +2525,6 @@
         "command": "cd /Users/giladbarnea/.pi && cat agent/extensions/pi-user-agents/tests/command-line.test.ts"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2650,7 +2567,6 @@
         "command": "cd /Users/giladbarnea/.pi && bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -30"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:26:00"
   },
   {
@@ -2689,7 +2605,6 @@
         "id": "01VV"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2752,7 +2667,6 @@
         "id": "01Rg"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:27:00"
   },
   {
@@ -2809,7 +2723,6 @@
         "id": "01Pn"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -2857,7 +2770,6 @@
         "id": "01Dk"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:28:00"
   },
   {
@@ -2902,7 +2814,6 @@
         "phrase": "Implementation verified 74/74; routing reviewer and verifier for Node H gates"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -2932,7 +2843,6 @@
         "command": "cd /Users/giladbarnea/.pi && bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -15"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -2962,7 +2872,6 @@
         "phrase": "77/77 confirmed; routing reviewer for adversarial pass, verifier for final acceptance"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:29:00"
   },
   {
@@ -3003,7 +2912,6 @@
         "message": "The suite is at 77/77 GREEN. Your final acceptance batch:\n\n1. **Run the full suite**: `bun test agent/extensions/pi-user-agents/tests/` — confirm 77 pass, 0 fail.\n\n2. **Duplication scan**: Verify that `runner.ts` contains zero option-name sets, arity maps, or option-recognition functions. Every production option spelling must trace to `AGENT_OPTIONS` in `command-line.ts` and nowhere else. Run:\n   ```\n   rg -n 'VALUE_OPTIONS|BOOLEAN_OPTIONS|BLOCKED_OPTIONS|EXTENSION_MODEL_OPTION|EXTENSION_ISOLATE_OPTIONS|EXTENSION_CONTEXT_OPTIONS|isRecognizedOption|isValueTaking' agent/extensions/pi-user-agents/ --glob '!tests/' --glob '!autocomplete/plan/'\n   ```\n   Expected: zero matches.\n\n3. **TypeScript strict check** on the focused files:\n   ```\n   npx tsc --noEmit --strict --moduleResolution node16 --module nodenext --target esnext agent/extensions/pi-user-agents/command-line.ts agent/extensions/pi-user-agents/autocomplete.ts 2>&1 | head -30\n   ```\n   Report any task-local errors (ignore pre-existing widget.ts strict-null diagnostics).\n\n4. **Semantic ID completeness**: Every option in `AGENT_OPTIONS` must have a unique `semanticId`. Verify no duplicates:\n   ```\n   rg 'semanticId:' agent/extensions/pi-user-agents/command-line.ts | sort | uniq -d\n   ```\n   Expected: zero duplicates.\n\n5. **Integration smoke**: Verify that `parseAgentCommand` in `command-line.ts` and the re-export in `runner.ts` produce identical results for the model-alias case:\n   ```\n   bun test agent/extensions/pi-user-agents/tests/command-line.test.ts --reporter=verbose\n   ```\n\nReport results for each check. Any failure is a blocker."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3058,7 +2966,6 @@
         "message": "Confirmed 77/77 GREEN. I've routed the reviewer for adversarial review and the verifier for final acceptance checks. Hold steady — no new changes until both report back. If the reviewer finds blockers, I'll route the fixes to you."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3088,7 +2995,6 @@
         "phrase": "Reviewing 75/0 checkpoint: alias + isolated suppression tests"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3117,7 +3023,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -15"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:30:00"
   },
   {
@@ -3156,7 +3061,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'test\\(' agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3186,7 +3090,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '20,66p' agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3225,7 +3128,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'moveCursorLeft|waitForAutocompleteToRemainHidden' agent/extensions/pi-user-agents/tests/editor-harness.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3254,7 +3156,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '116,135p' agent/extensions/pi-user-agents/tests/editor-harness.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3284,7 +3185,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1 | grep -A 20 'mid-line'"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3313,7 +3213,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/autocomplete.test.ts 2>&1 | grep -B 2 'mid-line\\|error\\|assert\\|Expected'"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:31:00"
   },
   {
@@ -3346,7 +3245,6 @@
         "message": "**Review of new tests (75→77 pass, 1 RED)**\n\nThe four new tests are well-crafted. Specific notes:\n\n1. **`/agent-isolated` suppression** — the regex `\\n[→ ]+-i\\s+Start without` correctly matches the rendered menu item format. Clean.\n\n2. **Prose/quoted/escaped negatives** — `waitForAutocompleteToRemainHidden` with 50ms is a reasonable negative-assertion timeout. The three cases (`explain -`, `\"-\"`, `\\-`) properly exercise the prose-terminal, quoted, and escaped paths.\n\n3. **Blocked options** — `--ex` prefix matching both `--exclude-tools` (effective) and `--export` (blocked) is the right targeted test.\n\n4. **Mid-line completion (RED)** — the failure is at `waitForRender` line 61 (value menu doesn't appear after Tab). Root cause: the cursor is at `--thi|` mid-line, Tab is pressed, but autocomplete isn't already showing (`wasShowingAutocomplete` is false), so the chaining condition doesn't fire. The test first needs Tab to trigger autocomplete and accept the option, *then* chain. This may need the explicit Tab path to also trigger autocomplete when the cursor is at an option position without prior dash-typing.\n\nAlso confirmed: the `using either model alias suppresses both spellings` test at line 104 is passing — so alias semantic suppression is already characterized. Good coverage expansion."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:32:00"
   },
   {
@@ -3376,7 +3274,6 @@
         "phrase": "New tests reviewed; mid-line RED root cause identified"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:32:00"
   },
   {
@@ -3406,7 +3303,6 @@
         "phrase": "Final adversarial review pass on 77/77 checkpoint"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -3436,7 +3332,6 @@
         "command": "cd /Users/giladbarnea/.pi && gsd HEAD -- agent/extensions/pi-user-agents/runner.ts agent/extensions/pi-user-agents/index.ts agent/extensions/pi-user-agents/shared.ts agent/extensions/pi-user-agents/tests/runner.test.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -3466,7 +3361,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg -n 'EXTENSION_MODEL|VALUE_OPTIONS|BOOLEAN_OPTIONS|BLOCKED_OPTIONS|isRecognizedOption|isValueTaking|resolveRequestedModel|matchesExactModelReference|modelReference' agent/extensions/pi-user-agents/ -g '*.ts' 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:33:00"
   },
   {
@@ -3506,7 +3400,6 @@
         "message": "**Adversarial Review Report — 77/77 GREEN checkpoint**\n\n**Verdict: No blockers. Two should-fix items, one nit.**\n\n---\n\n**PASS: Plan compliance (Node D–G requirements)**\n\n1. **No competing option tables in runner.ts** — `gsd` confirms the old `EXTENSION_MODEL_OPTION`, `VALUE_OPTIONS`, `BOOLEAN_OPTIONS`, `BLOCKED_OPTIONS`, `isRecognizedOption`, `isValueTaking`, `resolveRequestedModel`, and `matchesExactModelReference` are all deleted (225 lines removed). Zero hits across the entire extension. `runner.ts` imports `parseAgentCommand` from `command-line.js` and re-exports it — nothing else.\n\n2. **`modelReference` removed from `ParsedAgentCommand`** — `shared.ts` diff shows the field deleted. `-m` now normalizes to `forwardedArgs: [\"--model\", ...]` and resolves through `resolveCliModel()`. All 7 test fixture patches align.\n\n3. **`runner.ts` model resolution simplified** — old `resolveRequestedModel()` with its per-extension matching replaced by `forwarded.model ?? ctx.model` plus a clear error. Correct.\n\n**PASS: Lifecycle and composition**\n\n4. **`/reload` idempotency** — Pi's `handleReloadCommand` calls `resetExtensionUI()` (clears `autocompleteProviderWrappers` and `editorComponentFactory`), then `session.reload()` re-runs extension default exports. Our `autocompleteEditorFactory` closure is scoped per extension lifecycle. The `DECORATED_EDITOR` symbol prevents double-decorating the same editor instance. No handler accumulation.\n\n5. **Duplicate decoration prevention** — `decorateAutocompleteEditor` checks `runtimeEditor[DECORATED_EDITOR]` and returns early. `installEditorBridge` checks `previousEditorFactory === autocompleteEditorFactory`. Both guards are correct and complementary.\n\n6. **Race / rapid typing** — `handleInput` is synchronous. `analyzeAgentEditorInput` runs against current text/cursor each time. `tryTriggerAutocomplete` is fire-and-forget; the editor runtime serializes provider calls. No race.\n\n7. **Enter vs Tab** — `isCompletionAcceptance` checks both `tui.input.tab` and `tui.select.confirm`. Identical behavior for both. Correct per plan.\n\n**PASS: Provider delegation**\n\n8. **Fall-through to native** — non-agent lines (`cursorLine !== 0`), non-agent commands (expectation is `undefined`), and prose positions all fall through to `current.getSuggestions` / `current.applyCompletion`. Both `getSuggestions` and `applyCompletion` have the same guard structure.\n\n9. **`shouldTriggerFileCompletion`** delegates to `current.shouldTriggerFileCompletion` with a `true` default. Correct.\n\n**PASS: Cursor and edit correctness**\n\n10. **`applyGuardedOptionEdit` cursor position** — insertion is `` `${optionName} \"\" ` ``, cursor at `before.length + optionName.length + 2`. The `+2` accounts for the space and opening quote, placing the cursor between the quotes. Verified with concrete example.\n\n11. **`applyCompletionEdit` trailing space** — strips leading whitespace from suffix via `replace(/^\\s+/, \"\")`, inserts `${value} `. Exactly one trailing space regardless of context.\n\n12. **`parsedProvider` threading** — `analyzeArgumentCursor` captures the provider value after scanning `--provider <value>`. Threaded through `valueExpectation` calls. `getModelItems` filters by exact `model.provider` match when provider is set. Clean.\n\n**PASS: Semantic correctness**\n\n13. **Alias suppression** — `usedSemanticIds` tracks by `semanticId`, not by individual name. Using `-m` adds `\"model\"` which suppresses both `-m` and `--model`. Test at line 104 confirms.\n\n14. **`/agent-isolated` suppression** — `analyzeArgumentCursor` seeds `usedSemanticIds` with `[\"isolate\"]` when `command === \"agent-isolated\"`. Test at line 20 confirms.\n\n15. **Blocked options** — `autocomplete: false` on all blocked options prevents them from appearing in `getOptionItems`. Runtime `parseAgentCommand` still throws on leading blocked options. Test at line 42 confirms.\n\n**PASS: Runtime safety**\n\n16. **Missing editor methods** — `getCursor`, `tryTriggerAutocomplete`, and `forceFileAutocomplete` are checked with `typeof ... !== \"function\"` and throw clear errors. These would fire at extension load time, not silently at runtime.\n\n---\n\n**SHOULD-FIX (2):**\n\n1. **`autocomplete.ts:169` — useless escape in template literal.** `\\\"\\\"` should be `\"\"`. Biome `noUselessEscape`. Implementer acknowledged; deferred to next GREEN. Severity: should-fix (static lint).\n\n2. **`autocomplete.ts:69` — redundant option re-lookup.** `AGENT_OPTIONS.find(candidate => candidate.names.includes(item.value))` re-scans the 25-element array after `getOptionItems` already validated. Could store the option on the item or look up via `OPTION_BY_NAME`. Severity: should-fix (cleanliness, not correctness).\n\n**NIT (1):**\n\n3. **`getModelItems` double-filter chain** (line 140–141). Two successive `.filter()` calls could be merged into one. Purely stylistic.\n\n---\n\n**Test coverage assessment:**\n\nThe 12 editor-level tests cover the plan's critical interactions:\n- Option menu on `-` ✓\n- Thinking value chaining ✓\n- Model value chaining ✓  \n- Provider chaining ✓\n- Provider-scoped model filtering ✓\n- Alias semantic suppression ✓\n- `/agent-isolated` isolation suppression ✓\n- Prose/quoted/escaped negatives ✓\n- Blocked options invisible ✓\n- Free-form guarded slot ✓\n- Path traversal (directory + file) ✓\n- Mid-line completion (just went GREEN) ✓\n\nThe 65 parser/forwarding tests in `runner.test.ts` and 1 in `command-line.test.ts` all pass with updated fixtures.\n\n**Recommendation:** Proceed to the implementer's next slice. The two should-fix items can land with the next GREEN."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -3545,7 +3438,6 @@
         "phrase": "Adversarial review complete; no blockers; 2 should-fix, 1 nit"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -3576,7 +3468,6 @@
         "phrase": "Holding per main; awaiting implementer's completed batch announcement"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -3615,7 +3506,6 @@
         "phrase": "Reviewing mid-line async chaining fix at 78/78"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -3653,7 +3543,6 @@
         "id": "01DT"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:34:00"
   },
   {
@@ -3683,7 +3572,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -10"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -3713,7 +3601,6 @@
         "command": "cd /Users/giladbarnea/.pi && grep -n '\\\\\\\"' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -3746,7 +3633,6 @@
         "message": "**Review of mid-line async chaining fix — no issues found.**\n\nThe `observeChainedOptionEdit` approach is sound:\n- 500ms deadline prevents unbounded polling.\n- Three clean stop conditions: (1) expected value position reached → triggers value menu, (2) autocomplete already showing → defers to Pi, (3) deadline exceeded → stops silently.\n- `semanticId` check ensures chaining targets the right option, not a stale or different edit.\n- `pendingChainedOption` guard correctly gates on: no picker showing + Tab/Enter + single matching option + has completion domain. This precisely identifies the Pi \"unique forced completion\" case.\n\nThe `acceptedChainedOption` simplification from individual domain checks to `completionDomain !== undefined` is correct — free-form options (`tools`, `exclude-tools`, `system-prompt`, `append-system-prompt`) all have `completionDomain: undefined` and correctly won't chain.\n\n`triggerValueAutocomplete` extraction is clean — consolidates path vs non-path in one place.\n\n79/0 confirmed. The useless escape at line 169 is still pending."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -3776,7 +3662,6 @@
         "phrase": "79/0 GREEN; async observer reviewed and approved"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -3806,7 +3691,6 @@
         "phrase": "Final adversarial review of 79/79 negative-coverage batch"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -3835,7 +3719,6 @@
         "id": "01Ur"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:35:00"
   },
   {
@@ -3873,7 +3756,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | grep -E '(pass|fail)' | head -25"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -3903,7 +3785,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | grep -E '^\\s+\\d+ (pass|fail)' "
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -3933,7 +3814,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -5"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -3963,7 +3843,6 @@
         "message": "**Final adversarial review of 79/79 negative-coverage batch — APPROVED, no blockers.**\n\nThe batch is complete and well-structured. Since my last full review at 77/77, two new tests landed:\n\n1. **Rapid repeated dash stress** (line 22) — types `/agent -`, then rapidly deletes and retypes the dash 10 times. Asserts the editor text stays `/agent -` and the menu settles with model completion visible. Good race-condition coverage.\n\n2. **Mid-line completion** (line 67) — updated from the RED version. Now correctly uses `waitForRender` after Tab to observe the async auto-edit, then waits for thinking levels, accepts `off`, and verifies suffix preservation plus cursor position. Tests the `observeChainedOptionEdit` async path.\n\n**Implementation changes since 77/77:**\n- `observeChainedOptionEdit` — bounded 500ms observer for the unique-Tab auto-completion case. Clean stop conditions (value position reached, picker opened, deadline). Reviewed and approved.\n- `triggerValueAutocomplete` — extracted helper consolidating path vs non-path triggering.\n- `acceptedChainedOption` simplified to `completionDomain !== undefined` — correct since all enumerable domains set it and free-form ones don't.\n- `pendingChainedOption` guard gates correctly on `!wasShowingAutocomplete && completionAcceptance && exactly one option candidate with a value domain`.\n\n**Remaining should-fix items (carried from prior review):**\n1. `autocomplete.ts:169` — useless escape `\\\"\\\"` in template literal. Nit.\n2. `autocomplete.ts:71` — redundant `AGENT_OPTIONS.find()` re-lookup after `getOptionItems` validation. Cleanliness only.\n\n**Verdict:** The negative-coverage batch is complete and the implementation is sound. Ready for independent verification and final acceptance."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -3995,7 +3874,6 @@
         "message": "**Final stable checkpoint ready for independent verification: 79 pass, 0 fail, 93 expect calls.**\n\nThe implementer has announced the completed negative-coverage batch. Changes since last verified checkpoint (73):\n\n- 6 new editor-level tests: rapid dash stress, `/agent-isolated` suppression, prose/quote/escape negatives, blocked option absence, mid-line suffix preservation, alias semantic suppression\n- New `observeChainedOptionEdit` async observer for unique-Tab auto-completion chaining\n- `triggerValueAutocomplete` extracted helper\n- `acceptedChainedOption` simplified to `completionDomain !== undefined`\n\nPlease run full suite, focused autocomplete tests, and strict TypeScript check."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4025,7 +3903,6 @@
         "phrase": "79/0 final batch reviewed and approved; awaiting verifier"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:36:00"
   },
   {
@@ -4055,7 +3932,6 @@
         "phrase": "Adversarial review of async observer per main directive"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4094,7 +3970,6 @@
         "command": "cd /Users/giladbarnea/.pi && sed -n '175,245p' agent/extensions/pi-user-agents/autocomplete.ts 2>&1"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:37:00"
   },
   {
@@ -4124,7 +3999,6 @@
         "message": "**Adversarial review of `observeChainedOptionEdit` — NONBLOCKING**\n\nTraced all five scenarios you specified:\n\n1. **Stale cursor/text:** Observer reads fresh `getText()` and `getCursor()` each poll. `semanticId` check prevents triggering for a different option. If the user types and changes state, observer either matches the new valid state or times out. **Safe.**\n\n2. **Rapid/overlapping Tab:** Multiple Tabs before the observer resolves spawn multiple observers. Both may call `triggerValueAutocomplete` when Pi installs the edit, producing at most a redundant `tryTriggerAutocomplete` call. Pi serializes provider requests. **Minor concern (redundant trigger), not blocking.** To fully prevent: a `let pendingObserver = false` guard could be added, but the current behavior is functionally correct.\n\n3. **Reload/disposal:** Observer holds references to the old editor. On `/reload` during the 500ms window, calling methods on the stale editor no-ops (Pi's UI no longer references it). The observer expires at the deadline. **Negligible risk.**\n\n4. **Unrelated menu:** `semanticId` check prevents triggering for any option other than the one being auto-completed. **Safe.**\n\n5. **False `pendingChainedOption` activation:** Guard requires `!wasShowingAutocomplete`, `completionAcceptance`, exactly one matching candidate, and that candidate has a `completionDomain`. Free-form options (`completionDomain: undefined`) are excluded. Multi-candidate cases are excluded. **Safe.**\n\n**Verdict: NONBLOCKING.** The observer is bounded (500ms), reads fresh state each poll, targets a specific `semanticId`, and stops on any of three clean conditions. The only theoretical issue is redundant triggers from rapid Tab presses, which produce at most a harmless duplicate provider call."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -4154,7 +4028,6 @@
         "phrase": "Async observer review complete: NONBLOCKING verdict sent to main"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -4178,7 +4051,6 @@
     "content": [
       "Good — all three gates converged: reviewer approved (no blockers), verifier independently confirmed 79/0/93 + clean tsc, implementer running live TUI acceptance. Standing by for main's next directive."
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:38:00"
   },
   {
@@ -4197,7 +4069,6 @@
     "content": [
       "What can I help you with?"
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -4228,7 +4099,6 @@
         "command": "cd /Users/giladbarnea/.pi && git --no-pager diff --name-status HEAD | cat"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -4277,7 +4147,6 @@
         "command": "cd /Users/giladbarnea/.pi && git --no-pager diff HEAD -- agent/extensions/pi-user-agents/PARSER_SPEC.md agent/extensions/pi-user-agents/README.md agent/extensions/pi-user-agents/autocomplete/plan/26-07-16-019f6975-handoff.md agent/extensions/pi-user-agents/autocomplete/plan/AUTOCOMPLETE_PLAN.md | cat"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -4325,7 +4194,6 @@
         "id": "011E"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -4372,7 +4240,6 @@
         "id": "011w"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -4422,7 +4289,6 @@
         "command": "cd /Users/giladbarnea/.pi && git --no-pager status --short agent/extensions/pi-user-agents/ | cat"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:49:00"
   },
   {
@@ -4472,7 +4338,6 @@
         "command": "cd /Users/giladbarnea/.pi && rg 'resolveRequestedModel|matchesExactModelReference' agent/extensions/pi-user-agents/ | cat"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:51:00"
   },
   {
@@ -4526,7 +4391,6 @@
         "phrase": "Final release review complete: NONBLOCKING — ship. 80/80 verified, docs fact-checked, no blocking issues."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:52:00"
   },
   {
@@ -4564,7 +4428,6 @@
         "message": "**Release review complete: NONBLOCKING — ship.**\n\nIndependent verification confirms 80/80 tests passing. The structured diff is clean: every change traces to the autocomplete feature or its documented model-alias unification. No dead code, no unintended edits, no regressions in the original 65 parser+widget tests.\n\nDocs (PARSER_SPEC, README, plan ledger, handoff) were fact-checked against the implemented code — all claims accurate. The settings.json changes are confirmed unrelated concurrent configuration work as the handoff states.\n\nNo blocking issues found."
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:52:00"
   },
   {
@@ -4593,7 +4456,6 @@
         "command": "cd /Users/giladbarnea/.pi && npx bun test agent/extensions/pi-user-agents/tests/ 2>&1 | tail -5"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:52:00"
   },
   {
@@ -4624,7 +4486,6 @@
         "phrase": "80/0 RC confirmed; awaiting main's final gate"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:53:00"
   },
   {
@@ -4654,7 +4515,6 @@
         "phrase": "Doc/diff consistency check for release verdict"
       }
     ],
-    "model": "opus-4-6",
     "timestamp": "2026-07-16T16:53:00"
   },
   {

@@ -385,7 +385,6 @@ def test_parse_format_json_accepts_xml_and_stabilizes_both_representations() -> 
             "role": "assistant",
             "original_index": 3,
             "content": ["A canonical response."],
-            "model": "sonnet-4-6",
             "timestamp": "2026-07-17T18:42:37.123Z",
         }
     ])
@@ -421,7 +420,6 @@ def test_parse_format_json_accepts_xml_and_stabilizes_both_representations() -> 
             "role": "assistant",
             "original_index": 3,
             "content": ["A canonical response."],
-            "model": "sonnet-4-6",
             "timestamp": "2026-07-17T21:42:00",
         }
     ], (
@@ -442,6 +440,52 @@ def test_parse_format_json_accepts_xml_and_stabilizes_both_representations() -> 
     assert stabilized_xml.stdout == xml_result.stdout, (
         "Expected the XML -> JSON -> XML composition to stabilize byte-for-byte. "
         f"Expected: {xml_result.stdout!r}; got: {stabilized_xml.stdout!r}."
+    )
+
+
+@pytest.mark.parametrize(
+    ("arguments", "source", "expected_error"),
+    [
+        pytest.param(
+            [],
+            json.dumps([
+                {
+                    "type": "assistant-response",
+                    "role": "assistant",
+                    "original_index": 1,
+                    "content": ["Reply."],
+                    "model": "sonnet-4-6",
+                }
+            ]),
+            "Unexpected keys in message 1: ['model'].",
+            id="json",
+        ),
+        pytest.param(
+            ["-f", "json"],
+            '<assistant-response i="1" model="sonnet-4-6">\n## Assistant\n\nReply.\n</assistant-response>\n',
+            "Unexpected attributes in message 1: ['model'].",
+            id="xml",
+        ),
+    ],
+)
+def test_parse_rejects_model_id_as_unknown_message_metadata(
+    arguments: list[str], source: str, expected_error: str
+) -> None:
+    completed = subprocess.run(
+        [str(CH_EXECUTABLE), "parse", *arguments],
+        cwd=PROJECT_ROOT,
+        input=source,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1, (
+        "Expected `ch parse` to reject a model id, which is not message metadata. "
+        f"stdout: {completed.stdout!r}."
+    )
+    assert expected_error in " ".join(completed.stderr.split()), (
+        f"Expected error {expected_error!r}. Got: {completed.stderr!r}."
     )
 
 
@@ -492,7 +536,6 @@ def test_json_messages_preserve_metadata_required_to_rebuild_xml_wrappers() -> N
         agent_id="019ecaa3-3e57-7150-bb03-2c582bede7ba",
         subagent_type="default",
         name="Planck",
-        model="gpt-5.4-mini",
         timestamp="2026-06-15T09:35:42.123Z",
     )
 
@@ -507,7 +550,6 @@ def test_json_messages_preserve_metadata_required_to_rebuild_xml_wrappers() -> N
             "agent_id": "019ecaa3-3e57-7150-bb03-2c582bede7ba",
             "subagent_type": "default",
             "name": "Planck",
-            "model": "gpt-5.4-mini",
             "timestamp": "2026-06-15T09:35:42.123Z",
         }
     ], (

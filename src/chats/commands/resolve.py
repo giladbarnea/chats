@@ -98,7 +98,7 @@ def read_claude_subagent_metadata(agent_file: Path) -> SubagentMetadata:
     """Read a Claude agent's type and name from its sibling `.meta.json` sidecar.
 
     >>> read_claude_subagent_metadata(Path("/does/not/exist/agent-x.jsonl"))
-    SubagentMetadata(agent_id='x', name=None, subagent_type=None, model=None)
+    SubagentMetadata(agent_id='x', name=None, subagent_type=None)
     """
     if not agent_file.name.startswith("agent-"):
         return SubagentMetadata(agent_id=agent_file.stem, subagent_type="fork")

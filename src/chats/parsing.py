@@ -1400,20 +1400,11 @@ def read_pi_subagent_metadata(transcript: Path) -> SubagentMetadata:
     entries = _iter_jsonl_entries(transcript.read_text(encoding="utf-8"))
     own_entries = entries[pi_inherited_prefix_end(entries):]
     briefing = next(filter(_is_pi_team_leader_message, own_entries), None)
-    model = next(
-        (
-            entry["message"]["model"] for entry in own_entries
-            if isinstance(entry.get("message"), dict) and entry["message"].get("role") == "assistant"
-            and isinstance(entry["message"].get("model"), str)
-        ),
-        None,
-    )
     header = entries[0] if entries else {}
     return SubagentMetadata(
         agent_id=header.get("id") if isinstance(header.get("id"), str) else None,
         name=briefing["details"]["to"] if briefing else None,
         subagent_type="teammate" if briefing else "user-agent",
-        model=model,
     )
 
 
@@ -2024,37 +2015,14 @@ def find_codex_subagent_transcripts(
     return proven
 
 
-def _extract_codex_turn_context_model(session_file: Path) -> str | None:
-    """Read the model from the first Codex `turn_context` entry."""
-    try:
-        with open(session_file, "r", encoding="utf-8") as handle:
-            for line in handle:
-                stripped = line.strip()
-                if not stripped:
-                    continue
-                try:
-                    entry = json.loads(stripped)
-                except json.JSONDecodeError:
-                    continue
-                if entry.get("type") != "turn_context":
-                    continue
-                model = entry.get("payload", {}).get("model")
-                if isinstance(model, str) and model:
-                    return model
-    except OSError:
-        pass
-    return None
-
-
 def extract_codex_subagent_metadata(transcript: Path) -> SubagentMetadata:
-    """Read a Codex subagent's identity from its rollout's session_meta + turn_context."""
+    """Read a Codex subagent's identity from its rollout's session_meta."""
     session_meta = _read_codex_session_meta(transcript)
     thread_spawn = _codex_thread_spawn(session_meta)
     return SubagentMetadata(
         agent_id=session_meta.get("id"),
         name=thread_spawn.get("agent_nickname"),
         subagent_type=thread_spawn.get("agent_role"),
-        model=_extract_codex_turn_context_model(transcript),
     )
 
 
@@ -2440,13 +2408,11 @@ def _parse_assistant_entry(
         index=index,
         agent_id=agent_id,
         timestamp=entry.get("timestamp"),
-        model=message_data.get("model"),
     )
     agent_tool_message = Message(
         role="assistant",
         agent_id=agent_id,
         timestamp=msg.timestamp,
-        model=msg.model,
         tools_always_visible=True,
     )
     text_blocks = []
@@ -2727,7 +2693,6 @@ def _parse_pi_message_entry(
             index=index,
             timestamp=entry.get("timestamp"),
             native_entry_id=native_entry_id,
-            model=message_data.get("model"),
         )
     elif role == "toolResult":
         nested_team_message = _pi_nested_team_calls_message(entry, flags)
@@ -2784,7 +2749,6 @@ def _parse_pi_message_entry(
         role="assistant",
         timestamp=entry.get("timestamp"),
         native_entry_id=native_entry_id,
-        model=message_data.get("model"),
         tools_always_visible=True,
     )
     if role == "assistant" and isinstance(content_items, list):

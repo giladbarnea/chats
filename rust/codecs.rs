@@ -602,9 +602,6 @@ fn message_attributes(message: &Message, text_encoding: Option<&str>) -> Result<
             attributes.push(("name".to_string(), value.clone()));
         }
     }
-    if let Some(value) = message.display_model() {
-        attributes.push(("model".to_string(), value.to_string()));
-    }
     if let Some(value) = &message.custom_type {
         attributes.push(("custom_type".to_string(), value.clone()));
     }
@@ -977,7 +974,6 @@ fn parse_document_message(
         "agent_id",
         "subagent_type",
         "name",
-        "model",
         "custom_type",
         "status",
         "date",
@@ -1020,7 +1016,6 @@ fn parse_document_message(
     message.agent_id = attributes.shift_remove("agent_id");
     message.subagent_type = attributes.shift_remove("subagent_type");
     message.name = attributes.shift_remove("name");
-    message.model = attributes.shift_remove("model");
     message.branch = attributes.shift_remove("branch");
     if !attributes.is_empty() {
         let mut keys = attributes.keys().cloned().collect::<Vec<_>>();
@@ -1490,9 +1485,6 @@ fn message_to_json(message: &Message) -> Option<Value> {
         if let Some(value) = &message.name {
             payload.insert("name".to_string(), Value::String(value.clone()));
         }
-    }
-    if let Some(value) = message.display_model() {
-        payload.insert("model".to_string(), Value::String(value.to_string()));
     }
     if let Some(value) = &message.custom_type {
         payload.insert("custom_type".to_string(), Value::String(value.clone()));

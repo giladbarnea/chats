@@ -21,7 +21,6 @@
         "phrase": "Acknowledged main; reading handoff and current tree"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:14:01.723Z"
   },
   {
@@ -56,7 +55,6 @@
         "forceFull": true
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:14:07.926Z"
   },
   {
@@ -126,7 +124,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:14:18.419Z"
   },
   {
@@ -309,7 +306,6 @@
         "forceFull": true
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:14:29.811Z"
   },
   {
@@ -533,7 +529,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:14:41.393Z"
   },
   {
@@ -730,7 +725,6 @@
         "phrase": "Acknowledged main; loading required TDD skills"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:15:06.208Z"
   },
   {
@@ -772,7 +766,6 @@
         "forceFull": true
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:15:10.683Z"
   },
   {
@@ -826,7 +819,6 @@
         "phrase": "Reconstructed code; running full extension suite for intended provider RED"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:15:14.604Z"
   },
   {
@@ -861,7 +853,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:15:19.758Z"
   },
   {
@@ -899,7 +890,6 @@
         "message": "Reconstruction complete. Full `bun test agent/extensions/pi-user-agents/tests` confirms the intended current RED exactly: 71 pass, 1 fail, 93 expect calls. Only `--provider chains into the unique providers from the live model catalog` times out because provider-domain suggestions/chaining are not implemented. I’m applying the minimal GREEN now, then I’ll announce the stable checkpoint before the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:15:27.997Z"
   },
   {
@@ -934,7 +924,6 @@
         "message": "Reconstruction complete. Full `bun test agent/extensions/pi-user-agents/tests` confirms the intended current RED exactly: 71 pass, 1 fail, 93 expect calls. Only `--provider chains into the unique providers from the live model catalog` times out because provider-domain suggestions/chaining are not implemented. I’m applying the minimal GREEN now, then I’ll announce the stable checkpoint before the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:15:36.696Z"
   },
   {
@@ -969,7 +958,6 @@
         "phrase": "Provider chaining RED confirmed 71/1; applying minimal GREEN"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:15:41.082Z"
   },
   {
@@ -1021,7 +1009,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:07.060Z"
   },
   {
@@ -1065,7 +1052,6 @@
         "phrase": "Acknowledged reviewer; provider branches applied, running GREEN"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:11.039Z"
   },
   {
@@ -1102,7 +1088,6 @@
         "message": "Agreed. I applied both branches plus provider candidate validation in `applyCompletion`; running the full suite now. I’ll announce the stable GREEN for independent verification before introducing the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:15.287Z"
   },
   {
@@ -1137,7 +1122,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:18.808Z"
   },
   {
@@ -1173,7 +1157,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:23.997Z"
   },
   {
@@ -1210,7 +1193,6 @@
         "message": "The first GREEN run stayed 71/1, but the timeout is actually at line 64 before provider chaining. The test types `--pro` while both `--provider` and `--prompt-template` truthfully share that prefix, then incorrectly requires prompt-template absent. I’m correcting the behavioral test to the unambiguous `--prov`; production already has provider suggestions, validation, and chaining. This preserves the plan’s starts-with prefix rule."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:41.902Z"
   },
   {
@@ -1254,7 +1236,6 @@
         "phrase": "Acknowledged verifier; RED exposed invalid shared prefix assertion"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:45.898Z"
   },
   {
@@ -1291,7 +1272,6 @@
         "message": "Not stable yet: the first attempt remained 71/1 because the intended provider RED typed `--pro` but incorrectly required `--prompt-template` absent even though it shares that prefix. I’m correcting it to `--prov`, then rerunning the full command. I’ll send the exact GREEN result and explicit stable signal."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:50.851Z"
   },
   {
@@ -1325,7 +1305,6 @@
         "message": "Provider implementation is in, but the first rerun exposed that the inherited RED failed one step earlier than intended: it typed `--pro` and required `--prompt-template` absent, although both `--provider` and `--prompt-template` truthfully share that prefix. I’m correcting the test to `--prov` so it exercises provider chaining rather than contradicting prefix semantics, then rerunning the full suite."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:16:57.031Z"
   },
   {
@@ -1365,7 +1344,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:17:03.847Z"
   },
   {
@@ -1400,7 +1378,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:17:06.987Z"
   },
   {
@@ -1435,7 +1412,6 @@
         "phrase": "Provider chaining stable: 72 pass, 0 fail, 93 expects"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:17:14.487Z"
   },
   {
@@ -1487,7 +1463,6 @@
         "message": "STABLE GREEN checkpoint: `bun test agent/extensions/pi-user-agents/tests` is 72 pass, 0 fail, 93 expect calls. Provider completion and chaining are implemented; the test now uses truthful unambiguous prefix `--prov`. Tree is stable for review/independent verification before the next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:17:29.089Z"
   },
   {
@@ -1560,7 +1535,6 @@
         "phrase": "Holding 72/72 tree for verifier; auditing next negative slice read-only"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:17:37.217Z"
   },
   {
@@ -1622,7 +1596,6 @@
         "timeout": 30
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:17:57.328Z"
   },
   {
@@ -1730,7 +1703,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:18:06.234Z"
   },
   {
@@ -1803,7 +1775,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:18:12.163Z"
   },
   {
@@ -1838,7 +1809,6 @@
         "forceFull": true
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:18:21.071Z"
   },
   {
@@ -1873,7 +1843,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:18:34.544Z"
   },
   {
@@ -1908,7 +1877,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:18:42.213Z"
   },
   {
@@ -1943,7 +1911,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:18:45.955Z"
   },
   {
@@ -1978,7 +1945,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:18:50.571Z"
   },
   {
@@ -2013,7 +1979,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:19:04.419Z"
   },
   {
@@ -2048,7 +2013,6 @@
         "timeout": 30
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:19:25.918Z"
   },
   {
@@ -2092,7 +2056,6 @@
         "phrase": "Acknowledged main; next slice is provider-scoped model catalog"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:20:22.375Z"
   },
   {
@@ -2136,7 +2099,6 @@
         "phrase": "Acknowledged release; adding provider-scoped model RED"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:20:27.780Z"
   },
   {
@@ -2176,7 +2138,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:20:43.595Z"
   },
   {
@@ -2211,7 +2172,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:20:47.221Z"
   },
   {
@@ -2247,7 +2207,6 @@
         "phrase": "Provider scope RED confirmed; threading parsed provider through cursor state"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:21:03.960Z"
   },
   {
@@ -2295,7 +2254,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:21:35.458Z"
   },
   {
@@ -2339,7 +2297,6 @@
         "phrase": "Acknowledged reviewer; shared scanner carries prior provider, no reparse"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:21:41.243Z"
   },
   {
@@ -2376,7 +2333,6 @@
         "message": "Aligned. I’m threading a single prior provider value out of `analyzeArgumentCursor` into `ValueCursorExpectation` and filtering `getModelItems`; no autocomplete-side reparse."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:21:48.170Z"
   },
   {
@@ -2420,7 +2376,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:21:55.668Z"
   },
   {
@@ -2468,7 +2423,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:22:07.949Z"
   },
   {
@@ -2503,7 +2457,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:22:12.636Z"
   },
   {
@@ -2538,7 +2491,6 @@
         "phrase": "Provider-scoped models stable: 73 pass, 0 fail"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:22:17.379Z"
   },
   {
@@ -2590,7 +2542,6 @@
         "message": "STABLE GREEN checkpoint: shared cursor scan now carries `parsedProvider`; model candidates and acceptance both filter by it. Full suite: 73 pass, 0 fail, 93 expect calls. Holding before next RED."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:22:28.199Z"
   },
   {
@@ -2663,7 +2614,6 @@
         "phrase": "Holding 73/73 for verifier; probing next behavior read-only"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:22:38.181Z"
   },
   {
@@ -2698,7 +2648,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:22:54.770Z"
   },
   {
@@ -2733,7 +2682,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:23:02.628Z"
   },
   {
@@ -2777,7 +2725,6 @@
         "phrase": "Acknowledged 73/73 gate; next slice is mid-line provider scope"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:25:00.742Z"
   },
   {
@@ -2839,7 +2786,6 @@
         "phrase": "Acknowledged main; starting alias semantic-suppression editor slice"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:25:22.803Z"
   },
   {
@@ -2879,7 +2825,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:25:36.469Z"
   },
   {
@@ -2923,7 +2868,6 @@
         "phrase": "Acknowledged reviewer static fix; first proving alias slice"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:25:41.423Z"
   },
   {
@@ -2960,7 +2904,6 @@
         "message": "Acknowledged. I’ll remove that useless escape at the next GREEN/static cleanup point; first I’m running the current alias behavior test so the slice stays isolated."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:25:47.201Z"
   },
   {
@@ -2995,7 +2938,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:25:51.323Z"
   },
   {
@@ -3030,7 +2972,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:25:57.670Z"
   },
   {
@@ -3065,7 +3006,6 @@
         "phrase": "Alias suppression characterized GREEN: 74 pass, 0 fail"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:26:03.586Z"
   },
   {
@@ -3117,7 +3057,6 @@
         "message": "Alias semantic-suppression editor coverage landed and was already GREEN under the shared semantic IDs. Full suite 74/74. No production change; holding stable before `/agent-isolated`."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:26:10.895Z"
   },
   {
@@ -3190,7 +3129,6 @@
         "phrase": "Holding 74/74 for verification before isolated slice"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:26:15.437Z"
   },
   {
@@ -3239,7 +3177,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:26:34.788Z"
   },
   {
@@ -3321,7 +3258,6 @@
         "phrase": "Acknowledged 74/74 gate; adding isolated-command suppression"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:26:39.590Z"
   },
   {
@@ -3361,7 +3297,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:26:56.179Z"
   },
   {
@@ -3396,7 +3331,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:27:00.063Z"
   },
   {
@@ -3431,7 +3365,6 @@
         "phrase": "Isolated suppression characterized GREEN: 75 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:27:08.312Z"
   },
   {
@@ -3483,7 +3416,6 @@
         "message": "`/agent-isolated` editor suppression coverage is GREEN; 75/75 full suite, no production change. Stable before prose cutoff."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:27:15.779Z"
   },
   {
@@ -3556,7 +3488,6 @@
         "phrase": "Holding 75/75 before prose cutoff RED"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:27:20.924Z"
   },
   {
@@ -3600,7 +3531,6 @@
         "phrase": "Acknowledged batched verification; adding prose/escape cutoff coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:27:42.639Z"
   },
   {
@@ -3644,7 +3574,6 @@
         "phrase": "Acknowledged verifier batch; building prose cutoff coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:27:47.981Z"
   },
   {
@@ -3681,7 +3610,6 @@
         "message": "Acknowledged. I’ll send one explicit stable batch with the exact final count after prose cutoff, blocked-option absence, mid-line suffix preservation, and rapid-typing stress are all covered."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:27:52.246Z"
   },
   {
@@ -3725,7 +3653,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:02.037Z"
   },
   {
@@ -3765,7 +3692,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:09.403Z"
   },
   {
@@ -3800,7 +3726,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:16.235Z"
   },
   {
@@ -3835,7 +3760,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:21.595Z"
   },
   {
@@ -3870,7 +3794,6 @@
         "phrase": "Prose/quote/escape cutoff GREEN: 76 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:25.635Z"
   },
   {
@@ -3904,7 +3827,6 @@
         "message": "STABLE coverage checkpoint: real-editor prose cutoff now observes `/agent explain -`, quoted dash, and escaped dash for a bounded interval and proves autocomplete never appears. Already GREEN; full suite 76 pass, 0 fail, 93 expect calls. Proceeding directly to blocked-option absence under the approved batched-verification instruction."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:32.085Z"
   },
   {
@@ -3939,7 +3861,6 @@
         "phrase": "Adding blocked-option absence editor coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:43.138Z"
   },
   {
@@ -3983,7 +3904,6 @@
         "phrase": "Acknowledged 76/76; blocked-option absence slice in progress"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:48.351Z"
   },
   {
@@ -4023,7 +3943,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:28:55.409Z"
   },
   {
@@ -4058,7 +3977,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:29:02.398Z"
   },
   {
@@ -4093,7 +4011,6 @@
         "phrase": "Blocked-option absence GREEN: 77 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:29:08.098Z"
   },
   {
@@ -4127,7 +4044,6 @@
         "message": "STABLE coverage checkpoint: prefix `--ex` visibly offers effective `--exclude-tools` while blocked `--export` remains absent. Already GREEN; full suite 77 pass, 0 fail, 93 expect calls. Proceeding directly to mid-line suffix preservation."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:29:13.878Z"
   },
   {
@@ -4162,7 +4078,6 @@
         "phrase": "Adding real-editor mid-line suffix preservation"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:29:39.103Z"
   },
   {
@@ -4206,7 +4121,6 @@
         "phrase": "Acknowledged 77/77; mid-line suffix test in progress"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:29:44.819Z"
   },
   {
@@ -4250,7 +4164,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:29:53.267Z"
   },
   {
@@ -4290,7 +4203,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:30:06.070Z"
   },
   {
@@ -4325,7 +4237,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:30:13.197Z"
   },
   {
@@ -4361,7 +4272,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:30:17.632Z"
   },
   {
@@ -4396,7 +4306,6 @@
         "timeout": 30
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:30:25.460Z"
   },
   {
@@ -4436,7 +4345,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:30:50.614Z"
   },
   {
@@ -4489,7 +4397,6 @@
         "phrase": "Acknowledged reviewer/main correction; continuing mid-line chaining fix"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:30:57.342Z"
   },
   {
@@ -4526,7 +4433,6 @@
         "message": "Acknowledged. Main corrected the freeze: mid-line test exposed a real eager-chain gap when Tab applies a unique hidden completion. I’m continuing to GREEN, then will announce the final negative-coverage batch."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:31:01.945Z"
   },
   {
@@ -4561,7 +4467,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:31:09.774Z"
   },
   {
@@ -4602,7 +4507,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:31:23.590Z"
   },
   {
@@ -4637,7 +4541,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:31:27.559Z"
   },
   {
@@ -4673,7 +4576,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:31:34.588Z"
   },
   {
@@ -4708,7 +4610,6 @@
         "timeout": 30
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:31:39.773Z"
   },
   {
@@ -4756,7 +4657,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:01.225Z"
   },
   {
@@ -4800,7 +4700,6 @@
         "phrase": "Acknowledged reviewer; async unique-Tab observer implemented"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:08.012Z"
   },
   {
@@ -4837,7 +4736,6 @@
         "message": "Agreed on the root cause. Pi’s explicit Tab asynchronously auto-applies a unique forced completion, so the synchronous wrapper cannot observe the edit. I added a bounded observer only for a single value-domain option candidate; it triggers the second menu after the editor installs the edit, and stops if Pi instead opens a picker."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:19.373Z"
   },
   {
@@ -4872,7 +4770,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:22.807Z"
   },
   {
@@ -4907,7 +4804,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:26.952Z"
   },
   {
@@ -4942,7 +4838,6 @@
         "phrase": "Mid-line async chaining GREEN: 78 pass"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:31.475Z"
   },
   {
@@ -4985,7 +4880,6 @@
         "message": "Mid-line RED is GREEN at 78/78. Fix: bounded observation only for explicit completion with exactly one value-domain candidate; it stops on a visible picker and triggers the second menu once Pi’s async auto-edit is observable. Exact suffix/cursor test passes. Rapid stress is next; final batch follows."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:38.813Z"
   },
   {
@@ -5039,7 +4933,6 @@
         "phrase": "Adding repeated rapid dash-trigger stress coverage"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:47.021Z"
   },
   {
@@ -5079,7 +4972,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:33:56.131Z"
   },
   {
@@ -5114,7 +5006,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:34:04.520Z"
   },
   {
@@ -5149,7 +5040,6 @@
         "phrase": "Negative coverage batch complete: 79 pass, 0 fail"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:34:14.808Z"
   },
   {
@@ -5201,7 +5091,6 @@
         "message": "FINAL NEGATIVE-COVERAGE BATCH STABLE at 79/79. New scope since 73: alias and isolated suppression, prose/quote/escape negatives, blocked absence, mid-line suffix/cursor with bounded async unique-Tab chaining, and repeated rapid dash stress. Tree held for final adversarial review and independent verification."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:34:26.141Z"
   },
   {
@@ -5274,7 +5163,6 @@
         "phrase": "Holding 79/79 for batched verification and review"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:34:30.813Z"
   },
   {
@@ -5318,7 +5206,6 @@
         "phrase": "Acknowledged main; holding 79/79, no refactor churn"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:34:38.423Z"
   },
   {
@@ -5353,7 +5240,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:35:02.296Z"
   },
   {
@@ -5386,7 +5272,6 @@
         "id": "4HNk"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:35:14.859Z"
   },
   {
@@ -5421,7 +5306,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:35:22.638Z"
   },
   {
@@ -5456,7 +5340,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:35:39.905Z"
   },
   {
@@ -5500,7 +5383,6 @@
         "phrase": "Acknowledged reviewer; 79/79 async fix has no blockers"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:35:49.755Z"
   },
   {
@@ -5537,7 +5419,6 @@
         "message": "Thanks. I’ll make only the accepted useless-escape cleanup when main releases the static/docs gate; no other refactor churn."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:35:53.961Z"
   },
   {
@@ -5570,7 +5451,6 @@
         "id": "RkXe"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:35:59.154Z"
   },
   {
@@ -5605,7 +5485,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:36:04.239Z"
   },
   {
@@ -5639,7 +5518,6 @@
         "message": "Reviewer reports no issues and verifier status says final acceptance evidence sent. I remain on the 79/79 hold pending your release into docs/static/TUI gates."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:36:14.348Z"
   },
   {
@@ -5674,7 +5552,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:36:19.280Z"
   },
   {
@@ -5709,7 +5586,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:36:24.411Z"
   },
   {
@@ -5753,7 +5629,6 @@
         "phrase": "Acknowledged 79/79 gate; running live Pi /reload acceptance"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:36:37.942Z"
   },
   {
@@ -5788,7 +5663,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:36:51.878Z"
   },
   {
@@ -5823,7 +5697,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:00.008Z"
   },
   {
@@ -5858,7 +5731,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:06.780Z"
   },
   {
@@ -5893,7 +5765,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:10.846Z"
   },
   {
@@ -5928,7 +5799,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:15.461Z"
   },
   {
@@ -5963,7 +5833,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:25.141Z"
   },
   {
@@ -5998,7 +5867,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:32.799Z"
   },
   {
@@ -6033,7 +5901,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:39.282Z"
   },
   {
@@ -6068,7 +5935,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:47.844Z"
   },
   {
@@ -6103,7 +5969,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:37:59.024Z"
   },
   {
@@ -6138,7 +6003,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:38:08.483Z"
   },
   {
@@ -6173,7 +6037,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:38:16.514Z"
   },
   {
@@ -6208,7 +6071,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:38:24.093Z"
   },
   {
@@ -6243,7 +6105,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:38:31.088Z"
   },
   {
@@ -6278,7 +6139,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:38:39.234Z"
   },
   {
@@ -6313,7 +6173,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:38:53.738Z"
   },
   {
@@ -6348,7 +6207,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:39:07.092Z"
   },
   {
@@ -6383,7 +6241,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:39:15.410Z"
   },
   {
@@ -6418,7 +6275,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:39:25.150Z"
   },
   {
@@ -6453,7 +6309,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:39:34.340Z"
   },
   {
@@ -6488,7 +6343,6 @@
         "timeout": 10
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:39:42.237Z"
   },
   {
@@ -6522,7 +6376,6 @@
         "message": "Observed live Pi TUI acceptance is GREEN in a real `pi --no-session` tmux terminal with the full loaded editor stack (`inline-commands`, `simple-editor-stash`, `taller-input`, and `pi-user-agents`). Verified eager `/agent -`, filtered thinking and \n...\n chaining with suffix preservation. Ran real `/reload`; Pi reported reload success, `/agent -` showed one 32-item bridge/menu, and thinking plus mid-line chaining still worked exactly once. TUI session is cleanly closed. Proceeding to docs/static."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:39:56.000Z"
   },
   {
@@ -6557,7 +6410,6 @@
         "phrase": "Live /reload acceptance GREEN; updating spec, README, ledger, handoff"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:40:00.345Z"
   },
   {
@@ -6625,7 +6477,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:40:44.000Z"
   },
   {
@@ -6669,7 +6520,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:41:04.285Z"
   },
   {
@@ -6717,7 +6567,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:41:28.844Z"
   },
   {
@@ -6752,7 +6601,6 @@
         "forceFull": true
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:41:37.716Z"
   },
   {
@@ -6792,7 +6640,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:41:42.629Z"
   },
   {
@@ -6827,7 +6674,6 @@
         "phrase": "Docs updated; running focused Biome and strict TypeScript"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:41:51.347Z"
   },
   {
@@ -6862,7 +6708,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:42:00.546Z"
   },
   {
@@ -6898,7 +6743,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:42:34.947Z"
   },
   {
@@ -6934,7 +6778,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:42:52.163Z"
   },
   {
@@ -6969,7 +6812,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:43:03.980Z"
   },
   {
@@ -7005,7 +6847,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:43:22.191Z"
   },
   {
@@ -7042,7 +6883,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:43:33.351Z"
   },
   {
@@ -7082,7 +6922,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:43:47.614Z"
   },
   {
@@ -7122,7 +6961,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:43:54.332Z"
   },
   {
@@ -7162,7 +7000,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:44:02.100Z"
   },
   {
@@ -7197,7 +7034,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:44:13.092Z"
   },
   {
@@ -7232,7 +7068,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:44:25.575Z"
   },
   {
@@ -7268,7 +7103,6 @@
         "phrase": "Focused lint clean; strict TS only seven known widget errors; running final suite/diff"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:44:46.464Z"
   },
   {
@@ -7303,7 +7137,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:44:56.223Z"
   },
   {
@@ -7352,7 +7185,6 @@
         "forceFull": true
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:45:19.037Z"
   },
   {
@@ -7427,7 +7259,6 @@
         "context": 2
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:45:31.923Z"
   },
   {
@@ -7467,7 +7298,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:45:48.847Z"
   },
   {
@@ -7502,7 +7332,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:45:59.498Z"
   },
   {
@@ -7546,7 +7375,6 @@
         ]
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:46:25.862Z"
   },
   {
@@ -7581,7 +7409,6 @@
         "content": "# `/agent` eager autocomplete handoff — 2026-07-16\n\n## Task overview\n\nDeliver the eager `/agent` and `/agent-isolated` argument autocomplete defined by [`AUTOCOMPLETE_PLAN.md`](AUTOCOMPLETE_PLAN.md), without modifying Pi core, committing, or distur\n...\nnd `handoff` skills; the full extension and tests; `AUTOCOMPLETE_PLAN.md`; `PARSER_SPEC.md`; `README.md`; Pi extension/TUI/editor/autocomplete runtime sources; `inline-commands`; and `agent/models.json` behavior were all used as baseline context.\n"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:46:51.300Z"
   },
   {
@@ -7616,7 +7443,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:47:08.760Z"
   },
   {
@@ -7651,7 +7477,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:47:22.531Z"
   },
   {
@@ -7686,7 +7511,6 @@
         "timeout": 60
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:47:31.209Z"
   },
   {
@@ -7721,7 +7545,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:47:41.138Z"
   },
   {
@@ -7781,7 +7604,6 @@
         "limit": 284
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:47:48.247Z"
   },
   {
@@ -7873,7 +7695,6 @@
         "timeout": 20
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:47:55.794Z"
   },
   {
@@ -7908,7 +7729,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:48:11.069Z"
   },
   {
@@ -7943,7 +7763,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:48:21.940Z"
   },
   {
@@ -7978,7 +7797,6 @@
         "timeout": 30
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:48:38.959Z"
   },
   {
@@ -8013,7 +7831,6 @@
         "phrase": "Final RC stable: 80/80, live /reload, docs/static green"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:48:47.759Z"
   },
   {
@@ -8065,7 +7882,6 @@
         "message": "FINAL STABLE RELEASE CANDIDATE ready for independent acceptance. Exact suite: `bun test agent/extensions/pi-user-agents/tests` => 80 pass, 0 fail, 93 expect calls. Focused Biome clean; focused strict TS only seven known widget errors; docs current; live Pi TUI plus real `/reload` observed green with one bridge/menu. Tree held stable for your read-only checks."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:48:59.368Z"
   },
   {
@@ -8138,7 +7954,6 @@
         "phrase": "Holding final 80/80 RC for reviewer and verifier"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:49:14.895Z"
   },
   {
@@ -8173,7 +7988,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:49:27.374Z"
   },
   {
@@ -8206,7 +8020,6 @@
         "id": "aXfz"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:49:35.906Z"
   },
   {
@@ -8241,7 +8054,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:49:43.205Z"
   },
   {
@@ -8274,7 +8086,6 @@
         "id": "kcO1"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:49:49.749Z"
   },
   {
@@ -8309,7 +8120,6 @@
         "timeout": 6
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:49:57.777Z"
   },
   {
@@ -8344,7 +8154,6 @@
         "timeout": 6
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:50:09.281Z"
   },
   {
@@ -8388,7 +8197,6 @@
         "phrase": "Acknowledged verifier blocker; fixing command-line test import only"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:50:23.124Z"
   },
   {
@@ -8423,7 +8231,6 @@
         "timeout": 120
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:50:29.460Z"
   },
   {
@@ -8458,7 +8265,6 @@
         "phrase": "Biome blocker fixed; focused clean and 80/80 restored"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:50:39.699Z"
   },
   {
@@ -8510,7 +8316,6 @@
         "message": "Final RC restored after only the verifier-requested import-order fix in `tests/command-line.test.ts`. Focused Biome clean; full suite 80/80."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:50:49.490Z"
   },
   {
@@ -8583,7 +8388,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:50:58.537Z"
   },
   {
@@ -8616,7 +8420,6 @@
         "id": "TE28"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:51:06.666Z"
   },
   {
@@ -8651,7 +8454,6 @@
         "timeout": 6
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:51:12.861Z"
   },
   {
@@ -8684,7 +8486,6 @@
         "id": "2XGl"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:51:27.437Z"
   },
   {
@@ -8719,7 +8520,6 @@
         "timeout": 5
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:51:34.995Z"
   },
   {
@@ -8752,7 +8552,6 @@
         "id": "1IGv"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:51:52.303Z"
   },
   {
@@ -8786,7 +8585,6 @@
         "message": "Verifier status is now `complete`: final RC independently approved to ship. Implementer work is done; tree remains uncommitted and stable at 80/80 with the documented known unrelated diagnostics only."
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:51:58.538Z"
   },
   {
@@ -8821,7 +8619,6 @@
         "phrase": "Final RC independently approved; uncommitted tree stable"
       }
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:52:04.034Z"
   },
   {
@@ -8850,7 +8647,6 @@
     "content": [
       "Implementation complete and independently approved. Final evidence:\n\n- 80 tests passed, 0 failed\n- Focused Biome checks clean\n- No task-local TypeScript errors\n- Live Pi TUI and real `/reload` acceptance passed\n- Documentation and handoff updated\n- Unrelated `agent/settings.json` preserved\n- No commit created"
     ],
-    "model": "gpt-5.6-sol",
     "timestamp": "2026-07-16T13:52:14.537Z"
   }
 ]

@@ -13,7 +13,6 @@ pub const MESSAGE_KEYS: &[&str] = &[
     "agent_id",
     "subagent_type",
     "name",
-    "model",
     "custom_type",
     "inherited_context",
     "status",
@@ -107,7 +106,6 @@ pub struct Message {
     pub agent_id: Option<String>,
     pub subagent_type: Option<String>,
     pub name: Option<String>,
-    pub model: Option<String>,
     pub custom_type: Option<String>,
     pub inherited_context: Option<bool>,
     pub status: Option<String>,
@@ -135,7 +133,6 @@ impl Message {
             agent_id: None,
             subagent_type: None,
             name: None,
-            model: None,
             custom_type: None,
             inherited_context: None,
             status: None,
@@ -154,14 +151,6 @@ impl Message {
             Some(name) => format!("## {label} '{name}'"),
             None => format!("## {label}"),
         }
-    }
-
-    pub fn display_model(&self) -> Option<&str> {
-        let model = self.model.as_deref()?;
-        if self.custom_type.is_some() {
-            return Some(model);
-        }
-        Some(model.strip_prefix("claude-").unwrap_or(model))
     }
 
 }
@@ -587,7 +576,6 @@ fn message_from_json(payload: Value, position: usize) -> Result<Message, String>
     message.native_entry_id = optional_string(&payload, "native_entry_id", &context)?;
     message.subagent_type = optional_string(&payload, "subagent_type", &context)?;
     message.name = optional_string(&payload, "name", &context)?;
-    message.model = optional_string(&payload, "model", &context)?;
     message.custom_type = optional_string(&payload, "custom_type", &context)?;
     message.inherited_context = optional_bool(&payload, "inherited_context", &context)?;
     message.status = optional_string(&payload, "status", &context)?;

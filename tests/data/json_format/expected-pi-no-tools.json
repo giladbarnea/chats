@@ -16,7 +16,6 @@
     "content": [
       "Now let me read the full transcript to understand it semantically. I'll write a script to dump it in a readable format."
     ],
-    "model": "deepseek/deepseek-v4-pro",
     "timestamp": "2026-05-12T10:00:01Z",
     "native_entry_id": "a1"
   }

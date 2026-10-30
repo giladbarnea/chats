@@ -164,38 +164,20 @@ def test_skill_payload_meta_user_message_counts_as_tool_output():
     )
 
 
-def test_assistant_and_agent_messages_include_model_attribute():
-    """Assistant messages (regular and agent) render model attr with claude- prefix stripped."""
+def test_assistant_and_agent_messages_omit_model_id():
+    """Assistant and agent messages never carry the provider model id."""
     content = '{"type":"user","message":{"role":"user","content":"hello"}}\n{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"hi"}]}}\n{"type":"assistant","agentId":"agent-abc123","message":{"role":"assistant","model":"claude-sonnet-4-5-20250929","content":[{"type":"text","text":"agent reply"}]}}'
     flags = ConversationFlags(show_agents=True, color="never")
     messages = parse_jsonl(content, flags)
     output = format_to_xml(messages, flags)
 
-    assert 'model="opus-4-6"' in output, (
-        f"Expected assistant message to include model attr with 'claude-' stripped. Got:\n{output}"
-    )
     assert 'agent_id="agent-abc123"' in output, (
         f"Expected agent message to retain agent_id attr. Got:\n{output}"
     )
-    assert 'model="sonnet-4-5-20250929"' in output, (
-        f"Expected agent message to include model attr with 'claude-' stripped. Got:\n{output}"
-    )
-
-
-def test_user_messages_have_no_model_attribute():
-    """User messages never render a model attr, even when adjacent to assistant with model."""
-    content = '{"type":"user","message":{"role":"user","content":"hello"}}\n{"type":"assistant","message":{"role":"assistant","model":"claude-opus-4-6","content":[{"type":"text","text":"reply"}]}}'
-    flags = ConversationFlags(color="never")
-    messages = parse_jsonl(content, flags)
-    output = format_to_xml(messages, flags)
-
-    user_tag_line = [line for line in output.splitlines() if "<user-message" in line]
-    assert len(user_tag_line) == 1, (
-        f"Expected exactly 1 user-message tag. Got:\n{output}"
-    )
-    assert "model=" not in user_tag_line[0], (
-        f"User message must not have a model attribute. Got tag: {user_tag_line[0]}"
-    )
+    for model_id in ("model=", "opus-4-6", "sonnet-4-5"):
+        assert model_id not in output, (
+            f"Expected no model id in parse output, found {model_id!r}. Got:\n{output}"
+        )
 
 
 def test_message_wrappers_include_date_attribute_from_timestamp():
@@ -217,8 +199,8 @@ def test_message_wrappers_include_date_attribute_from_timestamp():
         f"Expected user wrapper to include date attr. Got:\n{output}"
     )
     assert (
-        f'<assistant-response i="2" model="opus-4-8" date="{assistant_date}">' in output
-    ), f"Expected assistant wrapper to include model then date attrs. Got:\n{output}"
+        f'<assistant-response i="2" date="{assistant_date}">' in output
+    ), f"Expected assistant wrapper to carry only index and date attrs. Got:\n{output}"
 
 
 def test_cmd_parse_slice_preserves_tool_name_on_tool_output(

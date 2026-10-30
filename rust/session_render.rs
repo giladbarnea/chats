@@ -2425,9 +2425,6 @@ pub fn header_badge(
         meta.push(tag.to_string());
     }
     meta.push(format!("#{}", message.original_index));
-    if let Some(model) = message.display_model().filter(|value| !value.is_empty()) {
-        meta.push(model.to_string());
-    }
     if let Some(date) = display_date(message.timestamp.as_deref()) {
         meta.push(date);
     }

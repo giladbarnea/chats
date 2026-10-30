@@ -92,7 +92,6 @@ class SubagentMetadata:
     agent_id: str | None = None
     name: str | None = None
     subagent_type: str | None = None
-    model: str | None = None
 
 
 class ConversationFlags:
@@ -230,7 +229,6 @@ class Message:
     subagent_type: str | None = None  # e.g., "codebase-analyzer:multiple-subsystems"
     name: str | None = None  # subagent nickname (Codex assigns these; Claude does not)
     subagent_task: str | None = None  # the prompt given to a subagent, shown as a block
-    model: str | None = None  # e.g., "claude-sonnet-4-5-20250929"
     is_meta: bool = False
     source_tool_user_id: str | None = None
     wrapper_type: ContentBlockType | None = None
@@ -388,9 +386,6 @@ class Message:
             if self.name:
                 payload["name"] = self.name
 
-        if model := self.get_display_model():
-            payload["model"] = model
-
         if self.custom_type:
             payload["custom_type"] = self.custom_type
 
@@ -515,12 +510,6 @@ class Message:
             return f"{header} '{self.name}'"
         return header
 
-    def get_display_model(self) -> str | None:
-        """Return the model metadata in its provider-normalized display form."""
-        if self.model is None or self.custom_type:
-            return self.model
-        return self.model.removeprefix("claude-")
-
     def get_date_attribute(self) -> str | None:
         """Return the message date and time for XML attributes, semi-machine-friendly."""
         if timestamp := _message_timestamp_datetime(self.timestamp):
@@ -550,8 +539,6 @@ class Message:
                 attrs.append(("subagent_type", self.subagent_type))
             if self.name:
                 attrs.append(("name", self.name))
-        if model := self.get_display_model():
-            attrs.append(("model", model))
         if self.custom_type:
             attrs.append(("custom_type", self.custom_type))
         if self.inherited_context is not None:

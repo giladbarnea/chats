@@ -38,7 +38,7 @@ APP_THEME = Theme(
         "search.id.tail": "#646a70",
         "search.header": "#7e8389",
         "search.empty": "#878c92",
-        # Dim metadata trailing a message's role badge (short id, index, model),
+        # Dim metadata trailing a message's role badge (short id, index, date),
         # and the amber pop used to highlight matched query terms in bodies.
         "message.meta": "#646a70",
         "search.match": "bold #14181d on #e6b450",

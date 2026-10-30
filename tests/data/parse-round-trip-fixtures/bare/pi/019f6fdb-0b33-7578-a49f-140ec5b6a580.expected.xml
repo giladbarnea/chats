@@ -21,7 +21,7 @@ Current team status:
 
 ---
 
-<assistant-response i="2" model="opus-4-8" date="2026-07-17 14:34">
+<assistant-response i="2" date="2026-07-17 14:34">
 ## Assistant
 
 I don't have the actual task specification yet — only the instruction to begin and send a verified design brief. Let me set my status and ask main for the task scope.
@@ -29,7 +29,7 @@ I don't have the actual task specification yet — only the instruction to begin
 
 ---
 
-<assistant-response i="3" model="opus-4-8" date="2026-07-17 14:34">
+<assistant-response i="3" date="2026-07-17 14:34">
 ## Assistant
 
 I've asked main for the task scope. Standing by for the design brief subject, focus areas, and verification criteria before I begin.
@@ -60,7 +60,7 @@ Current team status:
 
 ---
 
-<assistant-response i="5" model="opus-4-8" date="2026-07-17 14:35">
+<assistant-response i="5" date="2026-07-17 14:35">
 ## Assistant
 
 Now I have the scope. Let me update status and start inspecting the source.
@@ -91,7 +91,7 @@ Current team status:
 
 ---
 
-<assistant-response i="7" model="opus-4-8" date="2026-07-17 14:35">
+<assistant-response i="7" date="2026-07-17 14:35">
 ## Assistant
 
 The project is a Python `chats` (`ch`) CLI. Let me read the core files: CLI routing, formatting, parsing, and the most relevant tests.
@@ -99,7 +99,7 @@ The project is a Python `chats` (`ch`) CLI. Let me read the core files: CLI rout
 
 ---
 
-<assistant-response i="8" model="opus-4-8" date="2026-07-17 14:35">
+<assistant-response i="8" date="2026-07-17 14:35">
 ## Assistant
 
 Now let me read the commands module, formatting, and model to understand the format dispatch and XML formatter.
@@ -107,7 +107,7 @@ Now let me read the commands module, formatting, and model to understand the for
 
 ---
 
-<assistant-response i="9" model="opus-4-8" date="2026-07-17 14:35">
+<assistant-response i="9" date="2026-07-17 14:35">
 ## Assistant
 
 Now the formatting module — the crux is `format_to_json` and `format_to_xml`.
@@ -115,7 +115,7 @@ Now the formatting module — the crux is `format_to_json` and `format_to_xml`.
 
 ---
 
-<assistant-response i="10" model="opus-4-8" date="2026-07-17 14:35">
+<assistant-response i="10" date="2026-07-17 14:35">
 ## Assistant
 
 Now the model — the heart of it: `to_json_dict`, `iter_visible_parts`, `get_wrapper_type`, `get_header`, `get_wrapper_attrs`.
@@ -123,7 +123,7 @@ Now the model — the heart of it: `to_json_dict`, `iter_visible_parts`, `get_wr
 
 ---
 
-<assistant-response i="11" model="opus-4-8" date="2026-07-17 14:36">
+<assistant-response i="11" date="2026-07-17 14:36">
 ## Assistant
 
 Now the tools rendering (both XML and JSON sides) and the registry — these determine tool round-trip fidelity.
@@ -131,7 +131,7 @@ Now the tools rendering (both XML and JSON sides) and the registry — these det
 
 ---
 
-<assistant-response i="12" model="opus-4-8" date="2026-07-17 14:36">
+<assistant-response i="12" date="2026-07-17 14:36">
 ## Assistant
 
 Now the supporting pieces — `parts.py`, `registry.py`, and the id-shortening/text-extraction utils.
@@ -139,7 +139,7 @@ Now the supporting pieces — `parts.py`, `registry.py`, and the id-shortening/t
 
 ---
 
-<assistant-response i="13" model="opus-4-8" date="2026-07-17 14:37">
+<assistant-response i="13" date="2026-07-17 14:37">
 ## Assistant
 
 Now the utils functions that affect tool id/content shaping, and the JSON structured test to see the golden shape and what "byte-match" means.
@@ -147,7 +147,7 @@ Now the utils functions that affect tool id/content shaping, and the JSON struct
 
 ---
 
-<assistant-response i="14" model="opus-4-8" date="2026-07-17 14:37">
+<assistant-response i="14" date="2026-07-17 14:37">
 ## Assistant
 
 Critical finding forming: the JSON (`to_json_dict`) omits both the message `timestamp`/`date` attribute and the subagent `name`, while tool ids survive. I must verify against the actual golden fixtures whether the target XML contains `date=`. Let me find the fixtures for the five scenarios.
@@ -155,7 +155,7 @@ Critical finding forming: the JSON (`to_json_dict`) omits both the message `time
 
 ---
 
-<assistant-response i="15" model="opus-4-8" date="2026-07-17 14:38">
+<assistant-response i="15" date="2026-07-17 14:38">
 ## Assistant
 
 Let me find the five named scenarios (bare/tools/shortened-tools/agents/tools+agents) and inspect the JSON + XML golden fixtures side by side.
@@ -163,7 +163,7 @@ Let me find the five named scenarios (bare/tools/shortened-tools/agents/tools+ag
 
 ---
 
-<assistant-response i="16" model="opus-4-8" date="2026-07-17 14:38">
+<assistant-response i="16" date="2026-07-17 14:38">
 ## Assistant
 
 There's a dedicated `parse-round-trip-fixtures` directory. This is exactly the round-trip target. Let me inspect it fully.
@@ -171,7 +171,7 @@ There's a dedicated `parse-round-trip-fixtures` directory. This is exactly the r
 
 ---
 
-<assistant-response i="17" model="opus-4-8" date="2026-07-17 14:38">
+<assistant-response i="17" date="2026-07-17 14:38">
 ## Assistant
 
 A full 20-fixture `input.json` → `expected.xml` corpus exists. Let me diff the smallest pair (provider-specific bare, 1.5KB) to see exactly what the JSON carries vs what the XML requires.
@@ -179,7 +179,7 @@ A full 20-fixture `input.json` → `expected.xml` corpus exists. Let me diff the
 
 ---
 
-<assistant-response i="18" model="opus-4-8" date="2026-07-17 14:38">
+<assistant-response i="18" date="2026-07-17 14:38">
 ## Assistant
 
 The date attribute is in the XML but entirely absent from the JSON — round-trip byte-match is impossible with the current emitter. Let me confirm this holds across the whole corpus and check the `name`/tool-id situations.
@@ -187,7 +187,7 @@ The date attribute is in the XML but entirely absent from the JSON — round-tri
 
 ---
 
-<assistant-response i="19" model="opus-4-8" date="2026-07-17 14:38">
+<assistant-response i="19" date="2026-07-17 14:38">
 ## Assistant
 
 The date loss is total and universal. Now let me verify the subagent-wrapper `name=` (nickname) case and the tool-id round-trip precisely by examining an agent fixture's `<agent>` wrappers in both JSON and XML.
@@ -195,7 +195,7 @@ The date loss is total and universal. Now let me verify the subagent-wrapper `na
 
 ---
 
-<assistant-response i="20" model="opus-4-8" date="2026-07-17 14:40">
+<assistant-response i="20" date="2026-07-17 14:40">
 ## Assistant
 
 Decisive: the date is lost universally, and crucially the with-agents fixtures already contain the merged `type:"agent"` entries in the JSON — so `ch parse` needs **no** subagent-file discovery or disk merge (that's the prior explorer's overestimate). Let me examine tool JSON shapes and the agent block structure to design the inverse, then I'll prototype to prove the exact gap.
@@ -203,7 +203,7 @@ Decisive: the date is lost universally, and crucially the with-agents fixtures a
 
 ---
 
-<assistant-response i="21" model="opus-4-8" date="2026-07-17 14:40">
+<assistant-response i="21" date="2026-07-17 14:40">
 ## Assistant
 
 The tool JSON has real encoding subtleties (flat-merged input, `input`-wrapping on key conflicts, Write's literal `content` key). Let me now prove the exact gap empirically: I'll build a throwaway reconstructor in `/tmp`, reuse the real `format_to_xml`, and diff against `expected.xml` (with `date=` normalized) across fixtures.
@@ -234,7 +234,7 @@ Current team status:
 
 ---
 
-<assistant-response i="23" model="opus-4-8" date="2026-07-17 14:42">
+<assistant-response i="23" date="2026-07-17 14:42">
 ## Assistant
 
 The bare and with-agents cases round-trip **perfectly** except for `date=` — confirming agents need no disk merge. The tool-output mismatch is a prototype limitation (I nulled the `tool_use_id` and gave no id_map), not a real loss: the JSON tool-output carries `name` and short `id`. Let me fix the prototype's output reconstruction to prove tools fully round-trip too.
@@ -242,7 +242,7 @@ The bare and with-agents cases round-trip **perfectly** except for `date=` — c
 
 ---
 
-<assistant-response i="24" model="opus-4-8" date="2026-07-17 14:42">
+<assistant-response i="24" date="2026-07-17 14:42">
 ## Assistant
 
 Same story — the remaining diffs are a prototype-only id collision (my synthetic 4-char id map collapses distinct tools sharing a short id). The real JSON block carries its own `name` inline. Let me make the synthetic ids unique to eliminate the collision and get the true result.
@@ -273,7 +273,7 @@ Current team status:
 
 ---
 
-<assistant-response i="26" model="opus-4-8" date="2026-07-17 14:43">
+<assistant-response i="26" date="2026-07-17 14:43">
 ## Assistant
 
 All 20 fixtures now match byte-for-byte except `date=`. Proof complete. Let me clean up and send the final brief.
@@ -304,7 +304,7 @@ Current team status:
 
 ---
 
-<assistant-response i="28" model="opus-4-8" date="2026-07-17 14:44">
+<assistant-response i="28" date="2026-07-17 14:44">
 ## Assistant
 
 Resending the full brief text now.
@@ -312,7 +312,7 @@ Resending the full brief text now.
 
 ---
 
-<assistant-response i="29" model="opus-4-8" date="2026-07-17 14:44">
+<assistant-response i="29" date="2026-07-17 14:44">
 ## Assistant
 
 Full brief text sent to main. Standing by if you need any part expanded or additional verification.

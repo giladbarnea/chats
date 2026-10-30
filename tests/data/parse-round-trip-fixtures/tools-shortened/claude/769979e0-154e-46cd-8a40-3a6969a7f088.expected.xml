@@ -31,7 +31,7 @@ Current team status:
 
 ---
 
-<assistant-response i="2" model="<synthetic>" date="2026-07-16 22:46">
+<assistant-response i="2" date="2026-07-16 22:46">
 ## Assistant
 
 No response requested.
@@ -47,7 +47,7 @@ No response requested.
 
 ---
 
-<assistant-response i="4" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="4" date="2026-07-16 22:46">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="016p">
@@ -93,7 +93,7 @@ ase": "Reading plan and dirty tree to understand task scope",
 
 ---
 
-<assistant-response i="6" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="6" date="2026-07-16 22:46">
 ## Assistant
 
 Let me read the plan and handoff to understand what I'll be reviewing.
@@ -101,7 +101,7 @@ Let me read the plan and handoff to understand what I'll be reviewing.
 
 ---
 
-<assistant-response i="7" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="7" date="2026-07-16 22:46">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01D1">
@@ -115,7 +115,7 @@ Let me read the plan and handoff to understand what I'll be reviewing.
 
 ---
 
-<assistant-response i="8" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="8" date="2026-07-16 22:46">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01BY">
@@ -148,7 +148,7 @@ TS.md` files, the `instruct-another-ai` and `handoff` skills, all extension impl
 
 ---
 
-<assistant-response i="10" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="10" date="2026-07-16 22:46">
 ## Assistant
 
 Good — the plan is a complete autocomplete system for `/agent` commands with 82 tests. Let me now read the dirty tree to understand the actual implementation.
@@ -156,7 +156,7 @@ Good — the plan is a complete autocomplete system for `/agent` commands with 8
 
 ---
 
-<assistant-response i="11" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="11" date="2026-07-16 22:46">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01N6">
@@ -170,7 +170,7 @@ Good — the plan is a complete autocomplete system for `/agent` commands with 8
 
 ---
 
-<assistant-response i="12" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="12" date="2026-07-16 22:46">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01SK">
@@ -184,7 +184,7 @@ Good — the plan is a complete autocomplete system for `/agent` commands with 8
 
 ---
 
-<assistant-response i="13" model="opus-4-6" date="2026-07-16 22:46">
+<assistant-response i="13" date="2026-07-16 22:46">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Qs">
@@ -221,7 +221,7 @@ export function errorMessage(error: unknown): string {
 
 ---
 
-<assistant-response i="15" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="15" date="2026-07-16 22:47">
 ## Assistant
 
 Now let me read the remaining dirty files — runner, index, and the tests.
@@ -229,7 +229,7 @@ Now let me read the remaining dirty files — runner, index, and the tests.
 
 ---
 
-<assistant-response i="16" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="16" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="011X">
@@ -243,7 +243,7 @@ Now let me read the remaining dirty files — runner, index, and the tests.
 
 ---
 
-<assistant-response i="17" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="17" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01XG">
@@ -257,7 +257,7 @@ Now let me read the remaining dirty files — runner, index, and the tests.
 
 ---
 
-<assistant-response i="18" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="18" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01PH">
@@ -271,7 +271,7 @@ Now let me read the remaining dirty files — runner, index, and the tests.
 
 ---
 
-<assistant-response i="19" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="19" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01ML">
@@ -316,7 +316,7 @@ import { createEditorHarness }
 
 ---
 
-<assistant-response i="21" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="21" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01SH">
@@ -330,7 +330,7 @@ import { createEditorHarness }
 
 ---
 
-<assistant-response i="22" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="22" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01VY">
@@ -373,7 +373,7 @@ itionalPromptTemplatePaths: ["/tmp/project/prompts/foo.md"],
 
 ---
 
-<assistant-response i="24" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="24" date="2026-07-16 22:47">
 ## Assistant
 
 Let me also check the spec and README, plus the AGENTS.md for the team brief.
@@ -381,7 +381,7 @@ Let me also check the spec and README, plus the AGENTS.md for the team brief.
 
 ---
 
-<assistant-response i="25" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="25" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01NS">
@@ -395,7 +395,7 @@ Let me also check the spec and README, plus the AGENTS.md for the team brief.
 
 ---
 
-<assistant-response i="26" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="26" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="019k">
@@ -436,7 +436,7 @@ Heavily inspired by [tintinweb/pi-subagents](https://github.com/tintinweb/pi-sub
 
 ---
 
-<assistant-response i="28" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="28" date="2026-07-16 22:47">
 ## Assistant
 
 Let me check the AGENTS.md for the team definition and run the test suite to verify the baseline.
@@ -444,7 +444,7 @@ Let me check the AGENTS.md for the team definition and run the test suite to ver
 
 ---
 
-<assistant-response i="29" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="29" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__bash" id="01R8">
@@ -458,7 +458,7 @@ Let me check the AGENTS.md for the team definition and run the test suite to ver
 
 ---
 
-<assistant-response i="30" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="30" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__bash" id="0134">
@@ -495,7 +495,7 @@ Ran 82 tests across 4 files. [833.00ms]
 
 ---
 
-<assistant-response i="32" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="32" date="2026-07-16 22:47">
 ## Assistant
 
 Good — 82 pass, 0 fail. Let me now read the AGENTS.md for the team charter.
@@ -503,7 +503,7 @@ Good — 82 pass, 0 fail. Let me now read the AGENTS.md for the team charter.
 
 ---
 
-<assistant-response i="33" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="33" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Eq">
@@ -538,7 +538,7 @@ Additionally, there is a qmd `pi-source` collection which encompasses the `docs`
 
 ---
 
-<assistant-response i="35" model="opus-4-6" date="2026-07-16 22:47">
+<assistant-response i="35" date="2026-07-16 22:47">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Xq">
@@ -572,7 +572,7 @@ s/@earendil-works/pi-agent-core/dist/agent.js` — steering/follow-up queues and
 
 ---
 
-<assistant-response i="37" model="opus-4-6" date="2026-07-16 22:48">
+<assistant-response i="37" date="2026-07-16 22:48">
 ## Assistant
 
 I've read the full dirty tree — all production code, tests, harness, plan, handoff, spec, and README. Let me update my status and write the review.
@@ -580,7 +580,7 @@ I've read the full dirty tree — all production code, tests, harness, plan, han
 
 ---
 
-<assistant-response i="38" model="opus-4-6" date="2026-07-16 22:48">
+<assistant-response i="38" date="2026-07-16 22:48">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01LP">
@@ -628,7 +628,7 @@ I've read the full dirty tree — all production code, tests, harness, plan, han
 
 ---
 
-<assistant-response i="40" model="opus-4-6" date="2026-07-16 22:49">
+<assistant-response i="40" date="2026-07-16 22:49">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamsend" id="01Pe">
@@ -658,7 +658,7 @@ team runtime rejected teamsend: 500 {"error":"Unknown teammate(s) in agent-autoc
 
 ---
 
-<assistant-response i="42" model="opus-4-6" date="2026-07-16 22:49">
+<assistant-response i="42" date="2026-07-16 22:49">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamsend" id="017M">
@@ -695,7 +695,7 @@ team runtime rejected teamsend: 500 {"error":"Unknown teammate(s) in agent-autoc
 
 ---
 
-<assistant-response i="44" model="opus-4-6" date="2026-07-16 22:50">
+<assistant-response i="44" date="2026-07-16 22:50">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teammain" id="01Qa">
@@ -726,7 +726,7 @@ team runtime rejected teamsend: 500 {"error":"Unknown teammate(s) in agent-autoc
 
 ---
 
-<assistant-response i="46" model="opus-4-6" date="2026-07-16 22:50">
+<assistant-response i="46" date="2026-07-16 22:50">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01Wf">
@@ -772,7 +772,7 @@ team runtime rejected teamsend: 500 {"error":"Unknown teammate(s) in agent-autoc
 
 ---
 
-<assistant-response i="48" model="opus-4-6" date="2026-07-16 22:50">
+<assistant-response i="48" date="2026-07-16 22:50">
 ## Assistant
 
 Review delivered to both main and implementer. Found no correctness bugs. Two actionable items: (1) `command-line.test.ts` should import from `command-line.ts` directly instead of through the `runner.ts` re-export, and (2) the test suite lacks a dedicated boolean-option acceptance test at the editor level. Standing by for new work or re-review.
@@ -813,7 +813,7 @@ Current team status:
 
 ---
 
-<assistant-response i="50" model="opus-4-6" date="2026-07-16 22:50">
+<assistant-response i="50" date="2026-07-16 22:50">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="0122">
@@ -859,7 +859,7 @@ ementer; standing by for stable tool checkpoint review",
 
 ---
 
-<assistant-response i="52" model="opus-4-6" date="2026-07-16 22:50">
+<assistant-response i="52" date="2026-07-16 22:50">
 ## Assistant
 
 Sounds good. I'll do a fresh full read at the stable tool checkpoint. Standing by.
@@ -900,7 +900,7 @@ Current team status:
 
 ---
 
-<assistant-response i="54" model="opus-4-6" date="2026-07-16 22:51">
+<assistant-response i="54" date="2026-07-16 22:51">
 ## Assistant
 
 Starting the review. Let me read the changed files.
@@ -908,7 +908,7 @@ Starting the review. Let me read the changed files.
 
 ---
 
-<assistant-response i="55" model="opus-4-6" date="2026-07-16 22:51">
+<assistant-response i="55" date="2026-07-16 22:51">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01Dc">
@@ -953,7 +953,7 @@ phrase": "Reading stable tool-menu checkpoint (84 tests)",
 
 ---
 
-<assistant-response i="57" model="opus-4-6" date="2026-07-16 22:52">
+<assistant-response i="57" date="2026-07-16 22:52">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Q6">
@@ -967,7 +967,7 @@ phrase": "Reading stable tool-menu checkpoint (84 tests)",
 
 ---
 
-<assistant-response i="58" model="opus-4-6" date="2026-07-16 22:52">
+<assistant-response i="58" date="2026-07-16 22:52">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="018k">
@@ -981,7 +981,7 @@ phrase": "Reading stable tool-menu checkpoint (84 tests)",
 
 ---
 
-<assistant-response i="59" model="opus-4-6" date="2026-07-16 22:52">
+<assistant-response i="59" date="2026-07-16 22:52">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Cq">
@@ -995,7 +995,7 @@ phrase": "Reading stable tool-menu checkpoint (84 tests)",
 
 ---
 
-<assistant-response i="60" model="opus-4-6" date="2026-07-16 22:52">
+<assistant-response i="60" date="2026-07-16 22:52">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01V6">
@@ -1036,7 +1036,7 @@ ate.now() + timeoutMilliseconds;
 
 ---
 
-<assistant-response i="62" model="opus-4-6" date="2026-07-16 22:53">
+<assistant-response i="62" date="2026-07-16 22:53">
 ## Assistant
 
 I've read the full delta. Let me verify the tests pass before finalizing.
@@ -1044,7 +1044,7 @@ I've read the full delta. Let me verify the tests pass before finalizing.
 
 ---
 
-<assistant-response i="63" model="opus-4-6" date="2026-07-16 22:53">
+<assistant-response i="63" date="2026-07-16 22:53">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__bash" id="01Bx">
@@ -1080,7 +1080,7 @@ Ran 85 tests across 4 files. [1011.00ms]
 
 ---
 
-<assistant-response i="65" model="opus-4-6" date="2026-07-16 22:54">
+<assistant-response i="65" date="2026-07-16 22:54">
 ## Assistant
 
 85 pass, 0 fail (one more than the checkpoint message mentioned — perhaps a late addition). The implementation is clean and correct.
@@ -1088,7 +1088,7 @@ Ran 85 tests across 4 files. [1011.00ms]
 
 ---
 
-<assistant-response i="66" model="opus-4-6" date="2026-07-16 22:54">
+<assistant-response i="66" date="2026-07-16 22:54">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01XG">
@@ -1134,7 +1134,7 @@ Ran 85 tests across 4 files. [1011.00ms]
 
 ---
 
-<assistant-response i="68" model="opus-4-6" date="2026-07-16 22:54">
+<assistant-response i="68" date="2026-07-16 22:54">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamsend" id="01Kd">
@@ -1171,7 +1171,7 @@ Ran 85 tests across 4 files. [1011.00ms]
 
 ---
 
-<assistant-response i="70" model="opus-4-6" date="2026-07-16 22:54">
+<assistant-response i="70" date="2026-07-16 22:54">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01RL">
@@ -1217,7 +1217,7 @@ checkpoint review sent; awaiting next checkpoint (path hardening)",
 
 ---
 
-<assistant-response i="72" model="opus-4-6" date="2026-07-16 22:54">
+<assistant-response i="72" date="2026-07-16 22:54">
 ## Assistant
 
 Tool checkpoint review sent. The delta is clean — three focused functions, two new triggers, well-tested. Standing by for the path-hardening checkpoint.
@@ -1258,7 +1258,7 @@ Current team status:
 
 ---
 
-<assistant-response i="74" model="opus-4-6" date="2026-07-16 22:54">
+<assistant-response i="74" date="2026-07-16 22:54">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01Q3">
@@ -1305,7 +1305,7 @@ g",
 
 ---
 
-<assistant-response i="76" model="opus-4-6" date="2026-07-16 22:54">
+<assistant-response i="76" date="2026-07-16 22:54">
 ## Assistant
 
 The test count is still 85, so the path hardening changed existing tests rather than adding new ones. Let me read the changed files.
@@ -1313,7 +1313,7 @@ The test count is still 85, so the path hardening changed existing tests rather 
 
 ---
 
-<assistant-response i="77" model="opus-4-6" date="2026-07-16 22:55">
+<assistant-response i="77" date="2026-07-16 22:55">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Pm">
@@ -1327,7 +1327,7 @@ The test count is still 85, so the path hardening changed existing tests rather 
 
 ---
 
-<assistant-response i="78" model="opus-4-6" date="2026-07-16 22:55">
+<assistant-response i="78" date="2026-07-16 22:55">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="015z">
@@ -1372,7 +1372,7 @@ import { createEditorHarness }
 
 ---
 
-<assistant-response i="80" model="opus-4-6" date="2026-07-16 22:55">
+<assistant-response i="80" date="2026-07-16 22:55">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamsend" id="01Re">
@@ -1409,7 +1409,7 @@ import { createEditorHarness }
 
 ---
 
-<assistant-response i="82" model="opus-4-6" date="2026-07-16 22:56">
+<assistant-response i="82" date="2026-07-16 22:56">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01Jt">
@@ -1455,7 +1455,7 @@ Path checkpoint reviewed; awaiting shortcut checkpoint",
 
 ---
 
-<assistant-response i="84" model="opus-4-6" date="2026-07-16 22:56">
+<assistant-response i="84" date="2026-07-16 22:56">
 ## Assistant
 
 Path checkpoint reviewed — clean pass. The delta was a single `||` clause widening an existing trigger to cover path domains alongside tools. Standing by for the shortcut checkpoint.
@@ -1496,7 +1496,7 @@ Current team status:
 
 ---
 
-<assistant-response i="86" model="opus-4-6" date="2026-07-16 22:56">
+<assistant-response i="86" date="2026-07-16 22:56">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="012Z">
@@ -1542,7 +1542,7 @@ Both checkpoints reviewed; standing by for shortcut checkpoint",
 
 ---
 
-<assistant-response i="88" model="opus-4-6" date="2026-07-16 22:56">
+<assistant-response i="88" date="2026-07-16 22:56">
 ## Assistant
 
 Acknowledged. Standing by.
@@ -1583,7 +1583,7 @@ Current team status:
 
 ---
 
-<assistant-response i="90" model="opus-4-6" date="2026-07-16 22:58">
+<assistant-response i="90" date="2026-07-16 22:58">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01JB">
@@ -1629,7 +1629,7 @@ Current team status:
 
 ---
 
-<assistant-response i="92" model="opus-4-6" date="2026-07-16 22:59">
+<assistant-response i="92" date="2026-07-16 22:59">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Fp">
@@ -1643,7 +1643,7 @@ Current team status:
 
 ---
 
-<assistant-response i="93" model="opus-4-6" date="2026-07-16 22:59">
+<assistant-response i="93" date="2026-07-16 22:59">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01Pt">
@@ -1657,7 +1657,7 @@ Current team status:
 
 ---
 
-<assistant-response i="94" model="opus-4-6" date="2026-07-16 22:59">
+<assistant-response i="94" date="2026-07-16 22:59">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__read" id="01FD">
@@ -1698,7 +1698,7 @@ ate.now() + timeoutMilliseconds;
 
 ---
 
-<assistant-response i="96" model="opus-4-6" date="2026-07-16 23:00">
+<assistant-response i="96" date="2026-07-16 23:00">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__bash" id="017w">
@@ -1729,7 +1729,7 @@ Ran 87 tests across 4 files. [856.00ms]
 
 ---
 
-<assistant-response i="98" model="opus-4-6" date="2026-07-16 23:00">
+<assistant-response i="98" date="2026-07-16 23:00">
 ## Assistant
 
 87/87 green. This is the most interesting checkpoint — let me write the review.
@@ -1737,7 +1737,7 @@ Ran 87 tests across 4 files. [856.00ms]
 
 ---
 
-<assistant-response i="99" model="opus-4-6" date="2026-07-16 23:00">
+<assistant-response i="99" date="2026-07-16 23:00">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamsend" id="01HS">
@@ -1774,7 +1774,7 @@ Ran 87 tests across 4 files. [856.00ms]
 
 ---
 
-<assistant-response i="101" model="opus-4-6" date="2026-07-16 23:00">
+<assistant-response i="101" date="2026-07-16 23:00">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01D3">
@@ -1820,7 +1820,7 @@ rtcut checkpoint reviewed; awaiting final adversarial stage",
 
 ---
 
-<assistant-response i="103" model="opus-4-6" date="2026-07-16 23:00">
+<assistant-response i="103" date="2026-07-16 23:00">
 ## Assistant
 
 Shortcut checkpoint reviewed — clean pass. The domain filtering, merge logic, and guarded-slot handling are all correct. Standing by for the final adversarial stage.
@@ -1861,7 +1861,7 @@ Current team status:
 
 ---
 
-<assistant-response i="105" model="opus-4-6" date="2026-07-16 23:01">
+<assistant-response i="105" date="2026-07-16 23:01">
 ## Assistant
 
 <tool-input name="mcp__custom-tools__teamstatus" id="01KX">
@@ -1907,7 +1907,7 @@ Current team status:
 
 ---
 
-<assistant-response i="107" model="opus-4-6" date="2026-07-16 23:01">
+<assistant-response i="107" date="2026-07-16 23:01">
 ## Assistant
 
 Acknowledged. Standing by.

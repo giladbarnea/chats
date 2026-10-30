@@ -30,7 +30,6 @@
     "agent_id": "019ecaa3-3e57-7150-bb03-2c582bede7ba",
     "subagent_type": "default",
     "name": "Planck",
-    "model": "gpt-5.4-mini",
     "timestamp": "2026-06-15T12:35:00"
   },
   {
@@ -43,7 +42,6 @@
     "agent_id": "019ecaa3-3e57-7150-bb03-2c582bede7ba",
     "subagent_type": "default",
     "name": "Planck",
-    "model": "gpt-5.4-mini",
     "timestamp": "2026-06-15T12:36:00"
   },
   {
@@ -77,7 +75,6 @@
     "agent_id": "019ecaa9-37d5-7822-9338-bbf5dbfcf5a1",
     "subagent_type": "default",
     "name": "Leibniz",
-    "model": "gpt-5.4-mini",
     "timestamp": "2026-06-15T12:42:00"
   },
   {
@@ -104,7 +101,6 @@
     "agent_id": "019ecaa9-37d5-7822-9338-bbf5dbfcf5a1",
     "subagent_type": "default",
     "name": "Leibniz",
-    "model": "gpt-5.4-mini",
     "timestamp": "2026-06-15T12:42:00"
   }
 ]

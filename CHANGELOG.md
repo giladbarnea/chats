@@ -1,10 +1,17 @@
 ---
-last_updated: 2026-10-28T15-55
+last_updated: 2026-10-30T23-50
 ---
 
 # Changelog
 
 All notable changes to the `conversations` skill.
+
+---
+## [2026-10-30] Drop message model ids
+
+### Removed
+
+- Parse and search no longer read or show a message's model id: no `model=` XML attribute, no `model` JSON field, and no model in colored badges. `ch parse` rejects `model` as unknown message metadata. `ch info` still reports usage by model.
 
 ---
 ## [2026-10-28] Show Pi delegation as each session saw it

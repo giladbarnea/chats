@@ -15,7 +15,6 @@
     "content": [
       "I'll start by loading project context and studying the performance commits in parallel."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T19:52:36.273Z"
   },
   {
@@ -25,7 +24,6 @@
     "content": [
       "Now let me gather project context and read the full perf diff that was saved."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T19:52:45.021Z"
   },
   {
@@ -35,7 +33,6 @@
     "content": [
       "Now let me read the current state of the key source files to ground the abstractions precisely."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T19:53:30.515Z"
   },
   {
@@ -45,7 +42,6 @@
     "content": [
       "Let me read the remaining pieces (parse command, the facet extractor, the SearchQuery model) and load the in-html skill in parallel."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T19:53:39.788Z"
   },
   {
@@ -55,7 +51,6 @@
     "content": [
       "I now fully understand the four fast paths and the simplification. Let me inspect the in-html builder, the component vocabulary, and confirm the iCloud path before authoring."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T19:56:29.190Z"
   },
   {
@@ -65,7 +60,6 @@
     "content": [
       "iCloud is available, the builder supports `--layer 1` with self-contained iCloud output, and I have the full component vocabulary. I now understand all four fast paths and the simplification precisely. Let me author the two pages.\n\nFirst, the classroom (questions-only) page:"
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T19:59:36.592Z"
   },
   {
@@ -75,7 +69,6 @@
     "content": [
       "Now the worked-solutions page:"
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T20:01:31.555Z"
   },
   {
@@ -85,7 +78,6 @@
     "content": [
       "Now let me build both pages as self-contained Layer 1 files and place them into iCloud."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T20:03:12.294Z"
   },
   {
@@ -95,7 +87,6 @@
     "content": [
       "Both built with no broken-link errors (the builder fails the build on any broken internal `#link`, so a clean pass means every anchor resolved). Let me verify the files are truly self-contained and the anchors mirrored correctly."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T20:03:22.717Z"
   },
   {
@@ -105,7 +96,6 @@
     "content": [
       "Both pages built cleanly and are self-contained: CSS is inlined (no external stylesheet), every cross-reference anchor resolved (the builder fails on any broken internal link, and it passed), and the two pages link to each other. Let me record a small note about how you like to learn this material, then I'll summarize."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T20:03:50.665Z"
   },
   {
@@ -115,7 +105,6 @@
     "content": [
       "Done. Two self-contained Layer 1 pages (no JavaScript, CSS inlined) are in your iCloud Drive:\n\n```\n~/Library/Mobile Documents/com~apple~CloudDocs/Performance Fast Paths/\n  questions.html   — the classroom page (problems only)\n  solutions.html   — the worked solutions\n```\n\nOpen either in a browser, or Quick Look a single page. The two link to each other, so a real browser is best if you want to bounce between them.\n\n**What I studied.** The performance commit (`ddff696`, \"perf: add fallback-first fast paths\") and the follow-up (`1efa167`, \"simplification refactor\"), plus the plan and post-implementation notes in `thoughts/26-06-24-performance-fast-paths/`, the `ARCHITECTURE.md` notes 22–24, and the current source of `search.py`, `resolve.py`, `parse.py`, and `parsing.py`. The pass was four narrow fast paths over a corpus of ~2,300 transcript files — deliberately no index, no parallelism, no rewrite. The recurring root cause was always the same: a command that needed one small fact was paying for a whole-file read, a JSONL decode, message construction, or a rendered-XML match.\n\n**The classroom page** poses six open-ended problems, each stripped of the domain and handed to you as data structures, inputs, outputs, and the current flow — \"where does this compute more than the answer needs, and what invariant must your fix preserve?\" No hints, no answers. A short \"drill\" up top tells you how to work each one.\n\n**The solutions page** opens with the six transferable principles as a syllabus, then walks each problem to its bottleneck, the generalized technique, the actual code as it stands now, and the soundness guarantee. The six principles:\n\n1. **Necessary-condition prefilter** — run a cheap test `Q` where `P ⟹ Q`, so `¬Q` proves `¬P` and you skip the expensive `P`. (grep-before-parse / Bloom filter.)\n2. **Compute only what the output depends on** — push the projection down; `--only-id` returns from the path without reading the body. (covering index / HEAD vs GET.)\n3. **Discriminate the cheap case before the costly interpretation** — tell a self-describing payload from a handle without touching the corpus.\n4. **Prune the doomed fallback, and hoist the guard** — a canonical-key miss can't be rescued by a fuzzy scan; and an early-return placed *after* the loop saves nothing.\n5. **Conservative, tri-state, fallback-first** — let the fast path say \"I don't know\" and defer to the trusted slow path.\n6. **Delete over clone** — don't maintain the slow path's semantics in two places.\n\n**The one finding worth flagging:** the simplification commit is itself the best lesson on the page. The first version of the `search . -ll` projection re-implemented Claude's branch-dependent visibility rules and used a byte-marker heuristic to decide when to fall back. A reviewer caught a divergence — a session the real parser hid but the projection emitted. The fix wasn't to patch the replica; it was to delete it and always defer Claude files to the slow path. Less code, one source of truth, no drift — and `search . -ll` still dropped from ~7.5–8s to ~3.5s. That's principle 6, and it's why I gave it its own before/after on the page. The measured numbers (0.48s for a 35 MB paste, 0.63s for an id miss, 1.35s for a no-hit literal search, and the 2,132-ids equivalence check) are baked into the solutions."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-24T20:04:26.740Z"
   },
   {
@@ -130,7 +119,6 @@
     ],
     "agent_id": "athe-first-question-e5567b79a4ee3556",
     "subagent_type": "fork",
-    "model": "<synthetic>",
     "timestamp": "2026-06-25T07:30:54.543Z"
   },
   {
@@ -142,7 +130,6 @@
     ],
     "agent_id": "athe-first-question-e5567b79a4ee3556",
     "subagent_type": "fork",
-    "model": "<synthetic>",
     "timestamp": "2026-06-25T07:30:54.543Z"
   },
   {
@@ -154,7 +141,6 @@
     ],
     "agent_id": "athe-first-question-e5567b79a4ee3556",
     "subagent_type": "fork",
-    "model": "<synthetic>",
     "timestamp": "2026-06-25T07:30:54.546Z"
   },
   {
@@ -166,7 +152,6 @@
     ],
     "agent_id": "athe-first-question-e5567b79a4ee3556",
     "subagent_type": "fork",
-    "model": "<synthetic>",
     "timestamp": "2026-06-25T07:30:55.780Z"
   },
   {
@@ -194,7 +179,6 @@
     "content": [
       "No response requested."
     ],
-    "model": "<synthetic>",
     "timestamp": "2026-06-25T07:32:41.181Z"
   },
   {
@@ -213,7 +197,6 @@
     "content": [
       "The annotation server binds `0.0.0.0` (reachable over Tailscale) and accepts same-origin POSTs, so the builder's Layer-3 server will work from the phone. Let me confirm the exact CLI flag semantics for `ch parse`/`ch search`, two resolver helpers, and grab the Tailscale IPv6."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:09:50.199Z"
   },
   {
@@ -223,7 +206,6 @@
     "content": [
       "Tailscale IPv6 is `fd7a:115c:a1e0::5433:8253`, the annotation server binds `0.0.0.0` (phone-reachable) and accepts same-origin POSTs, and I've confirmed the exact flag semantics (`-ll` = only-id, `-l` = only-metadata; `resolve_exact_identifier` consults stem/filename indexes then per-file in-band ids; `get_display_session_id` is the stem for Claude). Now I'll author the pre-optimization behavior page — pure control flow, data in/out, and use cases, with no diagnosis or framing that points at a fix."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:13:18.588Z"
   },
   {
@@ -233,7 +215,6 @@
     "content": [
       "Now build it as a Layer 3 annotated page and start the annotation server:"
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:14:28.039Z"
   },
   {
@@ -243,7 +224,6 @@
     "content": [
       "Port 8765 is taken; let me build on an auto-selected free port and verify the server responds."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:15:48.860Z"
   },
   {
@@ -253,7 +233,6 @@
     "content": [
       "The server bound to `0.0.0.0` (IPv4 only), so the IPv6 Tailscale address won't reach it. Let me rebind the annotation server to dual-stack `::` so the IPv6 URL works, and verify."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:17:47.020Z"
   },
   {
@@ -263,7 +242,6 @@
     "content": [
       "IPv4 works and the v6 address is on the interface; the v6 `000` is likely the known self-hairpin quirk (a host often can't curl its own Tailscale IP). Let me confirm the socket is actually listening on IPv6 via loopback."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:18:15.548Z"
   },
   {
@@ -273,7 +251,6 @@
     "content": [
       "The server is confirmed listening on IPv6 (`TCP *:8767 LISTEN`), and both the page and the annotations endpoint return 200 over the IPv6 loopback. The self-curl to the Mac's own Tailscale v6 returns `000` only because of the harmless self-hairpin; a remote peer like your phone reaches it on a different path.\n\n**Your phone URL (Layer 3, annotations live):**\n```\nhttp://[fd7a:115c:a1e0::5433:8253]:8767/index.html\n```\n\nNow, per your follow-up, let me reread the write-ai-instructions skill before spawning the agent."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:18:29.772Z"
   },
   {
@@ -283,7 +260,6 @@
     "content": [
       "Server is correctly serving over IPv6 dual-stack and reread of the skill is done. Now I'll spawn a fresh Opus agent (no inherited context) to design and implement diagrams on the live page, with the no-hint boundary stated as an absolute constraint."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:08.058Z"
   },
   {
@@ -298,7 +274,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:23.395Z"
   },
   {
@@ -310,7 +285,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:26.539Z"
   },
   {
@@ -322,7 +296,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:35.361Z"
   },
   {
@@ -334,7 +307,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:43.709Z"
   },
   {
@@ -346,7 +318,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:51.572Z"
   },
   {
@@ -358,7 +329,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:59.145Z"
   },
   {
@@ -370,7 +340,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:21:13.909Z"
   },
   {
@@ -382,7 +351,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:21:26.878Z"
   },
   {
@@ -394,7 +362,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:21:32.246Z"
   },
   {
@@ -406,7 +373,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:21:43.569Z"
   },
   {
@@ -418,7 +384,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:21:51.453Z"
   },
   {
@@ -430,7 +395,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:21:58.884Z"
   },
   {
@@ -442,7 +406,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:22:04.867Z"
   },
   {
@@ -454,7 +417,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:22:10.767Z"
   },
   {
@@ -466,7 +428,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:22:58.728Z"
   },
   {
@@ -478,7 +439,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:23:14.498Z"
   },
   {
@@ -490,7 +450,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:23:31.656Z"
   },
   {
@@ -502,7 +461,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:23:49.008Z"
   },
   {
@@ -514,7 +472,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:24:24.741Z"
   },
   {
@@ -526,7 +483,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:24:43.969Z"
   },
   {
@@ -538,7 +494,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:25:02.711Z"
   },
   {
@@ -550,7 +505,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:25:19.508Z"
   },
   {
@@ -562,7 +516,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:25:29.872Z"
   },
   {
@@ -574,7 +527,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:25:37.348Z"
   },
   {
@@ -586,7 +538,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:25:48.317Z"
   },
   {
@@ -598,7 +549,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:25:59.407Z"
   },
   {
@@ -610,7 +560,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:26:12.573Z"
   },
   {
@@ -622,7 +571,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:26:19.607Z"
   },
   {
@@ -634,7 +582,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:26:28.035Z"
   },
   {
@@ -646,7 +593,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:26:37.082Z"
   },
   {
@@ -658,7 +604,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:26:44.619Z"
   },
   {
@@ -670,7 +615,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:27:01.268Z"
   },
   {
@@ -682,7 +626,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:27:13.040Z"
   },
   {
@@ -694,7 +637,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:27:17.190Z"
   },
   {
@@ -706,7 +648,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:27:32.668Z"
   },
   {
@@ -718,7 +659,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:27:51.899Z"
   },
   {
@@ -730,7 +670,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:28:06.238Z"
   },
   {
@@ -742,7 +681,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:28:20.028Z"
   },
   {
@@ -754,7 +692,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:28:31.547Z"
   },
   {
@@ -766,7 +703,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:28:45.008Z"
   },
   {
@@ -778,7 +714,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:28:55.290Z"
   },
   {
@@ -790,7 +725,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:29:10.597Z"
   },
   {
@@ -802,7 +736,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:29:29.716Z"
   },
   {
@@ -814,7 +747,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:29:54.536Z"
   },
   {
@@ -826,7 +758,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:31:02.737Z"
   },
   {
@@ -838,7 +769,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:31:09.246Z"
   },
   {
@@ -850,7 +780,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:31:26.112Z"
   },
   {
@@ -862,7 +791,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:31:36.451Z"
   },
   {
@@ -874,7 +802,6 @@
     ],
     "agent_id": "adiagram-designer-ad9e9ca0632757ac",
     "subagent_type": "diagram-designer",
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:32:10.247Z"
   },
   {
@@ -884,7 +811,6 @@
     "content": [
       "Everything is in place and the diagram agent is now running. Here's where things stand.\n\n**Your phone link (live, annotate now):**\n```\nhttp://[fd7a:115c:a1e0::5433:8253]:8767/index.html\n```\nThis is the Layer 3 page — tap any step, table row, or block to leave a note; saves land on disk here as you go. It's served over your Tailscale IPv6 (the server is bound dual-stack and confirmed listening on IPv6; the only thing that failed was my Mac curling its own Tailscale address, which is a harmless self-hairpin and doesn't affect your phone).\n\n**What the page is.** A neutral, pre-optimization behavioral record of `ch` — no diagnosis, no framing that points at a fix. Five sections, each with the use cases, the data in/out, and the step-by-step control flow:\n1. `ch parse` resolving its input, with a table mapping each input kind (file path, stem id, in-band id, negative index, name/summary fragment, canonical UUID, raw JSONL on stdin) to the exact steps it traverses — this directly answers your `/btw` about which cases just look up a path versus open and scan every file.\n2. `ch parse` output modes (`-ll` id-only, `-l` metadata-only, default).\n3. The title/summary fallback, in depth — the per-line decode and the branch order.\n4. `ch search` scanning candidates.\n5. `ch search . -ll` listing ids.\n\nI rewrote it entirely from the abstract \"Problem N\" framing to the real `ch` flows, and stripped anything that characterized a step — no complexity classes, no \"expensive,\" no \"even before,\" no emphasis that flags a step. (The earlier abstract questions/solutions pages are still sitting in your iCloud \"Performance Fast Paths\" folder, untouched.)\n\n**The diagram agent.** A fresh Opus agent with no inherited context is now working on the live page (`/tmp/perf-behavior-l3/index.html`). I gave it your learning goal, pointed it at the page and the in-html visual system, and told it the component set is text-optimized while this domain — components and flows — is the classic case for diagrams. The absolute boundary I set: visualize the behavior exactly and evenly as documented, uniform visual weight, no element flagged as costly or frequent, and stay naive to the optimization history so it can't bias the visuals. It has full latitude on which diagrams and which libraries. Its edits go straight to the served file, so the diagrams will appear when you refresh.\n\nI'll report back with what it added once it finishes. If the server ever stops (Mac sleep, etc.), tell me and I'll restart it."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:20:54.057Z"
   },
   {
@@ -903,7 +829,6 @@
     "content": [
       "The diagram agent reports idle — likely finished. Let me inspect what it changed on the live page and pull its report."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:30:15.853Z"
   },
   {
@@ -913,7 +838,6 @@
     "content": [
       "The file still contains only the original content — no diagram markup, no libraries, no SVG/canvas. The agent went idle without implementing anything visible. Let me check the directory for stray work and ask the agent directly what it did."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:30:55.028Z"
   },
   {
@@ -923,7 +847,6 @@
     "content": [
       "index.html was modified at 11:25 (the build was 11:15), so the agent did edit it — but my grep found no SVG, canvas, or external diagram library. If it added anything, it's pure HTML/CSS. I need to see the actual content and verify neutrality myself. Let me read the file."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:31:30.548Z"
   },
   {
@@ -960,7 +883,6 @@
     "content": [
       "Understood — holding here and waiting for your go. I won't touch the file or message the agent further until you say so.\n\nOne correction to my last update, since it matters: the diagrams **are** in fact implemented. My \"nothing was implemented\" was a bad read on my part — I grepped only for SVG/canvas/Mermaid/CDN libraries and missed that the agent built them as pure CSS. The page now carries a `.dg-*` diagram vocabulary and five inserted diagrams: a seven-stage cascade with the exit points for `ch parse` resolution, a nested loop frame (for-each-file containing for-each-line) for the title/summary scan, a guard→outcome ladder for the reduction, and per-candidate loop frames for search and the id listing. No external library was added; the head theme script and all Layer-3 annotation wiring are intact.\n\nOne loose end for when you're ready: I did send the agent a status message that wrongly said nothing was implemented and told it to proceed — so it may currently be redoing or extending work based on that. Tell me how you want to handle it and I'll act on your go."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:32:34.282Z"
   },
   {
@@ -970,7 +892,6 @@
     "content": [
       "Confirmed and consistent — my fresh read of the file matches the agent's report exactly, so we're aligned now. The diagrams are done, on disk, and being served live; a phone refresh will show them. Nothing is mid-flight that needs redoing.\n\nWhat's on the page now: five diagrams, one per flow (the seven-stage resolver cascade in §1, the nested for-each-file / for-each-line loop and the six-row guard→outcome ladder in §3, and the per-candidate loop frames in §4 and §5; §2 stays a table since it isn't a flow). They're built from the page's own CSS variables rather than a library — so they track dark/light and the phone breakpoints by construction, and there's no third-party styling that could nudge emphasis onto any node. Every node, frame, row, and connector renders identically; the only accent is the loop pill, applied equally so nesting depth is the sole signal. Each diagram is a single annotatable unit. The theme script and Layer-3 annotation wiring are untouched.\n\nI'm holding here and have changed nothing. Waiting for your go."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T08:32:51.551Z"
   },
   {
@@ -989,7 +910,6 @@
     "content": [
       "Let me verify what the server is actually serving right now and read your Q1 annotation before answering."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T09:30:22.988Z"
   },
   {
@@ -999,7 +919,6 @@
     "content": [
       "Server check is conclusive: **no restart needed.** The process on 8767 has the right cwd, the served file's hash equals the disk file's hash (`4fc5a23e…`), and it contains all 5 diagram blocks. You're looking at a cached page. Before I answer your Q1, let me verify one precise claim about the pool build (whether provider detection reads file contents)."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T09:32:04.915Z"
   },
   {
@@ -1009,7 +928,6 @@
     "content": [
       "Verified: adapter selection is by path (`adapter.matches(source_path)`), not by reading the file. So the pool build reads **no file contents**. Now the answer.\n\n**Server:** Not a server problem — don't restart. Served hash == disk hash (`4fc5a23e…`), 5 diagram blocks present, correct cwd. Your phone cached the old page → hard-refresh, or hit `…:8767/index.html?v=2`. Caveat worth naming: the diagrams are built from the page's own CSS tokens by design, so they read like the components. The genuinely new shapes are the \"↻ for each…\" loop frames (§3/§4/§5) and the guard ladder (§3). If you want loud, unmistakable diagrams (drawn connectors/arrows, a distinct surface), say so and I'll have them redone that way — still neutral.\n\n**Q1 — sharp pass.**\n\nRight:\n- Rule trivial cases out first; raw/multiline content can't be an id → skip resolution. ✓\n- Defer content reads to last. ✓\n- `-1` needs a full stat pass — unavoidable. ✓\n- Stem/filename id needs no file open. ✓\n\nWrong:\n- \"Pool build is the main sink.\" No — it's metadata only: glob + one `stat`/file + path-based provider tag + dict inserts. The sink is step 5: open + `json.loads` every line of every file. You're paying for *content*, not the index.\n- \"Cache cuts repeat lookups.\" There are none — the pool is built once per run. It's a single fallback scan, not amortization.\n\nMissing:\n- The lever isn't a faster O(N) — it's **not running it.** Prune by input shape: a canonical UUID that misses the exact index can never match a title (substring) or a summary (prefix), so skip the entire scan. You pruned raw content; prune the UUID-miss too.\n- Inside step 5: under 1% of lines are title/summary records, yet every line is `json.loads`'d. A raw substring test for the record's key skips the decode for the rest — necessary-condition prefilter, zero false negatives. Not in your plan.\n- Placement is half the win. Your \"defer slow to last\" has a dual: **hoist conclusive cheap exits above the loop.** A not-found guard sitting *after* the scan saves nothing.\n- Caveat to \"id = stem, no open\": only stem/filename index hits are free; a single-token id that misses them falls through to a per-file in-band-id comparison that *does* open files.\n\nOn parallelism / lazy-built pool / map-reduce: valid, but heavier. The real win is **removing work, not adding threads** — prune the doomed paths and the O(N) you feared mostly evaporates. Parallelize only what survives."
     ],
-    "model": "opus-4-8",
     "timestamp": "2026-06-25T09:32:39.887Z"
   },
   {

@@ -25,7 +25,7 @@ I also closed the subagent after receiving the result.
 
 ---
 
-<agent i="3" agent_id="019ecaa3-3e57-7150-bb03-2c582bede7ba" subagent_type="default" name="Planck" model="gpt-5.4-mini" date="2026-06-15 12:35">
+<agent i="3" agent_id="019ecaa3-3e57-7150-bb03-2c582bede7ba" subagent_type="default" name="Planck" date="2026-06-15 12:35">
 ## Agent 'Planck'
 
   <subagent-task>
@@ -36,7 +36,7 @@ I also closed the subagent after receiving the result.
 
 ---
 
-<agent i="4" agent_id="019ecaa3-3e57-7150-bb03-2c582bede7ba" subagent_type="default" name="Planck" model="gpt-5.4-mini" date="2026-06-15 12:36">
+<agent i="4" agent_id="019ecaa3-3e57-7150-bb03-2c582bede7ba" subagent_type="default" name="Planck" date="2026-06-15 12:36">
 ## Agent 'Planck'
 
   hi
@@ -69,7 +69,7 @@ Final output: `Done: read a small directory listing, wrote /tmp/foo, edited it o
 
 ---
 
-<agent i="7" agent_id="019ecaa9-37d5-7822-9338-bbf5dbfcf5a1" subagent_type="default" name="Leibniz" model="gpt-5.4-mini" date="2026-06-15 12:42">
+<agent i="7" agent_id="019ecaa9-37d5-7822-9338-bbf5dbfcf5a1" subagent_type="default" name="Leibniz" date="2026-06-15 12:42">
 ## Agent 'Leibniz'
 
   <subagent-task>
@@ -88,7 +88,7 @@ Final output: `Done: read a small directory listing, wrote /tmp/foo, edited it o
 
 ---
 
-<agent i="8" agent_id="019ecaa9-37d5-7822-9338-bbf5dbfcf5a1" subagent_type="default" name="Leibniz" model="gpt-5.4-mini" date="2026-06-15 12:42">
+<agent i="8" agent_id="019ecaa9-37d5-7822-9338-bbf5dbfcf5a1" subagent_type="default" name="Leibniz" date="2026-06-15 12:42">
 ## Agent 'Leibniz'
 
   I’m doing the filesystem exercise in one short shell pass: a quick listing, a temp write, a one-character edit, removal, and a final existence check.
